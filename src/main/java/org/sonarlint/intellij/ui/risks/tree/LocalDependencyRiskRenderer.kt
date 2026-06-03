@@ -46,7 +46,7 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
         setIcon(renderer, undecoratedIcon)
 
         renderer.setIconToolTip(toolTipText)
-        renderer.toolTipText = if (node.isLocalOnly) "Detected by local SCA analysis" else "Double-click to open in the browser"
+        renderer.toolTipText = "Double-click to open in the browser"
 
         val text = "${node.packageName}:${node.packageVersion}"
         if (displayedStatus == DisplayedStatus.OPEN) {
@@ -57,11 +57,6 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
 
         val details = getDetails(node)
         renderer.append(details, SimpleTextAttributes.GRAY_ATTRIBUTES)
-        if (node.isLocalOnly) {
-            renderer.append(" (Local analysis)", SimpleTextAttributes.GRAY_ATTRIBUTES)
-        } else if (node.isMatched) {
-            renderer.append(" (Server + local analysis)", SimpleTextAttributes.GRAY_ATTRIBUTES)
-        }
     }
 
     private fun getDetails(node: LocalDependencyRisk): String {

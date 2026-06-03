@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.finding.sca
 
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 import org.sonarlint.intellij.finding.Finding
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.ImpactDto
@@ -28,6 +29,12 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.SoftwareQuality
 
 class LocalDependencyRisk(private val serverDependencyRisk: DependencyRiskDto) : Finding {
 
+    private val localId = serverDependencyRisk.id ?: UUID.nameUUIDFromBytes(
+        listOf(serverDependencyRisk.type, serverDependencyRisk.packageName, serverDependencyRisk.packageVersion, serverDependencyRisk.vulnerabilityId)
+            .joinToString("|")
+            .toByteArray(StandardCharsets.UTF_8)
+    )
+    val isLocalOnly = serverDependencyRisk.presence == DependencyRiskDto.Presence.LOCAL_ONLY
     val type: DependencyRiskDto.Type = serverDependencyRisk.type
     val severity: DependencyRiskDto.Severity = serverDependencyRisk.severity
     val quality: DependencyRiskDto.SoftwareQuality = serverDependencyRisk.quality
@@ -37,16 +44,13 @@ class LocalDependencyRisk(private val serverDependencyRisk: DependencyRiskDto) :
     val vulnerabilityId = serverDependencyRisk.vulnerabilityId
     val cvssScore = serverDependencyRisk.cvssScore
     val transitions: List<DependencyRiskDto.Transition> = serverDependencyRisk.transitions
-    val localAnalysisDetails: DependencyRiskDto.LocalAnalysisDetailsDto? = serverDependencyRisk.localAnalysisDetails
-    val isMatched: Boolean = serverDependencyRisk.isMatched
-    val isLocalOnly: Boolean = serverDependencyRisk.isLocalOnly
     private val resolvedStatus = listOf(DependencyRiskDto.Status.SAFE, DependencyRiskDto.Status.ACCEPT, DependencyRiskDto.Status.FIXED)
 
     fun canChangeStatus(): Boolean {
         return !isLocalOnly && transitions.isNotEmpty()
     }
 
-    override fun getId(): UUID = serverDependencyRisk.id!!
+    override fun getId(): UUID = localId
 
     override fun getCleanCodeAttribute() = null
 

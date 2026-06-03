@@ -33,38 +33,16 @@ fun aDependencyRisk(id: UUID, status: DependencyRiskDto.Status, severity: Depend
 
 fun aDependencyRiskDto(status: DependencyRiskDto.Status, transition: List<DependencyRiskDto.Transition>,
                        severity: DependencyRiskDto.Severity = DependencyRiskDto.Severity.HIGH, id: UUID = UUID.randomUUID()) =
-    DependencyRiskDto(
-        id,
-        DependencyRiskDto.Type.VULNERABILITY,
-        severity,
-        DependencyRiskDto.SoftwareQuality.SECURITY,
-        status,
-        "test-rule-key",
-        "High",
-        "CVE-1234",
-        "7.5",
-        transition
-    )
-
-fun aLocalOnlyDependencyRiskDto(id: UUID = UUID.randomUUID()) =
-    DependencyRiskDto.withLocalAnalysis(
-        aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(), id = id),
-        aLocalAnalysisDetailsDto(),
-        false,
-        true
-    )
-
-fun aMatchedDependencyRiskDto(id: UUID = UUID.randomUUID()) =
-    DependencyRiskDto.withLocalAnalysis(
-        aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf(DependencyRiskDto.Transition.ACCEPT), id = id),
-        aLocalAnalysisDetailsDto(),
-        true,
-        false
-    )
-
-fun aLocalAnalysisDetailsDto() = DependencyRiskDto.LocalAnalysisDetailsDto(
-    DependencyRiskDto.ReleaseDetailsDto("release-key", "pkg:maven/org.example/library@1.2.3", "maven", "MIT", true, true, false),
-    DependencyRiskDto.IssueDetailsDto(false, listOf("CWE-79"), null, emptyList()),
-    DependencyRiskDto.DependencyDetailsDto(listOf("pom.xml"), listOf(listOf("root", "library")))
-)
-
+    DependencyRiskDto.builder()
+        .id(id)
+        .type(DependencyRiskDto.Type.VULNERABILITY)
+        .severity(severity)
+        .quality(DependencyRiskDto.SoftwareQuality.SECURITY)
+        .status(status)
+        .packageName("test-rule-key")
+        .packageVersion("High")
+        .vulnerabilityId("CVE-1234")
+        .cvssScore("7.5")
+        .transitions(transition)
+        .presence(DependencyRiskDto.Presence.SERVER_ONLY)
+        .build()

@@ -25,17 +25,12 @@ import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarsource.sonarlint.core.rpc.protocol.client.sca.DidChangeDependencyRiskAnalysisStatusParams.DependencyRiskAnalysisStatus
 
 @Service(Service.Level.PROJECT)
 class ScaAnalysisStatus(private val project: Project) {
     @Volatile
     var running = false
         private set
-
-    fun update(status: DependencyRiskAnalysisStatus) {
-        setRunningState(status == DependencyRiskAnalysisStatus.STARTED)
-    }
 
     fun setRunningState(value: Boolean) {
         running = value

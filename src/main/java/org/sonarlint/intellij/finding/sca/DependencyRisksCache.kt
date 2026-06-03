@@ -28,18 +28,14 @@ class DependencyRisksCache() {
 
     var dependencyRisks: List<LocalDependencyRisk> = emptyList()
 
-    fun replaceWith(dependencyRiskDtos: List<DependencyRiskDto>) {
-        dependencyRisks = dependencyRiskDtos
-            .filter { it.status != DependencyRiskDto.Status.FIXED }
-            .map { LocalDependencyRisk(it) }
-    }
-
     fun update(dependencyRiskIdsToRemove: Set<UUID>, dependencyRisksToAdd: List<LocalDependencyRisk>, dependencyRisksToUpdate: List<LocalDependencyRisk>) {
         val dependencyRisksToAddFiltered = dependencyRisksToAdd.filter { it.status != DependencyRiskDto.Status.FIXED }
         val dependencyRisksToUpdateFiltered = dependencyRisksToUpdate.filter { it.status != DependencyRiskDto.Status.FIXED }
 
         val currentDependencyRisks = dependencyRisks.toMutableList()
         currentDependencyRisks.removeAll { it.getId() in dependencyRiskIdsToRemove }
+        val addedDependencyRiskKeys = dependencyRisksToAddFiltered.map { it.getId() }
+        currentDependencyRisks.removeAll { it.getId() in addedDependencyRiskKeys }
         currentDependencyRisks.addAll(dependencyRisksToAddFiltered)
         val updatedDependencyRiskKeys = dependencyRisksToUpdateFiltered.map { it.getId() }
         currentDependencyRisks.removeAll { it.getId() in updatedDependencyRiskKeys }

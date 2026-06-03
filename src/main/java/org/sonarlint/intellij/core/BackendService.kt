@@ -169,8 +169,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.StandaloneRuleC
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.UpdateStandaloneRulesConfigurationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.AnalyzeDependencyRiskProjectParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.AnalyzeDependencyRiskProjectResponse
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.CancelDependencyRiskAnalysisParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.CancelDependencyRiskAnalysisResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.ChangeDependencyRiskStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.CheckDependencyRiskSupportedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.sca.CheckDependencyRiskSupportedResponse
@@ -1174,11 +1172,6 @@ class BackendService : Disposable {
     fun analyzeDependencyRiskProject(project: Project): CompletableFuture<AnalyzeDependencyRiskProjectResponse> {
         val projectId = projectId(project)
         return requestFromBackend { it.dependencyRiskService.analyzeProject(AnalyzeDependencyRiskProjectParams(projectId)) }
-    }
-
-    fun cancelDependencyRiskAnalysis(project: Project): CompletableFuture<CancelDependencyRiskAnalysisResponse> {
-        val projectId = projectId(project)
-        return requestFromBackend { it.dependencyRiskService.cancelAnalysis(CancelDependencyRiskAnalysisParams(projectId)) }
     }
 
     fun getPluginStatuses(project: Project): CompletableFuture<GetPluginStatusesResponse> {

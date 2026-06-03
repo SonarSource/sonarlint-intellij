@@ -71,25 +71,6 @@ class LocalDependencyRiskTests {
     }
 
     @Test
-    fun `should expose local analysis details and matched flags`() {
-        val dto = aMatchedDependencyRiskDto()
-
-        val localRisk = LocalDependencyRisk(dto)
-
-        assertThat(localRisk.isMatched).isTrue()
-        assertThat(localRisk.isLocalOnly).isFalse()
-        assertThat(localRisk.localAnalysisDetails).isSameAs(dto.localAnalysisDetails)
-    }
-
-    @Test
-    fun `should not allow status change for local-only risk`() {
-        val dto = aLocalOnlyDependencyRiskDto()
-        val localRisk = LocalDependencyRisk(dto)
-
-        assertThat(localRisk.canChangeStatus()).isFalse()
-    }
-
-    @Test
     fun `should not allow status change when no transitions available`() {
         val dto = aDependencyRiskDto(DependencyRiskDto.Status.OPEN, listOf())
         val localRisk = LocalDependencyRisk(dto)

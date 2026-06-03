@@ -74,20 +74,6 @@ class DependencyRisksCacheTests {
     }
 
     @Test
-    fun should_replace_dependency_risks_from_analysis_response() {
-        val existingRisk = aDependencyRisk(DependencyRiskDto.Status.OPEN)
-        cache.dependencyRisks = listOf(existingRisk)
-        val localOnlyRisk = aLocalOnlyDependencyRiskDto()
-        val matchedRisk = aMatchedDependencyRiskDto()
-        val fixedRisk = aDependencyRiskDto(DependencyRiskDto.Status.FIXED, emptyList())
-
-        cache.replaceWith(listOf(localOnlyRisk, matchedRisk, fixedRisk))
-
-        assertThat(cache.dependencyRisks.map { it.getId() }).containsExactly(localOnlyRisk.id, matchedRisk.id)
-        assertThat(cache.dependencyRisks).noneMatch { it.getId() == existingRisk.getId() }
-    }
-
-    @Test
     fun should_remove_dependency_risks_by_ids_during_update() {
         val risk1 = aDependencyRisk(DependencyRiskDto.Status.OPEN)
         val risk2 = aDependencyRisk(DependencyRiskDto.Status.OPEN)

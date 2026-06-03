@@ -112,7 +112,6 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilities
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.LocalDependencyRisk
-import org.sonarlint.intellij.finding.sca.ScaAnalysisStatus
 import org.sonarlint.intellij.fix.ShowFixSuggestion
 import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications.notifyOnceForSkippedPlugins
@@ -148,7 +147,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.Bindin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
-import org.sonarsource.sonarlint.core.rpc.protocol.client.sca.DidChangeDependencyRiskAnalysisStatusParams.DependencyRiskAnalysisStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.AssistBindingResponse
@@ -932,11 +930,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val updated = updatedDependencyRisks.map { LocalDependencyRisk(it) }
         getService(project, DependencyRisksCache::class.java).update(closedDependencyRiskIds, added, updated)
         getService(project, SonarLintToolWindow::class.java).refreshViews()
-    }
-
-    override fun didChangeDependencyRiskAnalysisStatus(configurationScopeId: String, status: DependencyRiskAnalysisStatus, message: String?) {
-        val project = findProject(configurationScopeId) ?: return
-        getService(project, ScaAnalysisStatus::class.java).update(status)
     }
 
 
