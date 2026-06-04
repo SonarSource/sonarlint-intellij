@@ -20,11 +20,14 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
@@ -48,6 +51,26 @@ class SonarExternalAnnotatorTests extends AbstractSonarLintLightTests {
     when(psiFile.getFileType()).thenReturn(JavaFileType.INSTANCE);
     when(psiFile.getProject()).thenReturn(getProject());
     Settings.getGlobalSettings().setFocusOnNewCode(false);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "cshtml, C#,    true",
+    "cshtml, HTML,  true",
+    "cshtml, Razor, false",
+    "cshtml, razor, false",
+    "razor,  C#,    true",
+    "razor,  Razor, false",
+    "razor,  RAZOR, false",
+    "cs,     C#,    false"
+  })
+  void shouldSkip_razorAndCshtmlFiles(String extension, String fileTypeName, boolean expectedShouldSkip) {
+    var fileType = mock(FileType.class);
+    when(fileType.getName()).thenReturn(fileTypeName);
+    when(psiFile.getFileType()).thenReturn(fileType);
+    when(virtualFile.getExtension()).thenReturn(extension);
+
+    assertThat(SonarExternalAnnotator.shouldSkip(psiFile)).isEqualTo(expectedShouldSkip);
   }
 
   @Test
