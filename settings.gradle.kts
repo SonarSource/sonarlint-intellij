@@ -5,14 +5,14 @@ import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.16.0"
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-    id("com.gradle.develocity") version "4.4.1"
+    id("com.gradle.develocity") version "4.4.2"
     id("com.gradle.common-custom-user-data-gradle-plugin") version "2.6.0"
 }
 
 rootProject.name = "sonarlint-intellij"
-val artifactoryUrl = System.getenv("ARTIFACTORY_URL") ?: (extra["artifactoryUrl"] as? String ?: "")
-val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra["artifactoryUsername"] as? String ?: "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra["artifactoryPassword"] as? String ?: "")
+val artifactoryUrl = System.getenv("ARTIFACTORY_URL") ?: (extra.properties["artifactoryUrl"] as? String ?: "")
+val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra.properties["artifactoryUsername"] as? String ?: "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra.properties["artifactoryPassword"] as? String ?: "")
 
 dependencyResolutionManagement {
 
