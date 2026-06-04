@@ -10,9 +10,9 @@ plugins {
 }
 
 rootProject.name = "sonarlint-intellij"
-val artifactoryUrl = System.getenv("ARTIFACTORY_URL") ?: (extra["artifactoryUrl"] as? String ?: "")
-val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra["artifactoryUsername"] as? String ?: "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra["artifactoryPassword"] as? String ?: "")
+val artifactoryUrl = System.getenv("ARTIFACTORY_URL") ?: (extra.properties["artifactoryUrl"] as? String ?: "")
+val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra.properties["artifactoryUsername"] as? String ?: "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra.properties["artifactoryPassword"] as? String ?: "")
 
 dependencyResolutionManagement {
 
