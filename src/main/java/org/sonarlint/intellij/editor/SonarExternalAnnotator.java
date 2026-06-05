@@ -49,6 +49,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpFile;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpLanguageRegistered;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isRazorFile;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isRider;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
@@ -101,10 +103,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
     // cshtml and razor files in Rider trigger apply() for multiple embedded languages (C#, HTML dialect, and Razor/Blazor).
     // Keep only the Razor fileType pass to avoid duplicate annotations in the Problems view.
-    var virtualFile = file.getVirtualFile();
-    if (virtualFile != null) {
-      var ext = virtualFile.getExtension();
-      return ("cshtml".equalsIgnoreCase(ext) || "razor".equalsIgnoreCase(ext)) && !"Razor".equalsIgnoreCase(file.getFileType().getName());
+    if (isRider() && isRazorFile(file)) {
+      return !"Razor".equalsIgnoreCase(file.getFileType().getName());
     }
     return false;
   }

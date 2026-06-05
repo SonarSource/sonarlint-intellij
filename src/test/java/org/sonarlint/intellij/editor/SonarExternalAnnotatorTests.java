@@ -35,8 +35,11 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 
+import org.sonarlint.intellij.common.util.SonarLintUtils;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 class SonarExternalAnnotatorTests extends AbstractSonarLintLightTests {
@@ -70,7 +73,10 @@ class SonarExternalAnnotatorTests extends AbstractSonarLintLightTests {
     when(psiFile.getFileType()).thenReturn(fileType);
     when(virtualFile.getExtension()).thenReturn(extension);
 
-    assertThat(SonarExternalAnnotator.shouldSkip(psiFile)).isEqualTo(expectedShouldSkip);
+    try (var mockedUtils = mockStatic(SonarLintUtils.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+      mockedUtils.when(SonarLintUtils::isRider).thenReturn(true);
+      assertThat(SonarExternalAnnotator.shouldSkip(psiFile)).isEqualTo(expectedShouldSkip);
+    }
   }
 
   @Test
