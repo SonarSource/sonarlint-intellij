@@ -32,7 +32,8 @@ fun aDependencyRisk(id: UUID, status: DependencyRiskDto.Status, severity: Depend
     LocalDependencyRisk(aDependencyRiskDto(status, listOf(), severity, id))
 
 fun aDependencyRiskDto(status: DependencyRiskDto.Status, transition: List<DependencyRiskDto.Transition>,
-                       severity: DependencyRiskDto.Severity = DependencyRiskDto.Severity.HIGH, id: UUID = UUID.randomUUID()) =
+                       severity: DependencyRiskDto.Severity = DependencyRiskDto.Severity.HIGH, id: UUID = UUID.randomUUID(),
+                       presence: DependencyRiskDto.Presence = DependencyRiskDto.Presence.SERVER_ONLY) =
     DependencyRiskDto.builder()
         .id(id)
         .type(DependencyRiskDto.Type.VULNERABILITY)
@@ -44,5 +45,5 @@ fun aDependencyRiskDto(status: DependencyRiskDto.Status, transition: List<Depend
         .vulnerabilityId("CVE-1234")
         .cvssScore("7.5")
         .transitions(transition)
-        .presence(DependencyRiskDto.Presence.SERVER_ONLY)
+        .presence(presence)
         .build()

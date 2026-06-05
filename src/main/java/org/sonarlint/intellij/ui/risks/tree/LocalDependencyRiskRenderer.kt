@@ -39,11 +39,18 @@ object LocalDependencyRiskRenderer : NodeRenderer<LocalDependencyRisk> {
         val qualityText = quality.toString().lowercase()
         val toolTipText = "$impactText $qualityText"
         val displayedStatus = DisplayedStatus.fromFinding(node)
-        val undecoratedIcon = FindingIconBuilder.forBaseIcon(SonarLintIcons.riskSeverity(severity))
+        val iconBuilder = FindingIconBuilder.forBaseIcon(SonarLintIcons.riskSeverity(severity))
             .withDisplayedStatus(displayedStatus)
-            .undecorated()
-            .build()
-        setIcon(renderer, undecoratedIcon)
+        val icon = if (node.isServerBacked) {
+            iconBuilder
+                .withDecoratingIcon(SonarLintIcons.ICON_SONARQUBE_SERVER_16)
+                .build()
+        } else {
+            iconBuilder
+                .undecorated()
+                .build()
+        }
+        setIcon(renderer, icon)
 
         renderer.setIconToolTip(toolTipText)
         renderer.toolTipText = "Double-click to open in the browser"

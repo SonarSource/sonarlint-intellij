@@ -78,4 +78,35 @@ class LocalDependencyRiskTests {
         assertThat(localRisk.canChangeStatus()).isFalse()
     }
 
-} 
+    @Test
+    fun `should identify server backed risks`() {
+        val serverOnlyRisk = LocalDependencyRisk(aDependencyRiskDto(
+            DependencyRiskDto.Status.OPEN,
+            listOf(),
+            presence = DependencyRiskDto.Presence.SERVER_ONLY
+        ))
+        val serverAndLocalRisk = LocalDependencyRisk(aDependencyRiskDto(
+            DependencyRiskDto.Status.OPEN,
+            listOf(),
+            presence = DependencyRiskDto.Presence.SERVER_AND_LOCAL
+        ))
+
+        assertThat(serverOnlyRisk.isServerBacked).isTrue()
+        assertThat(serverOnlyRisk.isLocalOnly).isFalse()
+        assertThat(serverAndLocalRisk.isServerBacked).isTrue()
+        assertThat(serverAndLocalRisk.isLocalOnly).isFalse()
+    }
+
+    @Test
+    fun `should identify local only risks`() {
+        val localRisk = LocalDependencyRisk(aDependencyRiskDto(
+            DependencyRiskDto.Status.OPEN,
+            listOf(),
+            presence = DependencyRiskDto.Presence.LOCAL_ONLY
+        ))
+
+        assertThat(localRisk.isServerBacked).isFalse()
+        assertThat(localRisk.isLocalOnly).isTrue()
+    }
+
+}

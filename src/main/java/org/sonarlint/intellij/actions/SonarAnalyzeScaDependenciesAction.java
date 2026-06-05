@@ -104,7 +104,6 @@ public class SonarAnalyzeScaDependenciesAction extends AbstractSonarAction {
 
   private static String successMessage(AnalyzeDependencyRiskProjectResponse response) {
     return "SCA dependency analysis completed: "
-      + response.getDependencyRisks().size() + " dependency risks, "
       + response.getParsedFiles().size() + " parsed files, "
       + response.getErrors().size() + " errors";
   }
