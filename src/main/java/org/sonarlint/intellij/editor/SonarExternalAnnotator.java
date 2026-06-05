@@ -49,6 +49,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpFile;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpLanguageRegistered;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isRazorFile;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isRider;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
@@ -94,9 +96,17 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .forEach(vulnerability -> addAnnotation(vulnerability, fileTextRange, holder));
   }
 
-  private static boolean shouldSkip(PsiFile file) {
+  static boolean shouldSkip(PsiFile file) {
     // A php file is annotated twice, once by HTML and once by PHP plugin. We want to avoid duplicate annotation
-    return isPhpLanguageRegistered() && isPhpFile(file);
+    if (isPhpLanguageRegistered() && isPhpFile(file)) {
+      return true;
+    }
+    // cshtml and razor files in Rider trigger apply() for multiple embedded languages (C#, HTML dialect, and Razor/Blazor).
+    // Keep only the Razor fileType pass to avoid duplicate annotations in the Problems view.
+    if (isRider() && isRazorFile(file)) {
+      return !"Razor".equalsIgnoreCase(file.getFileType().getName());
+    }
+    return false;
   }
 
   @Override

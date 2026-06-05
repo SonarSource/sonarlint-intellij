@@ -163,6 +163,15 @@ public class SonarLintUtils {
     return "php".equalsIgnoreCase(file.getFileType().getName());
   }
 
+  public static boolean isRazorFile(@NotNull PsiFile file) {
+    var virtualFile = file.getVirtualFile();
+    if (virtualFile == null) {
+      return false;
+    }
+    var ext = virtualFile.getExtension();
+    return "cshtml".equalsIgnoreCase(ext) || "razor".equalsIgnoreCase(ext);
+  }
+
   private static ApplicationInfo getAppInfo() {
     return ApplicationInfo.getInstance();
   }
