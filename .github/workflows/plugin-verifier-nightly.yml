@@ -18,16 +18,16 @@ jobs:
     name: Verify Plugin - LATEST
     if: github.ref_name == github.event.repository.default_branch
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
       # Cache verifier IDE binaries separately with a stable key (not invalidated by unrelated Gradle changes)
       # IDEs are stored by the IntelliJ Platform Gradle Plugin v2.x in ~/.gradle/caches/<gradle-version>/transforms/
       - name: Restore verifier IDEs cache
-        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+        uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
         with:
           path: ~/.gradle/caches/*/transforms/
           key: verifier-ides-${{ runner.os }}-LATEST-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
@@ -36,7 +36,7 @@ jobs:
             verifier-ides-${{ runner.os }}-
 
       - name: Cache Gradle
-        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+        uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
         with:
           path: |
             ~/.gradle/caches
@@ -49,7 +49,7 @@ jobs:
 
       - name: Fetch vault secrets
         id: secrets
-        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
+        uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
         with:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
@@ -68,7 +68,7 @@ jobs:
 
       - name: Upload reports on failure
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verifier-reports-latest
           path: "**/reports/**/*"

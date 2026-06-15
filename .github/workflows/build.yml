@@ -32,7 +32,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
+      - uses: SonarSource/ci-github-actions/get-build-number@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
         id: build-number
 
   aws-auth:
@@ -46,14 +46,14 @@ jobs:
       docker_password: ${{ steps.login-ecr.outputs.docker_password_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
         with:
           aws-region: eu-central-1
           role-to-assume: arn:aws:iam::275878209202:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@376925c9d111252e87ae59691e5a442dd100ef6a # v2.1.3
+        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2.1.5
         with:
           mask-password: 'false'
 
@@ -77,11 +77,11 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
@@ -93,7 +93,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Build Plugin
-        uses: SonarSource/ci-github-actions/build-gradle@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
+        uses: SonarSource/ci-github-actions/build-gradle@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
         id: build_plugin
         with:
           sonar-platform: none
@@ -118,15 +118,15 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
       - name: Fetch vault secrets
         id: secrets
-        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
+        uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
         with:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
@@ -145,7 +145,7 @@ jobs:
         run: .\gradlew.bat :check
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+        uses: mikepenz/action-junit-report@3a81627bfac62268172037048872e8ebd4207e6d # v6.4.1
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/test-results/**/*.xml'
@@ -183,11 +183,11 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0  # Full history needed for Sonar blame
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
@@ -199,7 +199,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Run Tests and Sonar Analysis
-        uses: SonarSource/ci-github-actions/build-gradle@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
+        uses: SonarSource/ci-github-actions/build-gradle@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
         with:
           deploy: false
           use-develocity: true
@@ -211,7 +211,7 @@ jobs:
             /home/runner/.gradle/wrapper
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+        uses: mikepenz/action-junit-report@3a81627bfac62268172037048872e8ebd4207e6d # v6.4.1
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/test-results/**/*.xml'
@@ -249,9 +249,9 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
@@ -263,7 +263,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Restore verifier IDEs cache
-        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+        uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
         with:
           path: /home/runner/.gradle/caches/*/transforms/
           key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
@@ -271,7 +271,7 @@ jobs:
             verifier-ides-${{ runner.os }}-
 
       - name: Verify Plugin Compatibility
-        uses: SonarSource/ci-github-actions/build-gradle@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
+        uses: SonarSource/ci-github-actions/build-gradle@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
         with:
           deploy: false
           sonar-platform: none
@@ -365,9 +365,9 @@ jobs:
       TEST_SUITE: ${{ matrix.test_suite }}
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
@@ -376,7 +376,7 @@ jobs:
 
       - name: Vault Secrets
         id: secrets
-        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
+        uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
         with:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
@@ -402,7 +402,7 @@ jobs:
           echo "Create dir ${ORCHESTRATOR_HOME}"
           mkdir -p "${ORCHESTRATOR_HOME}"
 
-      - uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+      - uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
         with:
           path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
           key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
@@ -419,7 +419,7 @@ jobs:
           rm -f gradle-md5-sums.txt
 
       - name: Restore Gradle Cache
-        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+        uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
         with:
           path: |
             /home/runner/.gradle/caches
@@ -483,7 +483,7 @@ jobs:
       - name: Restore IDE from cache
         if: steps.ide-source.outputs.embedded == 'false'
         id: cache-ide
-        uses: SonarSource/gh-action_cache@55df12d329333911afa3e89a9b558fbf47dcd61c # v1.4.4
+        uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
         with:
           path: ${{ steps.ide-source.outputs.cache_path }}
           key: ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}
@@ -660,7 +660,7 @@ jobs:
           fi
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@bccf2e31636835cf0874589931c4116687171386 # v6.4.0
+        uses: mikepenz/action-junit-report@3a81627bfac62268172037048872e8ebd4207e6d # v6.4.1
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/test-results/**/*.xml'
@@ -701,14 +701,14 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@23d3a5700259f9890438851083904c6d5e87ff4e # 1.3.34
+        uses: SonarSource/ci-github-actions/promote@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
         env:
           PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         with:
@@ -725,16 +725,16 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
           experimental: true
 
       - name: Fetch vault secrets
         id: secrets
-        uses: SonarSource/vault-action-wrapper@c154b4a417b51cb98dd71137f49bf20e77c56820 # 3.4.0
+        uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
         with:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
