@@ -60,7 +60,7 @@ jobs:
         with:
           version: 2025.9.12
 
-      - uses: SonarSource/ci-github-actions/build-gradle@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
+      - uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
         env:
           IDEA_HOME: ${{ env.IDEA_2024_DIR }}
           CLION_HOME: ${{ env.CLION_2024_DIR }}
@@ -83,7 +83,7 @@ jobs:
       contents: read
     steps:
       - name: Run IRIS Analysis
-        uses: SonarSource/unified-dogfooding-actions/run-iris@54cee68ff08f10645c757675c59d232063e0b947 # 1.0.0
+        uses: SonarSource/unified-dogfooding-actions/run-iris@03e023516511b1c9da325ad104c2290e3b91688c # 1.1.0
         with:
           primary_project_key: "org.sonarsource.sonarlint.intellij:sonarlint-intellij"
           primary_platform: "Next"

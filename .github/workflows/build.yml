@@ -32,7 +32,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
+      - uses: SonarSource/ci-github-actions/get-build-number@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
         id: build-number
 
   aws-auth:
@@ -93,7 +93,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Build Plugin
-        uses: SonarSource/ci-github-actions/build-gradle@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
+        uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
         id: build_plugin
         with:
           sonar-platform: none
@@ -199,7 +199,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Run Tests and Sonar Analysis
-        uses: SonarSource/ci-github-actions/build-gradle@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
+        uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
         with:
           deploy: false
           use-develocity: true
@@ -263,7 +263,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Restore verifier IDEs cache
-        uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
+        uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
         with:
           path: /home/runner/.gradle/caches/*/transforms/
           key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
@@ -271,7 +271,7 @@ jobs:
             verifier-ides-${{ runner.os }}-
 
       - name: Verify Plugin Compatibility
-        uses: SonarSource/ci-github-actions/build-gradle@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
+        uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
         with:
           deploy: false
           sonar-platform: none
@@ -402,7 +402,7 @@ jobs:
           echo "Create dir ${ORCHESTRATOR_HOME}"
           mkdir -p "${ORCHESTRATOR_HOME}"
 
-      - uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
+      - uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
         with:
           path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
           key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
@@ -419,7 +419,7 @@ jobs:
           rm -f gradle-md5-sums.txt
 
       - name: Restore Gradle Cache
-        uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
+        uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
         with:
           path: |
             /home/runner/.gradle/caches
@@ -483,7 +483,7 @@ jobs:
       - name: Restore IDE from cache
         if: steps.ide-source.outputs.embedded == 'false'
         id: cache-ide
-        uses: SonarSource/gh-action_cache@a7d13cdd1c9f097a5f8382ccec463be2831e3dbc # v1.6.0
+        uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
         with:
           path: ${{ steps.ide-source.outputs.cache_path }}
           key: ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}
@@ -708,7 +708,7 @@ jobs:
           version: 2025.9.12
 
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@1ea2cea521e6c74144d9fc6053e854d6d8e5b379 # 1.5.4
+        uses: SonarSource/ci-github-actions/promote@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
         env:
           PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         with:
