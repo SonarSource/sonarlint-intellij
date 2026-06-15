@@ -112,7 +112,7 @@ jobs:
         run: echo "project-version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
 
   check_windows:
-    runs-on: warp-custom-sonarlint-intellij
+    runs-on: warp-custom-pr-367-sonarlint-intellij-v20260615143319
     needs: build-number
     name: Test Windows
     env:
