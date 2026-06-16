@@ -67,8 +67,8 @@ class ReadActionUtils {
         }
 
         @JvmStatic
-        fun <T> computeReadActionSafely(action: ThrowableComputable<T, out Exception>): T {
-            return computeCancellableReadAction(action = action)
+        fun <T> computeReadActionSafely(action: ThrowableComputable<T, out Exception>): T? {
+            return computeCancellableReadAction { action.compute() }
         }
 
         @JvmStatic
@@ -162,14 +162,6 @@ class ReadActionUtils {
                 readAction = readAction.expireWhen { projectForExpiration.isDisposed }
             }
             return executeNonBlockingReadAction(readAction)
-        }
-
-        private fun <T> computeCancellableReadAction(action: ThrowableComputable<T, out Exception>): T {
-            return if (ApplicationManager.getApplication().isDispatchThread) {
-                ReadAction.compute<T, Exception> { action.compute() }
-            } else {
-                ReadAction.nonBlocking(Callable { action.compute() }).executeSynchronously()
-            }
         }
 
         /**
