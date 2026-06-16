@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.common.ui
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.DumbService
@@ -27,13 +28,26 @@ import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.ThrowableComputable
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
+import java.util.concurrent.Callable
 
+/**
+ * Thread-aware read-action helpers for PSI/VFS access.
+ *
+ * Long-running read actions on a background thread must be cancellable: otherwise they can
+ * prevent the EDT from writing and freeze the UI. This class picks the appropriate API
+ * based on the current thread.
+ *
+ * - **Background thread** → [ReadAction.nonBlocking] (cancellable; expires when the project is disposed)
+ * - **EDT** → [ReadAction.compute] / [ReadAction.run] ([ReadAction.nonBlocking] must not run on EDT)
+ *
+ * Prefer these methods over calling [ReadAction] directly.
+ */
 class ReadActionUtils {
     companion object {
         @JvmStatic
         fun runReadActionSafely(project: Project, action: Runnable) {
             if (!project.isDisposed) {
-                return ReadAction.run<Exception> {
+                runCancellableReadAction(project) {
                     if (!project.isDisposed) action.run()
                 }
             }
@@ -41,22 +55,20 @@ class ReadActionUtils {
 
         @JvmStatic
         fun runReadActionSafely(action: Runnable) {
-            return ReadAction.run<Exception> {
+            runCancellableReadAction {
                 action.run()
             }
         }
 
         @JvmStatic
         fun <T> computeReadActionSafely(action: ThrowableComputable<T, out Exception>): T {
-            return ReadAction.compute<T, Exception> {
-                action.compute()
-            }
+            return computeCancellableReadAction(action = action)
         }
 
         @JvmStatic
         fun <T> computeReadActionSafely(project: Project, action: ThrowableComputable<T, out Exception>): T? {
             if (!project.isDisposed) {
-                return ReadAction.compute<T?, Exception> {
+                return computeCancellableReadAction(project) {
                     if (project.isDisposed) null else action.compute()
                 }
             }
@@ -66,7 +78,7 @@ class ReadActionUtils {
         @JvmStatic
         fun <T> computeReadActionSafely(module: Module, action: ThrowableComputable<T, out Exception>): T? {
             if (!module.isDisposed) {
-                return ReadAction.compute<T?, Exception> {
+                return computeCancellableReadAction(module.project) {
                     if (module.isDisposed) null else action.compute()
                 }
             }
@@ -75,7 +87,7 @@ class ReadActionUtils {
 
         @JvmStatic
         fun <T> computeReadActionSafely(psiFile: PsiFile, action: ThrowableComputable<T, out Exception>): T? {
-            return ReadAction.compute<T?, Exception> {
+            return computeCancellableReadAction(psiFile.project) {
                 if (!psiFile.isValid) null else action.compute()
             }
         }
@@ -83,7 +95,7 @@ class ReadActionUtils {
         @JvmStatic
         fun <T> computeReadActionSafely(virtualFile: VirtualFile, project: Project, action: ThrowableComputable<T, out Exception>): T? {
             if (!project.isDisposed) {
-                return ReadAction.compute<T, Exception> {
+                return computeCancellableReadAction(project) {
                     if (project.isDisposed || !virtualFile.isValid) null else action.compute()
                 }
             }
@@ -97,15 +109,59 @@ class ReadActionUtils {
             action: Computable<T>
         ): T? {
             if (!project.isDisposed && virtualFile.isValid) {
-                return DumbService.getInstance(project).runReadActionInSmartMode(action)
+                return if (ApplicationManager.getApplication().isDispatchThread) {
+                    DumbService.getInstance(project).runReadActionInSmartMode(action)
+                } else {
+                    ReadAction.nonBlocking(Callable { action.compute() })
+                        .inSmartMode(project)
+                        .expireWhen { project.isDisposed || !virtualFile.isValid }
+                        .executeSynchronously()
+                }
             }
             return null
         }
 
         @JvmStatic
         fun <T> computeReadActionSafely(virtualFile: VirtualFile, action: ThrowableComputable<T, out Exception>): T? {
-            return ReadAction.compute<T?, Exception> {
+            return computeCancellableReadAction {
                 if (!virtualFile.isValid) null else action.compute()
+            }
+        }
+
+        private fun runCancellableReadAction(project: Project? = null, action: Runnable) {
+            if (ApplicationManager.getApplication().isDispatchThread) {
+                ReadAction.run<Exception> { action.run() }
+            } else {
+                var readAction = ReadAction.nonBlocking(Callable {
+                    action.run()
+                    null
+                })
+                if (project != null) {
+                    readAction = readAction.expireWhen { project.isDisposed }
+                }
+                readAction.executeSynchronously()
+            }
+        }
+
+        private fun <T> computeCancellableReadAction(
+            projectForExpiration: Project? = null,
+            action: ThrowableComputable<T?, out Exception>,
+        ): T? {
+            if (ApplicationManager.getApplication().isDispatchThread) {
+                return ReadAction.compute<T?, Exception> { action.compute() }
+            }
+            var readAction = ReadAction.nonBlocking(Callable { action.compute() })
+            if (projectForExpiration != null) {
+                readAction = readAction.expireWhen { projectForExpiration.isDisposed }
+            }
+            return readAction.executeSynchronously()
+        }
+
+        private fun <T> computeCancellableReadAction(action: ThrowableComputable<T, out Exception>): T {
+            return if (ApplicationManager.getApplication().isDispatchThread) {
+                ReadAction.compute<T, Exception> { action.compute() }
+            } else {
+                ReadAction.nonBlocking(Callable { action.compute() }).executeSynchronously()
             }
         }
     }
