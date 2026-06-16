@@ -20,8 +20,10 @@
 package org.sonarlint.intellij.common.ui
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.NonBlockingReadAction
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Computable
@@ -39,6 +41,10 @@ import java.util.concurrent.Callable
  *
  * - **Background thread** → [ReadAction.nonBlocking] (cancellable; expires when the project is disposed)
  * - **EDT** → [ReadAction.compute] / [ReadAction.run] ([ReadAction.nonBlocking] must not run on EDT)
+ *
+ * On background threads, cancellation or project expiration returns `null` (compute) or no-ops (run)
+ * instead of throwing [ProcessCanceledException]. Non-blocking read actions may re-run their lambda
+ * after cancellation; keep read-action bodies idempotent and free of non-repeatable side effects.
  *
  * Prefer these methods over calling [ReadAction] directly.
  */
@@ -112,10 +118,11 @@ class ReadActionUtils {
                 return if (ApplicationManager.getApplication().isDispatchThread) {
                     DumbService.getInstance(project).runReadActionInSmartMode(action)
                 } else {
-                    ReadAction.nonBlocking(Callable { action.compute() })
-                        .inSmartMode(project)
-                        .expireWhen { project.isDisposed || !virtualFile.isValid }
-                        .executeSynchronously()
+                    executeNonBlockingReadAction(
+                        ReadAction.nonBlocking(Callable { action.compute() })
+                            .inSmartMode(project)
+                            .expireWhen { project.isDisposed || !virtualFile.isValid }
+                    )
                 }
             }
             return null
@@ -139,7 +146,7 @@ class ReadActionUtils {
                 if (project != null) {
                     readAction = readAction.expireWhen { project.isDisposed }
                 }
-                readAction.executeSynchronously()
+                executeNonBlockingReadAction(readAction)
             }
         }
 
@@ -154,7 +161,7 @@ class ReadActionUtils {
             if (projectForExpiration != null) {
                 readAction = readAction.expireWhen { projectForExpiration.isDisposed }
             }
-            return readAction.executeSynchronously()
+            return executeNonBlockingReadAction(readAction)
         }
 
         private fun <T> computeCancellableReadAction(action: ThrowableComputable<T, out Exception>): T {
@@ -162,6 +169,18 @@ class ReadActionUtils {
                 ReadAction.compute<T, Exception> { action.compute() }
             } else {
                 ReadAction.nonBlocking(Callable { action.compute() }).executeSynchronously()
+            }
+        }
+
+        /**
+         * Runs a non-blocking read action on a background thread.
+         * Returns null when the action is cancelled or expired — intentional boundary for *Safely* helpers.
+         */
+        private fun <T> executeNonBlockingReadAction(readAction: NonBlockingReadAction<T>): T? {
+            return try {
+                readAction.executeSynchronously()
+            } catch (_: ProcessCanceledException) {
+                null
             }
         }
     }

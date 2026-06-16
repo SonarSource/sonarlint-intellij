@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -41,6 +42,46 @@ class ReadActionUtilsTests : AbstractSonarLintLightTests() {
         }.get(10, TimeUnit.SECONDS)
 
         assertThat(result).isEqualTo("computed")
+    }
+
+    @Test
+    fun computeReadActionSafely_returns_null_when_project_expires_during_background_read() {
+        val expiringProject = mock(Project::class.java)
+        val disposeChecks = AtomicInteger(0)
+        `when`(expiringProject.isDisposed).thenAnswer { disposeChecks.incrementAndGet() > 1 }
+
+        val result = CompletableFuture.supplyAsync {
+            ReadActionUtils.computeReadActionSafely(expiringProject) { "ignored" }
+        }.get(10, TimeUnit.SECONDS)
+
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun runReadActionSafely_does_not_throw_when_project_expires_during_background_read() {
+        val expiringProject = mock(Project::class.java)
+        val disposeChecks = AtomicInteger(0)
+        `when`(expiringProject.isDisposed).thenAnswer { disposeChecks.incrementAndGet() > 1 }
+        val executed = AtomicBoolean(false)
+
+        CompletableFuture.runAsync {
+            ReadActionUtils.runReadActionSafely(expiringProject) { executed.set(true) }
+        }.get(10, TimeUnit.SECONDS)
+
+        assertThat(executed).isFalse()
+    }
+
+    @Test
+    fun computeReadActionSafelyInSmartMode_returns_value_from_background_thread() {
+        myFixture.configureByText("Sample.java", "class Sample {}")
+
+        val result = CompletableFuture.supplyAsync {
+            ReadActionUtils.computeReadActionSafelyInSmartMode(myFixture.file.virtualFile, project) {
+                myFixture.file.virtualFile.name
+            }
+        }.get(10, TimeUnit.SECONDS)
+
+        assertThat(result).isEqualTo("Sample.java")
     }
 
     @Test
