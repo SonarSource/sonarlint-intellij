@@ -69,6 +69,8 @@ configurations {
     register("sloop")
 }
 
+apply(from = "gradle/cve-constraints.gradle")
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))

@@ -3,6 +3,7 @@
 import org.jetbrains.intellij.platform.gradle.services.RequestedIntelliJPlatformsService
 
 apply(from: "${rootProject.projectDir}/gradle/intellij-dependency-lock.gradle")
+apply(from: "${rootProject.projectDir}/gradle/cve-constraints.gradle")
 
 // Workaround for an IntelliJ Platform Gradle Plugin 2.14+ interaction bug.
 // `local(...)` defers `markIntelliJPlatformDependencyExplicit` to a lazy provider, which

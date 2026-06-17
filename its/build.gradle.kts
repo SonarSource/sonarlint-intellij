@@ -10,6 +10,16 @@ plugins {
 
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 
+configurations.all {
+    resolutionStrategy.eachDependency {
+        // Pulled in transitively by orchestrator via maven-artifact
+        if (requested.group == "org.codehaus.plexus" && requested.name == "plexus-utils") {
+            useVersion("3.6.1")
+            because("CVE-2025-67030")
+        }
+    }
+}
+
 // ITs require IDEs whose test-framework JARs introduce transitive deps that vary by environment
 dependencyLocking {
     lockMode.set(LockMode.LENIENT)
