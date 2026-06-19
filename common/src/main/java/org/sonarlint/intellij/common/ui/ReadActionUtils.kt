@@ -39,7 +39,7 @@ import java.util.concurrent.Callable
  * prevent the EDT from writing and freeze the UI. This class picks the appropriate API
  * based on the current thread.
  *
- * - **Background thread** → [ReadAction.nonBlocking] (cancellable; expires when the project is disposed)
+ * - **Background thread** → [ReadAction.nonBlocking] (cancellable; expires when the project or [VirtualFile] is disposed/invalid)
  * - **EDT** → [ReadAction.compute] / [ReadAction.run] ([ReadAction.nonBlocking] must not run on EDT)
  *
  * On background threads, cancellation or project expiration returns `null` (compute) or no-ops (run)
@@ -101,7 +101,7 @@ class ReadActionUtils {
         @JvmStatic
         fun <T> computeReadActionSafely(virtualFile: VirtualFile, project: Project, action: ThrowableComputable<T, out Exception>): T? {
             if (!project.isDisposed) {
-                return computeCancellableReadAction(project) {
+                return computeCancellableReadAction(project, virtualFile) {
                     if (project.isDisposed || !virtualFile.isValid) null else action.compute()
                 }
             }
@@ -130,7 +130,7 @@ class ReadActionUtils {
 
         @JvmStatic
         fun <T> computeReadActionSafely(virtualFile: VirtualFile, action: ThrowableComputable<T, out Exception>): T? {
-            return computeCancellableReadAction {
+            return computeCancellableReadAction(virtualFileForExpiration = virtualFile) {
                 if (!virtualFile.isValid) null else action.compute()
             }
         }
@@ -152,14 +152,18 @@ class ReadActionUtils {
 
         private fun <T> computeCancellableReadAction(
             projectForExpiration: Project? = null,
+            virtualFileForExpiration: VirtualFile? = null,
             action: ThrowableComputable<T?, out Exception>,
         ): T? {
             if (ApplicationManager.getApplication().isDispatchThread) {
                 return ReadAction.compute<T?, Exception> { action.compute() }
             }
             var readAction = ReadAction.nonBlocking(Callable { action.compute() })
-            if (projectForExpiration != null) {
-                readAction = readAction.expireWhen { projectForExpiration.isDisposed }
+            if (projectForExpiration != null || virtualFileForExpiration != null) {
+                readAction = readAction.expireWhen {
+                    projectForExpiration?.isDisposed == true
+                        || (virtualFileForExpiration != null && !virtualFileForExpiration.isValid)
+                }
             }
             return executeNonBlockingReadAction(readAction)
         }

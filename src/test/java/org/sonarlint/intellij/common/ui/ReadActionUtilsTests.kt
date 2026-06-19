@@ -85,6 +85,19 @@ class ReadActionUtilsTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun computeReadActionSafely_returns_null_when_virtual_file_expires_during_background_read() {
+        val expiringFile = mock(VirtualFile::class.java)
+        val validityChecks = AtomicInteger(0)
+        `when`(expiringFile.isValid).thenAnswer { validityChecks.incrementAndGet() > 1 }
+
+        val result = CompletableFuture.supplyAsync {
+            ReadActionUtils.computeReadActionSafely(expiringFile, project) { "ignored" }
+        }.get(10, TimeUnit.SECONDS)
+
+        assertThat(result).isNull()
+    }
+
+    @Test
     fun computeReadActionSafely_returns_null_when_project_is_disposed() {
         val disposedProject = mock(Project::class.java)
         `when`(disposedProject.isDisposed).thenReturn(true)
