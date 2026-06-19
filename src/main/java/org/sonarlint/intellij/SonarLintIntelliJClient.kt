@@ -872,24 +872,17 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         }?.toSet() ?: return emptySet()
     }
 
+    @JvmOverloads
     fun toClientFileDto(
         project: Project,
         configScopeId: String,
         file: VirtualFile,
         relativePath: String,
         language: Language?,
+        includeFileContent: Boolean = false,
     ): ClientFileDto? {
         if (!file.isValid || FileUtilRt.isTooLarge(file.length)) return null
         val uri = VirtualFileUtils.toURI(file) ?: return null
-        var fileContent: String? = null
-        if (file.name == SONAR_SCANNER_CONFIG_FILENAME
-            || file.name == AUTOSCAN_CONFIG_FILENAME
-            || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER
-            // Notebooks require special parsing, we should always send the content
-            || file.extension == "ipynb"
-        ) {
-            fileContent = computeReadActionSafely(project) { getFileContent(file) }
-        }
         return try {
             computeReadActionSafely(file, project) {
                 ClientFileDto(
@@ -899,7 +892,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
                     isTestSources(file, project),
                     VirtualFileUtils.getEncoding(file, project),
                     Paths.get(file.path),
-                    fileContent,
+                    readFileContentIfNeeded(file, includeFileContent),
                     language,
                     true
                 )
@@ -908,6 +901,17 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             SonarLintConsole.get(project).error("Error while computing ClientFileDto", e)
             null
         }
+    }
+
+    private fun readFileContentIfNeeded(file: VirtualFile, includeFileContent: Boolean): String? {
+        val shouldReadContent = includeFileContent
+            || file.name == SONAR_SCANNER_CONFIG_FILENAME
+            || file.name == AUTOSCAN_CONFIG_FILENAME
+            || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER
+            // Notebooks require special parsing, we should always send the content
+            || file.extension == "ipynb"
+        if (!shouldReadContent || FileUtilRt.isTooLarge(file.length)) return null
+        return getFileContent(file)
     }
 
     override fun didChangeTaintVulnerabilities(
