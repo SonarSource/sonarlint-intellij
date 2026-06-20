@@ -106,22 +106,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     var bindingEnabled = bindPanel.isBindingEnabled();
     var moduleBindings = bindPanel.getModuleBindings();
     if (bindingEnabled) {
-      if (selectedConnection == null) {
-        throw new ConfigurationException("Connection should not be empty");
-      }
-      if (!getGlobalSettings().connectionExists(selectedConnection.getName())) {
-        throw new ConfigurationException("Connection should be saved first");
-      }
-      isConnectionValid(project, selectedConnection);
-      if (selectedProjectKey == null || selectedProjectKey.isBlank()) {
-        throw new ConfigurationException("Project key should not be empty");
-      }
-      for (var binding : moduleBindings) {
-        var moduleProjectKey = binding.getSonarProjectKey();
-        if (moduleProjectKey == null || moduleProjectKey.isBlank()) {
-          throw new ConfigurationException("Project key for module '" + binding.getModule().getName() + "' should not be empty");
-        }
-      }
+      validateBinding(project, selectedConnection, selectedProjectKey, moduleBindings);
     }
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     exclusionsPanel.save(projectSettings);
@@ -133,6 +118,27 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       bindingManager.bindToManually(selectedConnection, selectedProjectKey, moduleBindingsMap);
     } else {
       bindingManager.unbind();
+    }
+  }
+
+  private static void validateBinding(Project project, @javax.annotation.Nullable ServerConnection selectedConnection,
+    @javax.annotation.Nullable String selectedProjectKey,
+    List<ModuleBindingPanel.ModuleBinding> moduleBindings) throws ConfigurationException {
+    if (selectedConnection == null) {
+      throw new ConfigurationException("Connection should not be empty");
+    }
+    if (!getGlobalSettings().connectionExists(selectedConnection.getName())) {
+      throw new ConfigurationException("Connection should be saved first");
+    }
+    isConnectionValid(project, selectedConnection);
+    if (selectedProjectKey == null || selectedProjectKey.isBlank()) {
+      throw new ConfigurationException("Project key should not be empty");
+    }
+    for (var binding : moduleBindings) {
+      var moduleProjectKey = binding.getSonarProjectKey();
+      if (moduleProjectKey == null || moduleProjectKey.isBlank()) {
+        throw new ConfigurationException("Project key for module '" + binding.getModule().getName() + "' should not be empty");
+      }
     }
   }
 

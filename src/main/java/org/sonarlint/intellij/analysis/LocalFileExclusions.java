@@ -63,7 +63,10 @@ public final class LocalFileExclusions {
   }
 
   private static @NotNull String getNormalized(String pathStr) {
-    var normalized = pathStr.replace("\\", "/").replaceAll("/+$", "");
+    var normalized = pathStr.replace("\\", "/");
+    while (normalized.endsWith("/")) {
+      normalized = normalized.substring(0, normalized.length() - 1);
+    }
     if (!normalized.startsWith("/")) {
       normalized = "/" + normalized;
     }
