@@ -101,6 +101,9 @@ dependencyResolutionManagement {
 }
 
 include("its", "clion", "clion-resharper", "nodejs", "common", "git", "rider", "test-common")
+if (gradle.startParameter.projectProperties.containsKey("dogfooding")) {
+    include("dogfood")
+}
 
 val isCiServer = System.getenv("CI") != null
 

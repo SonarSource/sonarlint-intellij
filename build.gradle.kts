@@ -92,6 +92,9 @@ dependencies {
         pluginComposedModule(runtimeOnly(project(":nodejs")))
         pluginComposedModule(runtimeOnly(project(":rider")))
         pluginComposedModule(runtimeOnly(project(":git")))
+        if (project.hasProperty("dogfooding")) {
+            pluginComposedModule(runtimeOnly(project(":dogfood")))
+        }
         bundledPlugins("com.intellij.java", "Git4Idea")
         testFramework(TestFrameworkType.Platform)
         pluginVerifier("1.398")
@@ -184,6 +187,14 @@ intellijPlatform {
                         channels = listOf(ProductRelease.Channel.RELEASE)
                         sinceBuild = "252.*"
                         untilBuild = "252.*"
+                    }
+                }
+
+                "EAP" -> ides {
+                    select {
+                        types = listOf(IntelliJPlatformType.IntellijIdeaUltimate)
+                        channels = listOf(ProductRelease.Channel.EAP)
+                        sinceBuild = "262.*"
                     }
                 }
             }

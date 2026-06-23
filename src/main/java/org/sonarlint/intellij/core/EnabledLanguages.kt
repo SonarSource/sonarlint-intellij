@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core
 
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.extensions.PluginId
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -188,6 +189,11 @@ object EnabledLanguages {
     @JvmStatic
     fun isClionEnabled() = isIdeModuleEnabled(CLION_MODULE_ID)
 
-    private fun isIdeModuleEnabled(pluginId: String) =
-        PluginManager.getInstance().findEnabledPlugin(PluginId.getId(pluginId)) != null
+    private fun isIdeModuleEnabled(pluginId: String): Boolean {
+        return when (pluginId) {
+            RIDER_MODULE_ID -> SonarLintUtils.isRider()
+            CLION_MODULE_ID -> SonarLintUtils.isCLion()
+            else -> PluginManager.getPlugins().any { it.isEnabled && it.pluginId == PluginId.getId(pluginId) }
+        }
+    }
 }
