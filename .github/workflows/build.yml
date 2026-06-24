@@ -124,20 +124,14 @@ jobs:
         with:
           version: 2025.9.12
 
-      - name: Fetch vault secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
+      - name: Configure Gradle
+        uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
         with:
-          secrets: |
-            development/kv/data/repox url | ARTIFACTORY_URL;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+          sonar-platform: none
+          artifactory-reader-role: private-reader
 
       - name: Run checks
         env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           IDEA_HOME: C:\Program Files\intellij
           RIDER_HOME: C:\Program Files\rider
           CLION_HOME: C:\Program Files\clion
@@ -371,6 +365,15 @@ jobs:
         with:
           version: 2025.9.12
 
+      - name: Configure Gradle
+        uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+        with:
+          sonar-platform: none
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          disable-caching: 'true'
+
       - name: Select Java ${{ env.JDK_VERSION }}
         run: mise use java@${{ env.JDK_VERSION }}
 
@@ -379,9 +382,6 @@ jobs:
         uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
         with:
           secrets: |
-            development/kv/data/repox url | ARTIFACTORY_URL;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
             development/team/sonarlint/kv/data/ide.keys clion | CLION_KEY;
             development/team/sonarlint/kv/data/ide.keys goland | GOLAND_KEY;
             development/team/sonarlint/kv/data/ide.keys idea | IDEA_KEY;
@@ -390,7 +390,6 @@ jobs:
             development/team/sonarlint/kv/data/ide.keys rider | RIDER_KEY;
             development/github/token/licenses-ro token | GITHUB_TOKEN;
             development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
-            development/kv/data/develocity token | DEVELOCITY_TOKEN;
 
       - name: Compute month key
         id: month
@@ -491,10 +490,6 @@ jobs:
             ${{ runner.os }}-jetbrains-ide-${{ matrix.ide_version }}-
 
       - name: Setup IDE for QA test
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_USER: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: .github/scripts/setup-qa-ide.sh "${{ matrix.ide_version }}"
 
       - name: Validate IDE setup for ${{ matrix.ide_version }}
@@ -533,9 +528,6 @@ jobs:
 
       - name: Extract and setup plugin
         env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_PRIVATE_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_PRIVATE_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
           CLION_KEY:    ${{ fromJSON(steps.secrets.outputs.vault).CLION_KEY }}
           GOLAND_KEY:   ${{ fromJSON(steps.secrets.outputs.vault).GOLAND_KEY }}
@@ -546,7 +538,7 @@ jobs:
         shell: bash --noprofile --norc -euo pipefail {0}
         run: |
           echo "Using project version: ${PROJECT_VERSION}"
-          curl -fsSL -u "${ARTIFACTORY_PRIVATE_USERNAME}:${ARTIFACTORY_PRIVATE_PASSWORD}" \
+          curl -fsSL -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_ACCESS_TOKEN}" \
             -o sonarlint-intellij.zip \
             "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
           unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
@@ -593,13 +585,9 @@ jobs:
           sleep 3
 
       - name: Start IDE in background
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
           # Start IDE in background using Gradle
-          nohup gradle :its:runIdeForUiTests --stacktrace -i \
+          nohup ./gradlew :its:runIdeForUiTests --stacktrace -i \
             -PijVersion=${IDEA_VERSION} \
             -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
           echo "IDE_PID=$!" >> $GITHUB_ENV
@@ -625,15 +613,15 @@ jobs:
             -codec:v libx264 -r 12 ${GITHUB_WORKSPACE}/recording_${IDEA_VERSION}.mp4 &
           echo "FFMPEG_PID=$!" >> $GITHUB_ENV
 
+      - name: Configure Maven
+        uses: SonarSource/ci-github-actions/config-maven@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+        with:
+          artifactory-reader-role: private-reader
+
       - name: Run integration tests
         env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
-          DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-          DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
         run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
 
       - name: Stop recording

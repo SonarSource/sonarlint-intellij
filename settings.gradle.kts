@@ -2,6 +2,28 @@ import java.net.URI
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
+pluginManagement {
+    // This block is compiled earlier than the rest of the script, so keep it self-contained.
+    val artifactoryUrl = (System.getenv("ARTIFACTORY_URL") ?: providers.gradleProperty("artifactoryUrl").orNull)
+        ?.removeSuffix("/")
+    val artifactoryUsername = System.getenv("ARTIFACTORY_USERNAME")
+        ?: System.getenv("ARTIFACTORY_ACCESS_USERNAME")
+        ?: providers.gradleProperty("artifactoryUsername").orNull
+    val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN")
+        ?: System.getenv("ARTIFACTORY_PASSWORD")
+        ?: providers.gradleProperty("artifactoryPassword").orNull
+    repositories {
+        maven {
+            if (artifactoryUrl != null && artifactoryUsername != null && artifactoryPassword != null) {
+                url = java.net.URI("$artifactoryUrl/plugins.gradle.org/")
+                credentials { username = artifactoryUsername; password = artifactoryPassword }
+            } else {
+                url = java.net.URI("https://plugins.gradle.org/m2/")
+            }
+        }
+    }
+}
+
 plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.16.0"
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
@@ -10,9 +32,14 @@ plugins {
 }
 
 rootProject.name = "sonarlint-intellij"
-val artifactoryUrl = System.getenv("ARTIFACTORY_URL") ?: (extra.properties["artifactoryUrl"] as? String ?: "")
-val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME") ?: (extra.properties["artifactoryUsername"] as? String ?: "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN") ?: (extra.properties["artifactoryPassword"] as? String ?: "")
+val artifactoryUrl = ((System.getenv("ARTIFACTORY_URL") ?: extra.properties["artifactoryUrl"] as? String)
+    ?.removeSuffix("/")).orEmpty()
+val artifactoryUsername = (System.getenv("ARTIFACTORY_USERNAME")
+    ?: System.getenv("ARTIFACTORY_ACCESS_USERNAME")
+    ?: extra.properties["artifactoryUsername"] as? String).orEmpty()
+val artifactoryPassword = (System.getenv("ARTIFACTORY_ACCESS_TOKEN")
+    ?: System.getenv("ARTIFACTORY_PASSWORD")
+    ?: extra.properties["artifactoryPassword"] as? String).orEmpty()
 
 dependencyResolutionManagement {
 
