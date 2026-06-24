@@ -63,13 +63,17 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         // Temporary workaround as FileEditorManager.openFiles does not return open files on dev containers/SSH
         val openedFiles = openFiles.ifEmpty { setOfNotNull(selectedFile) }
         val filteredFindings = findings.onlyFor(openedFiles)
+        // Derive changed files from the set of analyzed files, not only files that
+        // still have findings, so cleared files get their highlights removed.
+        val previouslyHighlightedOpenFiles = currentIssuesPerOpenFile.keys + currentSecurityHotspotsPerOpenFile.keys
         with(filteredFindings) {
             currentIssuesPerOpenFile.putAll(issuesPerFile)
             currentSecurityHotspotsPerOpenFile.putAll(securityHotspotsPerFile)
         }
+        val changedFiles = (filteredFindings.filesInvolved + previouslyHighlightedOpenFiles).intersect(openedFiles)
         publishViewUpdate(
             refreshHighlights = refreshHighlights,
-            changedFiles = filteredFindings.filesInvolved.intersect(openedFiles),
+            changedFiles = changedFiles,
             forceFullPanelRefresh = filteredFindings.securityHotspotsPerFile.isNotEmpty(),
         )
     }
