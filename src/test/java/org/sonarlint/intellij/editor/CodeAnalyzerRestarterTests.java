@@ -19,82 +19,68 @@
  */
 package org.sonarlint.intellij.editor;
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.util.messages.MessageBus;
-import com.intellij.util.messages.MessageBusConnection;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
-  private PsiManager psiManager = mock(PsiManager.class);
-  private DaemonCodeAnalyzer codeAnalyzer = mock(DaemonCodeAnalyzer.class);
-  private FileEditorManager fileEditorManager = mock(FileEditorManager.class);
-  private MessageBus bus = mock(MessageBus.class);
+  private final DirectHighlighter directHighlighter = mock(DirectHighlighter.class);
   private CodeAnalyzerRestarter analyzerRestarter;
 
   @BeforeEach
   void prepare() {
-    var connection = mock(MessageBusConnection.class);
-    when(bus.connect(getProject())).thenReturn(connection);
-    analyzerRestarter = new CodeAnalyzerRestarter(getProject(), codeAnalyzer);
+    analyzerRestarter = new CodeAnalyzerRestarter(getProject(), directHighlighter);
   }
 
   @Test
-  void should_not_restart_invalid() {
-    var vFile1 = mock(VirtualFile.class);
-    when(vFile1.isValid()).thenReturn(false);
+  void should_not_highlight_when_no_files() {
+    analyzerRestarter.refreshFiles(List.of());
 
-    when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {vFile1});
-
-    analyzerRestarter.refreshOpenFiles();
-    verifyNoInteractions(codeAnalyzer);
-    verifyNoInteractions(psiManager);
+    verifyNoInteractions(directHighlighter);
   }
 
   @Test
-  void should_restart_all_open() {
-    createAndOpenTestPsiFile("Foo.java", "class Foo {}");
-    createAndOpenTestPsiFile("Bar.java", "class Bar {}");
+  void should_highlight_all_open_files() {
+    var file1 = createAndOpenTestPsiFile("Foo.java", "class Foo {}").getVirtualFile();
+    var file2 = createAndOpenTestPsiFile("Bar.java", "class Bar {}").getVirtualFile();
 
     analyzerRestarter.refreshOpenFiles();
 
-    verify(codeAnalyzer, timeout(1000)).restart();
-    verifyNoMoreInteractions(codeAnalyzer);
+    verify(directHighlighter, timeout(1000)).updateHighlights(argThat(files -> files.containsAll(Set.of(file1, file2))));
+    verifyNoMoreInteractions(directHighlighter);
   }
 
   @Test
-  void should_restart_files() {
-    var file1 = createAndOpenTestPsiFile("Foo.java", "class Foo {}");
-    var file2 = createTestPsiFile("Bar.java", "class Bar {}");
+  void should_highlight_requested_files() {
+    var file1 = createAndOpenTestPsiFile("Foo.java", "class Foo {}").getVirtualFile();
+    var file2 = createTestPsiFile("Bar.java", "class Bar {}").getVirtualFile();
 
-    analyzerRestarter.refreshFiles(List.of(file1.getVirtualFile(), file2.getVirtualFile()));
+    analyzerRestarter.refreshFiles(List.of(file1, file2));
 
-    verify(codeAnalyzer, timeout(1000)).restart();
-    verifyNoMoreInteractions(codeAnalyzer);
+    verify(directHighlighter, timeout(1000)).updateHighlights(Set.of(file1, file2));
+    verifyNoMoreInteractions(directHighlighter);
   }
 
   @Test
-  void should_restart_only_one_file() {
-    createAndOpenTestPsiFile("Foo.java", "class Foo {}");
-    var file2 = createAndOpenTestPsiFile("Bar.java", "class Bar {}");
+  void should_debounce_rapid_calls_into_single_pass() {
+    var file1 = createAndOpenTestPsiFile("Foo.java", "class Foo {}").getVirtualFile();
+    var file2 = createTestPsiFile("Bar.java", "class Bar {}").getVirtualFile();
 
-    analyzerRestarter.refreshFiles(List.of(file2.getVirtualFile()));
+    analyzerRestarter.refreshFiles(List.of(file1));
+    analyzerRestarter.refreshFiles(List.of(file2));
 
-    verify(codeAnalyzer, timeout(1000)).restart(file2);
-    verifyNoMoreInteractions(codeAnalyzer);
+    verify(directHighlighter, timeout(1000)).updateHighlights(Set.of(file1, file2));
+    verifyNoMoreInteractions(directHighlighter);
   }
 
 }
