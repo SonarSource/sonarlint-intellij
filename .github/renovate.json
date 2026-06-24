@@ -5,5 +5,24 @@
   ],
   "ignorePaths": [
     "its/projects/**"
+  ],
+  "packageRules": [
+    {
+      "description": "Regenerate Gradle lockfiles after dependency updates",
+      "matchManagers": [
+        "gradle",
+        "gradle-wrapper"
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "./gradlew --write-locks dependencies :common:dependencies :clion:dependencies :clion-resharper:dependencies :nodejs:dependencies :git:dependencies :rider:dependencies :test-common:dependencies :its:dependencies"
+        ],
+        "fileFilters": [
+          "**/gradle.lockfile",
+          "**/settings-gradle.lockfile"
+        ],
+        "executionMode": "branch"
+      }
+    }
   ]
 }
