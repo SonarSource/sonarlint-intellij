@@ -9,7 +9,7 @@
 #
 # Environment variables (optional):
 #   ARTIFACTORY_URL:          Required for non-embedded IDEs (unless cached)
-#   ARTIFACTORY_USER:         Required for non-embedded IDEs (unless cached)
+#   ARTIFACTORY_USERNAME:     Authentication username
 #   ARTIFACTORY_ACCESS_TOKEN: Required for non-embedded IDEs (unless cached)
 #   GITHUB_ENV:               GitHub Actions environment file (for setting variables)
 #

@@ -47,23 +47,16 @@ jobs:
             gradle-${{ runner.os }}-nightly-
             gradle-${{ runner.os }}-
 
-      - name: Fetch vault secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
+      - name: Configure Gradle
+        uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
         with:
-          secrets: |
-            development/kv/data/repox url | ARTIFACTORY_URL;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader username | ARTIFACTORY_USER;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
-            development/kv/data/develocity token | DEVELOCITY_TOKEN;
+          sonar-platform: none
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          disable-caching: 'true'
 
       - name: Run plugin verifier
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_ACCESS_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_USER }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-          DEVELOCITY_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
-          DEVELOCITY_ACCESS_KEY: develocity.sonar.build=${{ fromJSON(steps.secrets.outputs.vault).DEVELOCITY_TOKEN }}
         run: ./gradlew :verifyPlugin -PverifierEnv=LATEST
 
       - name: Upload reports on failure

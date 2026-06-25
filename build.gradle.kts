@@ -35,9 +35,6 @@ plugins {
 }
 
 buildscript {
-    repositories {
-        mavenCentral()
-    }
     dependencies {
         "classpath"("org.jetbrains.intellij:blockmap:1.0.10")
     }
@@ -51,13 +48,15 @@ val ideaHome: String? = System.getenv("IDEA_HOME")
 val runIdeDirectory: String by project
 val verifierEnv: String by project
 
-// The environment variables ARTIFACTORY_ACCESS_USERNAME and ARTIFACTORY_ACCESS_TOKEN are used on CI env
+// The environment variables ARTIFACTORY_USERNAME and ARTIFACTORY_ACCESS_TOKEN are used on CI
 // On local box, please add artifactoryUrl, artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
 val artifactoryUrl = System.getenv("ARTIFACTORY_URL")
 	?: (if (project.hasProperty("artifactoryUrl")) project.property("artifactoryUrl").toString() else "")
-val artifactoryUsername = System.getenv("ARTIFACTORY_ACCESS_USERNAME")
+val artifactoryUsername = System.getenv("ARTIFACTORY_USERNAME")
+    ?: System.getenv("ARTIFACTORY_ACCESS_USERNAME")
     ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
 val artifactoryPassword = System.getenv("ARTIFACTORY_ACCESS_TOKEN")
+    ?: System.getenv("ARTIFACTORY_PASSWORD")
     ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 configurations {
