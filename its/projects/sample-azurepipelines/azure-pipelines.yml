@@ -1,0 +1,6 @@
+# TODO: remove this comment
+trigger:
+- main
+
+steps:
+- script: echo "Hello"

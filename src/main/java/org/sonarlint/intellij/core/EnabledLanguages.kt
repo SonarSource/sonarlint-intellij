@@ -87,7 +87,7 @@ object EnabledLanguages {
         get() {
             return when {
                 isClionEnabled() -> {
-                    EnumSet.of(Language.C, Language.CPP, Language.SECRETS)
+                    EnumSet.of(Language.C, Language.CPP, Language.SECRETS, Language.PYTHON)
                 }
 
                 isIdeModuleEnabled(RIDER_MODULE_ID) -> {
@@ -114,7 +114,7 @@ object EnabledLanguages {
     @JvmStatic
     val extraEnabledLanguagesInConnectedMode: Set<Language>
         get() {
-            val extraEnabledLanguages = EnumSet.of(Language.ANSIBLE, Language.TEXT, Language.GITHUBACTIONS)
+            val extraEnabledLanguages = EnumSet.of(Language.ANSIBLE, Language.TEXT, Language.GITHUBACTIONS, Language.SHELL, Language.AZUREPIPELINES)
 
             return when {
                 isIdeModuleEnabled(RIDER_MODULE_ID) -> {
