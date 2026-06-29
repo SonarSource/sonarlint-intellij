@@ -82,4 +82,16 @@ class CLionTests : BaseUiTest() {
         )
     }
 
+    @Test
+    fun should_analyze_python() = uiTest {
+        openExistingProject("sample-python")
+
+        openFile("file.py")
+
+        verifyCurrentFileTabContainsMessages(
+            "Found 1 issue",
+            "Refactor this method to not always return the same value."
+        )
+    }
+
 }

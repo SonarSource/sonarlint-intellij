@@ -19,19 +19,15 @@
  */
 package org.sonarlint.intellij.its.tests.flavor
 
-import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.junit5.OrchestratorExtension
 import com.sonar.orchestrator.locator.FileLocation
-import java.time.Duration
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -43,38 +39,54 @@ import org.sonarlint.intellij.its.utils.OrchestratorUtils.newAdminWsClientWithUs
 import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnectionsAndAddSonarQubeConnection
 
 const val ANSIBLE_PROJECT_KEY = "sample-ansible"
+const val SHELL_PROJECT_KEY = "sample-shell"
+const val AZURE_PIPELINES_PROJECT_KEY = "sample-azurepipelines"
 
 @Tag("ConnectedAnalysisTests")
 @EnabledIf("isIdeaCommunity")
-class AnsibleTests : BaseUiTest() {
+class IaCTests : BaseUiTest() {
 
     @Test
-    fun should_display_issue() = uiTest {
-        openExistingProject("sample-ansible")
-        openFile("HostNamespacesCheck/tasks/HostNamespacesCheck.yaml")
-        verifyCurrentFileTabContainsMessages("No findings to display")
-
-        enableConnectedModeFromCurrentFilePanel(ANSIBLE_PROJECT_KEY, true, "Orchestrator")
-
-        idea {
-            waitBackgroundTasksFinished()
-        }
-
-        verifyIssueTreeContainsMessages()
+    fun should_display_ansible_issue() = uiTest {
+        verifyConnectedModeIssue(
+            projectName = "sample-ansible",
+            filePath = "HostNamespacesCheck/tasks/HostNamespacesCheck.yaml",
+            projectKey = ANSIBLE_PROJECT_KEY,
+            "Found 1 issue",
+            "Use a specific version tag for the image."
+        )
     }
 
-    private fun verifyIssueTreeContainsMessages() {
-        with(remoteRobot) {
-            idea {
-                toolWindow {
-                    tabTitleContains("Findings") { select() }
-                    // the synchronization can take a while to happen
-                    waitFor(duration = Duration.ofMinutes(1)) {
-                        hasText("Use a specific version tag for the image.")
-                    }
-                }
-            }
-        }
+    @Test
+    fun should_display_shell_issue() = uiTest {
+        verifyConnectedModeIssue(
+            projectName = "sample-shell",
+            filePath = "foo.sh",
+            projectKey = SHELL_PROJECT_KEY,
+            "Found 1 issue",
+            "Prefix files and paths with \"./\" or \"--\" when using glob."
+        )
+    }
+
+    @Test
+    fun should_display_azure_pipelines_issue() = uiTest {
+        verifyConnectedModeIssue(
+            projectName = "sample-azurepipelines",
+            filePath = "azure-pipelines.yml",
+            projectKey = AZURE_PIPELINES_PROJECT_KEY,
+            "Found 1 issue",
+            "Complete the task associated to this \"TODO\" comment."
+        )
+    }
+
+    private fun verifyConnectedModeIssue(projectName: String, filePath: String, projectKey: String, vararg expectedMessages: String) {
+        openExistingProject(projectName)
+        openFile(filePath)
+        verifyCurrentFileTabContainsMessages("No findings to display")
+
+        enableConnectedModeFromCurrentFilePanel(projectKey, true, "Orchestrator")
+
+        verifyCurrentFileTabContainsMessages(*expectedMessages)
     }
 
     companion object {
@@ -83,6 +95,8 @@ class AnsibleTests : BaseUiTest() {
             .activateLicense()
             .keepBundledPlugins()
             .restoreProfileAtStartup(FileLocation.ofClasspath("/ansible-issue.xml"))
+            .restoreProfileAtStartup(FileLocation.ofClasspath("/shell-issue.xml"))
+            .restoreProfileAtStartup(FileLocation.ofClasspath("/azurepipelines-issue.xml"))
             .build()
 
         @JvmStatic
@@ -94,15 +108,27 @@ class AnsibleTests : BaseUiTest() {
             val response = generateTokenNameAndValue(adminWsClient, "sonarlintUser")
             val token = response.second
 
-            ORCHESTRATOR.server.provisionProject(ANSIBLE_PROJECT_KEY, "Sample Ansible Issues")
-            ORCHESTRATOR.server.associateProjectToQualityProfile(
+            provisionAndAnalyzeProject(
                 ANSIBLE_PROJECT_KEY,
+                "Sample Ansible Issues",
                 "ansible",
-                "SonarLint IT Ansible Issue"
+                "SonarLint IT Ansible Issue",
+                "projects/sample-ansible/"
             )
-
-            // Build and analyze project to raise issue
-            executeBuildWithSonarScanner("projects/sample-ansible/", ORCHESTRATOR, ANSIBLE_PROJECT_KEY)
+            provisionAndAnalyzeProject(
+                SHELL_PROJECT_KEY,
+                "Sample Shell Issues",
+                "shell",
+                "SonarLint IT Shell Issue",
+                "projects/sample-shell/"
+            )
+            provisionAndAnalyzeProject(
+                AZURE_PIPELINES_PROJECT_KEY,
+                "Sample Azure Pipelines Issues",
+                "azurepipelines",
+                "SonarLint IT Azure Pipelines Issue",
+                "projects/sample-azurepipelines/"
+            )
 
             clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, token)
         }
@@ -111,6 +137,12 @@ class AnsibleTests : BaseUiTest() {
         @JvmStatic
         fun teardown() {
             ORCHESTRATOR.stop()
+        }
+
+        private fun provisionAndAnalyzeProject(projectKey: String, projectName: String, language: String, qualityProfile: String, projectPath: String) {
+            ORCHESTRATOR.server.provisionProject(projectKey, projectName)
+            ORCHESTRATOR.server.associateProjectToQualityProfile(projectKey, language, qualityProfile)
+            executeBuildWithSonarScanner(projectPath, ORCHESTRATOR, projectKey)
         }
     }
 
