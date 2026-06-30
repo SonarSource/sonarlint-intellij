@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -63,7 +64,7 @@ public final class LocalFileExclusions {
   }
 
   private static @NotNull String getNormalized(String pathStr) {
-    var normalized = pathStr.replace("\\", "/").replaceAll("/+$", "");
+    var normalized = StringUtils.stripEnd(pathStr.replace('\\', '/'), "/");
     if (!normalized.startsWith("/")) {
       normalized = "/" + normalized;
     }
