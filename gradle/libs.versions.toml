@@ -1,9 +1,9 @@
 [versions]
 sonarlint-core = "11.6.0.85918"
 
-sonar-java = "8.32.0.44337"
+sonar-java = "8.33.0.44481"
 sonar-java-symbolic = "8.16.4.1912"
-sonar-javascript = "12.5.0.41048"
+sonar-javascript = "13.0.0.42526"
 sonar-php = "3.58.0.16263"
 sonar-python = "5.23.0.33560"
 sonar-kotlin = "3.6.0.9326"
@@ -12,8 +12,8 @@ sonar-go = "1.38.0.6335"
 sonar-html = "3.28.0.8018"
 sonar-xml = "2.18.0.7959"
 sonar-omnisharp = "1.43.0.101782"
-sonar-text = "2.44.0.11370"
-sonar-iac = "2.10.0.20406"
+sonar-text = "2.45.0.11557"
+sonar-iac = "2.11.0.21159"
 
 sonarqube = "7.3.0.8198"
 orchestrator = "6.1.0.3962"

@@ -42,8 +42,9 @@ class IdeaUltimateTests : BaseUiTest() {
 
         openFile("Dockerfile")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue",
-            "Replace \"from\" with upper case format \"FROM\"."
+            "Found 2 issues",
+            "Replace \"from\" with upper case format \"FROM\".",
+            "The \"ubuntu\" image runs with \"root\" as the default user. Make sure it is safe here."
         )
 
         openFile("kubernetes.yaml")
