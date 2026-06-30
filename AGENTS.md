@@ -13,12 +13,12 @@ All dependency resolution goes through Artifactory. There is no Maven Central fa
 
 **Local development** — add to `~/.gradle/gradle.properties`:
 ```properties
-artifactoryUrl=https://repox.jfrog.io/repox
+artifactoryUrl=https://repox.jfrog.io/artifactory
 artifactoryUsername=<your-username>
 artifactoryPassword=<your-access-token>
 ```
 
-> CI uses environment variables instead (`ARTIFACTORY_URL`, `ARTIFACTORY_ACCESS_USERNAME`, `ARTIFACTORY_ACCESS_TOKEN`). Environment variables take priority over `gradle.properties` if both are set.
+> CI uses environment variables instead (`ARTIFACTORY_URL`, `ARTIFACTORY_USERNAME`, `ARTIFACTORY_ACCESS_TOKEN`). Environment variables take priority over `gradle.properties` if both are set.
 
 ## Architecture Overview
 

@@ -10,7 +10,7 @@
 #
 # Environment variables (required):
 #   ARTIFACTORY_URL:          Repox/Artifactory base URL
-#   ARTIFACTORY_USER:         Authentication username
+#   ARTIFACTORY_USERNAME:     Authentication username
 #   ARTIFACTORY_ACCESS_TOKEN: Authentication token
 #
 # Exit codes:
@@ -36,7 +36,8 @@ fi
 IDE_TYPE="${BASH_REMATCH[1]}"
 IDE_VERSION="${BASH_REMATCH[2]}"
 
-: "${ARTIFACTORY_URL:?}" "${ARTIFACTORY_USER:?}" "${ARTIFACTORY_ACCESS_TOKEN:?}"
+ARTIFACTORY_URL="${ARTIFACTORY_URL%/}"
+: "${ARTIFACTORY_URL:?}" "${ARTIFACTORY_USERNAME:?}" "${ARTIFACTORY_ACCESS_TOKEN:?}"
 
 # Returns 0 (true) if the version is 2025.3 or later (unified distribution), 1 otherwise.
 # Unified distributions (2025.3+) no longer ship separate Community/Ultimate/Professional variants.
@@ -111,7 +112,7 @@ trap 'rm -rf "${TEMP_DIR}"' EXIT
 TEMP_FILE="${TEMP_DIR}/ide.tar.gz"
 
 echo "Downloading artifact..."
-if ! curl -fsSL -u "${ARTIFACTORY_USER}:${ARTIFACTORY_ACCESS_TOKEN}" -o "${TEMP_FILE}" "${DOWNLOAD_URL}"; then
+if ! curl -fsSL -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_ACCESS_TOKEN}" -o "${TEMP_FILE}" "${DOWNLOAD_URL}"; then
     echo "::error::Failed to download ${IDE_NAME} ${IDE_VERSION} from ${DOWNLOAD_URL}"
     exit 1
 fi
