@@ -42,7 +42,8 @@ class IdeaUltimateTests : BaseUiTest() {
 
         openFile("Dockerfile")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue",
+            "Found 2 issues",
+            "The \"ubuntu\" image runs with \"root\" as the default user. Make sure it is safe here.",
             "Replace \"from\" with upper case format \"FROM\"."
         )
 
