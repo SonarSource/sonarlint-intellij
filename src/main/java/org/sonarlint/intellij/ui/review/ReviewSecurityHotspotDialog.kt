@@ -33,7 +33,6 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.runOnPooledThread
@@ -75,7 +74,6 @@ class ReviewSecurityHotspotDialog(
                     .changeStatusForHotspot(module, securityHotspotKey, status)
                     .thenAcceptAsync {
                         SonarLintUtils.getService(project, SonarLintToolWindow::class.java).refreshViews()
-                        SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
                         runOnUiThread(
                             project,
                             modalityState,

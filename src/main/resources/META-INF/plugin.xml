@@ -271,9 +271,6 @@
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
         <iw.actionProvider implementation="org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider"/>
 
-      <!-- Empty language attribute corresponds to any language (see com.intellij.lang.Language.ANY) -->
-      <externalAnnotator language="" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-
       <!-- Cannot be moved to service annotation because state should stay exportable (currently not available with the new annotations) -->
       <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
 

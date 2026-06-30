@@ -19,30 +19,34 @@
  */
 package org.sonarlint.intellij.editor
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
 import com.intellij.serviceContainer.NonInjectable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
-import org.sonarlint.intellij.util.runOnPooledThread
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
+/**
+ * Refreshes the SonarQube highlighting of open files.
+ *
+ * Highlights are rendered by [DirectHighlighter] directly in the editor markup. Calls are debounced so that
+ * bursts of refresh requests are merged into a single highlighting pass.
+ */
 @Service(Service.Level.PROJECT)
-class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myProject: Project, private val codeAnalyzer: DaemonCodeAnalyzer) : Disposable {
-    constructor(project: Project) : this(project, DaemonCodeAnalyzer.getInstance(project))
+class CodeAnalyzerRestarter @NonInjectable internal constructor(
+    private val myProject: Project,
+    private val directHighlighter: DirectHighlighter,
+) : Disposable {
+    constructor(project: Project) : this(project, getService(project, DirectHighlighter::class.java))
 
     // Debounce multiple rapid calls to refreshFiles
     private val pendingFiles = ConcurrentHashMap.newKeySet<VirtualFile>()
-    private val scheduler = Executors.newScheduledThreadPool(1) { r -> 
+    private val scheduler = Executors.newScheduledThreadPool(1) { r ->
         Thread(r, "sonarlint-analyzer-restarter-${myProject.name}")
     }
     private var scheduledTask: ScheduledFuture<*>? = null
@@ -66,36 +70,12 @@ class CodeAnalyzerRestarter @NonInjectable internal constructor(private val myPr
     private fun processPendingFiles() {
         val filesToProcess = pendingFiles.toSet()
         pendingFiles.clear()
-        
-        if (filesToProcess.isEmpty()) {
+
+        if (filesToProcess.isEmpty() || myProject.isDisposed) {
             return
         }
-        
-        runOnPooledThread(myProject) {
-            val fileEditorManager = FileEditorManager.getInstance(myProject)
-            val openFiles = fileEditorManager.openFiles
-            runReadActionSafely(myProject) {
-                val psiFilesToRestart = openFiles
-                    .filter { it in filesToProcess }
-                    .mapNotNull { getPsi(it) }
-                
-                // If we need to restart all open files, use the more efficient single call
-                if (psiFilesToRestart.size == openFiles.size) {
-                    codeAnalyzer.restart()
-                } else {
-                    // Restart individual files - IntelliJ's daemon will batch these internally
-                    psiFilesToRestart.forEach { codeAnalyzer.restart(it) }
-                }
-            }
-        }
-    }
 
-    private fun getPsi(virtualFile: VirtualFile): PsiFile? {
-        if (!virtualFile.isValid) {
-            return null
-        }
-        ApplicationManager.getApplication().assertReadAccessAllowed()
-        return PsiManager.getInstance(myProject).findFile(virtualFile)
+        directHighlighter.updateHighlights(filesToProcess)
     }
 
     override fun dispose() {

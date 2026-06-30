@@ -27,6 +27,7 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.ContentManagerListener;
+import java.util.Collection;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
@@ -116,7 +117,17 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void refreshViews() {
-    this.updateCurrentFileTab(CurrentFilePanel::refreshView);
+    refreshViews(true);
+  }
+
+  public void refreshViews(boolean refreshEditorHighlights) {
+    refreshViews(refreshEditorHighlights, null, false);
+  }
+
+  public void refreshViews(boolean refreshEditorHighlights, @Nullable Collection<VirtualFile> highlightChangedFiles,
+    boolean highlightAllOpenFiles) {
+    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView(
+      refreshEditorHighlights, highlightChangedFiles, highlightAllOpenFiles));
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       runOnUiThread(project, () -> {
@@ -158,9 +169,15 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile) {
+  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, boolean refreshEditorHighlights) {
+    updateCurrentFileTab(selectedFile, refreshEditorHighlights, null, false);
+  }
+
+  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, boolean refreshEditorHighlights,
+    @Nullable Collection<VirtualFile> highlightChangedFiles, boolean highlightAllOpenFiles) {
     this.<CurrentFilePanel>updateCurrentFileTab(
-      panel -> runOnUiThread(project, () -> panel.update(selectedFile)));
+      panel -> runOnUiThread(project, () -> panel.update(
+        selectedFile, refreshEditorHighlights, highlightChangedFiles, highlightAllOpenFiles)));
   }
 
   public void showFindingDescription(Finding liveIssue) {

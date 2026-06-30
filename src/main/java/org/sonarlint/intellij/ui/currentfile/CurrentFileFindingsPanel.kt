@@ -248,7 +248,7 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
                 val selectedNodes = currentTree.getSelectedNodes(IssueNode::class.java, null)
                 if (selectedNodes.isNotEmpty()) {
                     updateOnSelect(selectedNodes[0].issue())
-                } else {
+                } else if (!hasAnyFindingSelected()) {
                     clearSelection()
                 }
             }
@@ -256,7 +256,7 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
                 val selectedNodes = currentTree.getSelectedNodes(LiveSecurityHotspotNode::class.java, null)
                 if (selectedNodes.isNotEmpty()) {
                     updateOnSelect(selectedNodes[0].hotspot)
-                } else {
+                } else if (!hasAnyFindingSelected()) {
                     clearSelection()
                 }
             }
@@ -264,13 +264,24 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
                 val selectedNodes = currentTree.getSelectedNodes(LocalTaintVulnerability::class.java, null)
                 if (selectedNodes.isNotEmpty()) {
                     updateOnSelect(selectedNodes[0])
-                } else {
+                } else if (!hasAnyFindingSelected()) {
                     clearSelection()
                 }
             }
             TreeType.DEPENDENCY_RISKS -> {
                 // Dependency risk trees just clear selection for now
-                clearSelection()
+                if (!hasAnyFindingSelected()) {
+                    clearSelection()
+                }
+            }
+        }
+    }
+
+    private fun hasAnyFindingSelected(): Boolean {
+        return treeConfigs.values.any { config ->
+            !config.tree.isSelectionEmpty && when (config.tree.lastSelectedPathComponent) {
+                is IssueNode, is LiveSecurityHotspotNode, is LocalTaintVulnerability -> true
+                else -> false
             }
         }
     }
