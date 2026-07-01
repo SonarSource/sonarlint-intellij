@@ -83,7 +83,7 @@ jobs:
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          version: 2025.9.12
+          version: 2026.6.14
 
       - name: Export embedded IDE paths from container
         run: |
@@ -122,7 +122,7 @@ jobs:
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          version: 2025.9.12
+          version: 2026.6.14
 
       - name: Configure Gradle
         uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
@@ -183,7 +183,7 @@ jobs:
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          version: 2025.9.12
+          version: 2026.6.14
 
       - name: Export embedded IDE paths from container
         run: |
@@ -247,7 +247,7 @@ jobs:
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          version: 2025.9.12
+          version: 2026.6.14
 
       - name: Export embedded IDE paths from container
         run: |
@@ -363,7 +363,7 @@ jobs:
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          version: 2025.9.12
+          version: 2026.6.14
 
       - name: Configure Gradle
         uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
@@ -693,7 +693,7 @@ jobs:
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          version: 2025.9.12
+          version: 2026.6.14
 
       - name: Promote artifacts
         uses: SonarSource/ci-github-actions/promote@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
@@ -717,7 +717,7 @@ jobs:
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
-          version: 2025.9.12
+          version: 2026.6.14
           experimental: true
 
       - name: Fetch vault secrets
