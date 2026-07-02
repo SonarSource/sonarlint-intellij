@@ -20,14 +20,14 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
         with:
           version: 2025.9.12
 
       # Cache verifier IDE binaries separately with a stable key (not invalidated by unrelated Gradle changes)
       # IDEs are stored by the IntelliJ Platform Gradle Plugin v2.x in ~/.gradle/caches/<gradle-version>/transforms/
       - name: Restore verifier IDEs cache
-        uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
+        uses: SonarSource/gh-action_cache@339d9d71cc5210bfa866a831dd8eba8e32c40491 # v1.7.1
         with:
           path: ~/.gradle/caches/*/transforms/
           key: verifier-ides-${{ runner.os }}-LATEST-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
@@ -36,7 +36,7 @@ jobs:
             verifier-ides-${{ runner.os }}-
 
       - name: Cache Gradle
-        uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
+        uses: SonarSource/gh-action_cache@339d9d71cc5210bfa866a831dd8eba8e32c40491 # v1.7.1
         with:
           path: |
             ~/.gradle/caches
@@ -48,7 +48,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+        uses: SonarSource/ci-github-actions/config-gradle@9d3488f52305895f599feb1ec8560c1a5339aa99 # 1.8.1
         with:
           sonar-platform: none
           use-develocity: true

@@ -19,14 +19,14 @@ jobs:
       docker_password: ${{ steps.login-ecr.outputs.docker_password_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           aws-region: eu-central-1
           role-to-assume: arn:aws:iam::275878209202:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2.1.5
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2.1.6
         with:
           mask-password: 'false'
 
@@ -56,11 +56,11 @@ jobs:
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d # v4.2.0
         with:
           version: 2025.9.12
 
-      - uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+      - uses: SonarSource/ci-github-actions/build-gradle@9d3488f52305895f599feb1ec8560c1a5339aa99 # 1.8.1
         env:
           IDEA_HOME: ${{ env.IDEA_2024_DIR }}
           CLION_HOME: ${{ env.CLION_2024_DIR }}
