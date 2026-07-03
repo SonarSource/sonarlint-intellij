@@ -277,6 +277,10 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
         }
     }
 
+    /**
+     * True if a finding is currently selected in any of the trees. Used to avoid clearing the shared selection when
+     * one tree reports an empty selection only because the active selection lives in a sibling tree.
+     */
     private fun hasAnyFindingSelected(): Boolean {
         return treeConfigs.values.any { config ->
             !config.tree.isSelectionEmpty && when (config.tree.lastSelectedPathComponent) {

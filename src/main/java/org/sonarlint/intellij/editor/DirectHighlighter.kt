@@ -44,7 +44,6 @@ import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsStore
-import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 
@@ -62,19 +61,18 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 @Service(Service.Level.PROJECT)
 class DirectHighlighter(private val project: Project) {
 
+    /**
+     * Recomputes and writes the SonarQube highlights for the given [files]. Called (debounced) from
+     * [CodeAnalyzerRestarter] whenever the displayed findings change. Highlighting must run on the EDT, so one task
+     * is dispatched per file; [applyHighlights] performs all validity checks, so no filtering is needed here.
+     */
     fun updateHighlights(files: Collection<VirtualFile>) {
         if (files.isEmpty() || project.isDisposed) {
             return
         }
-        runOnPooledThread(project) {
-            val fileEditorManager = FileEditorManager.getInstance(project)
-            files.toSet().forEach { file ->
-                if (project.isDisposed || !file.isValid || !fileEditorManager.isFileOpen(file)) {
-                    return@forEach
-                }
-                runOnUiThread(project, ModalityState.nonModal()) {
-                    applyHighlights(file)
-                }
+        files.toSet().forEach { file ->
+            runOnUiThread(project, ModalityState.nonModal()) {
+                applyHighlights(file)
             }
         }
     }
@@ -98,6 +96,11 @@ class DirectHighlighter(private val project: Project) {
         applyHighlights(file)
     }
 
+    /**
+     * Builds the list of highlights to render for [file] from the findings currently displayed in the tool window.
+     * Reads the shared snapshot rather than the raw analysis so that editor highlights always match what the user
+     * sees in the Current File tab (same filtering, same resolved/new-code handling).
+     */
     private fun collectHighlightPlans(file: VirtualFile): List<HighlightPlan> {
         val findings = getService(project, CurrentFileDisplayedFindingsStore::class.java).getFindingsForFile(file)
         val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
@@ -207,8 +210,10 @@ class DirectHighlighter(private val project: Project) {
     }
 
     companion object {
-        // Dedicated highlighter group so the daemon's highlighting passes never remove SonarQube findings.
-        private val SONARLINT_GROUP = "SonarLintFindings".hashCode()
+        // Dedicated highlighter group id used exclusively for SonarQube findings. It must stay distinct from the
+        // (small) group ids used by IntelliJ's own daemon passes so that neither clears the other's highlights. The
+        // exact value is arbitrary but must remain stable; 0x53_4C_49 spells the ASCII bytes 'S','L','I'.
+        private const val SONARLINT_GROUP = 0x53_4C_49
 
         // Some quick fixes do not match the IntelliJ experience
         private val SILENCED_QUICK_FIXABLE_RULE_KEYS = setOf("java:S1068", "java:S1144", "java:S1172")

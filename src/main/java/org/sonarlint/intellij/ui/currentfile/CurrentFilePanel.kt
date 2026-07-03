@@ -43,6 +43,7 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -356,12 +357,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
     }
 
-    fun update(
-        file: VirtualFile?,
-        refreshEditorHighlights: Boolean = false,
-        highlightChangedFiles: Collection<VirtualFile>? = null,
-        highlightAllOpenFiles: Boolean = false,
-    ) {
+    fun update(file: VirtualFile?, highlightRefresh: EditorHighlightRefresh = EditorHighlightRefresh.NONE) {
         this.currentFile = file
 
         if (!handleBackendAlive()) return
@@ -441,34 +437,37 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         expandTreesWithStatePreservation(treeStateSnapshot)
         updateSummaryButtons()
         } finally {
-            if (refreshEditorHighlights) {
-                refreshEditorHighlights(file, filterCriteria, highlightChangedFiles, highlightAllOpenFiles)
+            // Refresh highlights so they are updated even when the panel content is left
+            // unchanged by the early return above (e.g. on a selection change back to an already-populated file).
+            if (highlightRefresh.enabled) {
+                refreshEditorHighlights(file, filterCriteria, highlightRefresh)
             }
         }
     }
 
-    private fun refreshEditorHighlights(
-        file: VirtualFile?,
-        filterCriteria: FilterCriteria,
-        highlightChangedFiles: Collection<VirtualFile>?,
-        highlightAllOpenFiles: Boolean,
-    ) {
-        val files = resolveEditorHighlightFiles(file, filterCriteria, highlightChangedFiles, highlightAllOpenFiles)
+    private fun refreshEditorHighlights(file: VirtualFile?, filterCriteria: FilterCriteria, highlightRefresh: EditorHighlightRefresh) {
+        val files = resolveEditorHighlightFiles(file, filterCriteria, highlightRefresh)
         if (files.isNotEmpty()) {
             getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(files)
         }
     }
 
+    /**
+     * Resolves which open editors should have their highlights recomputed.
+     *
+     * Note the scope precedence: in the default [FindingsScope.CURRENT_FILE] view only the selected file is ever
+     * refreshed, so [EditorHighlightRefresh.changedFiles] is only consulted in the "all files" scope. This matches
+     * the historical behaviour where background editors kept their highlights until they were re-selected.
+     */
     private fun resolveEditorHighlightFiles(
         file: VirtualFile?,
         filterCriteria: FilterCriteria,
-        highlightChangedFiles: Collection<VirtualFile>?,
-        highlightAllOpenFiles: Boolean,
+        highlightRefresh: EditorHighlightRefresh,
     ): List<VirtualFile> {
         val files = when {
-            highlightAllOpenFiles -> FileEditorManager.getInstance(project).openFiles.toList()
+            highlightRefresh.allOpenFiles -> FileEditorManager.getInstance(project).openFiles.toList()
             filterCriteria.findingsScope == FindingsScope.CURRENT_FILE -> listOfNotNull(file)
-            highlightChangedFiles != null -> highlightChangedFiles.toList()
+            highlightRefresh.changedFiles != null -> highlightRefresh.changedFiles.toList()
             else -> FileEditorManager.getInstance(project).openFiles.toList()
         }
         return files.filter { it.isValid }
@@ -517,11 +516,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         runOnUiThread(project) { handleDisplayStatus() }
     }
 
-    fun refreshView(
-        refreshEditorHighlights: Boolean = true,
-        highlightChangedFiles: Collection<VirtualFile>? = null,
-        highlightAllOpenFiles: Boolean = false,
-    ) {
+    fun refreshView(highlightRefresh: EditorHighlightRefresh = EditorHighlightRefresh.enabled()) {
         runOnUiThread(project) {
             // Clear cache to force complete refresh
             lastFile = null
@@ -529,7 +524,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             
             // Re-evaluate support when views refresh (e.g., after backend initialization/restart)
             checkSupportStatus()
-            update(currentFile, refreshEditorHighlights, highlightChangedFiles, highlightAllOpenFiles)
+            update(currentFile, highlightRefresh)
         }
     }
 

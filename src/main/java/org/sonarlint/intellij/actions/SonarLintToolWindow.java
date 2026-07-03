@@ -27,11 +27,11 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.ContentManagerListener;
-import java.util.Collection;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.editor.EditorHighlightRefresh;
 import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.ShowFinding;
 import org.sonarlint.intellij.messages.ProjectBindingListener;
@@ -117,17 +117,11 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void refreshViews() {
-    refreshViews(true);
+    refreshViews(EditorHighlightRefresh.enabled());
   }
 
-  public void refreshViews(boolean refreshEditorHighlights) {
-    refreshViews(refreshEditorHighlights, null, false);
-  }
-
-  public void refreshViews(boolean refreshEditorHighlights, @Nullable Collection<VirtualFile> highlightChangedFiles,
-    boolean highlightAllOpenFiles) {
-    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView(
-      refreshEditorHighlights, highlightChangedFiles, highlightAllOpenFiles));
+  public void refreshViews(EditorHighlightRefresh highlightRefresh) {
+    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView(highlightRefresh));
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       runOnUiThread(project, () -> {
@@ -169,15 +163,9 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, boolean refreshEditorHighlights) {
-    updateCurrentFileTab(selectedFile, refreshEditorHighlights, null, false);
-  }
-
-  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, boolean refreshEditorHighlights,
-    @Nullable Collection<VirtualFile> highlightChangedFiles, boolean highlightAllOpenFiles) {
+  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, EditorHighlightRefresh highlightRefresh) {
     this.<CurrentFilePanel>updateCurrentFileTab(
-      panel -> runOnUiThread(project, () -> panel.update(
-        selectedFile, refreshEditorHighlights, highlightChangedFiles, highlightAllOpenFiles)));
+      panel -> runOnUiThread(project, () -> panel.update(selectedFile, highlightRefresh)));
   }
 
   public void showFindingDescription(Finding liveIssue) {

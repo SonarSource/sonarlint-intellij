@@ -31,6 +31,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.RawIssueAdapter
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -72,8 +73,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
         val changedFiles = (filteredFindings.filesInvolved + previouslyHighlightedOpenFiles).intersect(openedFiles)
         publishViewUpdate(
-            refreshHighlights = refreshHighlights,
-            changedFiles = changedFiles,
+            highlightRefresh = if (refreshHighlights) EditorHighlightRefresh.enabled(changedFiles) else EditorHighlightRefresh.NONE,
+            // Security hotspots live in their own tab, so a full refresh is required to keep it in sync.
             forceFullPanelRefresh = filteredFindings.securityHotspotsPerFile.isNotEmpty(),
         )
     }
@@ -93,7 +94,7 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
 
         currentIssuesPerOpenFile.putAll(issues)
         ensureSelectedFileIsSet()
-        publishViewUpdate(refreshHighlights = !isIntermediate, changedFiles = issues.keys)
+        publishViewUpdate(if (isIntermediate) EditorHighlightRefresh.NONE else EditorHighlightRefresh.enabled(issues.keys))
     }
 
     fun updateViewsWithNewSecurityHotspots(module: Module, raisedSecurityHotspots: Map<URI, List<RaisedHotspotDto>>, isIntermediate: Boolean = false) {
@@ -112,24 +113,25 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         currentSecurityHotspotsPerOpenFile.putAll(securityHotspots)
         ensureSelectedFileIsSet()
         publishViewUpdate(
-            refreshHighlights = !isIntermediate,
-            changedFiles = securityHotspots.keys,
+            highlightRefresh = if (isIntermediate) EditorHighlightRefresh.NONE else EditorHighlightRefresh.enabled(securityHotspots.keys),
             forceFullPanelRefresh = true,
         )
     }
 
     override fun selectionChanged(event: FileEditorManagerEvent) {
         selectedFile = event.newFile
-        updateCurrentFileTab(refreshEditorHighlights = true)
+        // Re-highlight the newly selected file: its findings may already be known but not yet drawn in this editor.
+        updateCurrentFileTab(EditorHighlightRefresh.enabled())
     }
 
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
         currentIssuesPerOpenFile.remove(file)
         currentSecurityHotspotsPerOpenFile.remove(file)
+        // The closed editor no longer needs highlighting and other editors are unaffected, so never refresh highlights.
         if (currentIssuesPerOpenFile.isEmpty()) {
             updateCurrentFileTab()
         } else {
-            refreshViews(refreshEditorHighlights = false)
+            refreshViews(EditorHighlightRefresh.NONE)
         }
 
         runOnPooledThread(project) {
@@ -160,7 +162,8 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
     fun clearAllCurrentFileFindings() {
         currentIssuesPerOpenFile.clear()
         currentSecurityHotspotsPerOpenFile.clear()
-        updateCurrentFileTab(refreshEditorHighlights = true, highlightAllOpenFiles = true)
+        // Findings are gone: refresh every open editor so their now-stale highlights are removed.
+        updateCurrentFileTab(EditorHighlightRefresh.ALL_OPEN_FILES)
     }
 
     private fun ensureSelectedFileIsSet() {
@@ -171,41 +174,32 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
     }
 
-    private fun publishViewUpdate(
-        refreshHighlights: Boolean,
-        changedFiles: Set<VirtualFile> = emptySet(),
-        forceFullPanelRefresh: Boolean = false,
-    ) {
+    /**
+     * Pushes the current findings to the tool window. When [forceFullPanelRefresh] is set, all tabs (including the
+     * Security Hotspots tab) are rebuilt; otherwise only the Current File tab is updated. [highlightRefresh] controls
+     * whether - and for which editors - the on-the-fly highlights are recomputed.
+     */
+    private fun publishViewUpdate(highlightRefresh: EditorHighlightRefresh, forceFullPanelRefresh: Boolean = false) {
         if (project.isDisposed) {
             return
         }
         val toolWindow = getService(project, SonarLintToolWindow::class.java)
-        val changedFilesList = changedFiles.takeIf { it.isNotEmpty() }?.toList()
         if (forceFullPanelRefresh) {
-            toolWindow.refreshViews(refreshHighlights, changedFilesList, false)
+            toolWindow.refreshViews(highlightRefresh)
         } else {
-            toolWindow.updateCurrentFileTab(selectedFile, refreshHighlights, changedFilesList, false)
+            toolWindow.updateCurrentFileTab(selectedFile, highlightRefresh)
         }
     }
 
-    private fun refreshViews(refreshEditorHighlights: Boolean) {
+    private fun refreshViews(highlightRefresh: EditorHighlightRefresh) {
         if (!project.isDisposed) {
-            getService(project, SonarLintToolWindow::class.java).refreshViews(refreshEditorHighlights)
+            getService(project, SonarLintToolWindow::class.java).refreshViews(highlightRefresh)
         }
     }
 
-    private fun updateCurrentFileTab(
-        refreshEditorHighlights: Boolean = false,
-        highlightChangedFiles: Collection<VirtualFile>? = null,
-        highlightAllOpenFiles: Boolean = false,
-    ) {
+    private fun updateCurrentFileTab(highlightRefresh: EditorHighlightRefresh = EditorHighlightRefresh.NONE) {
         if (!project.isDisposed) {
-            getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(
-                selectedFile,
-                refreshEditorHighlights,
-                highlightChangedFiles,
-                highlightAllOpenFiles,
-            )
+            getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(selectedFile, highlightRefresh)
         }
     }
 
