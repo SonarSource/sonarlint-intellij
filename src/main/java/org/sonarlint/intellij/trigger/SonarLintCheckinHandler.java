@@ -48,11 +48,11 @@ import javax.annotation.Nullable;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import org.apache.commons.lang3.tuple.Pair;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
+import org.sonarlint.intellij.callable.CheckInCallable;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -108,7 +108,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
             return null;
           }
           var completed = waitForPreCommitAnalyses(indicator, analysisIdsByCallback.getRight());
-          return Pair.of(analysisIdsByCallback, completed);
+          return new PreCommitResult(analysisIdsByCallback.getLeft(), completed);
         });
 
       if (preCommitResult == null) {
@@ -116,15 +116,12 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         return ReturnResult.COMMIT;
       }
 
-      var analysisIdsByCallback = preCommitResult.getLeft();
-      var completed = preCommitResult.getRight();
-
-      if (Boolean.FALSE.equals(completed) || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
+      if (preCommitResult.failed()) {
         SonarLintConsole.get(project).debug("Pre-commit analysis failed");
         return showFailureMessage("Error analysing " + affectedFiles.size() + " changed file(s).");
       }
 
-      var results = analysisIdsByCallback.getLeft().getResults();
+      var results = preCommitResult.callback().getResults();
       return processResults(results);
     } catch (ProcessCanceledException e) {
       SonarLintConsole.get(project).debug("Pre-commit analysis cancelled by user");
@@ -284,6 +281,12 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       getService(project, SonarLintToolWindow.class).openReportTab(analysisResult);
     } else {
       runOnUiThread(project, () -> getService(project, SonarLintToolWindow.class).openReportTab(analysisResult));
+    }
+  }
+
+  private record PreCommitResult(CheckInCallable callback, boolean completed) {
+    boolean failed() {
+      return !completed || !callback.analysisSucceeded();
     }
   }
 
