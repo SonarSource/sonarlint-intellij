@@ -24,6 +24,7 @@ import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.codeInsight.intention.IntentionAction
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -44,6 +45,7 @@ import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsStore
+import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 
@@ -63,38 +65,58 @@ class DirectHighlighter(private val project: Project) {
 
     /**
      * Recomputes and writes the SonarQube highlights for the given [files]. Called (debounced) from
-     * [CodeAnalyzerRestarter] whenever the displayed findings change. Highlighting must run on the EDT, so one task
-     * is dispatched per file; [applyHighlights] performs all validity checks, so no filtering is needed here.
+     * [CodeAnalyzerRestarter] whenever the displayed findings change.
+     *
+     * Highlight preparation runs in a read action on a background thread; only the final markup update is posted to
+     * the EDT. Keeping [UpdateHighlightersUtil.setHighlightersToEditor] off the read-action path avoids "slow
+     * operations on EDT" assertions in integration tests.
      */
     fun updateHighlights(files: Collection<VirtualFile>) {
         if (files.isEmpty() || project.isDisposed) {
             return
         }
-        files.toSet().forEach { file ->
+        val filesToProcess = files.toSet()
+        runOnPooledThread(project) {
+            val preparedHighlights = filesToProcess.mapNotNull { file -> prepareHighlights(file) }
+            if (preparedHighlights.isEmpty() || project.isDisposed) {
+                return@runOnPooledThread
+            }
             runOnUiThread(project, ModalityState.nonModal()) {
-                applyHighlights(file)
+                preparedHighlights.forEach { applyPreparedHighlights(it) }
             }
-        }
-    }
-
-    private fun applyHighlights(file: VirtualFile) {
-        computeReadActionSafely(file, project) {
-            if (project.isDisposed || !file.isValid || !FileEditorManager.getInstance(project).isFileOpen(file)) {
-                return@computeReadActionSafely
-            }
-            val document = FileDocumentManager.getInstance().getDocument(file) ?: return@computeReadActionSafely
-            val fileRange = TextRange(0, document.textLength)
-            val highlights = collectHighlightPlans(file).mapNotNull { it.toHighlightInfo(fileRange) }
-            UpdateHighlightersUtil.setHighlightersToEditor(
-                project, document, 0, document.textLength, highlights, null, SONARLINT_GROUP
-            )
         }
     }
 
     @VisibleForTesting
     internal fun applyHighlightsForTest(file: VirtualFile) {
-        applyHighlights(file)
+        prepareHighlights(file)?.let { applyPreparedHighlights(it) }
     }
+
+    /** Collects highlight descriptors under read lock; must not write editor markup here. */
+    private fun prepareHighlights(file: VirtualFile): PreparedHighlights? {
+        return computeReadActionSafely(file, project) {
+            if (project.isDisposed || !file.isValid || !FileEditorManager.getInstance(project).isFileOpen(file)) {
+                return@computeReadActionSafely null
+            }
+            val document = FileDocumentManager.getInstance().getDocument(file) ?: return@computeReadActionSafely null
+            val fileRange = TextRange(0, document.textLength)
+            val highlights = collectHighlightPlans(file).mapNotNull { it.toHighlightInfo(fileRange) }
+            PreparedHighlights(document, highlights)
+        }
+    }
+
+    /** Writes pre-computed highlights into the editor; must run on the EDT, outside any read action. */
+    private fun applyPreparedHighlights(prepared: PreparedHighlights) {
+        if (project.isDisposed) {
+            return
+        }
+        val document = prepared.document
+        UpdateHighlightersUtil.setHighlightersToEditor(
+            project, document, 0, document.textLength, prepared.highlights, null, SONARLINT_GROUP
+        )
+    }
+
+    private data class PreparedHighlights(val document: Document, val highlights: List<HighlightInfo>)
 
     /**
      * Builds the list of highlights to render for [file] from the findings currently displayed in the tool window.
