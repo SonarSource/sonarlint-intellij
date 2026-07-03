@@ -52,6 +52,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker;
+import org.sonarlint.intellij.callable.CheckInCallable;
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -100,24 +101,27 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
 
     try {
-      var analysisIdsByCallback = getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+      var preCommitResult = runModalTaskWithResult(project, "SonarQube for IDE Pre-Commit Analysis",
+        indicator -> {
+          var analysisIdsByCallback = getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+          if (analysisIdsByCallback == null) {
+            return null;
+          }
+          var completed = waitForPreCommitAnalyses(indicator, analysisIdsByCallback.getRight());
+          return new PreCommitResult(analysisIdsByCallback.getLeft(), completed);
+        });
 
-      if (analysisIdsByCallback == null) {
+      if (preCommitResult == null) {
         SonarLintConsole.get(project).debug("Pre-commit analysis cancelled because analysis did not start");
         return ReturnResult.COMMIT;
       }
 
-      var analysisIds = analysisIdsByCallback.getRight();
-
-      var completed = runModalTaskWithResult(project, "Waiting for SonarQube for IDE Analysis",
-        indicator -> waitForPreCommitAnalyses(indicator, analysisIds));
-
-      if (Boolean.FALSE.equals(completed) || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
+      if (preCommitResult.failed()) {
         SonarLintConsole.get(project).debug("Pre-commit analysis failed");
         return showFailureMessage("Error analysing " + affectedFiles.size() + " changed file(s).");
       }
 
-      var results = analysisIdsByCallback.getLeft().getResults();
+      var results = preCommitResult.callback().getResults();
       return processResults(results);
     } catch (ProcessCanceledException e) {
       SonarLintConsole.get(project).debug("Pre-commit analysis cancelled by user");
@@ -254,13 +258,11 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       "Cancel",
       UIUtil.getWarningIcon());
 
-    if (answer == Messages.YES) {
-      return ReturnResult.CLOSE_WINDOW;
-    } else if (answer == Messages.CANCEL) {
-      return ReturnResult.CANCEL;
-    } else {
-      return ReturnResult.COMMIT;
-    }
+    return switch (answer) {
+      case Messages.YES -> ReturnResult.CLOSE_WINDOW;
+      case Messages.CANCEL -> ReturnResult.CANCEL;
+      default -> ReturnResult.COMMIT;
+    };
   }
 
   private ReturnResult showFailureMessage(String msg) {
@@ -271,13 +273,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       "Abort",
       UIUtil.getErrorIcon());
 
-    if (answer == Messages.OK) {
-      return ReturnResult.COMMIT;
-    } else if (answer == Messages.CANCEL) {
-      return ReturnResult.CANCEL;
-    } else {
-      return ReturnResult.COMMIT;
-    }
+    return answer == Messages.CANCEL ? ReturnResult.CANCEL : ReturnResult.COMMIT;
   }
 
   private void showChangedFilesTab(AnalysisResult analysisResult) {
@@ -285,6 +281,12 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       getService(project, SonarLintToolWindow.class).openReportTab(analysisResult);
     } else {
       runOnUiThread(project, () -> getService(project, SonarLintToolWindow.class).openReportTab(analysisResult));
+    }
+  }
+
+  private record PreCommitResult(CheckInCallable callback, boolean completed) {
+    boolean failed() {
+      return !completed || !callback.analysisSucceeded();
     }
   }
 

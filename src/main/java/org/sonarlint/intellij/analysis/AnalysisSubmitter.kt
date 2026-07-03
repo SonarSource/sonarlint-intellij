@@ -49,7 +49,6 @@ import org.sonarlint.intellij.promotion.PromotionProvider
 import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
-import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarlint.intellij.util.runOnPooledThread
 
 @Service(Service.Level.PROJECT)
@@ -110,7 +109,7 @@ class AnalysisSubmitter(private val project: Project) {
     fun analyzeFilesPreCommit(files: Set<VirtualFile>): Pair<CheckInCallable, List<UUID>>? {
         val callback = CheckInCallable()
         val analysisIds = mutableListOf<UUID>()
-        files.groupBy { file -> computeOnPooledThread(project, "Find Module For File") { findModuleForFile(file, project) } }
+        files.groupBy { file -> findModuleForFile(file, project) }
             .forEach { (module, moduleFiles) -> module?.let { awaitPreCommitAnalysisStart(it, moduleFiles, callback, analysisIds) } }
         return preCommitAnalysisResult(callback, analysisIds)
     }
