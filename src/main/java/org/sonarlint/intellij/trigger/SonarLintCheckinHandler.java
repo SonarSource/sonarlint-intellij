@@ -48,6 +48,7 @@ import javax.annotation.Nullable;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import org.apache.commons.lang3.tuple.Pair;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
@@ -100,17 +101,23 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
 
     try {
-      var analysisIdsByCallback = getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+      var preCommitResult = runModalTaskWithResult(project, "SonarQube for IDE Pre-Commit Analysis",
+        indicator -> {
+          var analysisIdsByCallback = getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+          if (analysisIdsByCallback == null) {
+            return null;
+          }
+          var completed = waitForPreCommitAnalyses(indicator, analysisIdsByCallback.getRight());
+          return Pair.of(analysisIdsByCallback, completed);
+        });
 
-      if (analysisIdsByCallback == null) {
+      if (preCommitResult == null) {
         SonarLintConsole.get(project).debug("Pre-commit analysis cancelled because analysis did not start");
         return ReturnResult.COMMIT;
       }
 
-      var analysisIds = analysisIdsByCallback.getRight();
-
-      var completed = runModalTaskWithResult(project, "Waiting for SonarQube for IDE Analysis",
-        indicator -> waitForPreCommitAnalyses(indicator, analysisIds));
+      var analysisIdsByCallback = preCommitResult.getLeft();
+      var completed = preCommitResult.getRight();
 
       if (Boolean.FALSE.equals(completed) || !analysisIdsByCallback.getLeft().analysisSucceeded()) {
         SonarLintConsole.get(project).debug("Pre-commit analysis failed");
@@ -254,13 +261,11 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       "Cancel",
       UIUtil.getWarningIcon());
 
-    if (answer == Messages.YES) {
-      return ReturnResult.CLOSE_WINDOW;
-    } else if (answer == Messages.CANCEL) {
-      return ReturnResult.CANCEL;
-    } else {
-      return ReturnResult.COMMIT;
-    }
+    return switch (answer) {
+      case Messages.YES -> ReturnResult.CLOSE_WINDOW;
+      case Messages.CANCEL -> ReturnResult.CANCEL;
+      default -> ReturnResult.COMMIT;
+    };
   }
 
   private ReturnResult showFailureMessage(String msg) {
@@ -271,13 +276,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       "Abort",
       UIUtil.getErrorIcon());
 
-    if (answer == Messages.OK) {
-      return ReturnResult.COMMIT;
-    } else if (answer == Messages.CANCEL) {
-      return ReturnResult.CANCEL;
-    } else {
-      return ReturnResult.COMMIT;
-    }
+    return answer == Messages.CANCEL ? ReturnResult.CANCEL : ReturnResult.COMMIT;
   }
 
   private void showChangedFilesTab(AnalysisResult analysisResult) {
