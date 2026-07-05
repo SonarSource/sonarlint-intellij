@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>12.5 - Add support for Shell and Azure Pipelines. Migrate Security Hotspots to issues for Kotlin, IaC and Ruby. Support of Java 26. 12 new rules for JS/TS testing frameworks and Vue. 5 new rules for Python.</li>
         <li>12.4 - Fixed IDE UI freezes and duplicate findings in Rider. 3 new JUnit 5 rules for Java. New security and accessibility rules for HTML. Improved Python analysis. Fewer FPs for Java, PHP, Go, and HTML.</li>
         <li>12.3 - Add multi-selection and bulk copy of findings in the Findings and Report tabs. Optimized branch-matching resolution per repository. One new rule for Java. New Logic Apps rules for Azure Resource Manager. Add support for bun, Deno, and pnpm dependency detection. Fewer FPs across many languages.</li>
         <li>12.2.2 - Fix C# analysis in connected mode.</li>
