@@ -186,16 +186,20 @@ class DirectHighlighter @NonInjectable internal constructor(
             updateHighlights(listOf(file))
             return
         }
+        val isCurrent = synchronized(queueLock) {
+            !disposed && latestGenerationByFile[file] == request.generation
+        }
+        if (!isCurrent) {
+            return
+        }
+        // The markup write must not happen while holding queueLock: setHighlightersToEditor runs on the EDT and
+        // holding the lock across it would block background threads (e.g. the scheduler) on the EDT for its duration.
+        UpdateHighlightersUtil.setHighlightersToEditor(
+            project, document, 0, document.textLength, prepared.highlights, null, SONARLINT_GROUP
+        )
         synchronized(queueLock) {
-            // Keep the final generation check and markup write atomic with respect to registering a new request. A
-            // request arriving during the write will therefore be ordered after this application and refresh it again.
-            if (disposed || latestGenerationByFile[file] != request.generation) {
-                return
-            }
-            UpdateHighlightersUtil.setHighlightersToEditor(
-                project, document, 0, document.textLength, prepared.highlights, null, SONARLINT_GROUP
-            )
-            if (file !in pendingFiles) {
+            // A request arriving during the write is ordered after this application and will refresh it again.
+            if (!disposed && latestGenerationByFile[file] == request.generation && file !in pendingFiles) {
                 latestGenerationByFile.remove(file)
             }
         }
