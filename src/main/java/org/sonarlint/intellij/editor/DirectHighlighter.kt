@@ -22,6 +22,7 @@ package org.sonarlint.intellij.editor
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.codeInsight.daemon.impl.UpdateHighlightersUtil
 import com.intellij.codeInsight.intention.IntentionAction
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Document
@@ -30,6 +31,11 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.serviceContainer.NonInjectable
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import org.jetbrains.annotations.VisibleForTesting
 import org.sonarlint.intellij.actions.MarkAsResolvedAction
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
@@ -45,7 +51,6 @@ import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsStore
-import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 
@@ -61,62 +66,172 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
  * refreshed whenever the displayed findings change (see [CodeAnalyzerRestarter]).
  */
 @Service(Service.Level.PROJECT)
-class DirectHighlighter(private val project: Project) {
+class DirectHighlighter @NonInjectable internal constructor(
+    private val project: Project,
+    private val scheduler: ScheduledExecutorService,
+    private val debounceDelayMs: Long,
+) : Disposable {
+
+    constructor(project: Project) : this(project, newScheduler(project), DEFAULT_DEBOUNCE_DELAY_MS)
+
+    private val queueLock = Any()
+    private val pendingFiles = linkedSetOf<VirtualFile>()
+    private val latestGenerationByFile = mutableMapOf<VirtualFile, Long>()
+    private var nextGeneration = 0L
+    private var scheduledTask: ScheduledFuture<*>? = null
+    private var disposed = false
 
     /**
      * Recomputes and writes the SonarQube highlights for the given [files]. Called (debounced) from
      * [CodeAnalyzerRestarter] whenever the displayed findings change.
      *
-     * Highlight preparation runs in a read action on a background thread; only the final markup update is posted to
-     * the EDT. Keeping [UpdateHighlightersUtil.setHighlightersToEditor] off the read-action path avoids "slow
-     * operations on EDT" assertions in integration tests.
+     * Requests are coalesced and prepared serially on a project-owned worker. Only the final markup update is posted to
+     * the EDT. Each request gets a generation so an obsolete prepared result cannot overwrite a newer one. Keeping
+     * [UpdateHighlightersUtil.setHighlightersToEditor] off the read-action path avoids "slow operations on EDT"
+     * assertions in integration tests.
      */
     fun updateHighlights(files: Collection<VirtualFile>) {
         if (files.isEmpty() || project.isDisposed) {
             return
         }
-        val filesToProcess = files.toSet()
-        runOnPooledThread(project) {
-            val preparedHighlights = filesToProcess.mapNotNull { file -> prepareHighlights(file) }
-            if (preparedHighlights.isEmpty() || project.isDisposed) {
-                return@runOnPooledThread
+
+        synchronized(queueLock) {
+            if (disposed) {
+                return
             }
-            runOnUiThread(project, ModalityState.nonModal()) {
-                preparedHighlights.forEach { applyPreparedHighlights(it) }
+            files.forEach { file ->
+                latestGenerationByFile[file] = ++nextGeneration
+                pendingFiles.add(file)
             }
+            scheduledTask?.cancel(false)
+            scheduledTask = scheduler.schedule(::processPendingFiles, debounceDelayMs, TimeUnit.MILLISECONDS)
+        }
+    }
+
+    private fun processPendingFiles() {
+        val requests = synchronized(queueLock) {
+            scheduledTask = null
+            pendingFiles.mapNotNull { file ->
+                latestGenerationByFile[file]?.let { generation -> HighlightRequest(file, generation) }
+            }.also { pendingFiles.clear() }
+        }
+        if (requests.isEmpty() || project.isDisposed) {
+            return
+        }
+
+        val preparedHighlights = requests.mapNotNull { request ->
+            if (!isLatest(request)) {
+                null
+            } else {
+                val prepared = prepareHighlights(request)
+                if (prepared == null) {
+                    complete(request)
+                    null
+                } else if (!isLatest(request)) {
+                    // A newer request may have arrived while the read action was running. The EDT guard below remains
+                    // authoritative, but avoiding the post here saves unnecessary work in the common case.
+                    null
+                } else {
+                    prepared
+                }
+            }
+        }
+        if (preparedHighlights.isEmpty() || project.isDisposed) {
+            return
+        }
+        runOnUiThread(project, ModalityState.nonModal()) {
+            preparedHighlights.forEach { applyPreparedHighlightsIfCurrent(it) }
         }
     }
 
     @VisibleForTesting
     internal fun applyHighlightsForTest(file: VirtualFile) {
-        prepareHighlights(file)?.let { applyPreparedHighlights(it) }
+        val request = synchronized(queueLock) {
+            val generation = ++nextGeneration
+            latestGenerationByFile[file] = generation
+            HighlightRequest(file, generation)
+        }
+        prepareHighlights(request)?.let { applyPreparedHighlightsIfCurrent(it) }
     }
 
     /** Collects highlight descriptors under read lock; must not write editor markup here. */
-    private fun prepareHighlights(file: VirtualFile): PreparedHighlights? {
-        return computeReadActionSafely(file, project) {
+    private fun prepareHighlights(request: HighlightRequest): PreparedHighlights? {
+        return computeReadActionSafely(request.file, project) {
+            val file = request.file
             if (project.isDisposed || !file.isValid || !FileEditorManager.getInstance(project).isFileOpen(file)) {
                 return@computeReadActionSafely null
             }
             val document = FileDocumentManager.getInstance().getDocument(file) ?: return@computeReadActionSafely null
             val fileRange = TextRange(0, document.textLength)
             val highlights = collectHighlightPlans(file).mapNotNull { it.toHighlightInfo(fileRange) }
-            PreparedHighlights(document, highlights)
+            PreparedHighlights(request, document, document.modificationStamp, highlights)
         }
     }
 
-    /** Writes pre-computed highlights into the editor; must run on the EDT, outside any read action. */
-    private fun applyPreparedHighlights(prepared: PreparedHighlights) {
-        if (project.isDisposed) {
+    /** Writes current pre-computed highlights into the editor; must run on the EDT, outside any read action. */
+    private fun applyPreparedHighlightsIfCurrent(prepared: PreparedHighlights) {
+        val request = prepared.request
+        if (project.isDisposed || !isLatest(request)) {
             return
         }
+        val file = request.file
         val document = prepared.document
-        UpdateHighlightersUtil.setHighlightersToEditor(
-            project, document, 0, document.textLength, prepared.highlights, null, SONARLINT_GROUP
-        )
+        if (!file.isValid || !FileEditorManager.getInstance(project).isFileOpen(file)) {
+            complete(request)
+            return
+        }
+        if (document.modificationStamp != prepared.documentModificationStamp) {
+            // The prepared HighlightInfo instances contain fixed offsets. Recompute from the findings' RangeMarkers
+            // instead of applying them to a newer document revision.
+            updateHighlights(listOf(file))
+            return
+        }
+        synchronized(queueLock) {
+            // Keep the final generation check and markup write atomic with respect to registering a new request. A
+            // request arriving during the write will therefore be ordered after this application and refresh it again.
+            if (disposed || latestGenerationByFile[file] != request.generation) {
+                return
+            }
+            UpdateHighlightersUtil.setHighlightersToEditor(
+                project, document, 0, document.textLength, prepared.highlights, null, SONARLINT_GROUP
+            )
+            if (file !in pendingFiles) {
+                latestGenerationByFile.remove(file)
+            }
+        }
     }
 
-    private data class PreparedHighlights(val document: Document, val highlights: List<HighlightInfo>)
+    private fun isLatest(request: HighlightRequest): Boolean = synchronized(queueLock) {
+        latestGenerationByFile[request.file] == request.generation
+    }
+
+    private fun complete(request: HighlightRequest) {
+        synchronized(queueLock) {
+            if (latestGenerationByFile[request.file] == request.generation && request.file !in pendingFiles) {
+                latestGenerationByFile.remove(request.file)
+            }
+        }
+    }
+
+    override fun dispose() {
+        synchronized(queueLock) {
+            disposed = true
+            scheduledTask?.cancel(false)
+            scheduledTask = null
+            pendingFiles.clear()
+            latestGenerationByFile.clear()
+        }
+        scheduler.shutdownNow()
+    }
+
+    private data class HighlightRequest(val file: VirtualFile, val generation: Long)
+
+    private data class PreparedHighlights(
+        val request: HighlightRequest,
+        val document: Document,
+        val documentModificationStamp: Long,
+        val highlights: List<HighlightInfo>,
+    )
 
     /**
      * Builds the list of highlights to render for [file] from the findings currently displayed in the tool window.
@@ -232,6 +347,13 @@ class DirectHighlighter(private val project: Project) {
     }
 
     companion object {
+        private const val DEFAULT_DEBOUNCE_DELAY_MS = 100L
+
+        private fun newScheduler(project: Project): ScheduledExecutorService =
+            ScheduledThreadPoolExecutor(1) { runnable ->
+                Thread(runnable, "sonarlint-direct-highlighter-${project.name}").apply { isDaemon = true }
+            }.apply { removeOnCancelPolicy = true }
+
         // Dedicated highlighter group id used exclusively for SonarQube findings. It must stay distinct from the
         // (small) group ids used by IntelliJ's own daemon passes so that neither clears the other's highlights. The
         // exact value is arbitrary but must remain stable; 0x53_4C_49 spells the ASCII bytes 'S','L','I'.

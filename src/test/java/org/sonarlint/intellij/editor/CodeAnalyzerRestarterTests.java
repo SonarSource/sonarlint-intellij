@@ -27,7 +27,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -56,7 +55,7 @@ class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
     analyzerRestarter.refreshOpenFiles();
 
-    verify(directHighlighter, timeout(1000)).updateHighlights(argThat(files -> files.containsAll(Set.of(file1, file2))));
+    verify(directHighlighter).updateHighlights(argThat(files -> files.containsAll(Set.of(file1, file2))));
     verifyNoMoreInteractions(directHighlighter);
   }
 
@@ -67,19 +66,7 @@ class CodeAnalyzerRestarterTests extends AbstractSonarLintLightTests {
 
     analyzerRestarter.refreshFiles(List.of(file1, file2));
 
-    verify(directHighlighter, timeout(1000)).updateHighlights(Set.of(file1, file2));
-    verifyNoMoreInteractions(directHighlighter);
-  }
-
-  @Test
-  void should_debounce_rapid_calls_into_single_pass() {
-    var file1 = createAndOpenTestPsiFile("Foo.java", "class Foo {}").getVirtualFile();
-    var file2 = createTestPsiFile("Bar.java", "class Bar {}").getVirtualFile();
-
-    analyzerRestarter.refreshFiles(List.of(file1));
-    analyzerRestarter.refreshFiles(List.of(file2));
-
-    verify(directHighlighter, timeout(1000)).updateHighlights(Set.of(file1, file2));
+    verify(directHighlighter).updateHighlights(List.of(file1, file2));
     verifyNoMoreInteractions(directHighlighter);
   }
 

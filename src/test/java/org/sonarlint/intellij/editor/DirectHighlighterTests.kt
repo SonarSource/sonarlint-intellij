@@ -22,11 +22,13 @@ package org.sonarlint.intellij.editor
 import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.PlatformTestUtil
 import java.util.UUID
+import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -114,6 +116,70 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
         }
     }
 
+    @Test
+    fun should_not_apply_a_prepared_result_after_a_newer_refresh_was_requested() {
+        val content = "class Foo {}"
+        val file = createAndOpenTestPsiFile("Foo.java", content).virtualFile
+        val executor = ScheduledThreadPoolExecutor(1)
+        val highlighter = DirectHighlighter(project, executor, 0)
+
+        try {
+            withOpenEditor(file) {
+                val obsoleteMessage = "Obsolete finding"
+                seedDisplayedIssue(file, content, obsoleteMessage)
+                highlighter.updateHighlights(listOf(file))
+                awaitQueue(executor)
+
+                val latestMessage = "Latest finding"
+                seedDisplayedIssue(file, content, latestMessage)
+                highlighter.updateHighlights(listOf(file))
+                awaitQueue(executor)
+
+                PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+
+                assertThat(sonarLintHighlights(file, obsoleteMessage)).isEmpty()
+                assertThat(sonarLintHighlights(file, latestMessage)).hasSize(1)
+            }
+        } finally {
+            highlighter.dispose()
+        }
+    }
+
+    @Test
+    fun should_recompute_a_prepared_result_when_the_document_changes_before_application() {
+        val content = "class Foo {}"
+        val insertedText = "// comment\n"
+        val file = createAndOpenTestPsiFile("Foo.java", content).virtualFile
+        val issueMessage = "Finding with a moving range"
+        seedDisplayedIssue(file, content, issueMessage)
+        val executor = ScheduledThreadPoolExecutor(1)
+        val highlighter = DirectHighlighter(project, executor, 0)
+
+        try {
+            withOpenEditor(file) {
+                highlighter.updateHighlights(listOf(file))
+                awaitQueue(executor)
+
+                val document = FileDocumentManager.getInstance().getDocument(file)!!
+                WriteCommandAction.runWriteCommandAction(project) {
+                    document.insertString(0, insertedText)
+                }
+
+                // The queued EDT application detects the new document revision and requests a fresh preparation.
+                PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+                awaitQueue(executor)
+                PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+
+                val expectedRange = textRangeOf(insertedText + content, "Foo")
+                val highlight = sonarLintHighlights(file, issueMessage).single()
+                assertThat(highlight.startOffset).isEqualTo(expectedRange.first)
+                assertThat(highlight.endOffset).isEqualTo(expectedRange.second)
+            }
+        } finally {
+            highlighter.dispose()
+        }
+    }
+
     private fun seedDisplayedIssue(file: VirtualFile, content: String, message: String) {
         val document = FileDocumentManager.getInstance().getDocument(file)!!
         val (startOffset, endOffset) = textRangeOf(content, "Foo")
@@ -140,6 +206,10 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
         FileEditorManager.getInstance(project).openFile(file, true)
         assertThat(FileEditorManager.getInstance(project).selectedTextEditor).isNotNull
         block()
+    }
+
+    private fun awaitQueue(executor: ScheduledThreadPoolExecutor) {
+        executor.submit {}.get(5, TimeUnit.SECONDS)
     }
 
     private fun sonarLintHighlights(file: VirtualFile, expectedMessage: String): List<HighlightInfo> {
