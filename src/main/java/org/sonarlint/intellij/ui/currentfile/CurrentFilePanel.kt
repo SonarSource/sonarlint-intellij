@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.currentfile
 
 import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.vfs.VirtualFile
@@ -41,6 +42,8 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -62,8 +65,6 @@ import org.sonarlint.intellij.ui.filter.FindingsScope
 import org.sonarlint.intellij.ui.filter.SortMode
 import org.sonarlint.intellij.ui.filter.StatusFilter
 import org.sonarlint.intellij.ui.nodes.FileNode
-import org.sonarlint.intellij.ui.nodes.IssueNode
-import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.tree.TreeExpansionStateManager
 import org.sonarlint.intellij.util.SonarLintActions
 import org.sonarlint.intellij.util.runOnPooledThread
@@ -356,26 +357,27 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
     }
 
-    fun update(file: VirtualFile?) {
+    fun update(file: VirtualFile?, highlightRefresh: EditorHighlightRefresh = EditorHighlightRefresh.NONE) {
         this.currentFile = file
 
         if (!handleBackendAlive()) return
 
         val filterCriteria = displayManager.getCurrentFilterCriteria()
-        val fileChanged = file != lastFile
-        val filtersChanged = filterCriteria != lastFilterCriteria
-        
-        // Always check for new findings - they may have changed even with same file/filters
-        val newFilteredFindings = findingsFilter.filterAllFindings(file, filterCriteria)
-        val findingsChanged = newFilteredFindings != filteredFindingsCache
-        
-        // Skip expensive operations only if truly nothing has changed
-        if (!fileChanged && !filtersChanged && !findingsChanged) {
-            return
-        }
+        try {
+            val fileChanged = file != lastFile
+            val filtersChanged = filterCriteria != lastFilterCriteria
 
-        filteredFindingsCache = newFilteredFindings
-        getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(newFilteredFindings)
+            // Always check for new findings - they may have changed even with same file/filters
+            val newFilteredFindings = findingsFilter.filterAllFindings(file, filterCriteria)
+            val findingsChanged = newFilteredFindings != filteredFindingsCache
+
+            // Skip expensive operations only if truly nothing has changed
+            if (!fileChanged && !filtersChanged && !findingsChanged) {
+                return
+            }
+
+            filteredFindingsCache = newFilteredFindings
+            getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(newFilteredFindings)
 
         // Cache values for next comparison
         lastFile = file
@@ -434,6 +436,41 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         handleDisplayStatus()
         expandTreesWithStatePreservation(treeStateSnapshot)
         updateSummaryButtons()
+        } finally {
+            // Refresh highlights so they are updated even when the panel content is left
+            // unchanged by the early return above (e.g. on a selection change back to an already-populated file).
+            if (highlightRefresh.enabled) {
+                refreshEditorHighlights(file, filterCriteria, highlightRefresh)
+            }
+        }
+    }
+
+    private fun refreshEditorHighlights(file: VirtualFile?, filterCriteria: FilterCriteria, highlightRefresh: EditorHighlightRefresh) {
+        val files = resolveEditorHighlightFiles(file, filterCriteria, highlightRefresh)
+        if (files.isNotEmpty()) {
+            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(files)
+        }
+    }
+
+    /**
+     * Resolves which open editors should have their highlights recomputed.
+     *
+     * Note the scope precedence: in the default [FindingsScope.CURRENT_FILE] view only the selected file is ever
+     * refreshed, so [EditorHighlightRefresh.changedFiles] is only consulted in the "all files" scope. This matches
+     * the historical behaviour where background editors kept their highlights until they were re-selected.
+     */
+    private fun resolveEditorHighlightFiles(
+        file: VirtualFile?,
+        filterCriteria: FilterCriteria,
+        highlightRefresh: EditorHighlightRefresh,
+    ): List<VirtualFile> {
+        val files = when {
+            highlightRefresh.allOpenFiles -> FileEditorManager.getInstance(project).openFiles.toList()
+            filterCriteria.findingsScope == FindingsScope.CURRENT_FILE -> listOfNotNull(file)
+            highlightRefresh.changedFiles != null -> highlightRefresh.changedFiles.toList()
+            else -> FileEditorManager.getInstance(project).openFiles.toList()
+        }
+        return files.filter { it.isValid }
     }
 
     private fun handleBackendAlive(): Boolean {
@@ -479,7 +516,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         runOnUiThread(project) { handleDisplayStatus() }
     }
 
-    fun refreshView() {
+    fun refreshView(highlightRefresh: EditorHighlightRefresh = EditorHighlightRefresh.enabled()) {
         runOnUiThread(project) {
             // Clear cache to force complete refresh
             lastFile = null
@@ -487,7 +524,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             
             // Re-evaluate support when views refresh (e.g., after backend initialization/restart)
             checkSupportStatus()
-            this.update(currentFile)
+            update(currentFile, highlightRefresh)
         }
     }
 
@@ -504,7 +541,6 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
                             otherTreeConfig.tree.clearSelection()
                         }
                     }
-                    updateDetailsPanelForFinding(config.tree)
                 }
             }
         }
@@ -546,15 +582,6 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
     private fun disableEmptyDisplay() {
         treeScrollPane.isVisible = true
-    }
-
-    private fun updateDetailsPanelForFinding(tree: Tree) {
-        when (val selected = tree.lastSelectedPathComponent) {
-            is IssueNode -> findingDetailsPanel.show(selected.issue(), false)
-            is LiveSecurityHotspotNode -> findingDetailsPanel.show(selected.hotspot, false)
-            is LocalTaintVulnerability -> findingDetailsPanel.show(selected, false)
-            else -> findingDetailsPanel.clear()
-        }
     }
 
     private fun <T : Finding> populateTreesWithNewCodeFilter(treeType: TreeType, findings: List<T>, treeVisibilityCheck: (() -> Boolean)? = null) {

@@ -956,7 +956,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             runningAnalysis.addRawIssues(analysisId, issuesByFileUri, isIntermediatePublication)
         } else if (module != null) {
             val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-            onTheFlyFindingsHolder.updateViewsWithNewIssues(module, issuesByFileUri)
+            onTheFlyFindingsHolder.updateViewsWithNewIssues(module, issuesByFileUri, isIntermediatePublication)
         }
     }
 
@@ -975,7 +975,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             runningAnalysis.addRawHotspots(analysisId, hotspotsByFileUri, isIntermediatePublication)
         } else if (module != null) {
             val onTheFlyFindingsHolder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-            onTheFlyFindingsHolder.updateViewsWithNewSecurityHotspots(module, hotspotsByFileUri)
+            onTheFlyFindingsHolder.updateViewsWithNewSecurityHotspots(module, hotspotsByFileUri, isIntermediatePublication)
         }
     }
 

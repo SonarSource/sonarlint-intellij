@@ -38,7 +38,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
@@ -106,7 +105,6 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
         private fun updateUI(project: Project, issue: Issue) {
             issue.reopen()
             getService(project, SonarLintToolWindow::class.java).refreshViews()
-            getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
         }
 
         private fun confirm(project: Project, productName: String): Boolean {

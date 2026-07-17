@@ -19,20 +19,11 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
-import java.util.ArrayList;
-import java.util.Collection;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -49,36 +40,8 @@ public class ClearCurrentFileIssuesAction extends AbstractSonarAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      var codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
-
-      runReadActionSafely(project, () -> {
-        getService(project, AnalysisSubmitter.class).getOnTheFlyFindingsHolder().clearAllCurrentFileFindings();
-
-        // run annotator to remove highlighting of issues
-        var editorManager = FileEditorManager.getInstance(project);
-        var openFiles = editorManager.getOpenFiles();
-        var psiFiles = findFiles(project, openFiles);
-        psiFiles.forEach(codeAnalyzer::restart);
-      });
+      runReadActionSafely(project, () ->
+        getService(project, AnalysisSubmitter.class).getOnTheFlyFindingsHolder().clearAllCurrentFileFindings());
     }
-  }
-
-  public Collection<PsiFile> findFiles(Project project, VirtualFile[] files) {
-    ApplicationManager.getApplication().assertReadAccessAllowed();
-    var psiManager = PsiManager.getInstance(project);
-    var psiFiles = new ArrayList<PsiFile>(files.length);
-
-    for (var vFile : files) {
-      if (!vFile.isValid()) {
-        continue;
-      }
-      var psiFile = psiManager.findFile(vFile);
-      if (psiFile != null) {
-        psiFiles.add(psiFile);
-      } else {
-        SonarLintConsole.get(project).error("Couldn't find PSI for file: " + vFile.getPath());
-      }
-    }
-    return psiFiles;
   }
 }
