@@ -1,6 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
+# To regenerate this file, run: ./gradlew :nodejs:dependencies --write-locks
 com.github.ben-manes.caffeine:caffeine:2.9.3=swiftExportClasspathResolvable
 com.google.errorprone:error_prone_annotations:2.28.0=swiftExportClasspathResolvable
 com.jgoodies:forms:1.1-preview=intellijPlatformJavaCompiler
