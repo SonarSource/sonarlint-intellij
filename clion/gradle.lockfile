@@ -1,6 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
+# To regenerate this file, run: ./gradlew :clion:dependencies --write-locks
 com.fasterxml.jackson.core:jackson-annotations:2.17.0=intellijPlatformTestClasspath,intellijPlatformTestDependencies
 com.fasterxml.jackson.core:jackson-core:2.17.0=intellijPlatformTestClasspath,intellijPlatformTestDependencies
 com.fasterxml.jackson.core:jackson-databind:2.17.0=intellijPlatformTestClasspath,intellijPlatformTestDependencies
