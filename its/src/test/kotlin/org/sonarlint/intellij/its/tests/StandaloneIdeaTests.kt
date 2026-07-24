@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.analyzeCurrentFileFromToolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.closeWalkthrough
@@ -55,6 +56,10 @@ class StandaloneIdeaTests : BaseUiTest() {
             "No older issues",
             "No older Security Hotspots"
         )
+        // FIXME workaround until SLCORE-2533 is fixed.
+        // Re-enabling a rule does not auto-refresh already-open files; the Current File tab reflects
+        // the change only after an explicit re-analysis triggered from the tool window.
+        analyzeCurrentFileFromToolWindow()
         verifyCurrentFileTabContainsMessages(
             "Found 1 new issue from last 30 days",
         )

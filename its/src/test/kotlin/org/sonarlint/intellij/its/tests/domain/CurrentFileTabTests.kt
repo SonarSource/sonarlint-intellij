@@ -130,6 +130,20 @@ class CurrentFileTabTests {
             }
         }
 
+        fun analyzeCurrentFileFromToolWindow() {
+            with(remoteRobot) {
+                idea {
+                    toolWindow {
+                        tabTitleContains("Findings") { select() }
+                        content("CurrentFilePanel") {
+                            toolBarButton("Analyze Current File").click()
+                        }
+                    }
+                    waitBackgroundTasksFinished()
+                }
+            }
+        }
+
         fun clickCurrentFileIssue(issueMessage: String) {
             with(remoteRobot) {
                 idea {
