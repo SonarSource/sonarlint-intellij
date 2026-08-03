@@ -49,7 +49,6 @@ public final class SonarLintGlobalSettings {
   private String defaultFindingsScope = "CURRENT_FILE";
 
   private boolean autoTrigger = true;
-  private boolean isRegionEnabled = false;
   private String nodejsPath = "";
 
   private List<ServerConnection> servers = new LinkedList<>();
@@ -73,7 +72,6 @@ public final class SonarLintGlobalSettings {
     this.defaultSortMode = original.defaultSortMode;
     this.defaultFindingsScope = original.defaultFindingsScope;
     this.autoTrigger = original.autoTrigger;
-    this.isRegionEnabled = original.isRegionEnabled;
     this.nodejsPath = original.nodejsPath;
     this.hasWalkthroughRunOnce = original.hasWalkthroughRunOnce;
     this.secretsNeverBeenAnalysed = original.secretsNeverBeenAnalysed;
@@ -191,14 +189,6 @@ public final class SonarLintGlobalSettings {
 
   public void setAutoTrigger(boolean autoTrigger) {
     this.autoTrigger = autoTrigger;
-  }
-
-  public boolean isRegionEnabled() {
-    return isRegionEnabled;
-  }
-
-  public void setRegionEnabled(boolean regionEnabled) {
-    this.isRegionEnabled = regionEnabled;
   }
 
   public String getNodejsPath() {

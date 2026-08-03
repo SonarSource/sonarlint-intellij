@@ -33,6 +33,7 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.utils.ConnectionType
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.defaultBuilderEnv
@@ -52,7 +53,7 @@ class PLSQLTest : BaseUiTest() {
         openFile("file.pkb")
         verifyCurrentFileTabContainsMessages("No findings to display")
 
-        enableConnectedModeFromCurrentFilePanel(PLSQL_PROJECT_KEY, true, "Orchestrator")
+        enableConnectedModeFromCurrentFilePanel(PLSQL_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
 
         idea {
             waitBackgroundTasksFinished()

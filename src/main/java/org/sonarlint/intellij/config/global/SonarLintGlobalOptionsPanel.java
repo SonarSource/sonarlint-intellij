@@ -60,7 +60,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   private JPanel rootPane;
   private JBCheckBox autoTrigger;
   private JBCheckBox neverDownloadCFamily;
-  private JBCheckBox enableRegion;
   private JBTextField nodeJsPath;
   private JBLabel nodeJsVersion;
   private JBCheckBox focusOnNewCode;
@@ -137,11 +136,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     optionsPanel.add(nodeJsVersion, new GridBagConstraints(2, gridy++, 1, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 
-    enableRegion = new JBCheckBox("Show region selection for SonarQube Cloud");
-    enableRegion.setFocusable(false);
-    optionsPanel.add(enableRegion, new GridBagConstraints(0, gridy, 3, 1, 0.0, 0.0,
-      WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
-
     return optionsPanel;
   }
 
@@ -153,8 +147,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();
-    return model.isRegionEnabled() != enableRegion.isSelected()
-      || model.isAutoTrigger() != autoTrigger.isSelected()
+    return model.isAutoTrigger() != autoTrigger.isSelected()
       || model.isNeverDownloadCFamilyAnalyzer() != neverDownloadCFamily.isSelected()
       || !Objects.equals(model.getNodejsPath(), nodeJsPath.getText())
       || model.isFocusOnNewCode() != focusOnNewCode.isSelected();
@@ -165,7 +158,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getComponent();
     autoTrigger.setSelected(model.isAutoTrigger());
     neverDownloadCFamily.setSelected(model.isNeverDownloadCFamilyAnalyzer());
-    enableRegion.setSelected(model.isRegionEnabled());
     nodeJsPath.setText(model.getNodejsPath());
     nodeJsPath.getEmptyText().clear();
     focusOnNewCode.setSelected(model.isFocusOnNewCode());
@@ -227,7 +219,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     getService(CleanAsYouCodeService.class).setFocusOnNewCode(focusOnNewCode.isSelected(), settings);
     settings.setAutoTrigger(autoTrigger.isSelected());
     settings.setNeverDownloadCFamilyAnalyzer(neverDownloadCFamily.isSelected());
-    settings.setRegionEnabled(enableRegion.isSelected());
     // Do not let the user save an invalid path, this way we fall back to the auto-detection
     if (isNodejsPathValid(nodeJsPath.getText())) {
       settings.setNodejsPath(nodeJsPath.getText());
@@ -239,4 +230,3 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     return Files.exists(forcedNodeJsPath) && !Files.isDirectory(forcedNodeJsPath);
   }
 }
-

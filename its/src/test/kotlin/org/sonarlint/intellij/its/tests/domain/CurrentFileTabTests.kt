@@ -27,6 +27,7 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.utils.ConnectionType
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.enableConnectedMode
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
@@ -157,7 +158,7 @@ class CurrentFileTabTests {
             }
         }
 
-        fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String) {
+        fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String, connectionType: ConnectionType) {
             optionalIdeaFrame()?.apply {
                 toolWindow {
                     tabTitleContains("Findings") { select() }
@@ -166,7 +167,7 @@ class CurrentFileTabTests {
                     }
                 }
                 if (enabled) {
-                    projectKey?.let { enableConnectedMode(it, connectionName) }
+                    projectKey?.let { enableConnectedMode(it, connectionName, connectionType) }
                 } else {
                     disableConnectedMode()
                 }

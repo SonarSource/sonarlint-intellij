@@ -50,15 +50,17 @@ object ProjectBindingUtils {
         }
     }
 
-    fun enableConnectedMode(projectKey: String, connectionName: String) {
+    fun enableConnectedMode(projectKey: String, connectionName: String, connectionType: ConnectionType) {
         with(remoteRobot) {
             idea {
                 dialog("Project Settings") {
+                    val connectionLabelWithPrefix = connectionType.uiLabelPrefix + connectionName
                     checkBox("Bind project to SonarQube (Server, Cloud)").select()
                     comboBox("Connection:").click()
                     remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                        waitFor(Duration.ofSeconds(5)) { hasText(connectionName) }
-                        findText(connectionName).click()
+                        // a prefix is added only if there are multiple SQC connection. Check both with and without label
+                        waitFor(Duration.ofSeconds(5)) { hasText(connectionLabelWithPrefix) || hasText(connectionName) }
+                        findText { it.text == connectionLabelWithPrefix || it.text == connectionName }.click()
                     }
                     jbTextField().text = projectKey
                     button("OK").click()
@@ -107,4 +109,8 @@ object ProjectBindingUtils {
         }
     }
 
+}
+
+enum class ConnectionType(val uiLabelPrefix: String) {
+    SQS(""), SQC_EU("[EU] "), SQC_US("[US] ")
 }

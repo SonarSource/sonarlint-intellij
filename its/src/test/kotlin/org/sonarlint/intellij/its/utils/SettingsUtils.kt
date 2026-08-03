@@ -113,7 +113,7 @@ object SettingsUtils {
             addConnectionButton().clickWhenEnabled()
             dialog("New Connection: Server Details") {
                 keyboard { enterText("Orchestrator") }
-                jRadioButtons()[1].select()
+                jRadioButtons()[3].select()
                 jbTextFields()[1].text = serverUrl
                 button("Next").click()
             }
