@@ -48,7 +48,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         with:
           sonar-platform: none
           use-develocity: true

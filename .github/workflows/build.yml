@@ -93,7 +93,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Build Plugin
-        uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         id: build_plugin
         with:
           sonar-platform: none
@@ -125,7 +125,7 @@ jobs:
           version: 2025.9.12
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         with:
           sonar-platform: none
           artifactory-reader-role: private-reader
@@ -193,7 +193,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Run Tests and Sonar Analysis
-        uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         with:
           deploy: false
           use-develocity: true
@@ -265,7 +265,7 @@ jobs:
             verifier-ides-${{ runner.os }}-
 
       - name: Verify Plugin Compatibility
-        uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         with:
           deploy: false
           sonar-platform: none
@@ -366,7 +366,7 @@ jobs:
           version: 2025.9.12
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         with:
           sonar-platform: none
           use-develocity: true
