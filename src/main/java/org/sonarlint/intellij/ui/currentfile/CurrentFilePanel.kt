@@ -341,6 +341,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             listOf(actions.analyzeCurrentFileAction(), actions.cancelAnalysis()),
             listOf(actions.analyzeChangedFiles(), actions.analyzeAllFiles()),
             listOf(actions.expandAllTreesAction(), actions.collapseAllTreesAction()),
+            listOf(actions.generateFixPromptAction()),
             listOf(actions.configure(), actions.clearIssues())
         ))
     }
@@ -787,6 +788,8 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             }
         }
     }
+
+    fun getFilteredFindings(): FilteredFindings = filteredFindingsCache
     
     private fun expandTreeBasedOnScope(tree: Tree, treeType: TreeType, findingsScope: FindingsScope) {
         when (findingsScope) {
