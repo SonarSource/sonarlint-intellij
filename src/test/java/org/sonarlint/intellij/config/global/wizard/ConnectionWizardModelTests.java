@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto;
 
@@ -82,6 +83,7 @@ class ConnectionWizardModelTests {
 
     var server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
+    assertThat(server.getRegion()).isEqualTo(SonarCloudRegion.EU.name());
     assertThat(server.getOrganizationKey()).isEqualTo("org");
   }
 

@@ -53,6 +53,7 @@ import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.SecurityHotspotTabTests.Companion.verifySecurityHotspotTreeContainsMessages
+import org.sonarlint.intellij.its.utils.ConnectionType
 import org.sonarlint.intellij.its.utils.FiltersUtils.showOpenIssues
 import org.sonarlint.intellij.its.utils.FiltersUtils.showResolvedIssues
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -185,16 +186,16 @@ class OpenInIdeTests : BaseUiTest() {
             verifyHotspotOpened()
 
             // Should Propose To Bind
-            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, false, "Orchestrator")
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, false, "Orchestrator", ConnectionType.SQS)
             verifySecurityHotspotTabContainsMessages("The project is not bound, please bind it to SonarQube 9.7+ or SonarCloud")
 
             // Review Security Hotspot Test
-            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, true, "Orchestrator")
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
             verifySecurityHotspotTreeContainsMessages("Make sure using this hardcoded IP address is safe here.")
             openSecurityHotspotReviewDialogFromList("Make sure using this hardcoded IP address is safe here.")
             changeSecurityHotspotStatusAndPressChange("Fixed")
             verifySecurityHotspotStatusWasSuccessfullyChanged()
-            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, false, "Orchestrator")
+            enableConnectedModeFromSecurityHotspotPanel(SECURITY_HOTSPOT_PROJECT_KEY, false, "Orchestrator", ConnectionType.SQS)
         }
 
     }
@@ -247,7 +248,7 @@ class OpenInIdeTests : BaseUiTest() {
             )
             acceptNewSCAutomatedConnection()
             verifyIssueOpened()
-            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "sonarlint-it")
+            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "sonarlint-it", ConnectionType.SQC_EU)
         }
 
         @Test
@@ -255,7 +256,7 @@ class OpenInIdeTests : BaseUiTest() {
             openExistingProject(ISSUE_PROJECT_KEY)
 
             // Issue Analysis Test
-            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator")
+            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
             openFile("src/main/java/foo/Foo.java", "Foo.java")
             verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
 

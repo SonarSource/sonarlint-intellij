@@ -45,6 +45,7 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ver
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
 import org.sonarlint.intellij.its.tests.domain.SharedConfigurationTests.Companion.importConfiguration
 import org.sonarlint.intellij.its.tests.domain.SharedConfigurationTests.Companion.shareConfiguration
+import org.sonarlint.intellij.its.utils.ConnectionType
 import org.sonarlint.intellij.its.utils.OpeningUtils.closeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
@@ -208,7 +209,7 @@ class ConfigurationTests : BaseUiTest() {
                 "No findings to display",
                 "This file is not automatically analyzed",
             )
-            enableConnectedModeFromCurrentFilePanel(SCALA_PROJECT_KEY, false, "Orchestrator")
+            enableConnectedModeFromCurrentFilePanel(SCALA_PROJECT_KEY, false, "Orchestrator", ConnectionType.SQS)
         }
 
     }
@@ -237,7 +238,7 @@ class ConfigurationTests : BaseUiTest() {
             openExistingProject("shared-connected-mode")
             bindProjectAndModuleInFileSettings("shared-connected-mode-module", SHARED_CONNECTED_MODE_KEY, SHARED_CONNECTED_MODE_MODULE_KEY)
             shareConfiguration()
-            enableConnectedModeFromCurrentFilePanel(SHARED_CONNECTED_MODE_KEY, false, "Orchestrator")
+            enableConnectedModeFromCurrentFilePanel(SHARED_CONNECTED_MODE_KEY, false, "Orchestrator", ConnectionType.SQS)
             clearConnections()
             closeProject()
             openExistingProject("shared-connected-mode", copyProjectFiles = false)
@@ -268,7 +269,7 @@ class ConfigurationTests : BaseUiTest() {
         fun `should create new connection from tool window and autofill created connection`() = uiTest {
             addSonarCloudConnection(sonarCloudToken, "Initial connection")
             openExistingProject("sli-java-issues")
-            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, true, "Initial connection")
+            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, true, "Initial connection", ConnectionType.SQC_EU)
             bindProjectFromToolWindow(SONARCLOUD_ISSUE_PROJECT_KEY, "New Connection Name", sonarCloudToken, "Initial connection")
         }
     }
@@ -308,7 +309,7 @@ class ConfigurationTests : BaseUiTest() {
             addSonarCloudConnection(sonarCloudToken, "SonarCloud-IT")
 
             openExistingProject("sli-java-issues")
-            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, true, "SonarCloud-IT")
+            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, true, "SonarCloud-IT", ConnectionType.SQC_EU)
             openFile("src/main/java/foo/Foo.java", "Foo.java")
             verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
 
@@ -317,7 +318,7 @@ class ConfigurationTests : BaseUiTest() {
             confirm()
             verifyIssueStatusWasSuccessfullyChanged()
 
-            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "SonarCloud-IT")
+            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "SonarCloud-IT", ConnectionType.SQC_EU)
         }
 
     }

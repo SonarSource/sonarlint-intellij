@@ -30,6 +30,7 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.utils.ConnectionType
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 import org.sonarlint.intellij.its.utils.OrchestratorUtils.defaultBuilderEnv
@@ -84,7 +85,7 @@ class IaCTests : BaseUiTest() {
         openFile(filePath)
         verifyCurrentFileTabContainsMessages("No findings to display")
 
-        enableConnectedModeFromCurrentFilePanel(projectKey, true, "Orchestrator")
+        enableConnectedModeFromCurrentFilePanel(projectKey, true, "Orchestrator", ConnectionType.SQS)
 
         verifyCurrentFileTabContainsMessages(*expectedMessages)
     }

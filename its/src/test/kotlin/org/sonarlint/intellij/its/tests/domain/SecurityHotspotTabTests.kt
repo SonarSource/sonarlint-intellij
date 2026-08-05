@@ -27,6 +27,7 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.notification
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.utils.ConnectionType
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.disableConnectedMode
 import org.sonarlint.intellij.its.utils.ProjectBindingUtils.enableConnectedMode
 
@@ -104,7 +105,7 @@ class SecurityHotspotTabTests {
             }
         }
 
-        fun enableConnectedModeFromSecurityHotspotPanel(projectKey: String, enabled: Boolean, connectionName: String) {
+        fun enableConnectedModeFromSecurityHotspotPanel(projectKey: String, enabled: Boolean, connectionName: String, connectionType: ConnectionType) {
             with(remoteRobot) {
                 idea {
                     toolWindow {
@@ -114,7 +115,7 @@ class SecurityHotspotTabTests {
                         }
                     }
                     if (enabled) {
-                        enableConnectedMode(projectKey, connectionName)
+                        enableConnectedMode(projectKey, connectionName, connectionType)
                     } else {
                         disableConnectedMode()
                     }

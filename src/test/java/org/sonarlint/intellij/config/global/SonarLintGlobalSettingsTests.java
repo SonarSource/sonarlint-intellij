@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 class SonarLintGlobalSettingsTests {
 
-  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 15;
+  private static final int EXPECTED_NON_STATIC_FIELD_COUNT = 14;
   private static final String RULE = "rule";
   private static final String RULE1 = "rule1";
   private static final String PARAM = "param";
@@ -154,7 +154,6 @@ class SonarLintGlobalSettingsTests {
     original.setFocusOnNewCode(true);
     original.setPromotionDisabled(true);
     original.setAutoTrigger(false);
-    original.setRegionEnabled(true);
     original.setNodejsPath("/usr/local/node");
     original.setHasWalkthroughRunOnce(true);
     original.setSecretsNeverBeenAnalysed(false);
@@ -170,7 +169,6 @@ class SonarLintGlobalSettingsTests {
     assertThat(copy.isFocusOnNewCode()).isEqualTo(original.isFocusOnNewCode());
     assertThat(copy.isPromotionDisabled()).isEqualTo(original.isPromotionDisabled());
     assertThat(copy.isAutoTrigger()).isEqualTo(original.isAutoTrigger());
-    assertThat(copy.isRegionEnabled()).isEqualTo(original.isRegionEnabled());
     assertThat(copy.getNodejsPath()).isEqualTo(original.getNodejsPath());
     assertThat(copy.hasWalkthroughRunOnce()).isEqualTo(original.hasWalkthroughRunOnce());
     assertThat(copy.isSecretsNeverBeenAnalysed()).isEqualTo(original.isSecretsNeverBeenAnalysed());
