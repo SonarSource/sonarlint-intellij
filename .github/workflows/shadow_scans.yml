@@ -60,7 +60,7 @@ jobs:
         with:
           version: 2025.9.12
 
-      - uses: SonarSource/ci-github-actions/build-gradle@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+      - uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         env:
           IDEA_HOME: ${{ env.IDEA_2024_DIR }}
           CLION_HOME: ${{ env.CLION_2024_DIR }}
