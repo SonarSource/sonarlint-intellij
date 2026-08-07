@@ -41,8 +41,8 @@ import org.sonarlint.intellij.util.FixPromptBuilder
  * Works for both the Current File and Report tabs.
  */
 class GenerateFixPromptAction : AnAction(
-    "Copy Fix Prompt",
-    "Generate a prompt to fix all displayed findings and copy it to the clipboard",
+    ACTION_TEXT,
+    ACTION_DESCRIPTION,
     SonarLintIcons.SPARKLE_GUTTER_ICON
 ), DumbAware {
 
@@ -73,6 +73,12 @@ class GenerateFixPromptAction : AnAction(
         }
         val findings = getDisplayedFindingsContext(project)?.findings
         e.presentation.isEnabled = findings?.isNotEmpty() == true
+        // Icon-only in the tool window toolbar to avoid pushing actions off-screen on narrow layouts.
+        if (TOOL_WINDOW_ID == e.place) {
+            e.presentation.setText(null)
+        } else {
+            e.presentation.setText(ACTION_TEXT)
+        }
     }
 
     private fun countFindings(findings: FilteredFindings): Int {
@@ -90,5 +96,11 @@ class GenerateFixPromptAction : AnAction(
             is ReportPanel -> FindingsContext(component.getDisplayedFindings(), "Report tab")
             else -> null
         }
+    }
+
+    companion object {
+        private const val ACTION_TEXT = "Copy Fix Prompt"
+        private const val ACTION_DESCRIPTION =
+            "Generate a prompt to fix all displayed findings and copy it to the clipboard"
     }
 }

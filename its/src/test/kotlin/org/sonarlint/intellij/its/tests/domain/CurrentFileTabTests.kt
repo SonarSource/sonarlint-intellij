@@ -151,7 +151,9 @@ class CurrentFileTabTests {
                     toolWindow {
                         tabTitleContains("Findings") { select() }
                         content("CurrentFilePanel") {
-                            toolBarButton("Copy Fix Prompt").click()
+                            toolBarButtonByTooltip(
+                                "Generate a prompt to fix all displayed findings and copy it to the clipboard"
+                            ).click()
                         }
                     }
                     notification("Fix prompt copied to clipboard")
