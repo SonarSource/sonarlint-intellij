@@ -1,5 +1,5 @@
 [versions]
-sonarlint-core = "11.9.0.86097"
+sonarlint-core = "11.9.0.86111"
 
 sonar-java = "8.37.0.45887"
 sonar-java-symbolic = "8.16.4.1912"
