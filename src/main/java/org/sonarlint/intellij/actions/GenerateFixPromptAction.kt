@@ -41,7 +41,7 @@ import org.sonarlint.intellij.util.FixPromptBuilder
  * Works for both the Current File and Report tabs.
  */
 class GenerateFixPromptAction : AnAction(
-    "Generate Fix Prompt",
+    "Copy Fix Prompt",
     "Generate a prompt to fix all displayed findings and copy it to the clipboard",
     SonarLintIcons.SPARKLE_GUTTER_ICON
 ), DumbAware {
