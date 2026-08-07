@@ -19,11 +19,13 @@
  */
 package org.sonarlint.intellij.util
 
+import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.vfs.VirtualFile
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
+import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.sca.aDependencyRisk
 import org.sonarlint.intellij.ui.filter.FilteredFindings
@@ -34,7 +36,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import org.sonarsource.sonarlint.core.rpc.protocol.common.StandardModeDetails
 
-class FixPromptBuilderTests {
+class FixPromptBuilderTests : AbstractSonarLintLightTests() {
 
     @Test
     fun `build includes header and finding details`() {
@@ -72,6 +74,29 @@ class FixPromptBuilderTests {
         assertThat(prompt).doesNotContain("## Finding")
     }
 
+    @Test
+    fun `build reports 1-based line and column matching editor coordinates`() {
+        val psiFile = myFixture.configureByText("Foo.java", "class Foo {\n  int x;\n}\n")
+        val document = myFixture.getDocument(psiFile)
+        val startOffset = document.text.indexOf("int")
+        val range = document.createRangeMarker(startOffset, startOffset + 3)
+        val issue = anIssue(
+            psiFile.virtualFile,
+            message = "Remove this unused local variable.",
+            ruleKey = "java:S1481",
+            severity = IssueSeverity.MINOR,
+            range = range
+        )
+
+        val prompt = FixPromptBuilder.build(
+            FilteredFindings(listOf(issue), emptyList(), emptyList(), emptyList()),
+            "Current File tab"
+        )
+
+        assertThat(prompt).contains("Line: 2")
+        assertThat(prompt).contains("Column: 3")
+    }
+
     private fun mockFile(path: String): VirtualFile {
         val file = Mockito.mock(VirtualFile::class.java)
         `when`(file.path).thenReturn(path)
@@ -84,11 +109,12 @@ class FixPromptBuilderTests {
         message: String,
         ruleKey: String,
         severity: IssueSeverity,
+        range: RangeMarker? = null,
     ): LiveIssue {
         val dto = Mockito.mock(RaisedIssueDto::class.java)
         `when`(dto.primaryMessage).thenReturn(message)
         `when`(dto.ruleKey).thenReturn(ruleKey)
         `when`(dto.severityMode).thenReturn(Either.forLeft(StandardModeDetails(severity, RuleType.BUG)))
-        return LiveIssue(null, dto, file, emptyList())
+        return LiveIssue(null, dto, file, range, null, emptyList())
     }
 }

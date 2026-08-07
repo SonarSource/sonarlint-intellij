@@ -48,7 +48,7 @@ class StandaloneIdeaTests : BaseUiTest() {
         openExistingProject("sli-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-        copyFixPromptFromCurrentFilePanel()
+        copyFixPromptFromCurrentFilePanel("Remove this empty class, write its code or make it an \"interface\".")
     }
 
     @Test

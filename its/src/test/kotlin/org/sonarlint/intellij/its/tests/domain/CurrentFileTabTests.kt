@@ -145,16 +145,19 @@ class CurrentFileTabTests {
             }
         }
 
-        fun copyFixPromptFromCurrentFilePanel() {
+        fun copyFixPromptFromCurrentFilePanel(issueMessage: String) {
             with(remoteRobot) {
                 idea {
                     toolWindow {
                         tabTitleContains("Findings") { select() }
                         content("CurrentFilePanel") {
-                            toolBarButtonByTooltip(
-                                "Generate a prompt to fix all displayed findings and copy it to the clipboard"
-                            ).click()
+                            val issueElement = findText(issueMessage)
+                            issueElement.click()
+                            issueElement.rightClick()
                         }
+                    }
+                    actionMenuItem("Copy Fix Prompt") {
+                        click()
                     }
                     notification("Fix prompt copied to clipboard")
                 }

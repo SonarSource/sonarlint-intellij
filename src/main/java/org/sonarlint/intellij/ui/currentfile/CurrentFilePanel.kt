@@ -340,7 +340,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         setToolbarSections(listOf(
             listOf(actions.analyzeCurrentFileAction(), actions.cancelAnalysis()),
             listOf(actions.analyzeChangedFiles(), actions.analyzeAllFiles()),
-            listOf(actions.expandAllTreesAction(), actions.collapseAllTreesAction(), actions.generateFixPromptAction()),
+            listOf(actions.generateFixPromptAction()),
             listOf(actions.configure(), actions.clearIssues())
         ))
     }

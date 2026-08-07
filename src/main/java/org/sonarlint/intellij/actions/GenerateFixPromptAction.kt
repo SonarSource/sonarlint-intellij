@@ -46,7 +46,8 @@ class GenerateFixPromptAction : AnAction(
     SonarLintIcons.SPARKLE_GUTTER_ICON
 ), DumbAware {
 
-    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
+    // Tool window content must be read on the EDT, matching ExpandAllTreesAction/CollapseAllTreesAction.
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
@@ -75,9 +76,11 @@ class GenerateFixPromptAction : AnAction(
         e.presentation.isEnabled = findings?.isNotEmpty() == true
         // Icon-only in the tool window toolbar to avoid pushing actions off-screen on narrow layouts.
         if (TOOL_WINDOW_ID == e.place) {
-            e.presentation.setText(null)
+            e.presentation.setText(null, false)
+            e.presentation.setDescription(ACTION_DESCRIPTION)
         } else {
             e.presentation.setText(ACTION_TEXT)
+            e.presentation.setDescription(ACTION_DESCRIPTION)
         }
     }
 

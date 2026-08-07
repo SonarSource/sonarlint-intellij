@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.actions
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import org.assertj.core.api.Assertions.assertThat
@@ -40,6 +41,11 @@ class GenerateFixPromptActionTests : AbstractSonarLintLightTests() {
         presentation = Presentation()
         mockEvent = mock(AnActionEvent::class.java)
         `when`(mockEvent.presentation).thenReturn(presentation)
+    }
+
+    @Test
+    fun `update runs on the EDT because it reads tool window content`() {
+        assertThat(action.actionUpdateThread).isEqualTo(ActionUpdateThread.EDT)
     }
 
     @Test

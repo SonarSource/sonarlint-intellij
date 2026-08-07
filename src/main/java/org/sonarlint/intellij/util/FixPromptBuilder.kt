@@ -245,7 +245,7 @@ object FixPromptBuilder {
             val document = FileDocumentManager.getInstance().getCachedDocument(file) ?: return@runReadActionSafely
             val line = document.getLineNumber(rangeMarker.startOffset)
             val column = rangeMarker.startOffset - document.getLineStartOffset(line)
-            result = Coordinates(line + 1, column)
+            result = Coordinates(line + 1, column + 1)
         }
         return result
     }
