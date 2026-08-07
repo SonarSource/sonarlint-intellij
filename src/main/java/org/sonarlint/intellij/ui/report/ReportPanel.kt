@@ -250,7 +250,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         val sections = listOf(
             listOf(ShowReportFiltersAction(this@ReportPanel)),
             listOf(sonarLintActions.analyzeChangedFiles(), sonarLintActions.analyzeAllFiles()),
-            listOf(sonarLintActions.expandAllTreesAction(), sonarLintActions.collapseAllTreesAction(), sonarLintActions.generateFixPromptAction()),
+            listOf(sonarLintActions.generateFixPromptAction()),
             listOf(sonarLintActions.configure())
         )
 

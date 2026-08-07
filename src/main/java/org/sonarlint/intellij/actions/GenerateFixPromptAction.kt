@@ -75,9 +75,11 @@ class GenerateFixPromptAction : AnAction(
         e.presentation.isEnabled = findings?.isNotEmpty() == true
         // Icon-only in the tool window toolbar to avoid pushing actions off-screen on narrow layouts.
         if (TOOL_WINDOW_ID == e.place) {
-            e.presentation.setText(null)
+            e.presentation.setText(null, false)
+            e.presentation.setDescription(ACTION_DESCRIPTION)
         } else {
             e.presentation.setText(ACTION_TEXT)
+            e.presentation.setDescription(ACTION_DESCRIPTION)
         }
     }
 
