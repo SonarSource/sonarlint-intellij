@@ -47,7 +47,6 @@ class StandaloneIdeaTests : BaseUiTest() {
     fun should_copy_fix_prompt_from_current_file_tab() = uiTest {
         openExistingProject("sli-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
-        analyzeCurrentFileFromToolWindow()
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
         copyFixPromptFromCurrentFilePanel()
     }
