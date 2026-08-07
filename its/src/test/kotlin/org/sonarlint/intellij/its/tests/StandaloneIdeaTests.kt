@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.analyzeCurrentFileFromToolWindow
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.copyFixPromptFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.closeWalkthrough
@@ -41,6 +42,15 @@ import org.sonarlint.intellij.its.utils.optionalStep
 @Tag("Standalone")
 @EnabledIf("isIdeaCommunity")
 class StandaloneIdeaTests : BaseUiTest() {
+
+    @Test
+    fun should_copy_fix_prompt_from_current_file_tab() = uiTest {
+        openExistingProject("sli-java-issues")
+        openFile("src/main/java/foo/Foo.java", "Foo.java")
+        analyzeCurrentFileFromToolWindow()
+        verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
+        copyFixPromptFromCurrentFilePanel()
+    }
 
     @Test
     fun should_exclude_rule_and_focus_on_new_code() = uiTest {
