@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.components.JBCheckBox;
@@ -127,8 +128,10 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
     nodeJsPath = new JBTextField();
     var nodeJsPathWithBrowse = new TextFieldWithBrowseButton(nodeJsPath);
     nodeJsPathWithBrowse.setToolTipText(NODE_JS_TOOLTIP);
-    var fileChooser = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
-    nodeJsPathWithBrowse.addBrowseFolderListener("Select Node.js Binary", "Select Node.js binary to be used by SonarQube for IDE", null, fileChooser);
+    var fileChooser = FileChooserDescriptorFactory.createSingleLocalFileDescriptor()
+      .withTitle("Select Node.js Binary")
+      .withDescription("Select Node.js binary to be used by SonarQube for IDE");
+    nodeJsPathWithBrowse.addBrowseFolderListener(new TextBrowseFolderListener(fileChooser));
     optionsPanel.add(nodeJsPathWithBrowse, new GridBagConstraints(1, gridy, 1, 1, 1.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
 

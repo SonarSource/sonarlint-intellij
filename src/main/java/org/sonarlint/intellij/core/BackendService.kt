@@ -378,7 +378,7 @@ class BackendService : Disposable {
                 null,
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
-                LanguageSpecificRequirements(jsTsRequirements, null),
+                LanguageSpecificRequirements(jsTsRequirements, false),
                 getGlobalSettings().isAutoTrigger,
                 null,
                 LogLevel.DEBUG
