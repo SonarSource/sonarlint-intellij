@@ -19,13 +19,14 @@
  */
 package org.sonarlint.intellij.core
 
-import com.intellij.ide.plugins.PluginManager
-import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.fileTypes.FileTypeRegistry
+import com.intellij.openapi.fileTypes.UnknownFileType
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.EnumSet
 import org.sonarlint.intellij.SonarLintPlugin
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
@@ -188,6 +189,18 @@ object EnabledLanguages {
     @JvmStatic
     fun isClionEnabled() = isIdeModuleEnabled(CLION_MODULE_ID)
 
-    private fun isIdeModuleEnabled(pluginId: String) =
-        PluginManager.getInstance().findEnabledPlugin(PluginId.getId(pluginId)) != null
+    private fun isIdeModuleEnabled(pluginId: String): Boolean {
+        return when (pluginId) {
+            RIDER_MODULE_ID -> SonarLintUtils.isRider()
+            CLION_MODULE_ID -> SonarLintUtils.isCLion()
+            JAVA_MODULE_ID -> isFileTypeRegistered("JAVA")
+            GO_PLUGIN_ID -> isFileTypeRegistered("Go")
+            JUPYTER_PLUGIN_ID -> FileTypeRegistry.getInstance().getFileTypeByExtension("ipynb") !is UnknownFileType
+            DATABASE_PLUGIN_ID -> isFileTypeRegistered("SQL")
+            else -> false
+        }
+    }
+
+    private fun isFileTypeRegistered(fileTypeName: String) =
+        FileTypeRegistry.getInstance().findFileTypeByName(fileTypeName) != null
 }
