@@ -41,7 +41,6 @@ jobs:
         id: secrets
         uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
         with:
-          # TODO(SLI-2267): replace the jetbrains-marketplace vault path/key once the permanent token is available
           secrets: |
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-public-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
             development/team/sonarlint/kv/data/jetbrains-marketplace token | JETBRAINS_MARKETPLACE_TOKEN;
