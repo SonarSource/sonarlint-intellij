@@ -22,7 +22,7 @@ runs:
       with:
         secrets: |
           development/artifactory/token/{REPO_OWNER_NAME_DASH}-public-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
-          development/team/sonarlint/kv/data/jetbrains-marketplace token | JETBRAINS_MARKETPLACE_TOKEN;
+          development/team/sonarlint/kv/data/jetbrains-marketplace-token token | JETBRAINS_MARKETPLACE_TOKEN;
 
     - name: Download plugin from Artifactory
       shell: bash
