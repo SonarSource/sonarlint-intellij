@@ -23,8 +23,6 @@ jobs:
       dryRun: ${{ inputs.dryRun }}
       slackChannel: C02E6L5C01H # squad-devex-private
 
-  # Upload the promoted plugin zip to the JetBrains Marketplace via their Plugin Upload API:
-  # https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html
   deploy_to_jetbrains_marketplace:
     if: ${{ !inputs.dryRun }}
     name: Deploy to JetBrains Marketplace

@@ -1,3 +1,5 @@
+# Downloads the promoted plugin zip from Repox and uploads it via the JetBrains Plugin Upload API:
+# https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html
 name: Upload to JetBrains Marketplace
 description: Download the plugin zip from Repox and upload it to the JetBrains Marketplace
 author: SonarSource
