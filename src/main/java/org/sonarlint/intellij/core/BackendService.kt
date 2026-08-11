@@ -378,6 +378,7 @@ class BackendService : Disposable {
                 null,
                 nonDefaultRpcRulesConfigurationByKey,
                 getGlobalSettings().isFocusOnNewCode,
+                // false is equivalent to the previous deprecated ctor with null OmnisharpRequirementsDto
                 LanguageSpecificRequirements(jsTsRequirements, false),
                 getGlobalSettings().isAutoTrigger,
                 null,

@@ -20,32 +20,64 @@
 package org.sonarlint.intellij;
 
 import com.intellij.ide.plugins.cl.PluginAwareClassLoader;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.extensions.PluginDescriptor;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import org.jetbrains.annotations.NotNull;
+import java.nio.file.Paths;
+import org.jetbrains.annotations.Nullable;
 
 @Service(Service.Level.APP)
 public final class SonarLintPlugin {
 
-  private PluginDescriptor plugin;
+  private static final String TEST_VERSION = "test";
+
+  private @Nullable PluginDescriptor plugin;
 
   public String getVersion() {
-    return getPlugin().getVersion();
+    var descriptor = resolveDescriptor();
+    return descriptor != null ? descriptor.getVersion() : TEST_VERSION;
   }
 
   public Path getPath() {
-    return getPlugin().getPluginPath();
+    var descriptor = resolveDescriptor();
+    if (descriptor != null) {
+      return descriptor.getPluginPath();
+    }
+    if (ApplicationManager.getApplication().isUnitTestMode()) {
+      return resolvePathFromTestPluginsDir();
+    }
+    throw new IllegalStateException("Cannot find SonarLint plugin path");
   }
 
-  private @NotNull PluginDescriptor getPlugin() {
+  private @Nullable PluginDescriptor resolveDescriptor() {
     if (plugin == null) {
       var classLoader = getClass().getClassLoader();
-      if (!(classLoader instanceof PluginAwareClassLoader pluginClassLoader)) {
-        throw new IllegalStateException("Cannot find SonarLint plugin descriptor");
+      if (classLoader instanceof PluginAwareClassLoader pluginClassLoader) {
+        plugin = pluginClassLoader.getPluginDescriptor();
       }
-      plugin = pluginClassLoader.getPluginDescriptor();
     }
     return plugin;
+  }
+
+  /**
+   * In unit tests the plugin classes are not loaded by {@link PluginAwareClassLoader},
+   * but the plugin is still installed under the test sandbox plugins directory.
+   */
+  private static Path resolvePathFromTestPluginsDir() {
+    var pluginsPath = Paths.get(PathManager.getPluginsPath());
+    try (var stream = Files.list(pluginsPath)) {
+      return stream
+        .filter(Files::isDirectory)
+        .filter(path -> Files.isDirectory(path.resolve("sloop")))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("Cannot find SonarLint plugin path in test sandbox: " + pluginsPath));
+    } catch (IOException e) {
+      throw new UncheckedIOException("Cannot list test plugins directory: " + pluginsPath, e);
+    }
   }
 }
