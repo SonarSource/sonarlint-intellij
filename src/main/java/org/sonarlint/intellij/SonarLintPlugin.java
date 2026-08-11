@@ -40,7 +40,13 @@ public final class SonarLintPlugin {
 
   public String getVersion() {
     var descriptor = resolveDescriptor();
-    return descriptor != null ? descriptor.getVersion() : TEST_VERSION;
+    if (descriptor != null) {
+      return descriptor.getVersion();
+    }
+    if (ApplicationManager.getApplication().isUnitTestMode()) {
+      return TEST_VERSION;
+    }
+    throw new IllegalStateException("Cannot find SonarLint plugin descriptor");
   }
 
   public Path getPath() {
