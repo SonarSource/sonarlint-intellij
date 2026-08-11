@@ -1,5 +1,5 @@
 name: sonar-release
-# Triggered by the SonarSource IDE release action (publish-github-release) via workflow_dispatch
+
 on:
   workflow_dispatch:
     inputs:
@@ -32,38 +32,9 @@ jobs:
     runs-on: github-ubuntu-latest-s
     permissions:
       id-token: write
-    env:
-      ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
-      # Numeric plugin ID from https://plugins.jetbrains.com/plugin/7973-sonarlint
-      PLUGIN_ID: "7973"
     steps:
-      - name: Get vault secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: ./.github/actions/upload-to-jetbrains-marketplace
         with:
-          secrets: |
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-public-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
-            development/team/sonarlint/kv/data/jetbrains-marketplace token | JETBRAINS_MARKETPLACE_TOKEN;
-
-      - name: Download plugin from Artifactory
-        env:
-          VERSION: ${{ inputs.version }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
-        run: |
-          ARTIFACT_NAME="sonarlint-intellij-${VERSION}.zip"
-          ARTIFACT_URL="${ARTIFACTORY_URL}/sonarsource/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${VERSION}/${ARTIFACT_NAME}"
-          echo "Downloading ${ARTIFACT_URL}"
-          curl -sSf -o "${ARTIFACT_NAME}" -H "Authorization: Bearer ${ARTIFACTORY_ACCESS_TOKEN}" "${ARTIFACT_URL}"
-          echo "ARTIFACT_FILE=${ARTIFACT_NAME}" >> "${GITHUB_ENV}"
-          ls -lh "${ARTIFACT_NAME}"
-
-      - name: Upload plugin to JetBrains Marketplace
-        env:
-          JETBRAINS_MARKETPLACE_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).JETBRAINS_MARKETPLACE_TOKEN }}
-        run: |
-          echo "Uploading ${ARTIFACT_FILE} to JetBrains Marketplace (pluginId=${PLUGIN_ID})"
-          curl -sSf -i \
-            --header "Authorization: Bearer ${JETBRAINS_MARKETPLACE_TOKEN}" \
-            -F "pluginId=${PLUGIN_ID}" \
-            -F "file=@${ARTIFACT_FILE}" \
-            https://plugins.jetbrains.com/api/updates/upload
+          version: ${{ inputs.version }}
