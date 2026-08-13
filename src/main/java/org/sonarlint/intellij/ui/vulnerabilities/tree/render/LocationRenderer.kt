@@ -21,9 +21,9 @@ package org.sonarlint.intellij.ui.vulnerabilities.tree.render
 
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.util.ui.JBUI
-import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.finding.FragmentLocation
 import org.sonarlint.intellij.finding.Location
+import org.sonarlint.intellij.ui.nodes.AbstractNode
 import org.sonarlint.intellij.ui.tree.NodeRenderer
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
 
@@ -48,17 +48,9 @@ object LocationRenderer : NodeRenderer<FragmentLocation> {
 
     private fun issueCoordinates(location: Location): String {
         if (!location.exists()) {
-            return "(-, -) "
+            return AbstractNode.UNKNOWN_RANGE_COORDINATES
         }
-
-        return location.file?.let {
-            computeReadActionSafely(it) {
-                val rangeMarker = location.range!!
-                val doc = rangeMarker.document
-                val line = doc.getLineNumber(rangeMarker.startOffset)
-                val offset = rangeMarker.startOffset - doc.getLineStartOffset(line)
-                "(%d, %d) ".format(line + 1, offset)
-            }
-        } ?: "(-, -) "
+        // Paint runs on the EDT. Use the in-memory range-marker document; do not load or block.
+        return AbstractNode.formatRangeMarker(location.file, location.range)
     }
 }

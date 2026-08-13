@@ -33,8 +33,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PrimaryLocationNodeTests extends AbstractSonarLintLightTests {
+  private final RangeMarker range = mock(RangeMarker.class);
   private PrimaryLocationNode node;
-  private RangeMarker range = mock(RangeMarker.class);
 
   @BeforeEach
   void prepare() {
@@ -43,6 +43,7 @@ class PrimaryLocationNodeTests extends AbstractSonarLintLightTests {
     when(range.isValid()).thenReturn(true);
     when(range.getStartOffset()).thenReturn(3);
     when(range.getEndOffset()).thenReturn(10);
+    when(range.getDocument()).thenReturn(myFixture.getDocument(myFixture.getFile()));
   }
 
   @Test

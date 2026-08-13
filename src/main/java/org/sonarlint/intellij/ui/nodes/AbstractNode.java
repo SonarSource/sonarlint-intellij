@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -89,7 +88,7 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
     }
   }
 
-  public String formatRangeMarker(@Nullable VirtualFile file, @Nullable RangeMarker rangeMarker) {
+  public static String formatRangeMarker(@Nullable VirtualFile file, @Nullable RangeMarker rangeMarker) {
     if (rangeMarker == null) {
       return "(0, 0) ";
     }
@@ -98,13 +97,9 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
       return UNKNOWN_RANGE_COORDINATES;
     }
 
-    var cachedDocument = FileDocumentManager.getInstance().getCachedDocument(file);
-    if (cachedDocument == null) {
-      return UNKNOWN_RANGE_COORDINATES;
-    }
-
-    var line = cachedDocument.getLineNumber(rangeMarker.getStartOffset());
-    var offset = rangeMarker.getStartOffset() - cachedDocument.getLineStartOffset(line);
+    var document = rangeMarker.getDocument();
+    var line = document.getLineNumber(rangeMarker.getStartOffset());
+    var offset = rangeMarker.getStartOffset() - document.getLineStartOffset(line);
     return String.format("(%d, %d) ", line + 1, offset);
   }
 
