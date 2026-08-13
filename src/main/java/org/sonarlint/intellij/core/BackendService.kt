@@ -36,7 +36,6 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
-import com.intellij.ui.jcef.JBCefApp
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
@@ -465,7 +464,7 @@ class BackendService : Disposable {
     }
 
     private fun getTelemetryConstantAttributes() =
-        TelemetryClientConstantAttributesDto("idea", "SonarLint IntelliJ", getService(SonarLintPlugin::class.java).version, getIdeVersionForTelemetry(), mapOf("intellij" to mapOf("jcefSupported" to JBCefApp.isSupported())))
+        TelemetryClientConstantAttributesDto("idea", "SonarLint IntelliJ", getService(SonarLintPlugin::class.java).version, getIdeVersionForTelemetry(), mapOf("intellij" to mapOf("jcefSupported" to JcefAvailability.isSupported())))
 
     private fun getIdeVersionForTelemetry(): String {
         var ideVersion: String
