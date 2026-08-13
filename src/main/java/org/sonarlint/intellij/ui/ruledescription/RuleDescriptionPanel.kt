@@ -35,8 +35,8 @@ import java.awt.BorderLayout
 import java.awt.Font
 import java.util.UUID
 import javax.swing.DefaultComboBoxModel
-import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.ui.codefix.CodeFixTabPanel
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleContextualSectionDto
@@ -54,10 +54,19 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     }
 
     fun openCodeFixTabAndGenerate() {
-        sectionsTabs.let {
-            it!!.selectedIndex = it.indexOfTab(AI_CODEFIX_TITLE)
+        val tabs = sectionsTabs ?: return
+        val codeFixTabIndex = tabs.indexOfTab(AI_CODEFIX_TITLE)
+        if (codeFixTabIndex < 0) {
+            return
         }
+        tabs.selectedIndex = codeFixTabIndex
         runOnPooledThread(project) { codeFixTab?.loadSuggestion() }
+    }
+
+    override fun removeAll() {
+        super.removeAll()
+        sectionsTabs = null
+        codeFixTab = null
     }
 
     fun addMonolithWithCodeFix(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
