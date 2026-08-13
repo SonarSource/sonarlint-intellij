@@ -65,7 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>12.7 - Fix rule configuration panel not updating the active rules without a restart. More rules and FPs fixes for JS, extend JavaScript test rules to Bun and node:test. Improvements and fewer FPs in secrets. New Pytest/Pydantic rules, bugfixes for Python. </li>
+        <li>12.7 - Fix service startup failure on IntelliJ 2026.2 when the JCEF module is unavailable. Fix rule configuration panel not updating the active rules without a restart. More rules and FPs fixes for JS, extend JavaScript test rules to Bun and node:test. Improvements and fewer FPs in secrets. New Pytest/Pydantic rules, bugfixes for Python. </li>
         <li>12.6 - Faster issue highlighting on large files. 5 new rules for Python testing frameworks. Fewer FPs for PHP and secrets detection.</li>
         <li>12.5 - Add support for Shell and Azure Pipelines. Migrate Security Hotspots to issues for Kotlin, IaC and Ruby. Support of Java 26. 12 new rules for JS/TS testing frameworks and Vue. 5 new rules for Python.</li>
         <li>12.4 - Fixed IDE UI freezes and duplicate findings in Rider. 3 new JUnit 5 rules for Java. New security and accessibility rules for HTML. Improved Python analysis. Fewer FPs for Java, PHP, Go, and HTML.</li>
@@ -239,6 +239,7 @@
   <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->
   <depends>com.intellij.modules.lang</depends>
+    <depends optional="true" config-file="plugin-jcef.xml">com.intellij.modules.jcef</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-go.xml">org.jetbrains.plugins.go</depends>
     <depends optional="true" config-file="plugin-plsql.xml">com.intellij.database</depends>
