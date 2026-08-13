@@ -165,6 +165,13 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
                     into(sandboxPluginsDirectory)
                 }
             }
+            // UI-test IDE is not unit-test mode, so the bundled Python plugin refreshes
+            // its PyPI package cache on startup. ITs never use that index; disable it so
+            // the sandbox does not contact pypi.org.
+            copy {
+                from(layout.projectDirectory.dir("idea-config"))
+                into(sandboxConfigDirectory)
+            }
         }
     }
 
