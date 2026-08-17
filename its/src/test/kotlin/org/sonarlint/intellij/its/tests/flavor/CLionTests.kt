@@ -77,7 +77,7 @@ class CLionTests : BaseUiTest() {
             "Found 4 issues",
             "array designators are a C99 extension",
             "Replace this macro by \"const\", \"constexpr\" or an \"enum\".",
-            "Use \"std::array\" or \"std::vector\" instead of a C-style array.",
+            "Replace this C-style array with \"std::vector\" (for dynamic size), or \"std::array\" (for static size)",
             "unused variable 's'"
         )
     }
