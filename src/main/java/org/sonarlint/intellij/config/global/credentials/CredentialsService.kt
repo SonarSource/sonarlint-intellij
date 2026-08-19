@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.global.credentials
 
-import com.intellij.credentialStore.Credentials
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
@@ -124,10 +123,4 @@ class CredentialsService {
         passwordSafe.eraseToken(connection.name)
         passwordSafe.eraseUsernamePassword(connection.name)
     }
-
-    fun saveDogfoodCredentials(username: String?, pass: String?) {
-        PasswordSafe.instance.setDogfoodUsernamePassword(username, pass)
-    }
-
-    fun getDogfoodCredentials(): Credentials? = PasswordSafe.instance.getDogfoodCredentials()
 }

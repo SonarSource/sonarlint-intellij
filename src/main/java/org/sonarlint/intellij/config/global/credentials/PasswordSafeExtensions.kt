@@ -34,10 +34,6 @@ fun PasswordSafe.getUsernamePassword(name: String): Credentials? {
     return get(usernamePasswordAttributes(name))
 }
 
-fun PasswordSafe.getDogfoodCredentials(): Credentials? {
-    return get(dogfoodAttributes())
-}
-
 fun PasswordSafe.eraseToken(name: String) {
     setToken(name, null)
 }
@@ -58,20 +54,12 @@ fun PasswordSafe.setUsernamePassword(name: String, username: String?, password: 
     setUsernamePassword(name, Credentials(username, password))
 }
 
-fun PasswordSafe.setDogfoodUsernamePassword(username: String?, password: String?) {
-    set(dogfoodAttributes(), Credentials(username, password))
-}
-
 private fun tokenAttributes(name: String): CredentialAttributes = CredentialAttributes(
     serviceName(name, "token")
 )
 
 private fun usernamePasswordAttributes(name: String): CredentialAttributes = CredentialAttributes(
     serviceName(name, "usernamePassword")
-)
-
-private fun dogfoodAttributes() = CredentialAttributes(
-    generateServiceName(SUBSYSTEM, "dogfood:usernamePassword")
 )
 
 private fun serviceName(name: String, credentialsType: String): String = generateServiceName(

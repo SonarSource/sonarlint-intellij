@@ -704,47 +704,15 @@ jobs:
 
   dogfood:
     runs-on: sonar-xs
-    name: Update Dogfood Repository
+    name: Deploy dogfood to JetBrains Marketplace
     needs:
-      - build-number
       - build-plugin
       - promote
     if: ${{ github.ref_name == github.event.repository.default_branch }}
-    env:
-      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+      - uses: ./.github/actions/upload-to-jetbrains-marketplace
         with:
-          version: 2025.9.12
-          experimental: true
-
-      - name: Fetch vault secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
-        with:
-          secrets: |
-            development/kv/data/repox url | ARTIFACTORY_URL;
-            development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | ARTIFACTORY_API_KEY;
-
-      - name: Update dogfood repository
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
-          ARTIFACTORY_API_KEY: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_API_KEY }}
-          PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
-        run: |
-          cat > updatePlugins.xml << EOF
-          <plugins>
-            <plugin id="org.sonarlint.idea" url="${ARTIFACTORY_URL}/sonarsource/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip" version="${PROJECT_VERSION}"/>
-          </plugins>
-          EOF
-          cat updatePlugins.xml
-          
-          # Upload to Artifactory using jfrog CLI
-          jf rt u updatePlugins.xml \
-            sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/ \
-            --url "${ARTIFACTORY_URL}" \
-            --access-token "${ARTIFACTORY_API_KEY}" \
-            --build-name "${{ github.event.repository.name }}" \
-            --build-number "$BUILD_NUMBER"
+          version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
+          channel: dogfood
