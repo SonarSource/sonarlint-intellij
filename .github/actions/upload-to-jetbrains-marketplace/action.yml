@@ -47,7 +47,7 @@ runs:
       run: |
         echo "Uploading ${ARTIFACT_FILE} to JetBrains Marketplace (pluginId=${PLUGIN_ID}, channel=${CHANNEL:-Stable})"
         CURL_ARGS=(
-          -sSf -i
+          -sSf
           --header "Authorization: Bearer ${JETBRAINS_MARKETPLACE_TOKEN}"
           -F "pluginId=${PLUGIN_ID}"
           -F "file=@${ARTIFACT_FILE}"
