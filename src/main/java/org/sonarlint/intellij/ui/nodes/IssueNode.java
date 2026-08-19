@@ -156,7 +156,7 @@ public class IssueNode extends FindingNode {
     return issue;
   }
 
-  private String issueCoordinates(LiveIssue issue) {
+  private static String issueCoordinates(LiveIssue issue) {
     return formatRangeMarker(issue.file(), issue.getRange());
   }
 
