@@ -22,12 +22,9 @@ package org.sonarlint.intellij.ui.traffic.light
 import com.intellij.openapi.actionSystem.ActionButtonComponent.NORMAL
 import com.intellij.openapi.actionSystem.ActionButtonComponent.POPPED
 import com.intellij.openapi.actionSystem.ActionButtonComponent.PUSHED
-import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.ex.ActionButtonLook
-import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.ColorKey
 import com.intellij.openapi.editor.ex.util.EditorUtil
@@ -52,7 +49,6 @@ import org.sonarlint.intellij.ui.icons.SonarLintIcons
 
 class SonarLintTrafficLightWidget(
     private val action: AnAction,
-    private val presentation: Presentation,
     private val place: String,
     editor: Editor,
 ) : JPanel() {
@@ -83,9 +79,7 @@ class SonarLintTrafficLightWidget(
             }
 
             override fun mouseReleased(e: MouseEvent?) {
-                val context = ActionToolbar.getDataContextFor(this@SonarLintTrafficLightWidget)
-                val event = AnActionEvent.createFromInputEvent(e, place, presentation, context, false, true)
-                ActionUtil.performActionDumbAwareWithCallbacks(action, event)
+                ActionManager.getInstance().tryToExecute(action, e, this@SonarLintTrafficLightWidget, place, true)
                 mousePressed = false
                 repaint()
             }

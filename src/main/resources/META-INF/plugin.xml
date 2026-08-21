@@ -342,6 +342,8 @@
         <extensionPoint name="filesContributor" interface="org.sonarlint.intellij.common.analysis.FilesContributor" dynamic="true"/>
         <extensionPoint name="vcsProvider" interface="org.sonarlint.intellij.common.vcs.VcsRepoProvider" dynamic="true"/>
         <extensionPoint name="nodeJsProvider" interface="org.sonarlint.intellij.common.nodejs.NodeJsProvider" dynamic="true"/>
+        <extensionPoint name="optionalPluginMarker" interface="org.sonarlint.intellij.common.util.OptionalPluginMarker"
+                        dynamic="true"/>
     </extensionPoints>
 
     <applicationListeners>

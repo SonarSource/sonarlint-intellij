@@ -73,7 +73,6 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         ToolWindowConstants.CURRENT_FILE_TAB_TITLE,
         false);
     content.setCloseable(false);
-    contentManager.addDataProvider(panel);
     contentManager.addContent(content);
   }
 
