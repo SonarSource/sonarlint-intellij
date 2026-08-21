@@ -119,7 +119,7 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
         WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
     }
 
-    var label = new JLabel("Node.js path (20.12 minimum): ");
+    var label = new JLabel("Node.js path (22.12 minimum): ");
     label.setToolTipText(NODE_JS_TOOLTIP);
     optionsPanel.add(label, new GridBagConstraints(0, gridy, 1, 1, 0.0, 0.0,
       WEST, GridBagConstraints.HORIZONTAL, JBUI.emptyInsets(), 0, 0));
