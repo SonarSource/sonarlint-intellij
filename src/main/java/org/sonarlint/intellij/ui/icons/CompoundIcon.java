@@ -23,7 +23,7 @@ import java.awt.Component;
 import java.awt.Graphics;
 import javax.swing.Icon;
 
-public class CompoundIcon implements Icon {
+public final class CompoundIcon implements Icon {
   public enum Axis {
     X_AXIS,
     Y_AXIS,
