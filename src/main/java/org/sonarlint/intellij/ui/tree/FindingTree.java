@@ -35,7 +35,7 @@ import org.sonarlint.intellij.ui.nodes.FileNode;
 
 public abstract class FindingTree extends Tree {
 
-  private final Project project;
+  private final transient Project project;
 
   FindingTree(Project project, TreeModel model) {
     super(model);
