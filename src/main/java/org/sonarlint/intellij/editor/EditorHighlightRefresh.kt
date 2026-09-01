@@ -24,16 +24,15 @@ import org.sonarlint.intellij.editor.EditorHighlightRefresh.Companion.ALL_OPEN_F
 import org.sonarlint.intellij.editor.EditorHighlightRefresh.Companion.NONE
 
 /**
- * Describes whether - and for which files - SonarQube editor highlights should be recomputed after the findings shown
- * in the tool window change.
+ * Describes whether - and for which files - SonarQube editor highlights should be recomputed after on-the-fly
+ * findings change.
  *
  * This replaces the previous `(refreshEditorHighlights, highlightChangedFiles, highlightAllOpenFiles)` boolean triplet
- * that was threaded through several layers. The concrete set of files is resolved lazily by the Current File panel
- * because it depends on the active findings scope (see `CurrentFilePanel.resolveEditorHighlightFiles`):
+ * that was threaded through several layers. The concrete set of files is resolved by [org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator],
+ * not the Current File panel, and [changedFiles] is not gated by findings scope:
  *  - [enabled] `false` ([NONE]): editor highlights are left untouched (e.g. for intermediate analysis results).
  *  - [allOpenFiles] `true` ([ALL_OPEN_FILES]): every open editor is refreshed (e.g. when all findings are cleared).
- *  - [changedFiles]: hint of the files whose findings changed. It is only honored in the "all files" scope; the
- *    "current file" scope always refreshes just the selected file, preserving the pre-existing behaviour.
+ *  - [changedFiles]: files whose findings changed; honored whenever present. When null, every open editor is refreshed.
  */
 data class EditorHighlightRefresh(
     val enabled: Boolean,
@@ -49,7 +48,7 @@ data class EditorHighlightRefresh(
         @JvmField
         val ALL_OPEN_FILES = EditorHighlightRefresh(enabled = true, allOpenFiles = true)
 
-        /** Refresh highlights, resolving the affected files from [changedFiles] and the active findings scope. */
+        /** Refresh highlights, resolving the affected files from [changedFiles] when present, otherwise all open editors. */
         @JvmStatic
         @JvmOverloads
         fun enabled(changedFiles: Collection<VirtualFile>? = null) =

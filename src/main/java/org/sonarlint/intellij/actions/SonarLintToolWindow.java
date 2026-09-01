@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
 import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator;
 import org.sonarlint.intellij.editor.EditorHighlightRefresh;
 import org.sonarlint.intellij.finding.Finding;
 import org.sonarlint.intellij.finding.ShowFinding;
@@ -121,7 +122,8 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void refreshViews(EditorHighlightRefresh highlightRefresh) {
-    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView(highlightRefresh));
+    getService(project, OnTheFlyFindingsCoordinator.class).applyHighlightRefresh(highlightRefresh);
+    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView());
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       runOnUiThread(project, () -> {
@@ -163,9 +165,9 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
-  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, EditorHighlightRefresh highlightRefresh) {
+  public void updateCurrentFileTab(@Nullable VirtualFile selectedFile) {
     this.<CurrentFilePanel>updateCurrentFileTab(
-      panel -> runOnUiThread(project, () -> panel.update(selectedFile, highlightRefresh)));
+      panel -> runOnUiThread(project, () -> panel.update(selectedFile)));
   }
 
   public void showFindingDescription(Finding liveIssue) {

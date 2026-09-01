@@ -40,6 +40,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import org.sonarlint.intellij.actions.MarkAsResolvedAction
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -49,8 +50,8 @@ import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsStore
 import org.sonarsource.sonarlint.core.client.utils.ImpactSeverity
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
 
@@ -238,17 +239,20 @@ class DirectHighlighter @NonInjectable internal constructor(
     )
 
     /**
-     * Builds the list of highlights to render for [file] from the findings currently displayed in the tool window.
-     * Reads the shared snapshot rather than the raw analysis so that editor highlights always match what the user
-     * sees in the Current File tab (same filtering, same resolved/new-code handling).
+     * Builds the list of highlights to render for [file] from unfiltered on-the-fly findings plus taints.
+     * Editor squiggles do not follow Current File tab filters; resolved findings are still skipped, and CAYC styling
+     * is still applied.
      */
     private fun collectHighlightPlans(file: VirtualFile): List<HighlightPlan> {
-        val findings = getService(project, CurrentFileDisplayedFindingsStore::class.java).getFindingsForFile(file)
+        val coordinator = getService(project, OnTheFlyFindingsCoordinator::class.java)
+        val issues = coordinator.getIssuesForFile(file)
+        val hotspots = coordinator.getHotspotsForFile(file)
+        val taints = getService(project, TaintVulnerabilitiesCache::class.java).getTaintVulnerabilitiesForFile(file)
         val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
         val isBindingEnabled = getSettingsFor(project).isBindingEnabled
         val plans = mutableListOf<HighlightPlan>()
 
-        (findings.issues.asSequence() + findings.hotspots.asSequence())
+        (issues.asSequence() + hotspots.asSequence())
             .filter { !it.isResolved() }
             .forEach { finding ->
                 plans.add(
@@ -260,7 +264,7 @@ class DirectHighlighter @NonInjectable internal constructor(
                 )
             }
 
-        findings.taints
+        taints
             .filter { !it.isResolved() && file == it.file() }
             .forEach { taint -> plans.add(TaintHighlightPlan(taint, isFocusOnNewCode)) }
 
