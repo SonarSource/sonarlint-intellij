@@ -76,6 +76,7 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter.Companion.collectContri
 import org.sonarlint.intellij.analysis.InferredAnalysisPropertiesProvider.collectContributedExtraProperties
 import org.sonarlint.intellij.analysis.InferredAnalysisPropertiesProvider.getConfigurationFromConfiguratorEP
 import org.sonarlint.intellij.analysis.LocalFileExclusions
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
 import org.sonarlint.intellij.analysis.OpenInIdeFindingCache
 import org.sonarlint.intellij.analysis.RunningAnalysesTracker
 import org.sonarlint.intellij.binding.BindingSuggestionHandler.findOverriddenModules
@@ -103,6 +104,7 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONN
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_SETUP_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SUPPORT_POLICY_LINK
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.TROUBLESHOOTING_CONNECTED_MODE_SETUP_LINK
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
@@ -925,7 +927,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         } ?: return
         getService(project, TaintVulnerabilitiesCache::class.java)
             .update(closedTaintVulnerabilityIds, locallyMatchedAddedTaintVulnerabilities, locallyMatchedUpdatedTaintVulnerabilities)
-        getService(project, SonarLintToolWindow::class.java).refreshViews()
+        getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
     }
 
     override fun didChangeDependencyRisks(
@@ -938,7 +940,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         val added = addedDependencyRisks.map { LocalDependencyRisk(it) }
         val updated = updatedDependencyRisks.map { LocalDependencyRisk(it) }
         getService(project, DependencyRisksCache::class.java).update(closedDependencyRiskIds, added, updated)
-        getService(project, SonarLintToolWindow::class.java).refreshViews()
+        getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
     }
 
     override fun raiseIssues(

@@ -24,7 +24,6 @@ import java.time.Instant
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
@@ -32,6 +31,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -39,6 +39,8 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.ui.filter.FilterCriteria
+import org.sonarlint.intellij.ui.filter.FindingsFilter
 import org.sonarlint.intellij.util.VirtualFileUtils
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
@@ -71,7 +73,7 @@ class OnTheFlyFindingsCoordinatorTests : AbstractSonarLintLightTests() {
         holder.updateOnAnalysisResult(analysisResult(file, issue))
 
         verify(restarter).refreshFiles(check { files: Collection<VirtualFile> -> assertThat(files).contains(file) })
-        assertThat(coordinator.getIssuesForFile(file)).containsExactly(issue)
+        assertThat(holder.getIssuesForFile(file)).containsExactly(issue)
         verify(toolWindow).updateCurrentFileTab(anyOrNull())
     }
 
@@ -84,7 +86,7 @@ class OnTheFlyFindingsCoordinatorTests : AbstractSonarLintLightTests() {
         holder.updateOnAnalysisResult(cleanAnalysisResult(file))
 
         verify(restarter).refreshFiles(check { files: Collection<VirtualFile> -> assertThat(files).contains(file) })
-        assertThat(coordinator.getIssuesForFile(file)).isEmpty()
+        assertThat(holder.getIssuesForFile(file)).isEmpty()
     }
 
     @Test
@@ -120,8 +122,8 @@ class OnTheFlyFindingsCoordinatorTests : AbstractSonarLintLightTests() {
 
         holder.updateViewsWithNewIssues(module, mapOf(uriA!! to emptyList<RaisedIssueDto>()))
 
-        assertThat(coordinator.getIssuesForFile(fileA)).isEmpty()
-        assertThat(coordinator.getIssuesForFile(fileB)).containsExactly(issueB)
+        assertThat(holder.getIssuesForFile(fileA)).isEmpty()
+        assertThat(holder.getIssuesForFile(fileB)).containsExactly(issueB)
         verify(restarter).refreshFiles(check { files: Collection<VirtualFile> ->
             assertThat(files).contains(fileA).doesNotContain(fileB)
         })
@@ -152,30 +154,70 @@ class OnTheFlyFindingsCoordinatorTests : AbstractSonarLintLightTests() {
         )
 
         verify(restarter).refreshFiles(check { files: Collection<VirtualFile> -> assertThat(files).contains(fileB) })
-        assertThat(coordinator.getIssuesForFile(fileB)).isEmpty()
-        assertThat(coordinator.getIssuesForFile(fileA)).containsExactly(issueA)
+        assertThat(holder.getIssuesForFile(fileB)).isEmpty()
+        assertThat(holder.getIssuesForFile(fileA)).containsExactly(issueA)
     }
 
     @Test
     fun should_keep_unfiltered_findings_for_squiggles_when_the_panel_would_filter_the_list() {
         val file = createAndOpenTestVirtualFile("Foo.java", "class Foo {}")
         val issue = mock<LiveIssue>()
+        whenever(issue.message).thenReturn("Remove this unused private field")
+        whenever(issue.getRuleKey()).thenReturn("java:S1068")
+        whenever(issue.file()).thenReturn(file)
+        whenever(issue.isResolved()).thenReturn(false)
         resetMocks()
 
         holder.updateOnAnalysisResult(analysisResult(file, issue))
 
-        assertThat(coordinator.getIssuesForFile(file)).containsExactly(issue)
+        val hiddenInTheList = FindingsFilter(project).filterAllFindings(
+            file,
+            FilterCriteria(textFilter = "does-not-match-the-issue"),
+        )
+        assertThat(hiddenInTheList.issues).isEmpty()
+        assertThat(holder.getIssuesForFile(file)).containsExactly(issue)
         verify(toolWindow).updateCurrentFileTab(anyOrNull())
-        verify(toolWindow, never()).refreshViews(any())
+        verify(toolWindow, never()).refreshViews()
     }
 
     @Test
-    fun should_highlight_open_files_from_refreshViews_without_a_current_file_panel() {
+    fun should_not_refresh_markup_for_open_files_this_analysis_did_not_cover() {
+        val fileA = createAndOpenTestVirtualFile("A.java", "class A {}")
+        val fileB = createAndOpenTestVirtualFile("B.java", "class B {}")
+        val issueA = mock<LiveIssue>()
+        val issueB = mock<LiveIssue>()
+        holder.updateOnAnalysisResult(
+            AnalysisResult(
+                null,
+                LiveFindings(mapOf(fileA to listOf(issueA), fileB to listOf(issueB)), emptyMap()),
+                listOf(fileA, fileB),
+                Instant.EPOCH,
+            )
+        )
+        resetMocks()
+
+        holder.updateOnAnalysisResult(
+            AnalysisResult(
+                null,
+                LiveFindings(mapOf(fileA to listOf(issueA)), emptyMap()),
+                listOf(fileA),
+                Instant.EPOCH,
+            )
+        )
+
+        verify(restarter).refreshFiles(check { files: Collection<VirtualFile> ->
+            assertThat(files).contains(fileA).doesNotContain(fileB)
+        })
+        assertThat(holder.getIssuesForFile(fileB)).containsExactly(issueB)
+    }
+
+    @Test
+    fun should_highlight_open_files_when_the_binding_changes() {
         val file = createAndOpenTestVirtualFile("Foo.java", "class Foo {}")
         replaceProjectService(SonarLintToolWindow::class.java, SonarLintToolWindow(project))
         resetMocks()
 
-        getService(project, SonarLintToolWindow::class.java).refreshViews()
+        getService(project, SonarLintToolWindow::class.java).bindingChanged()
 
         verify(restarter).refreshFiles(check { files: Collection<VirtualFile> -> assertThat(files).contains(file) })
     }

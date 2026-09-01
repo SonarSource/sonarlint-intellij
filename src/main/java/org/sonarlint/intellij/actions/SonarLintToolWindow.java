@@ -118,11 +118,6 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void refreshViews() {
-    refreshViews(EditorHighlightRefresh.enabled());
-  }
-
-  public void refreshViews(EditorHighlightRefresh highlightRefresh) {
-    getService(project, OnTheFlyFindingsCoordinator.class).applyHighlightRefresh(highlightRefresh);
     this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView());
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
@@ -323,7 +318,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   @Override
   public void bindingChanged() {
-    refreshViews();
+    getService(project, OnTheFlyFindingsCoordinator.class).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled());
   }
 
 }

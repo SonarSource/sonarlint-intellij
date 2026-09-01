@@ -27,8 +27,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.PlatformTestUtil
-import java.nio.file.Files
-import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ScheduledThreadPoolExecutor
@@ -45,6 +43,8 @@ import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
+import org.sonarlint.intellij.ui.filter.FilterCriteria
+import org.sonarlint.intellij.ui.filter.FindingsFilter
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
@@ -206,11 +206,28 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
         }
     }
 
+
     @Test
-    fun should_not_depend_on_current_file_displayed_findings_store() {
-        val source = Files.readString(Path.of("src/main/java/org/sonarlint/intellij/editor/DirectHighlighter.kt"))
-        assertThat(source).doesNotContain("CurrentFileDisplayedFindingsStore")
-        assertThat(source).doesNotContain("ui.currentfile")
+    fun should_keep_editor_squiggle_when_a_list_filter_would_hide_the_issue() {
+        val content = "class Foo {}"
+        val file = createAndOpenTestPsiFile("Foo.java", content).virtualFile
+        val issueMessage = "Remove this unused private field"
+
+        seedDisplayedIssue(file, content, issueMessage)
+
+        val hiddenInList = FindingsFilter(project).filterAllFindings(
+            file,
+            FilterCriteria(textFilter = "does-not-match-the-issue"),
+        )
+        assertThat(hiddenInList.issues).isEmpty()
+
+        withOpenEditor(file) {
+            val highlighter = getService(project, DirectHighlighter::class.java)
+            highlighter.applyHighlightsForTest(file)
+
+            val highlights = sonarLintHighlights(file, issueMessage)
+            assertThat(highlights).hasSize(1)
+        }
     }
 
     private fun seedDisplayedIssue(file: VirtualFile, content: String, message: String) {

@@ -32,12 +32,14 @@ import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.actions.MarkAsResolvedAction.Companion.REVIEW_ISSUE_GROUP
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
@@ -104,7 +106,7 @@ class ReopenIssueAction(private var issue: LiveIssue? = null) : AbstractSonarAct
 
         private fun updateUI(project: Project, issue: Issue) {
             issue.reopen()
-            getService(project, SonarLintToolWindow::class.java).refreshViews()
+            getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
         }
 
         private fun confirm(project: Project, productName: String): Boolean {

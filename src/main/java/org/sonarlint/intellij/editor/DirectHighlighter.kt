@@ -40,7 +40,7 @@ import org.jetbrains.annotations.VisibleForTesting
 import org.sonarlint.intellij.actions.MarkAsResolvedAction
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction
-import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -244,9 +244,9 @@ class DirectHighlighter @NonInjectable internal constructor(
      * is still applied.
      */
     private fun collectHighlightPlans(file: VirtualFile): List<HighlightPlan> {
-        val coordinator = getService(project, OnTheFlyFindingsCoordinator::class.java)
-        val issues = coordinator.getIssuesForFile(file)
-        val hotspots = coordinator.getHotspotsForFile(file)
+        val holder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+        val issues = holder.getIssuesForFile(file)
+        val hotspots = holder.getSecurityHotspotsForFile(file)
         val taints = getService(project, TaintVulnerabilitiesCache::class.java).getTaintVulnerabilitiesForFile(file)
         val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
         val isBindingEnabled = getSettingsFor(project).isBindingEnabled

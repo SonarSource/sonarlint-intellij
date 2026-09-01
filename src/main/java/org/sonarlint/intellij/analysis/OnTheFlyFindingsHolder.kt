@@ -65,42 +65,23 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         refreshHighlights: Boolean,
         analyzedFiles: Collection<VirtualFile>?,
     ) {
-        ensureSelectedFileIsSet()
-        // Temporary workaround as FileEditorManager.openFiles does not return open files on dev containers/SSH
-        val openedFiles = openFiles.ifEmpty { setOfNotNull(selectedFile) }
+        val openedFiles = openOpenFiles()
         val filteredFindings = findings.onlyFor(openedFiles)
-        val previouslyHighlightedOpenFiles = (currentIssuesPerOpenFile.keys + currentSecurityHotspotsPerOpenFile.keys)
-            .intersect(openedFiles)
-        filteredFindings.issuesPerFile.forEach { (file, issues) -> currentIssuesPerOpenFile[file] = issues }
-        filteredFindings.securityHotspotsPerFile.forEach { (file, hotspots) ->
-            currentSecurityHotspotsPerOpenFile[file] = hotspots
-        }
-        val filesWithEmptyReplacements = if (analyzedFiles != null) {
-            val analyzedOpenFiles = analyzedFiles.filter { it in openedFiles }.toSet()
-            analyzedOpenFiles.forEach { file ->
-                if (file !in filteredFindings.issuesPerFile) {
-                    currentIssuesPerOpenFile[file] = emptyList()
-                }
-                if (file !in filteredFindings.securityHotspotsPerFile) {
-                    currentSecurityHotspotsPerOpenFile[file] = emptyList()
-                }
-            }
-            analyzedOpenFiles
-        } else {
-            emptySet()
-        }
-        val changedFiles = filesWithEmptyReplacements + previouslyHighlightedOpenFiles + filteredFindings.filesInvolved
-        publishViewUpdate(
-            highlightRefresh = if (refreshHighlights) EditorHighlightRefresh.enabled(changedFiles) else EditorHighlightRefresh.NONE,
-            // Security hotspots live in their own tab, so a full refresh is required to keep it in sync.
+        commitOpenFileFindings(
+            openedFiles = openedFiles,
+            issuesByFile = filteredFindings.issuesPerFile,
+            hotspotsByFile = filteredFindings.securityHotspotsPerFile,
+            analyzedOpenFilesForEmptyClear = analyzedFiles?.filter { it in openedFiles }?.toSet(),
+            refreshHighlights = refreshHighlights,
             forceFullPanelRefresh = filteredFindings.securityHotspotsPerFile.isNotEmpty(),
         )
     }
 
     fun updateViewsWithNewIssues(module: Module, raisedIssues: Map<URI, List<RaisedIssueDto>>, isIntermediate: Boolean = false) {
+        val openedFiles = openOpenFiles()
         val issues = raisedIssues.mapNotNull { (uri, rawIssues) ->
             val virtualFile = uriToVirtualFile(uri) ?: return@mapNotNull null
-            if (virtualFile in openFiles || virtualFile == selectedFile) {
+            if (virtualFile in openedFiles) {
                 val liveIssues = rawIssues.mapNotNull {
                     RawIssueAdapter.toLiveIssue(module, it, virtualFile, null)
                 }
@@ -110,15 +91,18 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             }
         }.toMap()
 
-        issues.forEach { (file, liveIssues) -> currentIssuesPerOpenFile[file] = liveIssues }
-        ensureSelectedFileIsSet()
-        publishViewUpdate(if (isIntermediate) EditorHighlightRefresh.NONE else EditorHighlightRefresh.enabled(issues.keys))
+        commitOpenFileFindings(
+            openedFiles = openedFiles,
+            issuesByFile = issues,
+            refreshHighlights = !isIntermediate,
+        )
     }
 
     fun updateViewsWithNewSecurityHotspots(module: Module, raisedSecurityHotspots: Map<URI, List<RaisedHotspotDto>>, isIntermediate: Boolean = false) {
+        val openedFiles = openOpenFiles()
         val securityHotspots = raisedSecurityHotspots.mapNotNull { (uri, rawSecurityHotspots) ->
             val virtualFile = uriToVirtualFile(uri) ?: return@mapNotNull null
-            if (virtualFile in openFiles || virtualFile == selectedFile) {
+            if (virtualFile in openedFiles) {
                 val liveHotspots = rawSecurityHotspots.mapNotNull {
                     RawIssueAdapter.toLiveSecurityHotspot(module, it, virtualFile, null)
                 }
@@ -128,10 +112,10 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
             }
         }.toMap()
 
-        securityHotspots.forEach { (file, liveHotspots) -> currentSecurityHotspotsPerOpenFile[file] = liveHotspots }
-        ensureSelectedFileIsSet()
-        publishViewUpdate(
-            highlightRefresh = if (isIntermediate) EditorHighlightRefresh.NONE else EditorHighlightRefresh.enabled(securityHotspots.keys),
+        commitOpenFileFindings(
+            openedFiles = openedFiles,
+            hotspotsByFile = securityHotspots,
+            refreshHighlights = !isIntermediate,
             forceFullPanelRefresh = true,
         )
     }
@@ -197,6 +181,46 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         }
     }
 
+    private fun openOpenFiles(): Set<VirtualFile> {
+        ensureSelectedFileIsSet()
+        // Temporary workaround as FileEditorManager.openFiles does not return open files on dev containers/SSH
+        return openFiles.ifEmpty { setOfNotNull(selectedFile) }
+    }
+
+    private fun commitOpenFileFindings(
+        openedFiles: Set<VirtualFile> = openOpenFiles(),
+        issuesByFile: Map<VirtualFile, Collection<LiveIssue>> = emptyMap(),
+        hotspotsByFile: Map<VirtualFile, Collection<LiveSecurityHotspot>> = emptyMap(),
+        analyzedOpenFilesForEmptyClear: Set<VirtualFile>? = null,
+        refreshHighlights: Boolean = true,
+        forceFullPanelRefresh: Boolean = false,
+    ) {
+        issuesByFile.forEach { (file, issues) ->
+            if (file in openedFiles) {
+                currentIssuesPerOpenFile[file] = issues
+            }
+        }
+        hotspotsByFile.forEach { (file, hotspots) ->
+            if (file in openedFiles) {
+                currentSecurityHotspotsPerOpenFile[file] = hotspots
+            }
+        }
+        val analyzedOpenFiles = analyzedOpenFilesForEmptyClear.orEmpty()
+        analyzedOpenFiles.forEach { file ->
+            if (file !in issuesByFile) {
+                currentIssuesPerOpenFile[file] = emptyList()
+            }
+            if (file !in hotspotsByFile) {
+                currentSecurityHotspotsPerOpenFile[file] = emptyList()
+            }
+        }
+        val changedFiles = issuesByFile.keys + hotspotsByFile.keys + analyzedOpenFiles
+        publishViewUpdate(
+            highlightRefresh = if (refreshHighlights) EditorHighlightRefresh.enabled(changedFiles) else EditorHighlightRefresh.NONE,
+            forceFullPanelRefresh = forceFullPanelRefresh,
+        )
+    }
+
     /**
      * Pushes the current findings to the tool window. When [forceFullPanelRefresh] is set, all tabs (including the
      * Security Hotspots tab) are rebuilt; otherwise only the Current File tab is updated. [highlightRefresh] is applied
@@ -209,7 +233,7 @@ class OnTheFlyFindingsHolder(private val project: Project) : FileEditorManagerLi
         getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefresh(highlightRefresh)
         val toolWindow = getService(project, SonarLintToolWindow::class.java)
         if (forceFullPanelRefresh) {
-            toolWindow.refreshViews(EditorHighlightRefresh.NONE)
+            toolWindow.refreshViews()
         } else {
             toolWindow.updateCurrentFileTab(selectedFile)
         }

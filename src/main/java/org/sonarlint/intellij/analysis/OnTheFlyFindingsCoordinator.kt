@@ -23,27 +23,22 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.issue.LiveIssue
 
 /**
- * Publishes on-the-fly analysis findings into editor markup, independently of the Current File tool window.
+ * Resolves an [EditorHighlightRefresh] into a set of files and triggers the editor markup refresh,
+ * independently of the Current File tool window.
  *
- * The [OnTheFlyFindingsHolder] owns the per-open-file maps. This service is the highlight publisher that
- * [org.sonarlint.intellij.editor.DirectHighlighter] reads from, and that resolves [EditorHighlightRefresh]
- * into a file set without consulting the Current File tab or its filters.
+ * The [OnTheFlyFindingsHolder] owns the per-open-file maps and is read directly by
+ * [org.sonarlint.intellij.editor.DirectHighlighter]. This service never consults the Current File
+ * tab or its filters, and [SonarLintToolWindow.refreshViews] no longer refreshes markup on its own:
+ * callers that need both must use [applyHighlightRefreshAndRefreshPanels].
  */
 @Service(Service.Level.PROJECT)
 class OnTheFlyFindingsCoordinator(private val project: Project) {
-
-    fun getIssuesForFile(file: VirtualFile): Collection<LiveIssue> =
-        holder().getIssuesForFile(file)
-
-    fun getHotspotsForFile(file: VirtualFile): Collection<LiveSecurityHotspot> =
-        holder().getSecurityHotspotsForFile(file)
 
     fun applyHighlightRefresh(highlightRefresh: EditorHighlightRefresh) {
         if (!highlightRefresh.enabled || project.isDisposed) {
@@ -56,6 +51,17 @@ class OnTheFlyFindingsCoordinator(private val project: Project) {
         getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(files)
     }
 
+    /**
+     * Refreshes editor markup, then rebuilds tool-window panels. Use when findings caches changed outside the
+     * holder's analysis publish path (taints, CAYC, resolve actions, binding changes).
+     */
+    fun applyHighlightRefreshAndRefreshPanels(highlightRefresh: EditorHighlightRefresh) {
+        applyHighlightRefresh(highlightRefresh)
+        if (!project.isDisposed) {
+            getService(project, SonarLintToolWindow::class.java).refreshViews()
+        }
+    }
+
     private fun resolveFiles(highlightRefresh: EditorHighlightRefresh): Collection<VirtualFile> {
         return when {
             highlightRefresh.allOpenFiles -> openEditors()
@@ -66,7 +72,4 @@ class OnTheFlyFindingsCoordinator(private val project: Project) {
 
     private fun openEditors(): List<VirtualFile> =
         FileEditorManager.getInstance(project).openFiles.toList()
-
-    private fun holder(): OnTheFlyFindingsHolder =
-        getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
 }
