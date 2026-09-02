@@ -14,12 +14,12 @@ Path-filtered matrix from [`.github/scripts/qa-matrix.sh`](../.github/scripts/qa
 |------|------|
 | Any non-docs change | IntelliJ **latest** × 4 suites (`OpenInIdeTests`, `ConnectedAnalysisTests`, `ConfigurationTests`, `Standalone`) |
 | `clion/`, `clion-resharper/`, CLion plugin XMLs, or IT/CI harness | CLion **latest** (`TEST_SUITE=CLion`) |
-| `rider/`, Rider plugin XML / sources, or IT/CI harness | Rider **latest** (`TEST_SUITE=Rider`) — advisory, does not block Promote |
+| `rider/`, Rider plugin XML / sources, or IT/CI harness | Rider **latest** (`TEST_SUITE=Rider`) — advisory on PRs (does not block Promote); gating on `master` pushes |
 | Docs only (`*.md`, `docs/`, `HEADER`, …) | ITs skipped |
 
 Harness means `its/`, `.github/`, Gradle files, or `mise.toml`. Changing those runs CLion and Rider as well as IntelliJ.
 
-Rider C# analysis ITs still time out waiting for findings (the reason this flavor was disabled in December 2025). The PR job stays in the matrix for signal (`qa-rider`, `continue-on-error`) so a flake cannot fail Promote. Nightly and weekly EAP still gate on Rider.
+Rider C# analysis ITs still time out waiting for findings (the reason this flavor was disabled in December 2025). On pull requests `qa-rider` uses `continue-on-error` so a flake cannot fail Promote. On `master` pushes the same job is gating so `notify-failure.yml` can alert Slack. Nightly and weekly EAP also gate on Rider.
 
 ### Nightly (weekdays 02:00 UTC)
 
@@ -27,7 +27,7 @@ IntelliJ **min** × 4 suites, CLion min+latest, **Rider min+latest**, PhpStorm l
 
 ### Weekly EAP (Mondays 06:00 UTC)
 
-IntelliJ Ultimate, CLion, and Rider against `eapIdeVersion`. Failures notify Slack; they do not block PR promotion.
+IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion`. Failures notify Slack; they do not block PR promotion.
 
 ## Version bumps
 
