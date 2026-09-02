@@ -108,6 +108,7 @@ class ConfigurationTests : BaseUiTest() {
 
         private var firstIssueKey: String? = null
         private var firstSCIssueKey: String? = null
+        private var sonarCloudIssueProjectReady = false
         lateinit var tokenName: String
         lateinit var tokenValue: String
         lateinit var sonarCloudToken: String
@@ -124,6 +125,23 @@ class ConfigurationTests : BaseUiTest() {
             val searchResults = client.issues().search(searchRequest)
             val issue = searchResults.issuesList[0]
             return issue.key
+        }
+
+        fun ensureSonarCloudIssueProject() {
+            if (sonarCloudIssueProjectReady) {
+                return
+            }
+            restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
+            provisionSonarCloudProfile(adminSonarCloudWsClient, "SLI Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
+            associateSonarCloudProjectToQualityProfile(
+                adminSonarCloudWsClient,
+                "java",
+                SONARCLOUD_ISSUE_PROJECT_KEY,
+                "SonarLint IT Java Issue"
+            )
+            analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues", sonarCloudToken)
+            firstSCIssueKey = getFirstSonarCloudIssueKey(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY)
+            sonarCloudIssueProjectReady = true
         }
 
         @JvmStatic
@@ -264,16 +282,7 @@ class ConfigurationTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
-            restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
-            provisionSonarCloudProfile(adminSonarCloudWsClient, "SLI Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
-            associateSonarCloudProjectToQualityProfile(
-                adminSonarCloudWsClient,
-                "java",
-                SONARCLOUD_ISSUE_PROJECT_KEY,
-                "SonarLint IT Java Issue"
-            )
-
-            analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues", sonarCloudToken)
+            ensureSonarCloudIssueProject()
         }
 
         @Test
@@ -302,18 +311,7 @@ class ConfigurationTests : BaseUiTest() {
             // Build and analyze project to raise issue
             executeBuildWithMaven("projects/sli-java-issues/pom.xml", ORCHESTRATOR)
             firstIssueKey = getFirstIssueKey(adminWsClient, ISSUE_PROJECT_KEY)
-
-            restoreSonarCloudProfile(adminSonarCloudWsClient, "java-sonarlint-with-issue.xml")
-            provisionSonarCloudProfile(adminSonarCloudWsClient, "SLI Java Issues", SONARCLOUD_ISSUE_PROJECT_KEY)
-            associateSonarCloudProjectToQualityProfile(
-                adminSonarCloudWsClient,
-                "java",
-                SONARCLOUD_ISSUE_PROJECT_KEY,
-                "SonarLint IT Java Issue"
-            )
-
-            analyzeSonarCloudWithMaven(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY, "sli-java-issues", sonarCloudToken)
-            firstSCIssueKey = getFirstSonarCloudIssueKey(adminSonarCloudWsClient, SONARCLOUD_ISSUE_PROJECT_KEY)
+            ensureSonarCloudIssueProject()
         }
 
         @Test
