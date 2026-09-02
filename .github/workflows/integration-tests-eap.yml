@@ -97,9 +97,7 @@ jobs:
 
       - name: Build EAP QA matrix
         id: set-matrix
-        run: |
-          EAP=$(grep '^eapIdeVersion=' gradle.properties | cut -d= -f2 | cut -d'#' -f1 | xargs)
-          .github/scripts/qa-matrix.sh eap "$EAP"
+        run: .github/scripts/qa-matrix.sh eap
 
   qa-eap:
     if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
