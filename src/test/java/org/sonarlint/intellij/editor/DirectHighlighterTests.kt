@@ -43,7 +43,9 @@ import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
+import org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsStore
 import org.sonarlint.intellij.ui.filter.FilterCriteria
+import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FindingsFilter
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
@@ -92,6 +94,9 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
 
             getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
                 .replaceIssuesForFile(file, emptyList())
+            getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(
+                FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList()),
+            )
             highlighter.applyHighlightsForTest(file)
 
             assertThat(sonarLintHighlights(file, issueMessage)).isEmpty()
@@ -208,25 +213,23 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
 
 
     @Test
-    fun should_keep_editor_squiggle_when_a_list_filter_would_hide_the_issue() {
+    fun should_hide_editor_squiggle_when_a_list_filter_hides_the_issue() {
         val content = "class Foo {}"
         val file = createAndOpenTestPsiFile("Foo.java", content).virtualFile
         val issueMessage = "Remove this unused private field"
 
         seedDisplayedIssue(file, content, issueMessage)
 
-        val hiddenInList = FindingsFilter(project).filterAllFindings(
-            file,
-            FilterCriteria(textFilter = "does-not-match-the-issue"),
-        )
+        val filterCriteria = FilterCriteria(textFilter = "does-not-match-the-issue")
+        val hiddenInList = FindingsFilter(project).filterAllFindings(file, filterCriteria)
         assertThat(hiddenInList.issues).isEmpty()
 
         withOpenEditor(file) {
+            getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(hiddenInList)
             val highlighter = getService(project, DirectHighlighter::class.java)
             highlighter.applyHighlightsForTest(file)
 
-            val highlights = sonarLintHighlights(file, issueMessage)
-            assertThat(highlights).hasSize(1)
+            assertThat(sonarLintHighlights(file, issueMessage)).isEmpty()
         }
     }
 
@@ -244,6 +247,9 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
 
         val issue = LiveIssue(module, issueDto, file, rangeMarker, null, emptyList())
         getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder.replaceIssuesForFile(file, listOf(issue))
+        getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(
+            FilteredFindings(listOf(issue), emptyList(), emptyList(), emptyList()),
+        )
     }
 
     private fun seedTaint(file: VirtualFile, content: String, message: String) {

@@ -24,18 +24,20 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
+import org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsRefresher
 
 /**
- * Resolves an [EditorHighlightRefresh] into a set of files and triggers the editor markup refresh,
- * independently of the Current File tool window.
+ * Resolves an [EditorHighlightRefresh] into a set of files, refreshes the filtered findings snapshot used by
+ * [org.sonarlint.intellij.editor.DirectHighlighter], and triggers editor markup refresh independently of the
+ * Current File tool window UI lifecycle.
  *
- * The [OnTheFlyFindingsHolder] owns the per-open-file maps and is read directly by
- * [org.sonarlint.intellij.editor.DirectHighlighter]. This service never consults the Current File
- * tab or its filters, and [SonarLintToolWindow.refreshViews] no longer refreshes markup on its own:
- * callers that need both must use [applyHighlightRefreshAndRefreshPanels].
+ * The [OnTheFlyFindingsHolder] owns the unfiltered per-open-file maps. Editor squiggles follow the Current File tab
+ * filters via [org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsStore]. [SonarLintToolWindow.refreshViews]
+ * rebuilds panels only; callers that need markup plus panels use [applyHighlightRefreshAndRefreshPanels].
  */
 @Service(Service.Level.PROJECT)
 class OnTheFlyFindingsCoordinator(private val project: Project) {
@@ -48,6 +50,8 @@ class OnTheFlyFindingsCoordinator(private val project: Project) {
         if (files.isEmpty()) {
             return
         }
+        getService(project, CurrentFileDisplayedFindingsRefresher::class.java)
+            .refreshDisplayedFindings(SonarLintUtils.getSelectedFile(project))
         getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(files)
     }
 

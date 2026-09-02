@@ -41,6 +41,11 @@ import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.ui.ToolWindowConstants;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
+import org.sonarlint.intellij.ui.filter.FilterCriteria;
+import org.sonarlint.intellij.ui.filter.FilterSettingsService;
+import org.sonarlint.intellij.ui.filter.SeverityFilter;
+import org.sonarlint.intellij.ui.filter.SeverityImpactFilter;
+import org.sonarlint.intellij.ui.filter.StatusFilter;
 import org.sonarlint.intellij.ui.report.ReportPanel;
 import org.sonarlint.intellij.ui.report.ReportTabManager;
 
@@ -118,7 +123,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
   }
 
   public void refreshViews() {
-    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView());
+    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView(EditorHighlightRefresh.enabled()));
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       runOnUiThread(project, () -> {
@@ -160,9 +165,32 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     }
   }
 
+
+  public FilterCriteria getCurrentFileFilterCriteria() {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      var content = toolWindow.getContentManager().findContent(CURRENT_FILE_TAB_TITLE);
+      if (content != null && content.getComponent() instanceof CurrentFilePanel panel) {
+        return panel.getCurrentFilterCriteria();
+      }
+    }
+    return getDefaultCurrentFileFilterCriteria();
+  }
+
+  private FilterCriteria getDefaultCurrentFileFilterCriteria() {
+    return new FilterCriteria(
+      new SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER),
+      StatusFilter.OPEN,
+      "",
+      false,
+      false,
+      getService(FilterSettingsService.class).getDefaultFindingsScope()
+    );
+  }
+
   public void updateCurrentFileTab(@Nullable VirtualFile selectedFile) {
     this.<CurrentFilePanel>updateCurrentFileTab(
-      panel -> runOnUiThread(project, () -> panel.update(selectedFile)));
+      panel -> runOnUiThread(project, () -> panel.update(selectedFile, EditorHighlightRefresh.NONE)));
   }
 
   public void showFindingDescription(Finding liveIssue) {

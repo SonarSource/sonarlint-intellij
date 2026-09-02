@@ -55,6 +55,7 @@ class OnTheFlyFindingsCoordinatorTests : AbstractSonarLintLightTests() {
     fun prepare() {
         restarter = mock()
         toolWindow = mock()
+        whenever(toolWindow.getCurrentFileFilterCriteria()).thenReturn(FilterCriteria())
         replaceProjectService(CodeAnalyzerRestarter::class.java, restarter)
         replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
         holder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
