@@ -33,6 +33,10 @@ IntelliJ Ultimate, CLion, and Rider against `eapIdeVersion`. Failures notify Sla
 minSupportedIdeVersion=2024.2
 latestStableIdeVersion=2025.3.2   # bump when JetBrains ships a new stable
 eapIdeVersion=2026.1-EAP          # must match the Repox artifact name
+# Optional per-product overrides when patch numbers diverge
+minRiderIdeVersion=2024.2.7
+latestRiderIdeVersion=2025.3.2
+latestPyCharmIdeVersion=2025.3.2.1
 ```
 
 ## Local run
