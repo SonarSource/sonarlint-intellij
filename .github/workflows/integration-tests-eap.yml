@@ -111,7 +111,7 @@ jobs:
     defaults:
       run:
         shell: bash
-    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.qa_category }}
+    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
     needs:
       - aws-auth
       - build-plugin
@@ -142,4 +142,5 @@ jobs:
           ide_version: ${{ matrix.ide_version }}
           qa_category: ${{ matrix.qa_category }}
           project_version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
+          test_suite: ${{ matrix.test_suite }}
           plugin_zip_path: ${{ steps.plugin-zip.outputs.path }}

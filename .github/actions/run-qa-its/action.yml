@@ -12,7 +12,7 @@ inputs:
     description: Built plugin version to download from Artifactory QA repo
     required: true
   test_suite:
-    description: Optional JUnit tag (OpenInIdeTests, ConnectedAnalysisTests, ConfigurationTests, Standalone)
+    description: Optional JUnit tag (OpenInIdeTests, ConnectedAnalysisTests, ConfigurationTests, Standalone, CLion, Rider, PhpStorm, PyCharm, GoLand, PLSQL)
     required: false
     default: ''
   plugin_zip_path:

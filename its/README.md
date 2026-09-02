@@ -13,15 +13,17 @@ Path-filtered matrix from [`.github/scripts/qa-matrix.sh`](../.github/scripts/qa
 | When | Jobs |
 |------|------|
 | Any non-docs change | IntelliJ **latest** × 4 suites (`OpenInIdeTests`, `ConnectedAnalysisTests`, `ConfigurationTests`, `Standalone`) |
-| `clion/`, `clion-resharper/`, CLion plugin XMLs, or IT/CI harness | CLion **latest** |
-| `rider/`, Rider plugin XML / sources, or IT/CI harness | Rider **latest** |
+| `clion/`, `clion-resharper/`, CLion plugin XMLs, or IT/CI harness | CLion **latest** (`TEST_SUITE=CLion`) |
+| `rider/`, Rider plugin XML / sources, or IT/CI harness | Rider **latest** (`TEST_SUITE=Rider`) — advisory, does not block Promote |
 | Docs only (`*.md`, `docs/`, `HEADER`, …) | ITs skipped |
 
 Harness means `its/`, `.github/`, Gradle files, or `mise.toml`. Changing those runs CLion and Rider as well as IntelliJ.
 
+Rider C# analysis ITs still time out waiting for findings (the reason this flavor was disabled in December 2025). The PR job stays in the matrix for signal (`qa-rider`, `continue-on-error`) so a flake cannot fail Promote. Nightly and weekly EAP still gate on Rider.
+
 ### Nightly (weekdays 02:00 UTC)
 
-IntelliJ **min** × 4 suites, CLion min+latest, **Rider min+latest**, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL). Failures notify Slack.
+IntelliJ **min** × 4 suites, CLion min+latest, **Rider min+latest**, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL). Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack.
 
 ### Weekly EAP (Mondays 06:00 UTC)
 
