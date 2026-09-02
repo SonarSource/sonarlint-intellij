@@ -59,7 +59,9 @@ object ProjectBindingUtils {
                     comboBox("Connection:").click()
                     remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
                         // a prefix is added only if there are multiple SQC connection. Check both with and without label
-                        waitFor(Duration.ofSeconds(5)) { hasText(connectionLabelWithPrefix) || hasText(connectionName) }
+                        waitFor(Duration.ofSeconds(10), errorMessage = "Connection combo did not contain '$connectionName'") {
+                            hasText(connectionLabelWithPrefix) || hasText(connectionName)
+                        }
                         findText { it.text == connectionLabelWithPrefix || it.text == connectionName }.click()
                     }
                     jbTextField().text = projectKey
@@ -82,7 +84,9 @@ object ProjectBindingUtils {
 
             comboBox("Connection:").click()
             remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
+                waitFor(Duration.ofSeconds(10), errorMessage = "Connection combo did not contain 'Orchestrator'") {
+                    hasText("Orchestrator")
+                }
                 findText("Orchestrator").click()
             }
             pressOk()
