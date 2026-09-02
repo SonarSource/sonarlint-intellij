@@ -108,6 +108,8 @@ The sandbox (instance files, JDK config) is stored under `build/sonarlint-test`.
 
 ITs require a running display and `SONARCLOUD_IT_TOKEN`. Supported on **Windows and Linux only** — macOS is not supported due to native file dialog incompatibility with the UI test framework.
 
+CI coverage (PR path filter, nightly flavors, weekly EAP) is documented in [`its/README.md`](its/README.md).
+
 On headless Linux, `xvfb` is required. On Windows and Linux with a display, start the IDE with the plugin, wait for it to be ready, then run the tests:
 
 ```bash
