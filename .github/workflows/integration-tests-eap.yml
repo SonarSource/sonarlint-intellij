@@ -1,0 +1,147 @@
+name: Integration Tests EAP
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Mondays at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+
+env:
+  CACHE_BACKEND: s3
+
+jobs:
+  aws-auth:
+    runs-on: sonar-xs
+    permissions:
+      id-token: write
+    outputs:
+      docker_username: ${{ steps.login-ecr.outputs.docker_username_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
+      docker_password: ${{ steps.login-ecr.outputs.docker_password_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        with:
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::275878209202:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2.1.5
+        with:
+          mask-password: 'false'
+
+  build-plugin:
+    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
+    runs-on: warp-custom-ubuntu-24-04
+    container:
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
+      options: --user runner
+      credentials:
+        username: ${{ needs.aws-auth.outputs.docker_username }}
+        password: ${{ needs.aws-auth.outputs.docker_password }}
+    defaults:
+      run:
+        shell: bash
+    needs:
+      - aws-auth
+    name: Build Plugin
+    outputs:
+      PROJECT_VERSION: ${{ steps.set_version.outputs.project-version }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          version: 2025.9.12
+
+      - name: Export embedded IDE paths from container
+        run: |
+          echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
+
+      - uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        id: build_plugin
+        with:
+          sonar-platform: none
+          deploy: false
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          gradle-args: -x test -x :its:check :buildPlugin
+
+      - name: Set project version output
+        id: set_version
+        run: echo "project-version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Upload built plugin
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: eap-plugin
+          path: build/distributions/sonarlint-intellij-*.zip
+          if-no-files-found: error
+
+  setup-matrix:
+    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
+    runs-on: sonar-xs
+    name: Setup EAP matrix
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Build EAP QA matrix
+        id: set-matrix
+        run: |
+          EAP=$(grep '^eapIdeVersion=' gradle.properties | cut -d= -f2 | cut -d'#' -f1 | xargs)
+          .github/scripts/qa-matrix.sh eap "$EAP"
+
+  qa-eap:
+    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
+    runs-on: warp-custom-ubuntu-24-04
+    container:
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
+      options: --user runner
+      credentials:
+        username: ${{ needs.aws-auth.outputs.docker_username }}
+        password: ${{ needs.aws-auth.outputs.docker_password }}
+    defaults:
+      run:
+        shell: bash
+    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.qa_category }}
+    needs:
+      - aws-auth
+      - build-plugin
+      - setup-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
+    env:
+      DISPLAY: ':10'
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Download built plugin
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: eap-plugin
+          path: ${{ github.workspace }}/plugin-zip
+
+      - name: Resolve plugin zip path
+        id: plugin-zip
+        run: |
+          ZIP=$(ls -1 "${GITHUB_WORKSPACE}/plugin-zip"/sonarlint-intellij-*.zip)
+          echo "path=${ZIP}" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/run-qa-its
+        with:
+          ide_version: ${{ matrix.ide_version }}
+          qa_category: ${{ matrix.qa_category }}
+          project_version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
+          plugin_zip_path: ${{ steps.plugin-zip.outputs.path }}

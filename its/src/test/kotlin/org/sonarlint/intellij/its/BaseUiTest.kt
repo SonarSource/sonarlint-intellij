@@ -61,6 +61,13 @@ open class BaseUiTest {
         @JvmStatic
         fun isIdeaCommunity() = remoteRobot.isIdea() && remoteRobot.isBuildCommunity()
 
+        /**
+         * IntelliJ IDEA in any edition, including the 2025.3+ unified distribution
+         * whose build string is no longer `IC`/`IU`.
+         */
+        @JvmStatic
+        fun isIntelliJIdea() = remoteRobot.isIdea()
+
         @JvmStatic
         fun isIdeaUltimate() = remoteRobot.isIdea() && remoteRobot.isBuildUltimate()
 

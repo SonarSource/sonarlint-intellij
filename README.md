@@ -82,6 +82,9 @@ unreleased dependencies not accessible to the public could be used, preventing y
 How to run UI tests
 -------------------
 
+CI coverage (what runs on PRs vs nightly vs EAP) is documented in [`its/README.md`](its/README.md).
+
+
 ```bash
 ./gradlew :its:runIdeForUiTests &
 ```

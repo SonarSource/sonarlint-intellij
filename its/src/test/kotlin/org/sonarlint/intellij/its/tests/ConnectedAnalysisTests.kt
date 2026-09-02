@@ -54,7 +54,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 
 @Tag("ConnectedAnalysisTests")
-@EnabledIf("isIdeaCommunity")
+@EnabledIf("isIntelliJIdea")
 class ConnectedAnalysisTests : BaseUiTest() {
 
     companion object {
