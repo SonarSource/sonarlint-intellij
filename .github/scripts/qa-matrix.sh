@@ -2,9 +2,12 @@
 # Build a GitHub Actions matrix for UI integration tests.
 #
 # Usage:
-#   qa-matrix.sh pr      <min> <latest>
-#   qa-matrix.sh nightly <min> <latest>
-#   qa-matrix.sh eap     <eap>
+#   qa-matrix.sh pr
+#   qa-matrix.sh nightly
+#   qa-matrix.sh eap
+#
+# Reads IDE versions from gradle.properties (see minSupportedIdeVersion,
+# latestStableIdeVersion, eapIdeVersion, and optional per-product overrides).
 #
 # Writes GITHUB_OUTPUT keys:
 #   matrix     JSON array of {ide_version, qa_category, test_suite?}
@@ -18,15 +21,37 @@ set -euo pipefail
 
 : "${GITHUB_OUTPUT:=/dev/null}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROPS="${ROOT}/gradle.properties"
+
 MODE="${1:-}"
 if [[ -z "${MODE}" ]]; then
-  echo "Usage: $0 pr <min> <latest> | nightly <min> <latest> | eap <eap>" >&2
+  echo "Usage: $0 pr | nightly | eap" >&2
   exit 1
 fi
 
-read_prop_version() {
-  local value="$1"
-  echo "${value}" | cut -d'#' -f1 | xargs
+read_gradle_prop() {
+  local key="$1"
+  local line
+  line="$(grep "^${key}=" "${PROPS}" || true)"
+  if [[ -z "${line}" ]]; then
+    echo ""
+    return
+  fi
+  echo "${line#*=}" | cut -d'#' -f1 | xargs
+}
+
+prop_or() {
+  local override="$1"
+  local fallback="$2"
+  local value
+  value="$(read_gradle_prop "${override}")"
+  if [[ -n "${value}" ]]; then
+    echo "${value}"
+  else
+    echo "${fallback}"
+  fi
 }
 
 is_docs_path() {
@@ -90,7 +115,9 @@ is_rider_path() {
 
 changed_files() {
   if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
-    git fetch --no-tags --depth=1 origin "${GITHUB_BASE_REF}" >/dev/null 2>&1 || true
+    # Do not pass --depth=1: setup-qa-matrix already checked out with fetch-depth 0.
+    # A shallow fetch would write .git/shallow and can break merge-base computation.
+    git fetch --no-tags origin "${GITHUB_BASE_REF}" >/dev/null 2>&1 || true
     if git rev-parse --verify "origin/${GITHUB_BASE_REF}" >/dev/null 2>&1; then
       git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD"
       return
@@ -131,11 +158,16 @@ emit() {
   echo "skip_its=${skip}"
 }
 
+MIN="$(read_gradle_prop minSupportedIdeVersion)"
+LATEST="$(read_gradle_prop latestStableIdeVersion)"
+EAP="$(read_gradle_prop eapIdeVersion)"
+RIDER_MIN="$(prop_or minRiderIdeVersion "${MIN}")"
+RIDER_LATEST="$(prop_or latestRiderIdeVersion "${LATEST}")"
+PYCHARM_LATEST="$(prop_or latestPyCharmIdeVersion "${LATEST}")"
+
 case "${MODE}" in
   pr)
-    MIN="$(read_prop_version "${2:?min version required}")"
-    LATEST="$(read_prop_version "${3:?latest version required}")"
-    echo "PR matrix: latest=${LATEST} (min=${MIN} is used on nightly only)"
+    echo "PR matrix: latest=${LATEST} rider=${RIDER_LATEST} (min=${MIN} is nightly-only)"
     mapfile -t FILES < <(changed_files)
     if [[ ${#FILES[@]} -eq 0 ]]; then
       emit "$(idea_suites "IC-${LATEST}" "IdeaLatest")" "false"
@@ -164,18 +196,16 @@ case "${MODE}" in
       MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "CL-${LATEST}" '[{ide_version:$ver,qa_category:"CLionLatest"}]')")"
     fi
     if [[ "${run_rider}" == "true" ]]; then
-      MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "RD-${LATEST}" '[{ide_version:$ver,qa_category:"RiderLatest"}]')")"
+      MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "RD-${RIDER_LATEST}" '[{ide_version:$ver,qa_category:"RiderLatest"}]')")"
     fi
     emit "${MATRIX}" "false"
     ;;
   nightly)
-    MIN="$(read_prop_version "${2:?min version required}")"
-    LATEST="$(read_prop_version "${3:?latest version required}")"
     MATRIX="$(idea_suites "IC-${MIN}" "IdeaMin")"
     MATRIX="$(append_json "${MATRIX}" "$(jq -nc \
       --arg clmin "CL-${MIN}" --arg cllat "CL-${LATEST}" \
-      --arg rdmin "RD-${MIN}" --arg rdlat "RD-${LATEST}" \
-      --arg pslat "PS-${LATEST}" --arg pylat "PY-${LATEST}" \
+      --arg rdmin "RD-${RIDER_MIN}" --arg rdlat "RD-${RIDER_LATEST}" \
+      --arg pslat "PS-${LATEST}" --arg pylat "PY-${PYCHARM_LATEST}" \
       --arg golat "GO-${LATEST}" --arg iumin "IU-${MIN}" \
       '[
         {ide_version:$clmin,qa_category:"CLionMin"},
@@ -185,16 +215,15 @@ case "${MODE}" in
         {ide_version:$pslat,qa_category:"PhpStormLatest"},
         {ide_version:$pylat,qa_category:"PyCharmLatest"},
         {ide_version:$golat,qa_category:"GoLandLatest"},
-        {ide_version:$iumin,qa_category:"IdeaUltimateMin"}
+        {ide_version:$iumin,qa_category:"IdeaUltimateMin",test_suite:"PLSQL"}
       ]')")"
     emit "${MATRIX}" "false"
     ;;
   eap)
-    EAP="$(read_prop_version "${2:?eap version required}")"
-    MATRIX="$(jq -nc --arg eap "${EAP}" '[
+    MATRIX="$(jq -nc --arg eap "${EAP}" --arg rd "$(prop_or eapRiderIdeVersion "${EAP}")" '[
       {ide_version:("IU-" + $eap),qa_category:"IdeaUltimateEAP"},
       {ide_version:("CL-" + $eap),qa_category:"CLionEAP"},
-      {ide_version:("RD-" + $eap),qa_category:"RiderEAP"}
+      {ide_version:("RD-" + $rd),qa_category:"RiderEAP"}
     ]')"
     emit "${MATRIX}" "false"
     ;;
