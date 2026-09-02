@@ -20,12 +20,12 @@
 package org.sonarlint.intellij.its.utils
 
 import org.junit.jupiter.api.extension.ExtensionContext
-import org.junit.jupiter.api.extension.TestWatcher
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler
 import org.sonarlint.intellij.its.robotUrl
 import java.net.URL
 
-class VisualTreeDumpOnFailure : TestWatcher {
-    override fun testFailed(context: ExtensionContext, cause: Throwable?) {
+class VisualTreeDumpOnFailure : TestExecutionExceptionHandler {
+    override fun handleTestExecutionException(context: ExtensionContext, throwable: Throwable) {
         println("Test '${context.displayName}' failed")
         println("Printing visual tree")
         println()
@@ -34,5 +34,6 @@ class VisualTreeDumpOnFailure : TestWatcher {
         conn.readTimeout = 1000
         conn.connect()
         conn.getInputStream().reader().use { println(it.readText()) }
+        throw throwable
     }
 }
