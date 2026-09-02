@@ -154,9 +154,17 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     }
 
     override fun removeFinding(finding: LiveIssue) {
-        findIssueNode(finding.getId().toString())?.let {
+        findIssueNode(finding.getId().toString())?.let { issueNode ->
             latestIssues.remove(finding)
-            summaryNode.remove(it)
+            val parentFileNode = issueNode.parent as? FileNode
+            if (parentFileNode != null) {
+                parentFileNode.remove(issueNode)
+                if (parentFileNode.childCount == 0) {
+                    summaryNode.remove(parentFileNode)
+                }
+            } else {
+                summaryNode.remove(issueNode)
+            }
             treeSummary.refresh(1, latestIssues.size)
             model.nodeStructureChanged(summaryNode)
         }
