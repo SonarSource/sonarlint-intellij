@@ -25,9 +25,12 @@ import com.sonar.orchestrator.locator.FileLocation
 import kotlin.random.Random
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.ClassOrderer
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestClassOrder
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -74,6 +77,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 
 @Tag("ConfigurationTests")
+@TestClassOrder(ClassOrderer.OrderAnnotation::class)
 @EnabledIf("isIdeaCommunity")
 class ConfigurationTests : BaseUiTest() {
 
@@ -147,11 +151,15 @@ class ConfigurationTests : BaseUiTest() {
     }
 
     @Nested
+    @Order(1)
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SampleScalaTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
+            // JUnit 5.14+/6 may run nested classes out of declaration order; SharedConfigTests.clearConnections()
+            // otherwise leaves no Orchestrator connection for this class.
+            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, tokenValue)
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))
 
@@ -215,11 +223,13 @@ class ConfigurationTests : BaseUiTest() {
     }
 
     @Nested
+    @Order(2)
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SharedConfigTests : BaseUiTest() {
 
         @BeforeAll
         fun initProfile() {
+            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, tokenValue)
             ORCHESTRATOR.server.restoreProfile(FileLocation.ofClasspath("/shared-connected-mode-java-issue.xml"))
             ORCHESTRATOR.server.provisionProject(SHARED_CONNECTED_MODE_KEY, "Shared Connected Mode")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
@@ -248,6 +258,7 @@ class ConfigurationTests : BaseUiTest() {
     }
 
     @Nested
+    @Order(3)
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class NewConnectionsFromToolWindowTests : BaseUiTest() {
 
@@ -275,6 +286,7 @@ class ConfigurationTests : BaseUiTest() {
     }
 
     @Nested
+    @Order(4)
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     inner class SampleJavaIssuesTests : BaseUiTest() {
 
