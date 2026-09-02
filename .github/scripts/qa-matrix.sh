@@ -236,11 +236,11 @@ case "${MODE}" in
     emit "${MATRIX}" "false"
     ;;
   eap)
-    MATRIX="$(jq -nc --arg eap "${EAP}" --arg rd "$(prop_or eapRiderIdeVersion "${EAP}")" '[
-      {ide_version:("IU-" + $eap),qa_category:"IdeaUltimateEAP"},
+    MATRIX="$(idea_suites "IU-${EAP}" "IdeaUltimateEAP")"
+    MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg eap "${EAP}" --arg rd "$(prop_or eapRiderIdeVersion "${EAP}")" '[
       {ide_version:("CL-" + $eap),qa_category:"CLionEAP",test_suite:"CLion"},
       {ide_version:("RD-" + $rd),qa_category:"RiderEAP",test_suite:"Rider"}
-    ]')"
+    ]')")"
     emit "${MATRIX}" "false"
     ;;
   *)
