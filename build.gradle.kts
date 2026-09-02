@@ -34,6 +34,16 @@ plugins {
     alias(libs.plugins.cyclonedx)
 }
 
+// sonar-gradle-plugin 7.4's sonarResolver reads processResources output without declaring that input
+allprojects {
+    tasks.matching { it.name == "sonarResolver" }.configureEach {
+        val resourcesTask = tasks.findByName("processResources")
+        if (resourcesTask != null) {
+            dependsOn(resourcesTask)
+        }
+    }
+}
+
 buildscript {
     dependencies {
         "classpath"("org.jetbrains.intellij:blockmap:1.0.10")
