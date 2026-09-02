@@ -258,10 +258,23 @@ runs:
       shell: bash
       run: |
         DOTNET_ROOT="${HOME}/.dotnet"
-        mkdir -p "${DOTNET_ROOT}"
-        curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
-        bash /tmp/dotnet-install.sh --channel 8.0 --install-dir "${DOTNET_ROOT}"
-        bash /tmp/dotnet-install.sh --channel 6.0 --runtime dotnet --install-dir "${DOTNET_ROOT}"
+        has_sdk8=0
+        has_rt6=0
+        if [[ -x "${DOTNET_ROOT}/dotnet" ]]; then
+          has_sdk8=$("${DOTNET_ROOT}/dotnet" --list-sdks 2>/dev/null | grep -c '^8\.' || true)
+          has_rt6=$("${DOTNET_ROOT}/dotnet" --list-runtimes 2>/dev/null | grep -c 'Microsoft.NETCore.App 6\.' || true)
+        fi
+        if [[ "${has_sdk8}" -eq 0 || "${has_rt6}" -eq 0 ]]; then
+          mkdir -p "${DOTNET_ROOT}"
+          curl -fsSL --retry 3 --retry-all-errors --retry-delay 5 \
+            https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+          if [[ "${has_sdk8}" -eq 0 ]]; then
+            bash /tmp/dotnet-install.sh --channel 8.0 --install-dir "${DOTNET_ROOT}"
+          fi
+          if [[ "${has_rt6}" -eq 0 ]]; then
+            bash /tmp/dotnet-install.sh --channel 6.0 --runtime dotnet --install-dir "${DOTNET_ROOT}"
+          fi
+        fi
         echo "${DOTNET_ROOT}" >> "${GITHUB_PATH}"
         echo "${DOTNET_ROOT}/tools" >> "${GITHUB_PATH}"
         echo "DOTNET_ROOT=${DOTNET_ROOT}" >> "${GITHUB_ENV}"
