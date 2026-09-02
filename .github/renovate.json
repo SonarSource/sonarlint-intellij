@@ -8,6 +8,13 @@
   ],
   "packageRules": [
     {
+      "description": "sonar-ws 26+ needs protobuf 4; 2024.2 ITs load IDE protobuf 3",
+      "matchPackageNames": [
+        "org.sonarsource.sonarqube:sonar-ws"
+      ],
+      "allowedVersions": "<26.0.0"
+    },
+    {
       "description": "Regenerate Gradle lockfiles after dependency updates",
       "matchManagers": [
         "gradle",
