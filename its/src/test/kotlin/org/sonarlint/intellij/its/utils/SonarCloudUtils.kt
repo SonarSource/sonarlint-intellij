@@ -33,6 +33,7 @@ import org.sonarqube.ws.MediaTypes
 import org.sonarqube.ws.client.GetRequest
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.PostRequest
+import org.sonarqube.ws.client.RequestWithPayload
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
 import org.sonarqube.ws.client.issues.SearchRequest
@@ -99,7 +100,7 @@ object SonarCloudUtils {
         val backupFile = File("src/test/resources/$fileName")
         val request = PostRequest("api/qualityprofiles/restore")
         request.setParam("organization", SONARCLOUD_ORGANIZATION)
-        request.setPart("backup", PostRequest.Part(MediaTypes.XML, backupFile))
+        request.setPart("backup", RequestWithPayload.Part(MediaTypes.XML, backupFile))
         adminWsClient.wsConnector().call(request)
     }
 
@@ -140,14 +141,14 @@ object SonarCloudUtils {
         val wsClient = WsClientFactories.getDefault().newClient(httpConnector)
 
         val request = GetRequest("api/issues/show")
-        request.setParam("project", project)
-        request.setParam("issue", issue)
-        request.setParam("server", server)
-        request.setParam("branch", branch)
-        request.setParam("tokenName", tokenName)
-        request.setParam("tokenValue", tokenValue)
-        request.setParam("organizationKey", organizationKey)
-        request.setHeader("Origin", SONARCLOUD_STAGING_URL)
+        request.setParam<GetRequest>("project", project)
+        request.setParam<GetRequest>("issue", issue)
+        request.setParam<GetRequest>("server", server)
+        request.setParam<GetRequest>("branch", branch)
+        request.setParam<GetRequest>("tokenName", tokenName)
+        request.setParam<GetRequest>("tokenValue", tokenValue)
+        request.setParam<GetRequest>("organizationKey", organizationKey)
+        request.setHeader<GetRequest>("Origin", SONARCLOUD_STAGING_URL)
         wsClient.wsConnector().call(request).close()
     }
 
