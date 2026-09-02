@@ -10,10 +10,8 @@
 # latestStableIdeVersion, eapIdeVersion, and optional per-product overrides).
 #
 # Writes GITHUB_OUTPUT keys:
-#   matrix        JSON array of {ide_version, qa_category, test_suite?}
-#   skip_its      true when a PR/push only touches documentation
-#   rider_matrix  PR-only Rider entries (empty JSON array otherwise)
-#   has_rider     true when rider_matrix is non-empty
+#   matrix     JSON array of {ide_version, qa_category, test_suite?}
+#   skip_its   true when a PR/push only touches documentation
 #
 # Exit codes:
 #   0: Success
@@ -154,16 +152,10 @@ append_json() {
 emit() {
   local matrix="$1"
   local skip="${2:-false}"
-  local rider_matrix="${3:-[]}"
-  local has_rider="${4:-false}"
   echo "matrix=${matrix}" >> "${GITHUB_OUTPUT}"
   echo "skip_its=${skip}" >> "${GITHUB_OUTPUT}"
-  echo "rider_matrix=${rider_matrix}" >> "${GITHUB_OUTPUT}"
-  echo "has_rider=${has_rider}" >> "${GITHUB_OUTPUT}"
   echo "QA matrix (${MODE}): ${matrix}"
   echo "skip_its=${skip}"
-  echo "rider_matrix=${rider_matrix}"
-  echo "has_rider=${has_rider}"
 }
 
 MIN="$(read_gradle_prop minSupportedIdeVersion)"
@@ -200,21 +192,15 @@ case "${MODE}" in
       exit 0
     fi
     MATRIX="$(idea_suites "IC-${LATEST}" "IdeaLatest")"
-    RIDER_MATRIX="[]"
-    HAS_RIDER="false"
     if [[ "${run_clion}" == "true" ]]; then
       MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "CL-${LATEST}" \
         '[{ide_version:$ver,qa_category:"CLionLatest",test_suite:"CLion"}]')")"
     fi
     if [[ "${run_rider}" == "true" ]]; then
-      # Rider stays on a separate PR job: C# analysis ITs still flake, and a
-      # failed matrix cell would fail `qa` / Promote. Nightly/EAP keep Rider
-      # in the main matrix so those workflows (and Slack) still surface it.
-      RIDER_MATRIX="$(jq -nc --arg ver "RD-${RIDER_LATEST}" \
-        '[{ide_version:$ver,qa_category:"RiderLatest",test_suite:"Rider"}]')"
-      HAS_RIDER="true"
+      MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "RD-${RIDER_LATEST}" \
+        '[{ide_version:$ver,qa_category:"RiderLatest",test_suite:"Rider"}]')")"
     fi
-    emit "${MATRIX}" "false" "${RIDER_MATRIX}" "${HAS_RIDER}"
+    emit "${MATRIX}" "false"
     ;;
   nightly)
     MATRIX="$(idea_suites "IC-${MIN}" "IdeaMin")"

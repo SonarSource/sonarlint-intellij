@@ -14,12 +14,12 @@ Path-filtered matrix from [`.github/scripts/qa-matrix.sh`](../.github/scripts/qa
 |------|------|
 | Any non-docs change | IntelliJ **latest** × 4 suites (`OpenInIdeTests`, `ConnectedAnalysisTests`, `ConfigurationTests`, `Standalone`) |
 | `clion/`, `clion-resharper/`, CLion plugin XMLs, or IT/CI harness | CLion **latest** (`TEST_SUITE=CLion`) |
-| `rider/`, Rider plugin XML / sources, or IT/CI harness | Rider **latest** (`TEST_SUITE=Rider`) — advisory on PRs (does not block Promote); gating on `master` pushes |
+| `rider/`, Rider plugin XML / sources, or IT/CI harness | Rider **latest** (`TEST_SUITE=Rider`) |
 | Docs only (`*.md`, `docs/`, `HEADER`, …) | ITs skipped |
 
 Harness means `its/`, `.github/`, Gradle files, or `mise.toml`. Changing those runs CLion and Rider as well as IntelliJ.
 
-Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet OmniSharp.dll`) and load the `net6.0` sample projects. CI installs that SDK on `RD-*` jobs. Local Rider ITs need the same. On pull requests `qa-rider` uses `continue-on-error` so a remaining flake cannot fail Promote. On `master` pushes the same job is gating so `notify-failure.yml` can alert Slack. Nightly and weekly EAP also gate on Rider.
+Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet OmniSharp.dll`) and load the `net6.0` sample projects. CI installs that SDK on `RD-*` jobs. Local Rider ITs need the same.
 
 ### Nightly (weekdays 02:00 UTC)
 
