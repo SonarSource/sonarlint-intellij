@@ -19,7 +19,7 @@ Path-filtered matrix from [`.github/scripts/qa-matrix.sh`](../.github/scripts/qa
 
 Harness means `its/`, `.github/`, Gradle files, or `mise.toml`. Changing those runs CLion and Rider as well as IntelliJ.
 
-Rider C# analysis needs a `dotnet` CLI on `PATH` so OmniSharp can start (`dotnet OmniSharp.dll`). CI installs the .NET 8 SDK plus the .NET 6 runtime on `RD-*` jobs. Local Rider ITs need the same. On pull requests `qa-rider` uses `continue-on-error` so a remaining flake cannot fail Promote. On `master` pushes the same job is gating so `notify-failure.yml` can alert Slack. Nightly and weekly EAP also gate on Rider.
+Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet OmniSharp.dll`) and load the `net6.0` sample projects. CI installs that SDK on `RD-*` jobs. Local Rider ITs need the same. On pull requests `qa-rider` uses `continue-on-error` so a remaining flake cannot fail Promote. On `master` pushes the same job is gating so `notify-failure.yml` can alert Slack. Nightly and weekly EAP also gate on Rider.
 
 ### Nightly (weekdays 02:00 UTC)
 
@@ -63,4 +63,4 @@ TEST_SUITE=ConnectedAnalysisTests ./gradlew :its:test -PijVersion=IC-2025.3.2
 
 Core suites are gated with `isIntelliJIdea()` so they run on Community, Ultimate, and the 2025.3+ unified IntelliJ distribution.
 
-Rider (`TEST_SUITE=Rider`, `-PijVersion=RD-…`) requires a .NET 8 SDK on `PATH` (`dotnet --info`). OmniSharp's host is net6; a .NET 6 runtime (or `DOTNET_ROLL_FORWARD=Major` with an 8+ SDK) is also required.
+Rider (`TEST_SUITE=Rider`, `-PijVersion=RD-…`) requires a .NET 6 SDK on `PATH` (`dotnet --info`). The sample projects target `net6.0` to match the embedded OmniSharp host.
