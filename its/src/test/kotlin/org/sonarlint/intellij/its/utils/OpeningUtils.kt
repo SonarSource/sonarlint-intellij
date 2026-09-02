@@ -112,10 +112,10 @@ object OpeningUtils {
                 }
             } catch (e: Throwable) {
                 // Starting from 2025.2+ there's no welcome frame
-                if (isGoLand()) {
-                    openFileSelector()
-                } else {
-                    throw e
+                when {
+                    isGoLand() -> openFileSelector()
+                    remoteRobot.isRider() -> openFileSelector()
+                    else -> throw e
                 }
             }
             if (remoteRobot.isRider()) {
