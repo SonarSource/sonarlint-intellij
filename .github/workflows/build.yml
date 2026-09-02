@@ -284,8 +284,6 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       skip_its: ${{ steps.set-matrix.outputs.skip_its }}
-      rider_matrix: ${{ steps.set-matrix.outputs.rider_matrix }}
-      has_rider: ${{ steps.set-matrix.outputs.has_rider }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -317,46 +315,6 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.setup-qa-matrix.outputs.matrix) }}
-    env:
-      DISPLAY: ':10'
-      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-
-      - uses: ./.github/actions/run-qa-its
-        with:
-          ide_version: ${{ matrix.ide_version }}
-          qa_category: ${{ matrix.qa_category }}
-          project_version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
-          test_suite: ${{ matrix.test_suite }}
-
-  # Rider C# analysis ITs still time out waiting for findings (the reason this
-  # flavor was disabled in Dec 2025). Keep the job for signal, but do not let
-  # it fail `qa` or block Promote on PRs. Master pushes still fail the workflow
-  # so notify-failure.yml can alert Slack. Nightly/EAP also gate on Rider.
-  qa-rider:
-    if: needs.setup-qa-matrix.outputs.has_rider == 'true'
-    continue-on-error: ${{ github.event_name == 'pull_request' }}
-    runs-on: warp-custom-ubuntu-24-04
-    container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
-      options: --user runner
-      credentials:
-        username: ${{ needs.aws-auth.outputs.docker_username }}
-        password: ${{ needs.aws-auth.outputs.docker_password }}
-    defaults:
-      run:
-        shell: bash
-    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite || matrix.qa_category }}
-    needs:
-      - build-plugin
-      - build-number
-      - aws-auth
-      - setup-qa-matrix
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.setup-qa-matrix.outputs.rider_matrix) }}
     env:
       DISPLAY: ':10'
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
