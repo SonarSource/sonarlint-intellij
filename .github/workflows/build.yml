@@ -291,10 +291,7 @@ jobs:
 
       - name: Build PR QA matrix
         id: set-matrix
-        run: |
-          MIN=$(grep '^minSupportedIdeVersion=' gradle.properties | cut -d= -f2 | cut -d'#' -f1 | xargs)
-          LATEST=$(grep '^latestStableIdeVersion=' gradle.properties | cut -d= -f2 | cut -d'#' -f1 | xargs)
-          .github/scripts/qa-matrix.sh pr "$MIN" "$LATEST"
+        run: .github/scripts/qa-matrix.sh pr
 
   qa:
     if: needs.setup-qa-matrix.outputs.skip_its != 'true'
@@ -339,14 +336,16 @@ jobs:
       - build-plugin
       - test-and-sonar
       - check_windows
+      - setup-qa-matrix
       - qa
     if: >
-      always() &&
       !cancelled() &&
       needs.build-plugin.result == 'success' &&
       needs.test-and-sonar.result == 'success' &&
       needs.check_windows.result == 'success' &&
-      (needs.qa.result == 'success' || needs.qa.result == 'skipped') &&
+      needs.setup-qa-matrix.result == 'success' &&
+      (needs.qa.result == 'success' ||
+       (needs.qa.result == 'skipped' && needs.setup-qa-matrix.outputs.skip_its == 'true')) &&
       (github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-'))
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}

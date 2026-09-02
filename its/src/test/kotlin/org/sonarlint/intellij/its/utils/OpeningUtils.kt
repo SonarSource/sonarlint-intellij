@@ -32,7 +32,6 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
-import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
@@ -111,11 +110,12 @@ object OpeningUtils {
                     openProjectButton().click(Point(10, 10))
                 }
             } catch (e: Throwable) {
-                // Starting from 2025.2+ there's no welcome frame
-                when {
-                    isGoLand() -> openFileSelector()
-                    remoteRobot.isRider() -> openFileSelector()
-                    else -> throw e
+                // Starting from 2025.2+ there's no welcome frame in any IDE flavor
+                try {
+                    openFileSelector()
+                } catch (fallbackFailure: Throwable) {
+                    e.addSuppressed(fallbackFailure)
+                    throw e
                 }
             }
             if (remoteRobot.isRider()) {

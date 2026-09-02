@@ -25,8 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.isBuildCommunity
-import org.sonarlint.intellij.its.fixtures.isBuildUltimate
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
@@ -58,18 +56,12 @@ open class BaseUiTest {
             remoteRobot = RemoteRobot(robotUrl)
         }
 
-        @JvmStatic
-        fun isIdeaCommunity() = remoteRobot.isIdea() && remoteRobot.isBuildCommunity()
-
         /**
          * IntelliJ IDEA in any edition, including the 2025.3+ unified distribution
          * whose build string is no longer `IC`/`IU`.
          */
         @JvmStatic
         fun isIntelliJIdea() = remoteRobot.isIdea()
-
-        @JvmStatic
-        fun isIdeaUltimate() = remoteRobot.isIdea() && remoteRobot.isBuildUltimate()
 
         @JvmStatic
         fun isCLion() = remoteRobot.isCLion()
@@ -101,7 +93,7 @@ open class BaseUiTest {
         fun isGoPlugin() = remoteRobot.isGoPlugin()
 
         @JvmStatic
-        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIdeaUltimate()
+        fun isSQLPlugin() = remoteRobot.isSQLPlugin()
 
         private fun closeAllDialogs() {
             remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
