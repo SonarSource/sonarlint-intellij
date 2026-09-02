@@ -242,45 +242,37 @@ runs:
         metacity --sm-disable --replace &
         sleep 3
 
-    # OmniSharp launches `dotnet OmniSharp.dll`. Rider ITs target net8.0; the
-    # embedded OmniSharp host is net6. Without both, analysis finds nothing.
+    # OmniSharp launches `dotnet OmniSharp.dll`. The embedded host is net6, and
+    # the Rider sample projects target net6.0 so MSBuild can load System.Runtime 6.
     - name: Restore .NET SDK cache
       if: startsWith(inputs.ide_version, 'RD-')
       uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
       with:
         path: ~/.dotnet
-        key: ${{ runner.os }}-dotnet-sdk-8.0-runtime-6.0
+        key: ${{ runner.os }}-dotnet-sdk-6.0
         restore-keys: |
-          ${{ runner.os }}-dotnet-sdk-8.0-runtime-6.0
+          ${{ runner.os }}-dotnet-sdk-6.0
 
     - name: Install .NET SDK for Rider OmniSharp
       if: startsWith(inputs.ide_version, 'RD-')
       shell: bash
       run: |
         DOTNET_ROOT="${HOME}/.dotnet"
-        has_sdk8=0
-        has_rt6=0
+        has_sdk6=0
         if [[ -x "${DOTNET_ROOT}/dotnet" ]]; then
-          has_sdk8=$("${DOTNET_ROOT}/dotnet" --list-sdks 2>/dev/null | grep -c '^8\.' || true)
-          has_rt6=$("${DOTNET_ROOT}/dotnet" --list-runtimes 2>/dev/null | grep -c 'Microsoft.NETCore.App 6\.' || true)
+          has_sdk6=$("${DOTNET_ROOT}/dotnet" --list-sdks 2>/dev/null | grep -c '^6\.' || true)
         fi
-        if [[ "${has_sdk8}" -eq 0 || "${has_rt6}" -eq 0 ]]; then
+        if [[ "${has_sdk6}" -eq 0 ]]; then
           mkdir -p "${DOTNET_ROOT}"
           curl -fsSL --retry 3 --retry-all-errors --retry-delay 5 \
             https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
-          if [[ "${has_sdk8}" -eq 0 ]]; then
-            bash /tmp/dotnet-install.sh --channel 8.0 --install-dir "${DOTNET_ROOT}"
-          fi
-          if [[ "${has_rt6}" -eq 0 ]]; then
-            bash /tmp/dotnet-install.sh --channel 6.0 --runtime dotnet --install-dir "${DOTNET_ROOT}"
-          fi
+          bash /tmp/dotnet-install.sh --channel 6.0 --install-dir "${DOTNET_ROOT}"
         fi
         echo "${DOTNET_ROOT}" >> "${GITHUB_PATH}"
         echo "${DOTNET_ROOT}/tools" >> "${GITHUB_PATH}"
         echo "DOTNET_ROOT=${DOTNET_ROOT}" >> "${GITHUB_ENV}"
         echo "DOTNET_NOLOGO=1" >> "${GITHUB_ENV}"
         echo "DOTNET_CLI_TELEMETRY_OPTOUT=1" >> "${GITHUB_ENV}"
-        echo "DOTNET_ROLL_FORWARD=Major" >> "${GITHUB_ENV}"
         "${DOTNET_ROOT}/dotnet" --info
 
     - name: Start IDE in background
