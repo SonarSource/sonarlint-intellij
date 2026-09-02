@@ -242,11 +242,45 @@ runs:
         metacity --sm-disable --replace &
         sleep 3
 
+    # OmniSharp launches `dotnet OmniSharp.dll`. Rider ITs target net8.0; the
+    # embedded OmniSharp host is net6. Without both, analysis finds nothing.
+    - name: Restore .NET SDK cache
+      if: startsWith(inputs.ide_version, 'RD-')
+      uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
+      with:
+        path: ~/.dotnet
+        key: ${{ runner.os }}-dotnet-sdk-8.0-runtime-6.0
+        restore-keys: |
+          ${{ runner.os }}-dotnet-sdk-8.0-runtime-6.0
+
+    - name: Install .NET SDK for Rider OmniSharp
+      if: startsWith(inputs.ide_version, 'RD-')
+      shell: bash
+      run: |
+        DOTNET_ROOT="${HOME}/.dotnet"
+        mkdir -p "${DOTNET_ROOT}"
+        curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+        bash /tmp/dotnet-install.sh --channel 8.0 --install-dir "${DOTNET_ROOT}"
+        bash /tmp/dotnet-install.sh --channel 6.0 --runtime dotnet --install-dir "${DOTNET_ROOT}"
+        echo "${DOTNET_ROOT}" >> "${GITHUB_PATH}"
+        echo "${DOTNET_ROOT}/tools" >> "${GITHUB_PATH}"
+        echo "DOTNET_ROOT=${DOTNET_ROOT}" >> "${GITHUB_ENV}"
+        echo "DOTNET_NOLOGO=1" >> "${GITHUB_ENV}"
+        echo "DOTNET_CLI_TELEMETRY_OPTOUT=1" >> "${GITHUB_ENV}"
+        echo "DOTNET_ROLL_FORWARD=Major" >> "${GITHUB_ENV}"
+        "${DOTNET_ROOT}/dotnet" --info
+
     - name: Start IDE in background
       shell: bash
       env:
         IDEA_VERSION: ${{ inputs.ide_version }}
       run: |
+        if [[ "${IDEA_VERSION}" == RD-* ]]; then
+          export DOTNET_ROOT="${DOTNET_ROOT:-${HOME}/.dotnet}"
+          export PATH="${DOTNET_ROOT}:${DOTNET_ROOT}/tools:${PATH}"
+          command -v dotnet
+          dotnet --info
+        fi
         nohup ./gradlew :its:runIdeForUiTests --stacktrace -i \
           -PijVersion=${IDEA_VERSION} \
           -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
