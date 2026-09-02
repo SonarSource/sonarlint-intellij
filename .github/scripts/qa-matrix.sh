@@ -10,8 +10,10 @@
 # latestStableIdeVersion, eapIdeVersion, and optional per-product overrides).
 #
 # Writes GITHUB_OUTPUT keys:
-#   matrix     JSON array of {ide_version, qa_category, test_suite?}
-#   skip_its   true when a PR/push only touches documentation
+#   matrix        JSON array of {ide_version, qa_category, test_suite?}
+#   skip_its      true when a PR/push only touches documentation
+#   rider_matrix  PR-only Rider entries (empty JSON array otherwise)
+#   has_rider     true when rider_matrix is non-empty
 #
 # Exit codes:
 #   0: Success
@@ -152,10 +154,16 @@ append_json() {
 emit() {
   local matrix="$1"
   local skip="${2:-false}"
+  local rider_matrix="${3:-[]}"
+  local has_rider="${4:-false}"
   echo "matrix=${matrix}" >> "${GITHUB_OUTPUT}"
   echo "skip_its=${skip}" >> "${GITHUB_OUTPUT}"
+  echo "rider_matrix=${rider_matrix}" >> "${GITHUB_OUTPUT}"
+  echo "has_rider=${has_rider}" >> "${GITHUB_OUTPUT}"
   echo "QA matrix (${MODE}): ${matrix}"
   echo "skip_its=${skip}"
+  echo "rider_matrix=${rider_matrix}"
+  echo "has_rider=${has_rider}"
 }
 
 MIN="$(read_gradle_prop minSupportedIdeVersion)"
@@ -192,13 +200,21 @@ case "${MODE}" in
       exit 0
     fi
     MATRIX="$(idea_suites "IC-${LATEST}" "IdeaLatest")"
+    RIDER_MATRIX="[]"
+    HAS_RIDER="false"
     if [[ "${run_clion}" == "true" ]]; then
-      MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "CL-${LATEST}" '[{ide_version:$ver,qa_category:"CLionLatest"}]')")"
+      MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "CL-${LATEST}" \
+        '[{ide_version:$ver,qa_category:"CLionLatest",test_suite:"CLion"}]')")"
     fi
     if [[ "${run_rider}" == "true" ]]; then
-      MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "RD-${RIDER_LATEST}" '[{ide_version:$ver,qa_category:"RiderLatest"}]')")"
+      # Rider stays on a separate PR job: C# analysis ITs still flake, and a
+      # failed matrix cell would fail `qa` / Promote. Nightly/EAP keep Rider
+      # in the main matrix so those workflows (and Slack) still surface it.
+      RIDER_MATRIX="$(jq -nc --arg ver "RD-${RIDER_LATEST}" \
+        '[{ide_version:$ver,qa_category:"RiderLatest",test_suite:"Rider"}]')"
+      HAS_RIDER="true"
     fi
-    emit "${MATRIX}" "false"
+    emit "${MATRIX}" "false" "${RIDER_MATRIX}" "${HAS_RIDER}"
     ;;
   nightly)
     MATRIX="$(idea_suites "IC-${MIN}" "IdeaMin")"
@@ -208,13 +224,13 @@ case "${MODE}" in
       --arg pslat "PS-${LATEST}" --arg pylat "PY-${PYCHARM_LATEST}" \
       --arg golat "GO-${LATEST}" --arg iumin "IU-${MIN}" \
       '[
-        {ide_version:$clmin,qa_category:"CLionMin"},
-        {ide_version:$cllat,qa_category:"CLionLatest"},
-        {ide_version:$rdmin,qa_category:"RiderMin"},
-        {ide_version:$rdlat,qa_category:"RiderLatest"},
-        {ide_version:$pslat,qa_category:"PhpStormLatest"},
-        {ide_version:$pylat,qa_category:"PyCharmLatest"},
-        {ide_version:$golat,qa_category:"GoLandLatest"},
+        {ide_version:$clmin,qa_category:"CLionMin",test_suite:"CLion"},
+        {ide_version:$cllat,qa_category:"CLionLatest",test_suite:"CLion"},
+        {ide_version:$rdmin,qa_category:"RiderMin",test_suite:"Rider"},
+        {ide_version:$rdlat,qa_category:"RiderLatest",test_suite:"Rider"},
+        {ide_version:$pslat,qa_category:"PhpStormLatest",test_suite:"PhpStorm"},
+        {ide_version:$pylat,qa_category:"PyCharmLatest",test_suite:"PyCharm"},
+        {ide_version:$golat,qa_category:"GoLandLatest",test_suite:"GoLand"},
         {ide_version:$iumin,qa_category:"IdeaUltimateMin",test_suite:"PLSQL"}
       ]')")"
     emit "${MATRIX}" "false"
@@ -222,8 +238,8 @@ case "${MODE}" in
   eap)
     MATRIX="$(jq -nc --arg eap "${EAP}" --arg rd "$(prop_or eapRiderIdeVersion "${EAP}")" '[
       {ide_version:("IU-" + $eap),qa_category:"IdeaUltimateEAP"},
-      {ide_version:("CL-" + $eap),qa_category:"CLionEAP"},
-      {ide_version:("RD-" + $rd),qa_category:"RiderEAP"}
+      {ide_version:("CL-" + $eap),qa_category:"CLionEAP",test_suite:"CLion"},
+      {ide_version:("RD-" + $rd),qa_category:"RiderEAP",test_suite:"Rider"}
     ]')"
     emit "${MATRIX}" "false"
     ;;

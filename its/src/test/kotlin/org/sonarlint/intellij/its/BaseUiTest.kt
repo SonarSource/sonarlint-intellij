@@ -92,8 +92,12 @@ open class BaseUiTest {
         @JvmStatic
         fun isGoPlugin() = remoteRobot.isGoPlugin()
 
+        /**
+         * Database plugin plus IntelliJ. Rider ships the Database plugin, so a
+         * plugin-only check would enable PLSQL ITs there.
+         */
         @JvmStatic
-        fun isSQLPlugin() = remoteRobot.isSQLPlugin()
+        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIntelliJIdea()
 
         private fun closeAllDialogs() {
             remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
