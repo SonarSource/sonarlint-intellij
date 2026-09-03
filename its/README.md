@@ -23,11 +23,12 @@ Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet O
 
 ### Weekly (Sundays 02:00 UTC)
 
-IntelliJ **min** × 4 suites, CLion min+latest, **Rider min+latest**, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL). Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack. PRs already cover latest IntelliJ (and CLion/Rider when those modules change), so the full flavor/min sweep is weekly rather than every weekday.
+One scheduled workflow, one plugin build:
 
-### Weekly EAP (Mondays 06:00 UTC)
+- IntelliJ **min** × 4 suites, CLion min+latest, Rider min+latest, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL)
+- IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion`
 
-IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion`. Failures notify Slack; they do not block PR promotion.
+Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change).
 
 ## Version bumps
 
