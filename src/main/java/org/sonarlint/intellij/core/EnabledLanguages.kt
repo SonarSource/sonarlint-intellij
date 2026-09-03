@@ -19,18 +19,19 @@
  */
 package org.sonarlint.intellij.core
 
-import com.intellij.ide.plugins.PluginManager
-import com.intellij.openapi.extensions.PluginId
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.EnumSet
 import org.sonarlint.intellij.SonarLintPlugin
+import org.sonarlint.intellij.common.util.OptionalPluginMarker
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.utils.ClientLogOutput
 import org.sonarsource.sonarlint.core.commons.api.SonarLanguage
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
+import com.intellij.lang.Language as IdeLanguage
 
 private const val JUPYTER_PLUGIN_ID = "intellij.jupyter"
 private const val DATABASE_PLUGIN_ID = "com.intellij.database"
@@ -188,6 +189,15 @@ object EnabledLanguages {
     @JvmStatic
     fun isClionEnabled() = isIdeModuleEnabled(CLION_MODULE_ID)
 
-    private fun isIdeModuleEnabled(pluginId: String) =
-        PluginManager.getInstance().findEnabledPlugin(PluginId.getId(pluginId)) != null
+    private fun isIdeModuleEnabled(pluginId: String): Boolean {
+        return when (pluginId) {
+            RIDER_MODULE_ID -> SonarLintUtils.isRider()
+            CLION_MODULE_ID -> SonarLintUtils.isCLion()
+            // Same public pattern as SonarLintUtils.isPhpLanguageRegistered()
+            JAVA_MODULE_ID -> IdeLanguage.findLanguageByID("JAVA") != null
+            // Optional config-files register markers only when the dependency plugin is enabled
+            GO_PLUGIN_ID, JUPYTER_PLUGIN_ID, DATABASE_PLUGIN_ID -> OptionalPluginMarker.isPresent(pluginId)
+            else -> false
+        }
+    }
 }
