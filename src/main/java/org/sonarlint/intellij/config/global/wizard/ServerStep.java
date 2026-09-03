@@ -221,9 +221,17 @@ public class ServerStep extends AbstractWizardStepEx {
   @Override
   public boolean isComplete() {
     boolean nameValid = !nameField.getText().trim().isEmpty();
-    errorPainter.setValid(nameField, nameValid);
+    if (nameValid) {
+      errorPainter.removeComponentWithErrors(nameField);
+    } else {
+      errorPainter.addComponentWithErrors(nameField);
+    }
     boolean urlValid = radioSonarCloud.isSelected() || !urlText.getText().trim().isEmpty();
-    errorPainter.setValid(urlText, urlValid);
+    if (urlValid) {
+      errorPainter.removeComponentWithErrors(urlText);
+    } else {
+      errorPainter.addComponentWithErrors(urlText);
+    }
 
     return nameValid && urlValid;
   }

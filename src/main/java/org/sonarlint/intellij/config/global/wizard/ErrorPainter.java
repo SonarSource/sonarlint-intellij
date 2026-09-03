@@ -58,14 +58,6 @@ public class ErrorPainter extends AbstractPainter {
     }
   }
 
-  public void setValid(JComponent component, boolean valid) {
-    if (valid) {
-      removeComponentWithErrors(component);
-    } else {
-      addComponentWithErrors(component);
-    }
-  }
-
   public void removeComponentWithErrors(JComponent component) {
     if (componentsWithErrors.remove(component)) {
       panel.getRootPane().getGlassPane().repaint();

@@ -76,7 +76,7 @@ class RulesFilterAction extends DefaultActionGroup implements Toggleable, DumbAw
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-      model.reset(true);
+      model.resetAndNotify();
     }
   }
 }

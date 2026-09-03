@@ -587,7 +587,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       var path = new TreePath(node.getPath());
       table.getTree().setSelectionPath(path);
     } else {
-      filterModel.reset(false);
+      filterModel.resetSilently();
       myRuleFilter.reset();
     }
   }

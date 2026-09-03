@@ -192,15 +192,27 @@ public class AuthStep extends AbstractWizardStepEx {
     if (LOGIN_ITEM.equals(authComboBox.getSelectedItem())) {
       boolean passValid = passwordField.getPassword().length > 0;
       boolean loginValid = !loginField.getText().isEmpty();
-      errorPainter.setValid(passwordField, passValid);
-      errorPainter.setValid(loginField, loginValid);
-      errorPainter.setValid(tokenField, true);
+      if (passValid) {
+        errorPainter.removeComponentWithErrors(passwordField);
+      } else {
+        errorPainter.addComponentWithErrors(passwordField);
+      }
+      if (loginValid) {
+        errorPainter.removeComponentWithErrors(loginField);
+      } else {
+        errorPainter.addComponentWithErrors(loginField);
+      }
+      errorPainter.removeComponentWithErrors(tokenField);
       return passValid && loginValid;
     } else {
       boolean tokenValid = tokenField.getPassword().length > 0;
-      errorPainter.setValid(tokenField, tokenValid);
-      errorPainter.setValid(loginField, true);
-      errorPainter.setValid(passwordField, true);
+      if (tokenValid) {
+        errorPainter.removeComponentWithErrors(tokenField);
+      } else {
+        errorPainter.addComponentWithErrors(tokenField);
+      }
+      errorPainter.removeComponentWithErrors(loginField);
+      errorPainter.removeComponentWithErrors(passwordField);
       return tokenValid;
     }
   }

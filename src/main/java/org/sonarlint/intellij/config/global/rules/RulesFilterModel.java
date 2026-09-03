@@ -90,14 +90,21 @@ public class RulesFilterModel {
     return text == null && !isShowOnlyChanged() && !isShowOnlyDisabled() && !isShowOnlyEnabled();
   }
 
-  public void reset(boolean triggerListener) {
+  public void resetAndNotify() {
+    resetFilters();
+    onChange.run();
+  }
+
+  public void resetSilently() {
+    resetFilters();
+  }
+
+  private void resetFilters() {
     showOnlyChanged = false;
     showOnlyDisabled = false;
     showOnlyEnabled = false;
     text = null;
-    if (triggerListener) {
-      onChange.run();
-    }
+    tokenizedText = Collections.emptyList();
   }
 
   public boolean filter(RulesTreeNode.Rule rule) {
