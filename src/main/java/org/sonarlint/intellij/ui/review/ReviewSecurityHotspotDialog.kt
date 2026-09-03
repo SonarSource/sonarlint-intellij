@@ -28,11 +28,12 @@ import com.intellij.openapi.ui.DialogWrapper
 import java.awt.event.ActionEvent
 import javax.swing.JButton
 import org.sonarlint.intellij.actions.ReviewSecurityHotspotAction.Companion.REVIEW_HOTSPOT_GROUP
-import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.SECURITY_HOTSPOTS_LINK
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.runOnPooledThread
@@ -73,7 +74,7 @@ class ReviewSecurityHotspotDialog(
                 SonarLintUtils.getService(BackendService::class.java)
                     .changeStatusForHotspot(module, securityHotspotKey, status)
                     .thenAcceptAsync {
-                        SonarLintUtils.getService(project, SonarLintToolWindow::class.java).refreshViews()
+                        SonarLintUtils.getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
                         runOnUiThread(
                             project,
                             modalityState,

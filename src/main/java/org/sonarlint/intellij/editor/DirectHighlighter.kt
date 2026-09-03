@@ -238,9 +238,8 @@ class DirectHighlighter @NonInjectable internal constructor(
     )
 
     /**
-     * Builds the list of highlights to render for [file] from the findings currently displayed in the tool window.
-     * Reads the shared snapshot rather than the raw analysis so that editor highlights always match what the user
-     * sees in the Current File tab (same filtering, same resolved/new-code handling).
+     * Builds the list of highlights to render for [file] from the filtered findings snapshot shown in the Current File
+     * tab. Resolved findings are still skipped, and CAYC styling is still applied.
      */
     private fun collectHighlightPlans(file: VirtualFile): List<HighlightPlan> {
         val findings = getService(project, CurrentFileDisplayedFindingsStore::class.java).getFindingsForFile(file)

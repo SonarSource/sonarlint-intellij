@@ -37,12 +37,12 @@ import javax.swing.JScrollPane
 import javax.swing.tree.TreePath
 import org.sonarlint.intellij.actions.RestartBackendAction
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
 import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.Finding
 import org.sonarlint.intellij.finding.ShowFinding
@@ -357,6 +357,8 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         }
     }
 
+    fun getCurrentFilterCriteria(): FilterCriteria = displayManager.getCurrentFilterCriteria()
+
     fun update(file: VirtualFile?, highlightRefresh: EditorHighlightRefresh = EditorHighlightRefresh.NONE) {
         this.currentFile = file
 
@@ -364,20 +366,20 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
 
         val filterCriteria = displayManager.getCurrentFilterCriteria()
         try {
-            val fileChanged = file != lastFile
-            val filtersChanged = filterCriteria != lastFilterCriteria
+        val fileChanged = file != lastFile
+        val filtersChanged = filterCriteria != lastFilterCriteria
 
-            // Always check for new findings - they may have changed even with same file/filters
-            val newFilteredFindings = findingsFilter.filterAllFindings(file, filterCriteria)
-            val findingsChanged = newFilteredFindings != filteredFindingsCache
+        // Always check for new findings - they may have changed even with same file/filters
+        val newFilteredFindings = findingsFilter.filterAllFindings(file, filterCriteria)
+        val findingsChanged = newFilteredFindings != filteredFindingsCache
 
-            // Skip expensive operations only if truly nothing has changed
-            if (!fileChanged && !filtersChanged && !findingsChanged) {
-                return
-            }
+        // Skip expensive operations only if truly nothing has changed
+        if (!fileChanged && !filtersChanged && !findingsChanged) {
+            return
+        }
 
-            filteredFindingsCache = newFilteredFindings
-            getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(newFilteredFindings)
+        filteredFindingsCache = newFilteredFindings
+        getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(newFilteredFindings)
 
         // Cache values for next comparison
         lastFile = file
@@ -437,8 +439,6 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         expandTreesWithStatePreservation(treeStateSnapshot)
         updateSummaryButtons()
         } finally {
-            // Refresh highlights so they are updated even when the panel content is left
-            // unchanged by the early return above (e.g. on a selection change back to an already-populated file).
             if (highlightRefresh.enabled) {
                 refreshEditorHighlights(file, filterCriteria, highlightRefresh)
             }
@@ -448,17 +448,11 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     private fun refreshEditorHighlights(file: VirtualFile?, filterCriteria: FilterCriteria, highlightRefresh: EditorHighlightRefresh) {
         val files = resolveEditorHighlightFiles(file, filterCriteria, highlightRefresh)
         if (files.isNotEmpty()) {
-            getService(project, CodeAnalyzerRestarter::class.java).refreshFiles(files)
+            getService(project, OnTheFlyFindingsCoordinator::class.java)
+                .applyHighlightRefresh(EditorHighlightRefresh.enabled(files))
         }
     }
 
-    /**
-     * Resolves which open editors should have their highlights recomputed.
-     *
-     * Note the scope precedence: in the default [FindingsScope.CURRENT_FILE] view only the selected file is ever
-     * refreshed, so [EditorHighlightRefresh.changedFiles] is only consulted in the "all files" scope. This matches
-     * the historical behaviour where background editors kept their highlights until they were re-selected.
-     */
     private fun resolveEditorHighlightFiles(
         file: VirtualFile?,
         filterCriteria: FilterCriteria,
@@ -467,7 +461,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         val files = when {
             highlightRefresh.allOpenFiles -> FileEditorManager.getInstance(project).openFiles.toList()
             filterCriteria.findingsScope == FindingsScope.CURRENT_FILE -> listOfNotNull(file)
-            highlightRefresh.changedFiles != null -> highlightRefresh.changedFiles.toList()
+            highlightRefresh.changedFiles != null -> highlightRefresh.changedFiles!!.toList()
             else -> FileEditorManager.getInstance(project).openFiles.toList()
         }
         return files.filter { it.isValid }

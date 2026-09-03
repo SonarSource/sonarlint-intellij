@@ -37,10 +37,11 @@ import org.sonarlint.intellij.util.VirtualFileUtils.uriToVirtualFile
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
-class AnalysisState(
+class AnalysisState @JvmOverloads constructor(
     val id: UUID,
     private val analysisCallback: AnalysisCallback,
-    private val module: Module
+    private val module: Module,
+    private val submittedFiles: Collection<VirtualFile> = emptyList(),
 ) {
     private val modificationStampByFile = ConcurrentHashMap<VirtualFile, Long>()
     private val analysisDate: Instant = Instant.now()
@@ -63,19 +64,7 @@ class AnalysisState(
             }
         })
 
-        if (isAnalysisFinished()) {
-            analysisCallback.onSuccess(
-                AnalysisResult(
-                    analysisId,
-                    LiveFindings(liveIssues, liveHotspots),
-                    liveHotspots.keys,
-                    analysisDate
-                )
-            )
-            getService(module.project, RunningAnalysesTracker::class.java).finish(this)
-        } else {
-            analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
-        }
+        notifyIfFinished(analysisId)
     }
 
     fun addRawIssues(analysisId: UUID, issuesByFile: Map<URI, List<RaisedIssueDto>>, isIntermediate: Boolean) {
@@ -91,12 +80,16 @@ class AnalysisState(
             }
         })
 
+        notifyIfFinished(analysisId)
+    }
+
+    private fun notifyIfFinished(analysisId: UUID) {
         if (isAnalysisFinished()) {
             analysisCallback.onSuccess(
                 AnalysisResult(
                     analysisId,
                     LiveFindings(liveIssues, liveHotspots),
-                    liveIssues.keys,
+                    analyzedFilesForResult(),
                     analysisDate
                 )
             )
@@ -105,6 +98,13 @@ class AnalysisState(
             analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
         }
     }
+
+    /**
+     * Files this analysis actually covered. When the submitter did not pass a set (full-project / VCS-changed),
+     * fall back to the union of findings keys so report tabs keep today's behaviour.
+     */
+    private fun analyzedFilesForResult(): Collection<VirtualFile> =
+        submittedFiles.ifEmpty { liveIssues.keys + liveHotspots.keys }
 
     private fun convertRawHotspots(virtualFile: VirtualFile, rawHotspots: Collection<RaisedHotspotDto>): Collection<LiveSecurityHotspot> {
         try {

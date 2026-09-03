@@ -38,9 +38,10 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
-import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.aDependencyRiskDto
 import org.sonarlint.intellij.messages.PLUGIN_STATUS_CHANGE_TOPIC
@@ -395,8 +396,8 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_handle_dependency_risks_changes() {
-        val toolWindow = mock(SonarLintToolWindow::class.java)
-        replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
+        val coordinator = mock(OnTheFlyFindingsCoordinator::class.java)
+        replaceProjectService(OnTheFlyFindingsCoordinator::class.java, coordinator)
         val risksCache = mock(DependencyRisksCache::class.java)
         replaceProjectService(DependencyRisksCache::class.java, risksCache)
 
@@ -428,7 +429,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
                 updatedLocal[0].getId() == updatedRiskId1 && updatedLocal[0].isResolved()
             }
         )
-        verify(toolWindow).refreshViews()
+        verify(coordinator).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
     }
 
     @Test
@@ -442,15 +443,15 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_handle_empty_dependency_risks_changes() {
-        val toolWindow = mock(SonarLintToolWindow::class.java)
-        replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
+        val coordinator = mock(OnTheFlyFindingsCoordinator::class.java)
+        replaceProjectService(OnTheFlyFindingsCoordinator::class.java, coordinator)
         val risksCache = mock(DependencyRisksCache::class.java)
         replaceProjectService(DependencyRisksCache::class.java, risksCache)
 
         client.didChangeDependencyRisks(projectBackendId, emptySet(), emptyList(), emptyList())
 
         verify(risksCache).update(emptySet(), emptyList(), emptyList())
-        verify(toolWindow).refreshViews()
+        verify(coordinator).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
     }
 
     @Test

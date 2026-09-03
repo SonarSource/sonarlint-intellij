@@ -27,18 +27,27 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.PlatformTestUtil
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.ui.currentfile.CurrentFileDisplayedFindingsStore
+import org.sonarlint.intellij.ui.filter.FilterCriteria
 import org.sonarlint.intellij.ui.filter.FilteredFindings
+import org.sonarlint.intellij.ui.filter.FindingsFilter
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
@@ -83,8 +92,11 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
             highlighter.applyHighlightsForTest(file)
             assertThat(sonarLintHighlights(file, issueMessage)).hasSize(1)
 
-            getService(project, CurrentFileDisplayedFindingsStore::class.java)
-                .setSnapshot(FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList()))
+            getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+                .replaceIssuesForFile(file, emptyList())
+            getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(
+                FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList()),
+            )
             highlighter.applyHighlightsForTest(file)
 
             assertThat(sonarLintHighlights(file, issueMessage)).isEmpty()
@@ -180,6 +192,47 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
         }
     }
 
+    @Test
+    fun should_highlight_taints_from_the_taint_cache_without_a_findings_store() {
+        val content = "class Foo {}"
+        val file = createAndOpenTestPsiFile("Foo.java", content).virtualFile
+        val issueMessage = "SQL injection"
+        val expectedRange = textRangeOf(content, "Foo")
+        seedTaint(file, content, issueMessage)
+
+        withOpenEditor(file) {
+            val highlighter = getService(project, DirectHighlighter::class.java)
+            highlighter.applyHighlightsForTest(file)
+
+            val highlights = sonarLintHighlights(file, issueMessage)
+            assertThat(highlights).hasSize(1)
+            assertThat(highlights.single().startOffset).isEqualTo(expectedRange.first)
+            assertThat(highlights.single().endOffset).isEqualTo(expectedRange.second)
+        }
+    }
+
+
+    @Test
+    fun should_hide_editor_squiggle_when_a_list_filter_hides_the_issue() {
+        val content = "class Foo {}"
+        val file = createAndOpenTestPsiFile("Foo.java", content).virtualFile
+        val issueMessage = "Remove this unused private field"
+
+        seedDisplayedIssue(file, content, issueMessage)
+
+        val filterCriteria = FilterCriteria(textFilter = "does-not-match-the-issue")
+        val hiddenInList = FindingsFilter(project).filterAllFindings(file, filterCriteria)
+        assertThat(hiddenInList.issues).isEmpty()
+
+        withOpenEditor(file) {
+            getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(hiddenInList)
+            val highlighter = getService(project, DirectHighlighter::class.java)
+            highlighter.applyHighlightsForTest(file)
+
+            assertThat(sonarLintHighlights(file, issueMessage)).isEmpty()
+        }
+    }
+
     private fun seedDisplayedIssue(file: VirtualFile, content: String, message: String) {
         val document = FileDocumentManager.getInstance().getDocument(file)!!
         val (startOffset, endOffset) = textRangeOf(content, "Foo")
@@ -193,8 +246,33 @@ class DirectHighlighterTests : AbstractSonarLintLightTests() {
         whenever(issueDto.isOnNewCode).thenReturn(false)
 
         val issue = LiveIssue(module, issueDto, file, rangeMarker, null, emptyList())
-        getService(project, CurrentFileDisplayedFindingsStore::class.java)
-            .setSnapshot(FilteredFindings(listOf(issue), emptyList(), emptyList(), emptyList()))
+        getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder.replaceIssuesForFile(file, listOf(issue))
+        getService(project, CurrentFileDisplayedFindingsStore::class.java).setSnapshot(
+            FilteredFindings(listOf(issue), emptyList(), emptyList(), emptyList()),
+        )
+    }
+
+    private fun seedTaint(file: VirtualFile, content: String, message: String) {
+        val document = FileDocumentManager.getInstance().getDocument(file)!!
+        val (startOffset, endOffset) = textRangeOf(content, "Foo")
+        val rangeMarker = document.createRangeMarker(startOffset, endOffset)
+        val dto = Mockito.mock(TaintVulnerabilityDto::class.java, Mockito.RETURNS_DEEP_STUBS)
+        whenever(dto.message).thenReturn(message)
+        whenever(dto.introductionDate).thenReturn(Instant.EPOCH)
+        whenever(dto.isAiCodeFixable).thenReturn(false)
+        whenever(dto.isOnNewCode).thenReturn(false)
+        whenever(dto.severityMode).thenReturn(Either.forLeft(StandardModeDetails(IssueSeverity.MAJOR, RuleType.VULNERABILITY)))
+        whenever(dto.ruleKey).thenReturn("javasecurity:S3649")
+        whenever(dto.id).thenReturn(UUID.randomUUID())
+        whenever(dto.sonarServerKey).thenReturn("taint-key")
+        val taint = LocalTaintVulnerability(
+            module,
+            Location(file, rangeMarker, message, null, null),
+            emptyList(),
+            dto,
+            false,
+        )
+        getService(project, TaintVulnerabilitiesCache::class.java).taintVulnerabilities = listOf(taint)
     }
 
     private fun textRangeOf(content: String, token: String): Pair<Int, Int> {

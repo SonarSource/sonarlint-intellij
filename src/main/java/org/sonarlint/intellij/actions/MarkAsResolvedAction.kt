@@ -32,11 +32,13 @@ import com.intellij.openapi.ui.DoNotAskOption
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.util.Iconable
 import com.intellij.psi.PsiFile
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.Issue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
@@ -149,7 +151,7 @@ class MarkAsResolvedAction(
 
         private fun updateUI(project: Project, issue: Issue) {
             issue.resolve()
-            getService(project, SonarLintToolWindow::class.java).refreshViews()
+            getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
         }
 
         private fun addComment(project: Project, module: Module, issueKey: String, comment: String) {

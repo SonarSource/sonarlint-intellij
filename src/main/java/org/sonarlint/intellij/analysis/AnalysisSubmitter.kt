@@ -22,6 +22,7 @@ package org.sonarlint.intellij.analysis
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
@@ -95,10 +96,12 @@ class AnalysisSubmitter(private val project: Project) {
         runOnPooledThread(project) {
             val callback = UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder)
             val modules = ModuleManager.getInstance(project).modules
+            val openFiles = FileEditorManager.getInstance(project).openFiles.toList()
             modules.forEach { module ->
                 getService(BackendService::class.java).analyzeOpenFiles(module).thenAccept { response ->
                     response.analysisId?.let { analysisId ->
-                        val analysisState = AnalysisState(analysisId, callback, module)
+                        val moduleOpenFiles = openFiles.filter { findModuleForFile(it, project) == module }
+                        val analysisState = AnalysisState(analysisId, callback, module, moduleOpenFiles)
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
                 }
@@ -123,7 +126,7 @@ class AnalysisSubmitter(private val project: Project) {
         try {
             future[5, TimeUnit.SECONDS].analysisId?.let { analysisId ->
                 console.debug("Pre-commit: analyzeFileList returned analysisId=$analysisId in ${System.currentTimeMillis() - startTime} ms")
-                getService(project, RunningAnalysesTracker::class.java).track(AnalysisState(analysisId, callback, module))
+                getService(project, RunningAnalysesTracker::class.java).track(AnalysisState(analysisId, callback, module, files))
                 analysisIds.add(analysisId)
             } ?: console.debug("Pre-commit: analyzeFileList returned no analysisId in ${System.currentTimeMillis() - startTime} ms")
         } catch (e: TimeoutException) {
@@ -190,7 +193,7 @@ class AnalysisSubmitter(private val project: Project) {
                     .thenAccept { response ->
                         response.analysisId?.let { analysisId ->
                             getService(project, AnalysisStatus::class.java).tryRun(analysisId)
-                            val analysisState = AnalysisState(analysisId, callback, module)
+                            val analysisState = AnalysisState(analysisId, callback, module, files)
                             getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                         }
                         taskState?.trackTask(module, response.analysisId?.toString())
@@ -212,7 +215,7 @@ class AnalysisSubmitter(private val project: Project) {
                     response.analysisId?.let { analysisId ->
                         getService(project, OpenInIdeFindingCache::class.java).finding = null
                         getService(project, OpenInIdeFindingCache::class.java).analysisQueued = false
-                        val analysisState = AnalysisState(analysisId, callback, module)
+                        val analysisState = AnalysisState(analysisId, callback, module, listOf(showFinding.file))
                         getService(project, RunningAnalysesTracker::class.java).track(analysisState)
                     }
                 }

@@ -57,10 +57,10 @@ import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
-import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.Companion.collectContributedLanguages
 import org.sonarlint.intellij.analysis.GlobalBackgroundTaskTracker
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsCoordinator
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -70,6 +70,7 @@ import org.sonarlint.intellij.config.global.NodeJsSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.fs.VirtualFileEvent
@@ -323,7 +324,7 @@ class BackendService : Disposable {
     private fun handleSloopExited() {
         ProjectManager.getInstance().openProjects.forEach { project ->
             runOnUiThread(project) {
-                getService(project, SonarLintToolWindow::class.java).refreshViews()
+                getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
             }
         }
 
@@ -927,7 +928,7 @@ class BackendService : Disposable {
     private fun catchUpWithBackend(rpcServer: SonarLintRpcServer) {
         ProjectManager.getInstance().openProjects.forEach { project ->
             runOnUiThread(project) {
-                getService(project, SonarLintToolWindow::class.java).refreshViews()
+                getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
             }
 
             val binding = getService(project, ProjectBindingManager::class.java).binding
@@ -1000,7 +1001,7 @@ class BackendService : Disposable {
                 } ?: return@thenApplyAsync
                 getService(project, TaintVulnerabilitiesCache::class.java).taintVulnerabilities = localTaintVulnerabilities
                 runOnUiThread(project) {
-                    getService(project, SonarLintToolWindow::class.java).refreshViews()
+                    getService(project, OnTheFlyFindingsCoordinator::class.java).applyHighlightRefreshAndRefreshPanels(EditorHighlightRefresh.enabled())
                 }
             }
     }
