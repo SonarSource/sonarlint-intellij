@@ -4,7 +4,6 @@
 # Usage:
 #   qa-matrix.sh pr
 #   qa-matrix.sh weekly
-#   qa-matrix.sh eap
 #
 # Reads IDE versions from gradle.properties (see minSupportedIdeVersion,
 # latestStableIdeVersion, eapIdeVersion, and optional per-product overrides).
@@ -27,7 +26,7 @@ PROPS="${ROOT}/gradle.properties"
 
 MODE="${1:-}"
 if [[ -z "${MODE}" ]]; then
-  echo "Usage: $0 pr | weekly | eap" >&2
+  echo "Usage: $0 pr | weekly" >&2
   exit 1
 fi
 
@@ -203,30 +202,26 @@ case "${MODE}" in
     emit "${MATRIX}" "false"
     ;;
   weekly)
+    RIDER_EAP="$(prop_or eapRiderIdeVersion "${EAP}")"
     MATRIX="$(idea_suites "IC-${MIN}" "IdeaMin")"
+    MATRIX="$(append_json "${MATRIX}" "$(idea_suites "IU-${EAP}" "IdeaUltimateEAP")")"
     MATRIX="$(append_json "${MATRIX}" "$(jq -nc \
-      --arg clmin "CL-${MIN}" --arg cllat "CL-${LATEST}" \
-      --arg rdmin "RD-${RIDER_MIN}" --arg rdlat "RD-${RIDER_LATEST}" \
+      --arg clmin "CL-${MIN}" --arg cllat "CL-${LATEST}" --arg cleap "CL-${EAP}" \
+      --arg rdmin "RD-${RIDER_MIN}" --arg rdlat "RD-${RIDER_LATEST}" --arg rdeap "RD-${RIDER_EAP}" \
       --arg pslat "PS-${LATEST}" --arg pylat "PY-${PYCHARM_LATEST}" \
       --arg golat "GO-${LATEST}" --arg iumin "IU-${MIN}" \
       '[
         {ide_version:$clmin,qa_category:"CLionMin",test_suite:"CLion"},
         {ide_version:$cllat,qa_category:"CLionLatest",test_suite:"CLion"},
+        {ide_version:$cleap,qa_category:"CLionEAP",test_suite:"CLion"},
         {ide_version:$rdmin,qa_category:"RiderMin",test_suite:"Rider"},
         {ide_version:$rdlat,qa_category:"RiderLatest",test_suite:"Rider"},
+        {ide_version:$rdeap,qa_category:"RiderEAP",test_suite:"Rider"},
         {ide_version:$pslat,qa_category:"PhpStormLatest",test_suite:"PhpStorm"},
         {ide_version:$pylat,qa_category:"PyCharmLatest",test_suite:"PyCharm"},
         {ide_version:$golat,qa_category:"GoLandLatest",test_suite:"GoLand"},
         {ide_version:$iumin,qa_category:"IdeaUltimateMin",test_suite:"PLSQL"}
       ]')")"
-    emit "${MATRIX}" "false"
-    ;;
-  eap)
-    MATRIX="$(idea_suites "IU-${EAP}" "IdeaUltimateEAP")"
-    MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg eap "${EAP}" --arg rd "$(prop_or eapRiderIdeVersion "${EAP}")" '[
-      {ide_version:("CL-" + $eap),qa_category:"CLionEAP",test_suite:"CLion"},
-      {ide_version:("RD-" + $rd),qa_category:"RiderEAP",test_suite:"Rider"}
-    ]')")"
     emit "${MATRIX}" "false"
     ;;
   *)
