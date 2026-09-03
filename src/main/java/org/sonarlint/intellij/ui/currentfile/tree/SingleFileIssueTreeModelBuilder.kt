@@ -154,9 +154,17 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
     }
 
     override fun removeFinding(finding: LiveIssue) {
-        findIssueNode(finding.getId().toString())?.let {
+        findIssueNode(finding.getId().toString())?.let { issueNode ->
             latestIssues.remove(finding)
-            summaryNode.remove(it)
+            val parentFileNode = issueNode.parent as? FileNode
+            if (parentFileNode != null) {
+                parentFileNode.remove(issueNode)
+                if (parentFileNode.childCount == 0) {
+                    summaryNode.remove(parentFileNode)
+                }
+            } else {
+                summaryNode.remove(issueNode)
+            }
             treeSummary.refresh(1, latestIssues.size)
             model.nodeStructureChanged(summaryNode)
         }
@@ -170,30 +178,25 @@ class SingleFileIssueTreeModelBuilder(project: Project, isOldIssue: Boolean) : S
         return latestIssues.minByOrNull { IMPACT_ORDER.indexOf(it.getHighestImpact()) }
     }
 
-    private fun findIssueNode(key: String): IssueNode? {
-        summaryNode.children().asIterator().forEach { child ->
-            // Handle both cases: when there are FileNodes as children (grouped by file) 
-            // and when IssueNodes are direct children
-            when (child) {
-                is FileNode -> {
-                    child.children().asIterator().forEach { fileChild ->
-                        if (fileChild is IssueNode) {
-                            val issue = fileChild.issue()
-                            if (issue.getServerKey() == key || issue.getId().toString() == key) {
-                                return fileChild
-                            }
-                        }
-                    }
-                }
-                is IssueNode -> {
-                    val issue = child.issue()
-                    if (issue.getServerKey() == key || issue.getId().toString() == key) {
-                        return child
-                    }
-                }
-            }
-        }
-        return null
+    private fun findIssueNode(key: String): IssueNode? =
+        summaryNode.children().asIterator().asSequence()
+            .mapNotNull { findIssueNodeInChild(it, key) }
+            .firstOrNull()
+
+    private fun findIssueNodeInChild(child: Any?, key: String): IssueNode? = when (child) {
+        is FileNode -> findIssueNodeInFile(child, key)
+        is IssueNode -> child.takeIf { it.matchesIssueKey(key) }
+        else -> null
+    }
+
+    private fun findIssueNodeInFile(fileNode: FileNode, key: String): IssueNode? =
+        fileNode.children().asIterator().asSequence()
+            .filterIsInstance<IssueNode>()
+            .firstOrNull { it.matchesIssueKey(key) }
+
+    private fun IssueNode.matchesIssueKey(key: String): Boolean {
+        val issue = issue()
+        return issue.getServerKey() == key || issue.getId().toString() == key
     }
 
     private fun accept(issue: LiveIssue): Boolean {
