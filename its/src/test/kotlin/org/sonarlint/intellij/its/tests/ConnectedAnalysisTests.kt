@@ -156,8 +156,9 @@ class ConnectedAnalysisTests : BaseUiTest() {
                     "No new Security Hotspots from last 1 days",
                     "Found 3 older issues"
                 )
-                // FIXME: Current File does not always refresh after toggling Focus On New Code.
-                // This is not SLCORE-2533 (rule re-enable on an already-open file).
+                // FIXME workaround: the Current File tab does not refresh after toggling the
+                // Focus On New Code filter, so trigger an explicit re-analysis. Unlike the
+                // StandaloneIdeaTests workaround (SLCORE-2533) this lag is not yet tracked.
                 analyzeCurrentFileFromToolWindow()
                 verifyCurrentFileTabContainsMessages(
                     "Found 3 older issues",
