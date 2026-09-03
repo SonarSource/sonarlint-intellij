@@ -26,7 +26,7 @@ Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet O
 One scheduled workflow, one plugin build:
 
 - IntelliJ **min** × 4 suites, CLion min+latest, Rider min+latest, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL)
-- IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion`
+- IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion` (Rider uses `eapRiderIdeVersion` when set)
 
 Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change).
 
@@ -39,6 +39,7 @@ eapIdeVersion=2026.1-EAP          # must match the Repox artifact name
 # Optional per-product overrides when patch numbers diverge
 minRiderIdeVersion=2024.2.7
 latestRiderIdeVersion=2025.3.2
+eapRiderIdeVersion=2026.1-EAP
 latestPyCharmIdeVersion=2025.3.2.1
 ```
 
