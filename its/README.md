@@ -21,9 +21,9 @@ Harness means `its/`, `.github/`, Gradle files, or `mise.toml`. Changing those r
 
 Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet OmniSharp.dll`) and load the `net6.0` sample projects. CI installs that SDK on `RD-*` jobs. Local Rider ITs need the same.
 
-### Nightly (weekdays 02:00 UTC)
+### Weekly (Sundays 02:00 UTC)
 
-IntelliJ **min** × 4 suites, CLion min+latest, **Rider min+latest**, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL). Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack.
+IntelliJ **min** × 4 suites, CLion min+latest, **Rider min+latest**, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL). Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack. PRs already cover latest IntelliJ (and CLion/Rider when those modules change), so the full flavor/min sweep is weekly rather than every weekday.
 
 ### Weekly EAP (Mondays 06:00 UTC)
 
