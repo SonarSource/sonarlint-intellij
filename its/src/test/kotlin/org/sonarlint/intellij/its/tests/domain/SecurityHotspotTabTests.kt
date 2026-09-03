@@ -128,8 +128,13 @@ class SecurityHotspotTabTests {
                 idea {
                     toolWindow {
                         content("SecurityHotspotsPanel") {
-                            waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
-                                hasText(expectedMessage)
+                            try {
+                                waitFor(Duration.ofMinutes(1)) { hasText(expectedMessage) }
+                            } catch (e: Throwable) {
+                                throw AssertionError(
+                                    "Unable to find '$expectedMessage' in: ${findAllText().map { it.text }}",
+                                    e
+                                )
                             }
                         }
                     }

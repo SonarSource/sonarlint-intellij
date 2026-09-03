@@ -156,7 +156,8 @@ class ConnectedAnalysisTests : BaseUiTest() {
                     "No new Security Hotspots from last 1 days",
                     "Found 3 older issues"
                 )
-                // Current File can lag the Report tab after a filter change (same as StandaloneIdeaTests).
+                // FIXME: Current File does not always refresh after toggling Focus On New Code.
+                // This is not SLCORE-2533 (rule re-enable on an already-open file).
                 analyzeCurrentFileFromToolWindow()
                 verifyCurrentFileTabContainsMessages(
                     "Found 3 older issues",
