@@ -38,7 +38,7 @@ class ReportTabTests {
                             expectedMessages.forEach {
                                 waitFor(
                                     duration = Duration.ofSeconds(45),
-                                    errorMessage = "Unable to find '$it' in: ${findAllText()}"
+                                    errorMessage = "Unable to find '$it' in: ${findAllText().map { text -> text.text }}"
                                 ) {
                                     hasText(it)
                                 }

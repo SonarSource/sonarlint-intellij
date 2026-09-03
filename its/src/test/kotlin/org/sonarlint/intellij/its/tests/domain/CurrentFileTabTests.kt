@@ -120,7 +120,7 @@ class CurrentFileTabTests {
                                 // The synchronization might take a while
                                 waitFor(
                                     duration = Duration.ofMinutes(1),
-                                    errorMessage = "Unable to find '$it' in: ${findAllText()}"
+                                    errorMessage = "Unable to find '$it' in: ${findAllText().map { text -> text.text }}"
                                 ) {
                                     hasText(it)
                                 }
@@ -179,7 +179,7 @@ class CurrentFileTabTests {
                 idea {
                     toolWindow {
                         content("CurrentFilePanel") {
-                            waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
+                            waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText().map { it.text }}") {
                                 hasText(expectedMessage)
                             }
                         }

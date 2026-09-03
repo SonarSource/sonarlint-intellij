@@ -33,6 +33,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.analyzeCurrentFileFromToolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
@@ -149,16 +150,21 @@ class ConnectedAnalysisTests : BaseUiTest() {
             enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode()
-            analyzeAndVerifyReportTabContainsMessages(
-                "No new issues from last 1 days",
-                "No new Security Hotspots from last 1 days",
-                "Found 3 older issues"
-            )
-            verifyCurrentFileTabContainsMessages(
-                "Found 3 older issues",
-                "Found 1 older Taint Vulnerability"
-            )
-            resetFocusOnNewCode()
+            try {
+                analyzeAndVerifyReportTabContainsMessages(
+                    "No new issues from last 1 days",
+                    "No new Security Hotspots from last 1 days",
+                    "Found 3 older issues"
+                )
+                // Current File can lag the Report tab after a filter change (same as StandaloneIdeaTests).
+                analyzeCurrentFileFromToolWindow()
+                verifyCurrentFileTabContainsMessages(
+                    "Found 3 older issues",
+                    "Found 1 older Taint Vulnerability"
+                )
+            } finally {
+                resetFocusOnNewCode()
+            }
         }
 
         @Test
