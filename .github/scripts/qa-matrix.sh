@@ -3,7 +3,7 @@
 #
 # Usage:
 #   qa-matrix.sh pr
-#   qa-matrix.sh nightly
+#   qa-matrix.sh weekly
 #   qa-matrix.sh eap
 #
 # Reads IDE versions from gradle.properties (see minSupportedIdeVersion,
@@ -27,7 +27,7 @@ PROPS="${ROOT}/gradle.properties"
 
 MODE="${1:-}"
 if [[ -z "${MODE}" ]]; then
-  echo "Usage: $0 pr | nightly | eap" >&2
+  echo "Usage: $0 pr | weekly | eap" >&2
   exit 1
 fi
 
@@ -167,7 +167,7 @@ PYCHARM_LATEST="$(prop_or latestPyCharmIdeVersion "${LATEST}")"
 
 case "${MODE}" in
   pr)
-    echo "PR matrix: latest=${LATEST} rider=${RIDER_LATEST} (min=${MIN} is nightly-only)"
+    echo "PR matrix: latest=${LATEST} rider=${RIDER_LATEST} (min=${MIN} is weekly-only)"
     mapfile -t FILES < <(changed_files)
     if [[ ${#FILES[@]} -eq 0 ]]; then
       emit "$(idea_suites "IC-${LATEST}" "IdeaLatest")" "false"
@@ -202,7 +202,7 @@ case "${MODE}" in
     fi
     emit "${MATRIX}" "false"
     ;;
-  nightly)
+  weekly)
     MATRIX="$(idea_suites "IC-${MIN}" "IdeaMin")"
     MATRIX="$(append_json "${MATRIX}" "$(jq -nc \
       --arg clmin "CL-${MIN}" --arg cllat "CL-${LATEST}" \

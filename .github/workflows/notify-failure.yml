@@ -1,7 +1,7 @@
 name: Notify Failure
 on:
   workflow_run:
-    workflows: [ "Build", "Plugin Verifier Nightly", "Integration Tests Nightly", "Integration Tests EAP" ]
+    workflows: [ "Build", "Plugin Verifier Nightly", "Integration Tests Weekly", "Integration Tests EAP" ]
     types:
       - completed
     branches:
