@@ -118,11 +118,13 @@ class CurrentFileTabTests {
                         content("CurrentFilePanel") {
                             expectedMessages.forEach {
                                 // The synchronization might take a while
-                                waitFor(
-                                    duration = Duration.ofMinutes(1),
-                                    errorMessage = "Unable to find '$it' in: ${findAllText()}"
-                                ) {
-                                    hasText(it)
+                                try {
+                                    waitFor(duration = Duration.ofMinutes(1)) { hasText(it) }
+                                } catch (e: Throwable) {
+                                    throw AssertionError(
+                                        "Unable to find '$it' in: ${findAllText().map { text -> text.text }}",
+                                        e
+                                    )
                                 }
                             }
                         }
@@ -179,8 +181,13 @@ class CurrentFileTabTests {
                 idea {
                     toolWindow {
                         content("CurrentFilePanel") {
-                            waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
-                                hasText(expectedMessage)
+                            try {
+                                waitFor(Duration.ofMinutes(1)) { hasText(expectedMessage) }
+                            } catch (e: Throwable) {
+                                throw AssertionError(
+                                    "Unable to find '$expectedMessage' in: ${findAllText().map { it.text }}",
+                                    e
+                                )
                             }
                         }
                     }

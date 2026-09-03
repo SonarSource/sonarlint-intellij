@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.its.tests.flavor
 
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
@@ -28,6 +29,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 
 
 /** Tests for Go language support (not limited to GoLand) */
+@Tag("GoLand")
 @EnabledIf("isGoPlugin")
 class GoPluginTests : BaseUiTest() {
 

@@ -25,8 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.isBuildCommunity
-import org.sonarlint.intellij.its.fixtures.isBuildUltimate
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
@@ -38,6 +36,7 @@ import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.isSQLPlugin
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.closeProject
 import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
@@ -58,11 +57,12 @@ open class BaseUiTest {
             remoteRobot = RemoteRobot(robotUrl)
         }
 
+        /**
+         * IntelliJ IDEA in any edition, including the 2025.3+ unified distribution
+         * whose build string is no longer `IC`/`IU`.
+         */
         @JvmStatic
-        fun isIdeaCommunity() = remoteRobot.isIdea() && remoteRobot.isBuildCommunity()
-
-        @JvmStatic
-        fun isIdeaUltimate() = remoteRobot.isIdea() && remoteRobot.isBuildUltimate()
+        fun isIntelliJIdea() = remoteRobot.isIdea()
 
         @JvmStatic
         fun isCLion() = remoteRobot.isCLion()
@@ -93,8 +93,12 @@ open class BaseUiTest {
         @JvmStatic
         fun isGoPlugin() = remoteRobot.isGoPlugin()
 
+        /**
+         * Database plugin plus IntelliJ. Rider ships the Database plugin, so a
+         * plugin-only check would enable PLSQL ITs there.
+         */
         @JvmStatic
-        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIdeaUltimate()
+        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIntelliJIdea()
 
         private fun closeAllDialogs() {
             remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
@@ -181,6 +185,11 @@ open class BaseUiTest {
 
     @AfterEach
     fun closeProjectAfterEach() {
+        // Focus on new code is a global setting. Reset it while the project is still
+        // open so a failed CAYC assertion cannot hide findings in later tests.
+        optionalStep {
+            resetFocusOnNewCode()
+        }
         optionalStep {
             closeProject()
         }
