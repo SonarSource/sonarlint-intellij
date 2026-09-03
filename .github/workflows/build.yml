@@ -32,7 +32,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+      - uses: SonarSource/ci-github-actions/get-build-number@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         id: build-number
 
   aws-auth:
@@ -77,7 +77,7 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -93,7 +93,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Build Plugin
-        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/build-gradle@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         id: build_plugin
         with:
           sonar-platform: none
@@ -118,14 +118,14 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         with:
           sonar-platform: none
           artifactory-reader-role: private-reader
@@ -177,7 +177,7 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0  # Full history needed for Sonar blame
 
@@ -193,7 +193,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Run Tests and Sonar Analysis
-        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/build-gradle@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         with:
           deploy: false
           use-develocity: true
@@ -243,7 +243,7 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
@@ -265,7 +265,7 @@ jobs:
             verifier-ides-${{ runner.os }}-
 
       - name: Verify Plugin Compatibility
-        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/build-gradle@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         with:
           deploy: false
           sonar-platform: none
@@ -359,14 +359,14 @@ jobs:
       TEST_SUITE: ${{ matrix.test_suite }}
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         with:
           sonar-platform: none
           use-develocity: true
@@ -614,7 +614,7 @@ jobs:
           echo "FFMPEG_PID=$!" >> $GITHUB_ENV
 
       - name: Configure Maven
-        uses: SonarSource/ci-github-actions/config-maven@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+        uses: SonarSource/ci-github-actions/config-maven@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         with:
           artifactory-reader-role: private-reader
 
@@ -689,14 +689,14 @@ jobs:
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
           version: 2025.9.12
 
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+        uses: SonarSource/ci-github-actions/promote@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         env:
           PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         with:
@@ -710,7 +710,7 @@ jobs:
       - promote
     if: ${{ github.ref_name == github.event.repository.default_branch }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: ./.github/actions/upload-to-jetbrains-marketplace
         with:

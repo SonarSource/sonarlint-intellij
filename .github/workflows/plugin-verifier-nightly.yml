@@ -18,7 +18,7 @@ jobs:
     name: Verify Plugin - LATEST
     if: github.ref_name == github.event.repository.default_branch
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
         with:
@@ -48,7 +48,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@d41706a4180f70b6c0d0479795309a6c99726022 # 2.0.0
         with:
           sonar-platform: none
           use-develocity: true
