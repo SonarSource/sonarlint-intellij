@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.report
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.tree.TreeUtil
@@ -31,6 +32,7 @@ import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.FindingDetailsPanel
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThreadAndWait
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode
 import org.sonarlint.intellij.ui.report.tree.ReportIssueTreeModelBuilder
@@ -168,14 +170,22 @@ class ReportTreeManager(
      * This should be called before updating tree models.
      */
     fun takeTreeStateSnapshot(): Map<Tree, Set<String>> {
-        return mapOf(
-            issuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(issuesTree),
-            oldIssuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldIssuesTree),
-            securityHotspotsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(securityHotspotsTree),
-            oldSecurityHotspotsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldSecurityHotspotsTree),
-            taintsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(taintsTree),
-            oldTaintsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldTaintsTree)
-        )
+        // Swing tree/model state must only be read on the EDT: reading it off-EDT can race with
+        // EDT-queued tree model mutations and throw ArrayIndexOutOfBoundsException. All current
+        // callers already run on the EDT, but this guarantees it regardless of caller thread.
+        var snapshot: Map<Tree, Set<String>> = emptyMap()
+        // ModalityState.any() avoids stalling a caller thread behind an open modal dialog for this read-only snapshot.
+        runOnUiThreadAndWait(project, ModalityState.any()) {
+            snapshot = mapOf(
+                issuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(issuesTree),
+                oldIssuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldIssuesTree),
+                securityHotspotsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(securityHotspotsTree),
+                oldSecurityHotspotsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldSecurityHotspotsTree),
+                taintsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(taintsTree),
+                oldTaintsTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldTaintsTree)
+            )
+        }
+        return snapshot
     }
     
     /**
