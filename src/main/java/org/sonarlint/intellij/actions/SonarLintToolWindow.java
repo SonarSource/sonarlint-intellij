@@ -48,7 +48,6 @@ import static org.sonarlint.intellij.ui.ToolWindowConstants.CURRENT_FILE_TAB_TIT
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
-import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @Service(Service.Level.PROJECT)
 public final class SonarLintToolWindow implements ContentManagerListener, ProjectBindingListener {
@@ -131,7 +130,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
         for (var tabTitle : reportTabManager.getOpenReportTabs()) {
           var content = contentManager.findContent(tabTitle);
           if (content != null && content.getComponent() instanceof ReportPanel reportPanel) {
-            runOnPooledThread(project, reportPanel::refreshView);
+            reportPanel.refreshView();
           }
         }
       });

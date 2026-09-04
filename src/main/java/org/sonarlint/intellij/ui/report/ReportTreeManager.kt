@@ -170,11 +170,12 @@ class ReportTreeManager(
      * This should be called before updating tree models.
      */
     fun takeTreeStateSnapshot(): Map<Tree, Set<String>> {
-        // Swing tree/model state must only be read on the EDT: this can be called from a
-        // background thread (e.g. ReportPanel.refreshView via runOnPooledThread), and reading it
-        // there races with the EDT-queued tree model mutations, which can throw ArrayIndexOutOfBoundsException.
+        // Swing tree/model state must only be read on the EDT: reading it off-EDT can race with
+        // EDT-queued tree model mutations and throw ArrayIndexOutOfBoundsException. All current
+        // callers already run on the EDT, but this guarantees it regardless of caller thread.
         var snapshot: Map<Tree, Set<String>> = emptyMap()
-        runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
+        // ModalityState.any() avoids stalling a caller thread behind an open modal dialog for this read-only snapshot.
+        runOnUiThreadAndWait(project, ModalityState.any()) {
             snapshot = mapOf(
                 issuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(issuesTree),
                 oldIssuesTree to TreeExpansionStateManager.takeFileNodeExpansionStateSnapshot(oldIssuesTree),
