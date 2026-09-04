@@ -17,7 +17,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
-    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@0c9c1cc54cbdd24258f135601d1b77cfc87e67ae # 7.4.0
+    uses: SonarSource/gh-action_release/.github/workflows/main.yaml@07c3b254ac74436e361f4ea8ef70c3e697b9dc48 # 7.6.0
     with:
       version: ${{ inputs.version }}
       dryRun: ${{ inputs.dryRun }}
@@ -31,7 +31,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - uses: ./.github/actions/upload-to-jetbrains-marketplace
         with:
