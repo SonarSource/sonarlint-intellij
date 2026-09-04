@@ -74,7 +74,7 @@ public final class AnalysisStatus {
 
     // don't lock while calling listeners
     if (callback != null) {
-      statusListener.changed(callback);
+      statusListener.accept(callback);
     }
   }
 
@@ -90,7 +90,7 @@ public final class AnalysisStatus {
 
     // don't lock while calling listeners
     if (callback != null) {
-      statusListener.changed(callback);
+      statusListener.accept(callback);
       return true;
     } else {
       return false;
