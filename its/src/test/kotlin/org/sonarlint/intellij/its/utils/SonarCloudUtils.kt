@@ -72,20 +72,26 @@ object SonarCloudUtils {
         )
 
         val request = GetRequest("api/analysis_reports/is_queue_empty")
+        // is_queue_empty is org-wide; concurrent ITs can keep it false after this project's issues exist.
         waitFor(Duration.ofMinutes(2), interval = Duration.ofSeconds(5)) {
-            adminWsClient.wsConnector().call(request).use { response ->
+            val queueEmpty = adminWsClient.wsConnector().call(request).use { response ->
                 "true" == response.content()
             }
+            queueEmpty || projectHasIssues(adminWsClient, projectKey)
         }
         waitForSonarCloudIssues(adminWsClient, projectKey)
     }
 
     fun waitForSonarCloudIssues(adminWsClient: WsClient, projectKey: String) {
         waitFor(Duration.ofMinutes(2), interval = Duration.ofSeconds(5)) {
-            val searchRequest = SearchRequest()
-            searchRequest.projects = listOf(projectKey)
-            adminWsClient.issues().search(searchRequest).issuesList.isNotEmpty()
+            projectHasIssues(adminWsClient, projectKey)
         }
+    }
+
+    private fun projectHasIssues(adminWsClient: WsClient, projectKey: String): Boolean {
+        val searchRequest = SearchRequest()
+        searchRequest.projects = listOf(projectKey)
+        return adminWsClient.issues().search(searchRequest).issuesList.isNotEmpty()
     }
 
     fun getFirstSonarCloudIssueKey(adminWsClient: WsClient, projectKey: String): String {
