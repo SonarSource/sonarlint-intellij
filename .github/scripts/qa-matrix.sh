@@ -4,6 +4,7 @@
 # Usage:
 #   qa-matrix.sh pr
 #   qa-matrix.sh weekly
+#   qa-matrix.sh min
 #
 # Reads IDE versions from gradle.properties (see minSupportedIdeVersion,
 # latestStableIdeVersion, eapIdeVersion, and optional per-product overrides).
@@ -26,7 +27,7 @@ PROPS="${ROOT}/gradle.properties"
 
 MODE="${1:-}"
 if [[ -z "${MODE}" ]]; then
-  echo "Usage: $0 pr | weekly" >&2
+  echo "Usage: $0 pr | weekly | min" >&2
   exit 1
 fi
 
@@ -166,12 +167,10 @@ PYCHARM_LATEST="$(prop_or latestPyCharmIdeVersion "${LATEST}")"
 
 case "${MODE}" in
   pr)
-    echo "PR matrix: latest=${LATEST} min=${MIN} rider=${RIDER_LATEST}"
+    echo "PR matrix: latest=${LATEST} rider=${RIDER_LATEST} (min=${MIN} is weekly-only)"
     mapfile -t FILES < <(changed_files)
     if [[ ${#FILES[@]} -eq 0 ]]; then
-      MATRIX="$(idea_suites "IC-${LATEST}" "IdeaLatest")"
-      MATRIX="$(append_json "${MATRIX}" "$(idea_suites "IC-${MIN}" "IdeaMin")")"
-      emit "${MATRIX}" "false"
+      emit "$(idea_suites "IC-${LATEST}" "IdeaLatest")" "false"
       exit 0
     fi
     docs_only=true
@@ -193,8 +192,6 @@ case "${MODE}" in
       exit 0
     fi
     MATRIX="$(idea_suites "IC-${LATEST}" "IdeaLatest")"
-    # Pre-merge: also run the min-version axis that weekly owns after merge.
-    MATRIX="$(append_json "${MATRIX}" "$(idea_suites "IC-${MIN}" "IdeaMin")")"
     if [[ "${run_clion}" == "true" ]]; then
       MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "CL-${LATEST}" \
         '[{ide_version:$ver,qa_category:"CLionLatest",test_suite:"CLion"}]')")"
@@ -227,6 +224,9 @@ case "${MODE}" in
         {ide_version:$iumin,qa_category:"IdeaUltimateMin",test_suite:"PLSQL"}
       ]')")"
     emit "${MATRIX}" "false"
+    ;;
+  min)
+    emit "$(idea_suites "IC-${MIN}" "IdeaMin")" "false"
     ;;
   *)
     echo "Unknown mode: ${MODE}" >&2
