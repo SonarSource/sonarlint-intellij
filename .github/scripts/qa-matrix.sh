@@ -4,7 +4,6 @@
 # Usage:
 #   qa-matrix.sh pr
 #   qa-matrix.sh weekly
-#   qa-matrix.sh min
 #
 # Reads IDE versions from gradle.properties (see minSupportedIdeVersion,
 # latestStableIdeVersion, eapIdeVersion, and optional per-product overrides).
@@ -27,7 +26,7 @@ PROPS="${ROOT}/gradle.properties"
 
 MODE="${1:-}"
 if [[ -z "${MODE}" ]]; then
-  echo "Usage: $0 pr | weekly | min" >&2
+  echo "Usage: $0 pr | weekly" >&2
   exit 1
 fi
 
@@ -224,9 +223,6 @@ case "${MODE}" in
         {ide_version:$iumin,qa_category:"IdeaUltimateMin",test_suite:"PLSQL"}
       ]')")"
     emit "${MATRIX}" "false"
-    ;;
-  min)
-    emit "$(idea_suites "IC-${MIN}" "IdeaMin")" "false"
     ;;
   *)
     echo "Unknown mode: ${MODE}" >&2
