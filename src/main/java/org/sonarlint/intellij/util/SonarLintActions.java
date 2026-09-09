@@ -29,6 +29,7 @@ import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
 import org.sonarlint.intellij.actions.CollapseAllTreesAction;
 import org.sonarlint.intellij.actions.ExpandAllTreesAction;
+import org.sonarlint.intellij.actions.GenerateFixPromptAction;
 import org.sonarlint.intellij.actions.RestartBackendAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
@@ -57,6 +58,7 @@ public final class SonarLintActions {
   private final AnAction restartSonarLintAction;
   private final AnAction expandAllTreesAction;
   private final AnAction collapseAllTreesAction;
+  private final AnAction generateFixPromptAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -96,6 +98,7 @@ public final class SonarLintActions {
     restartSonarLintAction = new RestartBackendAction();
     expandAllTreesAction = new ExpandAllTreesAction();
     collapseAllTreesAction = new CollapseAllTreesAction();
+    generateFixPromptAction = new GenerateFixPromptAction();
   }
 
   public static SonarLintActions getInstance() {
@@ -144,6 +147,10 @@ public final class SonarLintActions {
 
   public AnAction collapseAllTreesAction() {
     return collapseAllTreesAction;
+  }
+
+  public AnAction generateFixPromptAction() {
+    return generateFixPromptAction;
   }
 
 }
