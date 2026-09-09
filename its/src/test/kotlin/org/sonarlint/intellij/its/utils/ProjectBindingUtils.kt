@@ -57,11 +57,8 @@ object ProjectBindingUtils {
                     val connectionLabelWithPrefix = connectionType.uiLabelPrefix + connectionName
                     checkBox("Bind project to SonarQube (Server, Cloud)").select()
                     comboBox("Connection:").click()
-                    remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                        // a prefix is added only if there are multiple SQC connection. Check both with and without label
-                        waitFor(Duration.ofSeconds(5)) { hasText(connectionLabelWithPrefix) || hasText(connectionName) }
-                        findText { it.text == connectionLabelWithPrefix || it.text == connectionName }.click()
-                    }
+                    // a prefix is added only if there are multiple SQC connections
+                    selectConnectionComboItem(connectionLabelWithPrefix, connectionName)
                     jbTextField().text = projectKey
                     button("OK").click()
                     // wait for binding fully established
@@ -81,10 +78,7 @@ object ProjectBindingUtils {
             errorMessage("Connection should not be empty")
 
             comboBox("Connection:").click()
-            remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
-                findText("Orchestrator").click()
-            }
+            selectConnectionComboItem("Orchestrator")
             pressOk()
             errorMessage("Project key should not be empty")
 
@@ -107,6 +101,22 @@ object ProjectBindingUtils {
             }
             pressOk()
         }
+    }
+
+    // IC-2024.2 leaves other CustomComboPopup instances (run config, etc.). find() grabs the first.
+    private fun selectConnectionComboItem(vararg names: String) {
+        val expected = names.toList()
+        waitFor(Duration.ofSeconds(10), errorMessage = "Connection combo did not contain any of $expected") {
+            connectionComboPopup(expected) != null
+        }
+        val popup = requireNotNull(connectionComboPopup(expected))
+        val label = expected.first { popup.hasText(it) }
+        popup.findText(label).click()
+    }
+
+    private fun connectionComboPopup(names: List<String>): ContainerFixture? {
+        return remoteRobot.findAll<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']"))
+            .firstOrNull { popup -> names.any { popup.hasText(it) } }
     }
 
 }
