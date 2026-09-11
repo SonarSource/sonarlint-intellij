@@ -20,4 +20,7 @@
 
 -->
 <idea-plugin>
+    <extensions defaultExtensionNs="org.sonarlint.idea">
+        <optionalPluginMarker implementation="org.sonarlint.intellij.optional.JupyterPluginMarker"/>
+    </extensions>
 </idea-plugin>

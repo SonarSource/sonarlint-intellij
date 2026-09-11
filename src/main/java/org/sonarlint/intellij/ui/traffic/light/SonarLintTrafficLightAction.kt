@@ -40,7 +40,7 @@ private val DASHBOARD_MODEL = Key<SonarLintDashboardModel>("DASHBOARD_MODEL")
 class SonarLintTrafficLightAction(private val editor: Editor) : AbstractSonarAction(), CustomComponentAction {
 
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
-        return SonarLintTrafficLightWidget(this, presentation, place, editor)
+        return SonarLintTrafficLightWidget(this, place, editor)
     }
 
     override fun updateCustomComponent(component: JComponent, presentation: Presentation) {

@@ -35,6 +35,7 @@ import java.awt.BorderLayout
 import java.awt.Font
 import java.util.UUID
 import javax.swing.DefaultComboBoxModel
+import javax.swing.JList
 import org.sonarlint.intellij.ui.codefix.CodeFixTabPanel
 import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
@@ -137,7 +138,17 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
         comboPanel.add(JBLabel("Which component or framework contains the issue?"))
         val contextCombo = ComboBox(DefaultComboBoxModel(contextualSections.toTypedArray()))
-        contextCombo.renderer = SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName)
+        contextCombo.renderer = object : SimpleListCellRenderer<RuleContextualSectionDto>() {
+            override fun customize(
+                list: JList<out RuleContextualSectionDto>,
+                value: RuleContextualSectionDto?,
+                index: Int,
+                selected: Boolean,
+                hasFocus: Boolean
+            ) {
+                text = value?.displayName.orEmpty()
+            }
+        }
         contextCombo.addActionListener {
             val layout = sectionPanel.layout as BorderLayout
             layout.getLayoutComponent(BorderLayout.CENTER)?.let { sectionPanel.remove(it) }
