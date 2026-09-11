@@ -23,6 +23,7 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import java.awt.Point
 import java.time.Duration
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
@@ -34,6 +35,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 import org.sonarlint.intellij.its.utils.optionalStep
 
+@Tag("CLion")
 @EnabledIf("isCLion")
 class CLionTests : BaseUiTest() {
 

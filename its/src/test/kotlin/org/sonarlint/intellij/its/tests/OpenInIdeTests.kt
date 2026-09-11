@@ -80,7 +80,7 @@ import org.sonarqube.ws.client.usertokens.RevokeRequest
 
 // In order to run these test change the url triggerOpenHotspotRequest to some other port than 64120 depending on number of IntelliJ instances
 @Tag("OpenInIdeTests")
-@EnabledIf("isIdeaCommunity")
+@EnabledIf("isIntelliJIdea")
 class OpenInIdeTests : BaseUiTest() {
 
     companion object {

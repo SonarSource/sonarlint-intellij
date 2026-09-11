@@ -26,6 +26,7 @@ import com.sonar.orchestrator.locator.FileLocation
 import java.time.Duration
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
@@ -44,6 +45,7 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.clearConnectionsAndAddSona
 
 const val PLSQL_PROJECT_KEY = "sample-plsql"
 
+@Tag("PLSQL")
 @EnabledIf("isSQLPlugin")
 class PLSQLTest : BaseUiTest() {
 

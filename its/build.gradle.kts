@@ -112,8 +112,7 @@ tasks {
     test {
         useJUnitPlatform {
             val tag = System.getenv("TEST_SUITE")
-            if (tag != null && (tag == "OpenInIdeTests" || tag == "ConnectedAnalysisTests"
-                    || tag == "ConfigurationTests" || tag == "Standalone")) {
+            if (!tag.isNullOrBlank()) {
                 includeTags(tag)
             }
         }
