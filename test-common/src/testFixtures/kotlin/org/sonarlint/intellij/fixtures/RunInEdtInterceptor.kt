@@ -34,7 +34,7 @@ class RunInEdtInterceptor : InvocationInterceptor {
     }
 
     override fun interceptBeforeAllMethod(
-        invocation: InvocationInterceptor.Invocation<Void>,
+        invocation: InvocationInterceptor.Invocation<Void?>,
         invocationContext: ReflectiveInvocationContext<Method>,
         extensionContext: ExtensionContext
     ) {
@@ -42,14 +42,15 @@ class RunInEdtInterceptor : InvocationInterceptor {
     }
 
     override fun interceptBeforeEachMethod(
-        invocation: InvocationInterceptor.Invocation<Void>,
+        invocation: InvocationInterceptor.Invocation<Void?>,
         invocationContext: ReflectiveInvocationContext<Method>,
         extensionContext: ExtensionContext
     ) {
         runInEdtAndWait { invocation.proceed() }
     }
+
     override fun interceptTestMethod(
-        invocation: InvocationInterceptor.Invocation<Void>,
+        invocation: InvocationInterceptor.Invocation<Void?>,
         invocationContext: ReflectiveInvocationContext<Method>,
         extensionContext: ExtensionContext
     ) {
@@ -57,7 +58,7 @@ class RunInEdtInterceptor : InvocationInterceptor {
     }
 
     override fun interceptAfterEachMethod(
-        invocation: InvocationInterceptor.Invocation<Void>,
+        invocation: InvocationInterceptor.Invocation<Void?>,
         invocationContext: ReflectiveInvocationContext<Method>,
         extensionContext: ExtensionContext
     ) {
@@ -65,7 +66,7 @@ class RunInEdtInterceptor : InvocationInterceptor {
     }
 
     override fun interceptAfterAllMethod(
-        invocation: InvocationInterceptor.Invocation<Void>,
+        invocation: InvocationInterceptor.Invocation<Void?>,
         invocationContext: ReflectiveInvocationContext<Method>,
         extensionContext: ExtensionContext
     ) {

@@ -89,6 +89,14 @@ dependencies {
     }
     testImplementation(libs.its.sonar.scala)
     testImplementation(libs.its.sonar.ws)
+    constraints {
+        testImplementation(libs.its.okhttp) {
+            because("Keep the sonar-ws test dependency on a version without known vulnerabilities")
+        }
+        testImplementation(libs.its.protobuf) {
+            because("Keep the sonar-ws test dependency on a patched protobuf 3 release")
+        }
+    }
     testImplementation(libs.bundles.its.remote)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
