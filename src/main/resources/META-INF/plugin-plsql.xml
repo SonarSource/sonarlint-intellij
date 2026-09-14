@@ -20,7 +20,4 @@
 
 -->
 <idea-plugin>
-    <extensions defaultExtensionNs="org.sonarlint.idea">
-        <optionalPluginMarker implementation="org.sonarlint.intellij.optional.DatabasePluginMarker"/>
-    </extensions>
 </idea-plugin>
