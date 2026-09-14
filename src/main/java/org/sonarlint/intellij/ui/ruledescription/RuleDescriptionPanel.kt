@@ -24,7 +24,6 @@ import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTabbedPane
@@ -36,7 +35,6 @@ import java.awt.BorderLayout
 import java.awt.Font
 import java.util.UUID
 import javax.swing.DefaultComboBoxModel
-import javax.swing.JList
 import org.sonarlint.intellij.ui.codefix.CodeFixTabPanel
 import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.ui.ruledescription.RuleParsingUtils.Companion.parseCodeExamples
