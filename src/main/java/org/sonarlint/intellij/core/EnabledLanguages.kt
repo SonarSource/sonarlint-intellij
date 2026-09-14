@@ -188,8 +188,6 @@ object EnabledLanguages {
     @JvmStatic
     fun isClionEnabled() = isIdeModuleEnabled(CLION_MODULE_ID)
 
-    // TODO SLI-2750: PluginManager.findEnabledPlugin is scheduled for removal; keep it until
-    // the minimum supported IDE version is bumped and a public replacement is available.
     private fun isIdeModuleEnabled(pluginId: String) =
         PluginManager.getInstance().findEnabledPlugin(PluginId.getId(pluginId)) != null
 }
