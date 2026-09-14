@@ -1,5 +1,5 @@
 [versions]
-sonarlint-core = "11.10.0.86211"
+sonarlint-core = "11.10.0.86299"
 
 sonar-java = "8.41.0.47177"
 sonar-java-symbolic = "8.16.4.1912"
@@ -11,7 +11,7 @@ sonar-ruby = "1.25.0.2597"
 sonar-go = "1.44.0.8969"
 sonar-html = "3.28.0.8018"
 sonar-xml = "2.19.0.8138"
-sonar-omnisharp = "1.44.0.101952"
+sonar-omnisharp = "1.46.0.102069"
 sonar-text = "2.50.0.13411"
 sonar-iac = "2.18.0.23895"
 
