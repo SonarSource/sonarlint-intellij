@@ -42,6 +42,8 @@ public final class SonarLintPlugin {
 
   private @NotNull PluginDescriptor getPlugin() {
     if (plugin == null) {
+      // TODO SLI-2750: PluginManager.findEnabledPlugin is scheduled for removal; keep it until
+      // the minimum supported IDE version is bumped and a public replacement is available.
       plugin = PluginManager.getInstance().findEnabledPlugin(PLUGIN_ID);
       if (plugin == null) {
         throw new IllegalStateException("Cannot find SonarLint plugin descriptor (id=" + PLUGIN_ID + ")");
