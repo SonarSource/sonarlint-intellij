@@ -24,6 +24,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.changes.ChangesUtil;
@@ -70,17 +71,17 @@ public class AddEditExclusionDialog extends DialogWrapper {
     init();
 
     FileChooserDescriptor fileChooser = new FileChooserDescriptor(true, false, false,
-      true, false, false);
+      true, false, false)
+      .withTitle("Select File to Exclude")
+      .withDescription("Select the file which will be excluded from SonarQube for IDE analysis");
     fileChooser.setRoots(ProjectRootManager.getInstance(project).getContentRoots());
-    fileTextField.addBrowseFolderListener("Select File to Exclude",
-      "Select the file which will be excluded from SonarQube for IDE analysis",
-      project, fileChooser);
+    fileTextField.addBrowseFolderListener(new TextBrowseFolderListener(fileChooser, project));
 
-    FileChooserDescriptor directoryChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
+    FileChooserDescriptor directoryChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor()
+      .withTitle("Select Directory to Exclude")
+      .withDescription("Select the directory which will be excluded from SonarQube for IDE analysis");
     directoryChooser.setRoots(ProjectRootManager.getInstance(project).getContentRoots());
-    directoryTextField.addBrowseFolderListener("Select Directory to Exclude",
-      "Select the directory which will be excluded from SonarQube for IDE analysis",
-      project, directoryChooser);
+    directoryTextField.addBrowseFolderListener(new TextBrowseFolderListener(directoryChooser, project));
 
     DocumentListener docListener = new DocumentAdapter() {
       protected void textChanged(final DocumentEvent e) {

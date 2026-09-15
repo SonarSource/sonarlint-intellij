@@ -36,7 +36,7 @@ open class TaskProgressReporter(
     private val message: String? = null,
     private val taskId: String? = null,
     private val onCompletion: () -> Unit = {}
-) : Task.Backgroundable(project, "SonarQube: $title", isCancellable, ALWAYS_BACKGROUND) {
+) : Task.Backgroundable(project, "SonarQube: $title", isCancellable) {
     var progressIndicator: ProgressIndicator? = null
     private val waitMonitor = Object()
     private val complete = AtomicBoolean(false)

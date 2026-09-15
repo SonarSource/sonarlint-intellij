@@ -24,11 +24,11 @@ import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.panels.HorizontalLayout
+import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
@@ -137,7 +137,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
         comboPanel.add(JBLabel("Which component or framework contains the issue?"))
         val contextCombo = ComboBox(DefaultComboBoxModel(contextualSections.toTypedArray()))
-        contextCombo.renderer = SimpleListCellRenderer.create("", RuleContextualSectionDto::getDisplayName)
+        contextCombo.renderer = textListCellRenderer<RuleContextualSectionDto> { it.displayName }
         contextCombo.addActionListener {
             val layout = sectionPanel.layout as BorderLayout
             layout.getLayoutComponent(BorderLayout.CENTER)?.let { sectionPanel.remove(it) }
