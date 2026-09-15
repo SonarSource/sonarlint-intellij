@@ -252,7 +252,7 @@ class BackendService : Disposable {
     }
 
     private fun createServiceStartingTask(): Task.Backgroundable {
-        return object : Task.Backgroundable(null, "Starting SonarQube for IDE service\u2026", false, ALWAYS_BACKGROUND) {
+        return object : Task.Backgroundable(null, "Starting SonarQube for IDE service\u2026", false) {
             override fun run(indicator: ProgressIndicator) {
                 try {
                     val sloop = startSloopProcess()
