@@ -44,7 +44,7 @@ const val SHELL_PROJECT_KEY = "sample-shell"
 const val AZURE_PIPELINES_PROJECT_KEY = "sample-azurepipelines"
 
 @Tag("ConnectedAnalysisTests")
-@EnabledIf("isIdeaCommunity")
+@EnabledIf("isIntelliJIdea")
 class IaCTests : BaseUiTest() {
 
     @Test

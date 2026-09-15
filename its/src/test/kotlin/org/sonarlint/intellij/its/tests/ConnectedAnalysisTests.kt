@@ -33,6 +33,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.analyzeCurrentFileFromToolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
@@ -54,7 +55,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 
 @Tag("ConnectedAnalysisTests")
-@EnabledIf("isIdeaCommunity")
+@EnabledIf("isIntelliJIdea")
 class ConnectedAnalysisTests : BaseUiTest() {
 
     companion object {
@@ -149,16 +150,23 @@ class ConnectedAnalysisTests : BaseUiTest() {
             enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode()
-            analyzeAndVerifyReportTabContainsMessages(
-                "No new issues from last 1 days",
-                "No new Security Hotspots from last 1 days",
-                "Found 3 older issues"
-            )
-            verifyCurrentFileTabContainsMessages(
-                "Found 3 older issues",
-                "Found 1 older Taint Vulnerability"
-            )
-            resetFocusOnNewCode()
+            try {
+                analyzeAndVerifyReportTabContainsMessages(
+                    "No new issues from last 1 days",
+                    "No new Security Hotspots from last 1 days",
+                    "Found 3 older issues"
+                )
+                // FIXME workaround: the Current File tab does not refresh after toggling the
+                // Focus On New Code filter, so trigger an explicit re-analysis. Unlike the
+                // StandaloneIdeaTests workaround (SLCORE-2533) this lag is not yet tracked.
+                analyzeCurrentFileFromToolWindow()
+                verifyCurrentFileTabContainsMessages(
+                    "Found 3 older issues",
+                    "Found 1 older Taint Vulnerability"
+                )
+            } finally {
+                resetFocusOnNewCode()
+            }
         }
 
         @Test
