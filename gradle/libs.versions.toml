@@ -37,6 +37,7 @@ awaitility = "4.3.0"
 its-remote = "0.11.23"
 its-sonar-scala = "1.8.3.2219"
 its-sonar-ws = "8.5.1.38104"
+its-okhttp = "5.4.0"
 
 [libraries]
 sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarlint-java-client-utils", version.ref = "sonarlint-core" }
@@ -72,6 +73,7 @@ awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" 
 its-orchestrator = { module = "org.sonarsource.orchestrator:sonar-orchestrator-junit5", version.ref = "orchestrator"}
 its-sonar-scala = { module = "org.sonarsource.slang:sonar-scala-plugin", version.ref = "its-sonar-scala" }
 its-sonar-ws = { module = "org.sonarsource.sonarqube:sonar-ws", version.ref = "its-sonar-ws" }
+its-okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "its-okhttp" }
 its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.ref = "its-remote" }
 its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "its-remote" }
 
