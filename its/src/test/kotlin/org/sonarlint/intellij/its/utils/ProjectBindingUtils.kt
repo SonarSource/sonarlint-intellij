@@ -106,13 +106,13 @@ object ProjectBindingUtils {
     // Re-query the popup each poll: CustomComboPopup can appear empty for several seconds on
     // 2024.2 after a validation error, and a 5s wait on the first instance times out.
     private fun clickConnectionInComboPopup(vararg names: String) {
+        var target: ContainerFixture? = null
         waitFor(Duration.ofSeconds(20), Duration.ofMillis(200), "Connection ${names.toList()} not in combo popup") {
-            remoteRobot.findAll<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']"))
-                .any { popup -> names.any { popup.hasText(it) } }
+            target = remoteRobot.findAll<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']"))
+                .firstOrNull { popup -> names.any { popup.hasText(it) } }
+            target != null
         }
-        remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-            findText { names.contains(it.text) }.click()
-        }
+        checkNotNull(target).findText { names.contains(it.text) }.click()
     }
 
 }
