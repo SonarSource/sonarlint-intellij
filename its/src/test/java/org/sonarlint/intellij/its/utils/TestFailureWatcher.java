@@ -23,15 +23,17 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 
 /**
- * Bridges {@link TestWatcher#testFailed} across JUnit 5 and 6.
- * Kotlin cannot override both JUnit 5's {@code Throwable} and JUnit 6's {@code Throwable?}
- * (JSpecify) in the same source, and CLion 2024.2 still compiles ITs against JUnit 5.
+ * Java bridge for {@link TestWatcher#testFailed}.
+ * CLion 2024.2's ITS compile classpath presents {@code cause} as a non-null {@code Throwable}
+ * (IDE test-framework JUnit 5 on the same classpath as locked junit-jupiter-api 6.1.1),
+ * so a Kotlin {@code Throwable?} override does not match. Java does not encode that
+ * nullability difference.
  */
 public abstract class TestFailureWatcher implements TestWatcher {
     @Override
     public final void testFailed(ExtensionContext context, Throwable cause) {
-        onTestFailed(context);
+        onTestFailed(context, cause);
     }
 
-    protected abstract void onTestFailed(ExtensionContext context);
+    protected abstract void onTestFailed(ExtensionContext context, Throwable cause);
 }
