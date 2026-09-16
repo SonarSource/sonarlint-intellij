@@ -20,11 +20,12 @@
 package org.sonarlint.intellij.its.utils
 
 import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.TestWatcher
 import org.sonarlint.intellij.its.robotUrl
 import java.net.URL
 
-class VisualTreeDumpOnFailure : TestFailureWatcher() {
-    override fun onTestFailed(context: ExtensionContext, cause: Throwable?) {
+class VisualTreeDumpOnFailure : TestWatcher {
+    override fun testFailed(context: ExtensionContext, cause: Throwable?) {
         println("Test '${context.displayName}' failed")
         println("Printing visual tree")
         println()

@@ -101,6 +101,16 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
 }
 
+// CLion 2024.2 ships lib/junit5.jar (JUnit 5, no JSpecify) on the platform classpath,
+// ahead of the catalog junit-jupiter-api 6.1.1. Drop it so ITS compile and run JUnit 6
+// on every IDE flavor. Gradle cannot exclude that jar as a Maven coordinate.
+afterEvaluate {
+    sourceSets.named("test") {
+        compileClasspath = compileClasspath.filter { it.name != "junit5.jar" }
+        runtimeClasspath = runtimeClasspath.filter { it.name != "junit5.jar" }
+    }
+}
+
 tasks {
     compileKotlin {
         compilerOptions {

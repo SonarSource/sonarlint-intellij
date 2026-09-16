@@ -20,10 +20,11 @@
 package org.sonarlint.intellij.its.utils
 
 import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.TestWatcher
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 
-class ThreadDumpOnFailure : TestFailureWatcher() {
-    override fun onTestFailed(context: ExtensionContext, cause: Throwable?) {
+class ThreadDumpOnFailure : TestWatcher {
+    override fun testFailed(context: ExtensionContext, cause: Throwable?) {
         println("Test '${context.displayName}' failed")
         println("Printing thread dump")
         println()
