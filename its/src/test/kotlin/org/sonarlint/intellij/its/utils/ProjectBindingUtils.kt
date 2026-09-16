@@ -57,11 +57,8 @@ object ProjectBindingUtils {
                     val connectionLabelWithPrefix = connectionType.uiLabelPrefix + connectionName
                     checkBox("Bind project to SonarQube (Server, Cloud)").select()
                     comboBox("Connection:").click()
-                    remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                        // a prefix is added only if there are multiple SQC connection. Check both with and without label
-                        waitFor(Duration.ofSeconds(5)) { hasText(connectionLabelWithPrefix) || hasText(connectionName) }
-                        findText { it.text == connectionLabelWithPrefix || it.text == connectionName }.click()
-                    }
+                    // a prefix is added only if there are multiple SQC connections. Check both with and without label
+                    clickConnectionInComboPopup(connectionLabelWithPrefix, connectionName)
                     jbTextField().text = projectKey
                     button("OK").click()
                     // wait for binding fully established
@@ -81,10 +78,7 @@ object ProjectBindingUtils {
             errorMessage("Connection should not be empty")
 
             comboBox("Connection:").click()
-            remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
-                waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
-                findText("Orchestrator").click()
-            }
+            clickConnectionInComboPopup("Orchestrator")
             pressOk()
             errorMessage("Project key should not be empty")
 
@@ -106,6 +100,18 @@ object ProjectBindingUtils {
                 pressOk()
             }
             pressOk()
+        }
+    }
+
+    // Re-query the popup each poll: CustomComboPopup can appear empty for several seconds on
+    // 2024.2 after a validation error, and a 5s wait on the first instance times out.
+    private fun clickConnectionInComboPopup(vararg names: String) {
+        waitFor(Duration.ofSeconds(20), Duration.ofMillis(200), "Connection ${names.toList()} not in combo popup") {
+            remoteRobot.findAll<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']"))
+                .any { popup -> names.any { popup.hasText(it) } }
+        }
+        remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
+            findText { names.contains(it.text) }.click()
         }
     }
 
