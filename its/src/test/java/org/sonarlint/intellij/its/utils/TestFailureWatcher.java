@@ -17,27 +17,21 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.utils
+package org.sonarlint.intellij.its.utils;
 
-import org.junit.jupiter.api.extension.ExtensionContext
-import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
 
-class ThreadDumpOnFailure : TestFailureWatcher() {
-    override fun onTestFailed(context: ExtensionContext) {
-        println("Test '${context.displayName}' failed")
-        println("Printing thread dump")
-        println()
-        printThreadDump()
+/**
+ * Bridges {@link TestWatcher#testFailed} across JUnit 5 and 6.
+ * Kotlin cannot override both JUnit 5's {@code Throwable} and JUnit 6's {@code Throwable?}
+ * (JSpecify) in the same source, and CLion 2024.2 still compiles ITs against JUnit 5.
+ */
+public abstract class TestFailureWatcher implements TestWatcher {
+    @Override
+    public final void testFailed(ExtensionContext context, Throwable cause) {
+        onTestFailed(context);
     }
 
-    private fun printThreadDump() {
-        val stackTrace = remoteRobot.callJs<String>(
-            """
-               java.lang.management.ManagementFactory.getThreadMXBean().dumpAllThreads(true, true).map(function(element){
-                    return element.toString();
-                }).join("\n");
-            """.trimIndent()
-        )
-        println(stackTrace)
-    }
+    protected abstract void onTestFailed(ExtensionContext context);
 }
