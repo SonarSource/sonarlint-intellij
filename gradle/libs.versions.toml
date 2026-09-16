@@ -16,7 +16,7 @@ sonar-text = "2.50.0.13411"
 sonar-iac = "2.18.0.23895"
 
 sonarqube = "7.3.0.8198"
-orchestrator = "6.1.0.3962"
+orchestrator = "6.4.3.4676"
 
 kotlin-plugin = "2.2.21"
 license-plugin = "0.16.1"
