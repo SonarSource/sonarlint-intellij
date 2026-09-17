@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.its.tests.flavor
 
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
@@ -27,7 +28,8 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 
 
-@EnabledIf("isIdeaUltimate")
+@Tag("Standalone")
+@EnabledIf("isIntelliJIdea")
 class IdeaUltimateTests : BaseUiTest() {
 
     @Test
