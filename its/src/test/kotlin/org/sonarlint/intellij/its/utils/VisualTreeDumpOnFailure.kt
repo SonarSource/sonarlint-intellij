@@ -25,7 +25,7 @@ import org.sonarlint.intellij.its.robotUrl
 import java.net.URL
 
 class VisualTreeDumpOnFailure : TestWatcher {
-    override fun testFailed(context: ExtensionContext, cause: Throwable) {
+    override fun testFailed(context: ExtensionContext, cause: Throwable?) {
         println("Test '${context.displayName}' failed")
         println("Printing visual tree")
         println()

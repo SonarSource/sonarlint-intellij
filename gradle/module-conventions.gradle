@@ -18,6 +18,22 @@ gradle.sharedServices.registerIfAbsent(requestedPlatformsServiceName, requestedP
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
+    // IntelliJ Platform plugin reassembles Test.classpath from its own configurations,
+    // independently of sourceSets. Filter at execution so CLion's lib/junit5.jar cannot
+    // shadow catalog JUnit 6 at runtime.
+    doFirst {
+        classpath = classpath.filter { it.name != 'junit5.jar' }
+    }
+}
+
+// CLion 2024.2 ships lib/junit5.jar (JUnit 5, no JSpecify) on the platform classpath,
+// ahead of the catalog junit-jupiter-api 6.1.1. Drop it so every module compiles against
+// JUnit 6. Gradle cannot exclude that jar as a Maven coordinate.
+afterEvaluate {
+    sourceSets.test {
+        compileClasspath = compileClasspath.filter { it.name != 'junit5.jar' }
+        runtimeClasspath = runtimeClasspath.filter { it.name != 'junit5.jar' }
+    }
 }
 
 tasks.matching { it.name == "signArchives" }.configureEach {

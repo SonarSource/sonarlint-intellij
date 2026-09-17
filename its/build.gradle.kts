@@ -90,6 +90,11 @@ dependencies {
     testImplementation(libs.its.sonar.scala)
     testImplementation(libs.its.sonar.ws)
     testImplementation(libs.bundles.its.remote)
+    // remote-robot → retrofit and sonar-ws still request okhttp 3.14.x; orchestrator brings okhttp-jvm 5.x.
+    // Without this constraint both jars land on the ITS classpath with duplicate okhttp3 classes.
+    constraints {
+        testImplementation(libs.its.okhttp)
+    }
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.four)
