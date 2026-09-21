@@ -211,7 +211,10 @@ intellijPlatform {
         clientConfig.isIncludeEnvVars = true
         clientConfig.envVarsExcludePatterns =
             "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
-        setContextUrl(System.getenv("ARTIFACTORY_URL"))
+        // Publish always targets SaaS. CI may point ARTIFACTORY_URL at Edge for resolve.
+        setContextUrl(
+            System.getenv("ARTIFACTORY_PUBLISH_URL") ?: "https://repox.jfrog.io/artifactory"
+        )
         publish {
             repository {
                 repoKey = System.getenv("ARTIFACTORY_DEPLOY_REPO") ?: ""

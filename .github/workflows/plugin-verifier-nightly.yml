@@ -56,6 +56,10 @@ jobs:
           artifactory-reader-role: private-reader
           disable-caching: 'true'
 
+      - name: Point resolve at Edge
+        if: runner.environment != 'github-hosted'
+        uses: ./.github/actions/point-resolve-at-edge
+
       - name: Run plugin verifier
         run: ./gradlew :verifyPlugin -PverifierEnv=LATEST
 
