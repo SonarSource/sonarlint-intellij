@@ -92,6 +92,22 @@ jobs:
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
+      # config-gradle first so we can wait for Edge federation before Gradle resolve.
+      # build-gradle then skips its nested config-gradle (CONFIG_GRADLE_COMPLETED).
+      - name: Configure Gradle
+        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        with:
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          cache-paths: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+
+      - name: Point resolve at Edge
+        if: runner.environment != 'github-hosted'
+        uses: ./.github/actions/point-resolve-at-edge
+
       - name: Build Plugin
         uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         id: build_plugin
@@ -129,6 +145,10 @@ jobs:
         with:
           sonar-platform: none
           artifactory-reader-role: private-reader
+
+      - name: Point resolve at Edge
+        if: runner.environment != 'github-hosted'
+        uses: ./.github/actions/point-resolve-at-edge
 
       - name: Run checks
         env:
@@ -191,6 +211,20 @@ jobs:
           echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
+
+      - name: Configure Gradle
+        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        with:
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          cache-paths: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+
+      - name: Point resolve at Edge
+        if: runner.environment != 'github-hosted'
+        uses: ./.github/actions/point-resolve-at-edge
 
       - name: Run Tests and Sonar Analysis
         uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
@@ -264,6 +298,20 @@ jobs:
           restore-keys: |
             verifier-ides-${{ runner.os }}-
 
+      - name: Configure Gradle
+        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        with:
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          cache-paths: |
+            /home/runner/.gradle/caches
+            !/home/runner/.gradle/caches/*/transforms/
+            /home/runner/.gradle/wrapper
+
+      # Verifier downloads IDE tarballs through Gradle ivy from jetbrains-download.
+      # Edge returns HTTP 404 for that repo, and the config-gradle init script strips
+      # any ivy host that does not match ARTIFACTORY_URL. Keep this job on SaaS.
       - name: Verify Plugin Compatibility
         uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
         with:
@@ -373,6 +421,10 @@ jobs:
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           disable-caching: 'true'
+
+      - name: Point resolve at Edge
+        if: runner.environment != 'github-hosted'
+        uses: ./.github/actions/point-resolve-at-edge
 
       - name: Select Java ${{ env.JDK_VERSION }}
         run: mise use java@${{ env.JDK_VERSION }}
@@ -540,7 +592,7 @@ jobs:
           echo "Using project version: ${PROJECT_VERSION}"
           curl -fsSL -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_ACCESS_TOKEN}" \
             -o sonarlint-intellij.zip \
-            "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
+            "${ARTIFACTORY_RESOLVE_URL:-${ARTIFACTORY_URL}}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
           unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
           mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
           rm sonarlint-intellij.zip
@@ -585,6 +637,9 @@ jobs:
           sleep 3
 
       - name: Start IDE in background
+        env:
+          ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
+          ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
         run: |
           # Start IDE in background using Gradle
           nohup ./gradlew :its:runIdeForUiTests --stacktrace -i \
@@ -618,10 +673,19 @@ jobs:
         with:
           artifactory-reader-role: private-reader
 
+      # config-maven issues a new reader token and resets ARTIFACTORY_URL to SaaS.
+      # Wait for that token to federate to Edge before Gradle ITs resolve there;
+      # restoring URLs alone yields HTTP 401 on unfederated credentials.
+      - name: Point resolve at Edge after Maven
+        if: runner.environment != 'github-hosted'
+        uses: ./.github/actions/point-resolve-at-edge
+
       - name: Run integration tests
         env:
           SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+          ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
+          ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
         run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
 
       - name: Stop recording

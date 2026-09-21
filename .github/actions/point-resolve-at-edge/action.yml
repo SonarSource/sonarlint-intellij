@@ -1,0 +1,42 @@
+name: Point resolve at Edge
+description: Wait for JFrog Edge token federation and point Gradle/curl resolve at Edge. Publish and Orchestrator stay on SaaS.
+
+# Inlined from wait-for-artifactory-token-federation: this public repo cannot
+# resolve the private sonarsource-infra-artifactory action.
+runs:
+  using: composite
+  steps:
+    - name: Set Edge resolve URLs
+      shell: bash
+      run: |
+        echo "ARTIFACTORY_URL=https://repox-internal.dev.sonar.build/artifactory" >> "$GITHUB_ENV"
+        echo "ARTIFACTORY_RESOLVE_URL=https://repox-internal.dev.sonar.build/artifactory" >> "$GITHUB_ENV"
+    - name: Wait for Artifactory token federation
+      shell: bash
+      env:
+        ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
+      run: |
+        : "${ARTIFACTORY_ACCESS_TOKEN:?ARTIFACTORY_ACCESS_TOKEN must be configured before waiting for token federation}"
+        wait_for_probe() {
+          local probe_path="$1"
+          local label="$2"
+          for attempt in {1..12}; do
+            status=$(curl --silent --output /dev/null --write-out "%{http_code}" \
+              --header "Authorization: Bearer ${ARTIFACTORY_ACCESS_TOKEN}" \
+              "${ARTIFACTORY_URL}/${probe_path}" || true)
+            if [[ "${status}" == "200" ]]; then
+              echo "Artifactory token accepted by Edge (${label})"
+              return 0
+            fi
+            if [[ "${status}" != "401" && "${status}" != "000" ]]; then
+              echo "Unexpected response from Edge (${label}): HTTP ${status}"
+              return 1
+            fi
+            echo "Waiting for Artifactory token federation (${label}, attempt ${attempt}/12)"
+            sleep 10
+          done
+          echo "Artifactory token was not accepted by Edge within 2 minutes (${label})"
+          return 1
+        }
+        wait_for_probe "api/search/versions?g=org.sonarsource.sonarqube&a=sonar-plugin-api&remote=1&repos=sonarsource&v=*" "sonarsource"
+        wait_for_probe "api/search/versions?g=com.gradle.develocity&a=com.gradle.develocity.gradle.plugin&remote=1&repos=plugins.gradle.org&v=*" "plugins.gradle.org"
