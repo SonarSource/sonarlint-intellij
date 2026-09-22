@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.CliOperationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
@@ -35,7 +37,8 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val panel: AiIntegrationsPanel,
     private val backendService: BackendService = getService(BackendService::class.java),
     private val registry: AiAgentRegistry = AiAgentRegistry(),
-    private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java)
+    private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java),
+    private val mcpCoordinator: McpConfigurationCoordinator = getService(McpConfigurationCoordinator::class.java)
 ) : Disposable {
     private val generation = AtomicLong()
     private val started = AtomicBoolean()
@@ -47,6 +50,7 @@ class AiIntegrationsController @JvmOverloads constructor(
         panel.setIntentListener(::handleIntent)
         ApplicationManager.getApplication().messageBus.connect(this)
             .subscribe(CliOperationListener.TOPIC, CliOperationListener { if (started.get()) refresh() })
+        mcpCoordinator.register(this, ::refresh)
     }
 
     fun loadInitially() {
@@ -62,16 +66,18 @@ class AiIntegrationsController @JvmOverloads constructor(
         val requestedGeneration = generation.incrementAndGet()
         publish(requestedGeneration, AiIntegrationsPanelState.Loading)
         try {
-            backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
-                val state = if (error != null) {
-                    AiIntegrationsPanelState.Error(userFacingMessage(error))
-                } else if (snapshot.agents.isEmpty()) {
-                    AiIntegrationsPanelState.Empty(snapshot)
-                } else {
-                    AiIntegrationsPanelState.Ready(snapshot)
+            backendService.getAiIntegrationState(project, registry.detectedIdeAgents())
+                .thenCompose(mcpCoordinator::inspectSnapshot)
+                .whenComplete { snapshot, error ->
+                    val state = if (error != null) {
+                        AiIntegrationsPanelState.Error(userFacingMessage(error))
+                    } else if (snapshot.agents.isEmpty()) {
+                        AiIntegrationsPanelState.Empty(snapshot)
+                    } else {
+                        AiIntegrationsPanelState.Ready(snapshot)
+                    }
+                    publish(requestedGeneration, state)
                 }
-                publish(requestedGeneration, state)
-            }
         } catch (error: Exception) {
             publish(requestedGeneration, AiIntegrationsPanelState.Error(userFacingMessage(error)))
         }
@@ -91,8 +97,21 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     private fun handleIntent(intent: AiIntegrationsIntent) {
-        latestSnapshot?.let { snapshot ->
-            cliCoordinator.execute(project, snapshot, intent)
+        when (intent) {
+            AiIntegrationsIntent.Refresh -> refresh()
+            AiIntegrationsIntent.OpenCliDocumentation -> BrowserUtil.browse(SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
+            AiIntegrationsIntent.InstallCli,
+            AiIntegrationsIntent.AuthenticateCli,
+            is AiIntegrationsIntent.IntegrateCli -> latestSnapshot?.let { snapshot ->
+                cliCoordinator.execute(project, snapshot, intent)
+            }
+            is AiIntegrationsIntent.SetUpMcp -> latestSnapshot?.let { snapshot ->
+                mcpCoordinator.setUp(project, snapshot, intent.agent)
+            }
+            is AiIntegrationsIntent.OpenMcpConfiguration -> latestSnapshot?.let { snapshot ->
+                mcpCoordinator.openConfiguration(project, intent.agent, snapshot)
+            }
+            AiIntegrationsIntent.OpenConnectionSettings -> mcpCoordinator.openConnectionSettings(project)
         }
     }
 
@@ -106,6 +125,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     override fun dispose() {
         disposed.set(true)
         generation.incrementAndGet()
+        mcpCoordinator.unregister(this)
         panel.dispose()
     }
 }
