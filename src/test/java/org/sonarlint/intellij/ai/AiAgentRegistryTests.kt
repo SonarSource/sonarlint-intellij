@@ -17,14 +17,30 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui
+package org.sonarlint.intellij.ai
 
-object ToolWindowConstants {
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
-    const val TOOL_WINDOW_ID: String = "SonarQube for IDE"
-    const val LOG_TAB_TITLE: String = "Log"
-    const val CURRENT_FILE_TAB_TITLE: String = "Findings"
-    const val AI_INTEGRATIONS_TAB_TITLE: String = "AI Integrations"
-    const val HELP_AND_FEEDBACK_TAB_TITLE: String = "Help & Feedback"
+class AiAgentRegistryTests {
+    @Test
+    fun `detects enabled GitHub Copilot plugin`() {
+        val registry = AiAgentRegistry { pluginId -> pluginId == AiAgentRegistry.GITHUB_COPILOT_PLUGIN_ID }
 
+        assertThat(registry.detectedIdeAgents()).containsExactly(AiAgentId.GITHUB_COPILOT)
+    }
+
+    @Test
+    fun `does not detect a disabled GitHub Copilot plugin`() {
+        val registry = AiAgentRegistry { false }
+
+        assertThat(registry.detectedIdeAgents()).isEmpty()
+    }
+
+    @Test
+    fun `does not detect an absent GitHub Copilot plugin`() {
+        val registry = AiAgentRegistry { false }
+
+        assertThat(registry.detectedIdeAgents()).isEmpty()
+    }
 }

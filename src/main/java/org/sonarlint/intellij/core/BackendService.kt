@@ -55,6 +55,14 @@ import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
+import org.sonarlint.intellij.ai.AgentCapability
+import org.sonarlint.intellij.ai.AgentDetectionSource
+import org.sonarlint.intellij.ai.AiAgentId
+import org.sonarlint.intellij.ai.AiIntegrationSnapshot
+import org.sonarlint.intellij.ai.CliAuthenticationState
+import org.sonarlint.intellij.ai.CliInstallationState
+import org.sonarlint.intellij.ai.CliState
+import org.sonarlint.intellij.ai.IntegrationConnection
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -95,6 +103,14 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.AnalyzeVCSCh
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeAutomaticAnalysisSettingParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeClientNodeJsPathParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationHost
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationScope
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -1154,6 +1170,45 @@ class BackendService : Disposable {
     fun getPluginStatuses(project: Project): CompletableFuture<GetPluginStatusesResponse> {
         val projectId = projectId(project)
         return requestFromBackend { it.pluginService.getPluginStatuses(GetPluginStatusesParams(projectId)) }
+    }
+
+    fun getAiIntegrationState(project: Project, detectedAgents: List<AiAgentId>): CompletableFuture<AiIntegrationSnapshot> {
+        val params = GetAiIntegrationStateParams(
+            AiIntegrationHost.INTELLIJ,
+            detectedAgents.map { AiAgent.valueOf(it.name) },
+            AiIntegrationScope.GLOBAL,
+            projectId(project),
+            true
+        )
+        return requestFromBackend { it.aiAgentService.getIntegrationState(params) }
+            .thenApply(::toAiIntegrationSnapshot)
+    }
+
+    private fun toAiIntegrationSnapshot(response: GetAiIntegrationStateResponse): AiIntegrationSnapshot {
+        val cli = response.cli
+        return AiIntegrationSnapshot(
+            CliState(
+                CliInstallationState.valueOf(cli.installationStatus.name),
+                CliAuthenticationState.valueOf(cli.authenticationStatus.name),
+                cli.version,
+                cli.serverUrl,
+                cli.organization
+            ),
+            response.agents.map { capability ->
+                AgentCapability(
+                    AiAgentId.valueOf(capability.agent.name),
+                    capability.detectionSources.mapTo(mutableSetOf()) { source ->
+                        AgentDetectionSource.valueOf(source.name)
+                    },
+                    capability.isCliIntegrationSupported,
+                    capability.isStandaloneMcpSupported
+                )
+            },
+            response.connectionChoices.map { connection ->
+                IntegrationConnection(connection.connectionId, connection.serverUrl, connection.organization)
+            },
+            response.recommendedConnectionId
+        )
     }
 
 }
