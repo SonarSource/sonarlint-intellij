@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -42,5 +43,21 @@ class AiAgentRegistryTests {
         val registry = AiAgentRegistry { false }
 
         assertThat(registry.detectedIdeAgents()).isEmpty()
+    }
+
+    @Test
+    fun `provides normalized standalone MCP paths for all supported agents`() {
+        val registry = AiAgentRegistry { false }
+        val home = Path.of("/users/me").toAbsolutePath()
+
+        assertThat(registry.standaloneMcpPath(AiAgentId.GITHUB_COPILOT, home, false, null))
+            .isEqualTo(home.resolve(".config/github-copilot/intellij/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgentId.GITHUB_COPILOT, home, true, Path.of("/local/appdata")))
+            .isEqualTo(Path.of("/local/appdata/github-copilot/intellij/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgentId.CURSOR, home, false, null))
+            .isEqualTo(home.resolve(".cursor/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgentId.CLAUDE_CODE, home, false, null))
+            .isEqualTo(home.resolve(".claude.json"))
+        assertThat(registry.standaloneMcpPath(AiAgentId.KIRO, home, false, null)).isNull()
     }
 }

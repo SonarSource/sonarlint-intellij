@@ -31,6 +31,7 @@ import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterEach
@@ -73,6 +74,11 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationSt
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationUpdateParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationUpdatePlanResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.SonarQubeCliState
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -83,6 +89,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.DidUpd
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidAddConfigurationScopesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.scope.DidRemoveConfigurationScopeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.ConnectionRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.GetMCPServerConfigurationParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.GetMCPServerConfigurationResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.auth.HelpGenerateUserTokenParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidChangeCredentialsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
@@ -110,6 +118,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllRespo
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityTrackingRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AcceptedBindingSuggestionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
 private const val CONNECTION_NAME = "id"
 
@@ -335,6 +346,45 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val integrateCaptor = argumentCaptor<PrepareIntegrateCliCommandParams>()
         verify(backendAiAgentService).prepareIntegrateCommand(integrateCaptor.capture())
         assertThat(integrateCaptor.firstValue.agent).isEqualTo(AiAgent.CURSOR)
+    }
+
+    @Test
+    fun test_mcp_wrappers_map_all_calls_and_send_only_token_credentials() {
+        `when`(backendAiAgentService.inspectMcpConfiguration(any())).thenReturn(
+            CompletableFuture.completedFuture(McpConfigurationInspectionResponse(McpConfigurationState.MALFORMED, listOf("bad json")))
+        )
+        `when`(backendAiAgentService.planMcpConfigurationUpdate(any())).thenReturn(
+            CompletableFuture.completedFuture(McpConfigurationUpdatePlanResponse(McpConfigurationState.STANDALONE, "updated", emptyList()))
+        )
+        `when`(backendConnectionService.getMCPServerConfiguration(any())).thenReturn(
+            CompletableFuture.completedFuture(GetMCPServerConfigurationResponse("generated"))
+        )
+
+        assertThat(service.inspectMcpConfiguration(AiAgentId.CLAUDE_CODE, "content").get().state.name).isEqualTo("MALFORMED")
+        assertThat(service.planMcpConfigurationUpdate(AiAgentId.CLAUDE_CODE, "content", "generated").get().updatedContent)
+            .isEqualTo("updated")
+        assertThat(service.generateMcpConfiguration("connection", Either.forLeft(TokenDto("token-value"))).get())
+            .isEqualTo("generated")
+
+        val inspectCaptor = argumentCaptor<McpConfigurationInspectionParams>()
+        verify(backendAiAgentService).inspectMcpConfiguration(inspectCaptor.capture())
+        assertThat(inspectCaptor.firstValue.agent).isEqualTo(AiAgent.CLAUDE_CODE)
+        assertThat(inspectCaptor.firstValue.content).isEqualTo("content")
+        val planCaptor = argumentCaptor<McpConfigurationUpdateParams>()
+        verify(backendAiAgentService).planMcpConfigurationUpdate(planCaptor.capture())
+        assertThat(planCaptor.firstValue.sonarMcpConfiguration).isEqualTo("generated")
+        val generationCaptor = argumentCaptor<GetMCPServerConfigurationParams>()
+        verify(backendConnectionService).getMCPServerConfiguration(generationCaptor.capture())
+        assertThat(generationCaptor.firstValue.connectionId).isEqualTo("connection")
+        assertThat(generationCaptor.firstValue.token).isEqualTo("token-value")
+
+        assertThatThrownBy {
+            service.generateMcpConfiguration(
+                "connection",
+                Either.forRight<TokenDto, UsernamePasswordDto>(UsernamePasswordDto("user", "password"))
+            ).join()
+        }.hasCauseInstanceOf(IllegalArgumentException::class.java)
+        verify(backendConnectionService, org.mockito.Mockito.times(1)).getMCPServerConfiguration(any())
     }
 
     @Test

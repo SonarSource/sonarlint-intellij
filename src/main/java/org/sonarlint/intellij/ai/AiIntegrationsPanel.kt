@@ -187,14 +187,102 @@ class AiIntegrationsPanel(
             AiIntegrationsPanelState.Remote -> addMessage(REMOTE_MESSAGE)
             is AiIntegrationsPanelState.Error -> addMessage("MCP capabilities could not be loaded.")
             is AiIntegrationsPanelState.Empty -> addMessage("Install a supported coding agent to configure MCP.")
-            is AiIntegrationsPanelState.Ready -> addCapabilityOverview(
-                state.snapshot.agents,
-                { it.standaloneMcpSupported },
-                mcpDetailsExpanded,
-                "MCP"
-            ) {
-                mcpDetailsExpanded = !mcpDetailsExpanded
-                rebuild()
+            is AiIntegrationsPanelState.Ready -> addMcpConfigurations(state.snapshot)
+        }
+    }
+
+    private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
+        val configurations = snapshot.mcpConfigurations.values.toList()
+        if (configurations.isEmpty()) {
+            addMessage("No standalone MCP setup is available for the detected agents.")
+            return
+        }
+
+        val configuredCount = configurations.count {
+            it.state == McpConfigurationKind.STANDALONE || it.state == McpConfigurationKind.CLI_MANAGED
+        }
+        val attentionCount = configurations.count {
+            it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
+        }
+        addMessage(mcpSummary(configuredCount, configurations.size, attentionCount))
+
+        val nextActions = configurations.filter {
+            it.state == McpConfigurationKind.NOT_CONFIGURED || it.state == McpConfigurationKind.CLI_ONLY
+        }
+        if (!mcpDetailsExpanded && nextActions.size == 1) {
+            addMcpPrimaryAction(nextActions.single(), snapshot)
+        }
+        val toggleDetails = {
+            mcpDetailsExpanded = !mcpDetailsExpanded
+            rebuild()
+        }
+        when {
+            mcpDetailsExpanded -> addDisclosure("Hide agent details", toggleDetails)
+            nextActions.size > 1 -> addPrimaryAction("Set up an agent…", toggleDetails)
+            else -> addDisclosure("View agent details", toggleDetails)
+        }
+        if (mcpDetailsExpanded) {
+            configurations.forEach { addMcpConfigurationRow(it, snapshot) }
+        }
+    }
+
+    private fun CardBuilder.addMcpPrimaryAction(configuration: McpAgentConfiguration, snapshot: AiIntegrationSnapshot) {
+        val agentName = registry.displayName(configuration.agent)
+        when (configuration.state) {
+            McpConfigurationKind.NOT_CONFIGURED -> addPrimaryAction(
+                "Set up $agentName",
+                AiIntegrationsIntent.SetUpMcp(configuration.agent)
+            )
+            McpConfigurationKind.CLI_ONLY -> cliAction(snapshot, configuration.agent)?.let {
+                addPrimaryAction(it.label, it.intent)
+            }
+            else -> Unit
+        }
+    }
+
+    private fun CardBuilder.addMcpConfigurationRow(configuration: McpAgentConfiguration, snapshot: AiIntegrationSnapshot) {
+        val actions = when (configuration.state) {
+            McpConfigurationKind.NOT_CONFIGURED -> listOf(
+                RowAction("Set up", AiIntegrationsIntent.SetUpMcp(configuration.agent))
+            )
+            McpConfigurationKind.STANDALONE -> buildList {
+                if (!configuration.owned) {
+                    add(RowAction("Replace…", AiIntegrationsIntent.SetUpMcp(configuration.agent, true)))
+                }
+                add(RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent)))
+            }
+            McpConfigurationKind.CLI_MANAGED -> listOf(
+                RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
+            )
+            McpConfigurationKind.CLI_ONLY -> listOfNotNull(cliAction(snapshot, configuration.agent))
+            McpConfigurationKind.UNKNOWN,
+            McpConfigurationKind.MALFORMED -> listOf(
+                RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
+            )
+        }
+        addAgentRow(
+            registry.displayName(configuration.agent),
+            configuration.displayText(),
+            configuration.diagnostics.takeIf { it.isNotEmpty() }?.joinToString(" • "),
+            actions
+        )
+    }
+
+    private fun cliAction(snapshot: AiIntegrationSnapshot, agent: AiAgentId): RowAction? {
+        val capability = snapshot.agents.firstOrNull { it.agent == agent }
+        if (capability?.cliIntegrationSupported != true) {
+            return null
+        }
+        return when (snapshot.cli.installation) {
+            CliInstallationState.NOT_INSTALLED -> RowAction("Install CLI", AiIntegrationsIntent.InstallCli)
+            CliInstallationState.UNUSABLE -> RowAction("Troubleshoot", AiIntegrationsIntent.OpenDocumentation)
+            CliInstallationState.INSTALLED -> when (snapshot.cli.authentication) {
+                CliAuthenticationState.UNAUTHENTICATED,
+                CliAuthenticationState.INVALID,
+                CliAuthenticationState.UNVERIFIED -> RowAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
+                CliAuthenticationState.UNAVAILABLE,
+                CliAuthenticationState.UNKNOWN -> RowAction("Check CLI", AiIntegrationsIntent.Refresh)
+                CliAuthenticationState.AUTHENTICATED -> RowAction("Integrate with CLI", AiIntegrationsIntent.IntegrateCli(agent))
             }
         }
     }
@@ -367,7 +455,7 @@ class AiIntegrationsPanel(
                     alignmentX = Component.LEFT_ALIGNMENT
                 })
                 description?.let {
-                    add(JBLabel(it).apply {
+                    add(bodyText(it, secondary = true).apply {
                         foreground = SECONDARY_TEXT
                         font = JBFont.small()
                         alignmentX = Component.LEFT_ALIGNMENT
@@ -391,7 +479,7 @@ class AiIntegrationsPanel(
         }
 
         fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
-            addPrimaryAction(label) { intentListener(intent) }
+            addPrimaryAction(label) { dispatchIntent(intent) }
         }
 
         fun addPrimaryAction(label: String, action: () -> Unit) {
@@ -412,11 +500,11 @@ class AiIntegrationsPanel(
 
     private fun createCompactButton(label: String, intent: AiIntegrationsIntent): JButton = JButton(label).apply {
         margin = JBUI.insets(2, 8)
-        addActionListener { intentListener(intent) }
+        addActionListener { dispatchIntent(intent) }
     }
 
     private fun createLinkButton(label: String, intent: AiIntegrationsIntent): JButton = createLinkButton(label) {
-        intentListener(intent)
+        dispatchIntent(intent)
     }
 
     private fun createLinkButton(label: String, action: () -> Unit): JButton = JButton(label).apply {
@@ -427,6 +515,10 @@ class AiIntegrationsPanel(
         foreground = LINK_TEXT
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         addActionListener { action() }
+    }
+
+    private fun dispatchIntent(intent: AiIntegrationsIntent) {
+        intentListener(intent)
     }
 
     override fun dispose() {
@@ -628,8 +720,18 @@ private fun AiIntegrationsPanel.mcpStatus(state: AiIntegrationsPanelState): Card
     is AiIntegrationsPanelState.Error -> CardStatus("Needs attention", StatusTone.WARNING)
     is AiIntegrationsPanelState.Empty -> CardStatus("No agents", StatusTone.NEUTRAL)
     is AiIntegrationsPanelState.Ready -> {
-        val count = state.snapshot.agents.count { it.standaloneMcpSupported }
-        if (count == 0) CardStatus("No agents", StatusTone.NEUTRAL) else CardStatus("$count available", StatusTone.SUCCESS)
+        val configurations = state.snapshot.mcpConfigurations.values
+        when {
+            configurations.any { it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED } ->
+                CardStatus("Needs attention", StatusTone.WARNING)
+            configurations.isNotEmpty() && configurations.all {
+                it.state == McpConfigurationKind.STANDALONE || it.state == McpConfigurationKind.CLI_MANAGED
+            } -> CardStatus("Configured", StatusTone.SUCCESS)
+            configurations.any { it.state == McpConfigurationKind.STANDALONE || it.state == McpConfigurationKind.CLI_MANAGED } ->
+                CardStatus("Partly configured", StatusTone.SUCCESS)
+            configurations.isNotEmpty() -> CardStatus("Setup available", StatusTone.NEUTRAL)
+            else -> CardStatus("No agents", StatusTone.NEUTRAL)
+        }
     }
 }
 
@@ -651,6 +753,26 @@ private fun agentSummary(agentNames: List<String>, integrationName: String): Str
     val remaining = agentNames.size - 3
     val suffix = if (remaining > 0) " + $remaining more" else ""
     return "$integrationName is available for $visibleAgents$suffix."
+}
+
+private fun mcpSummary(configuredCount: Int, totalCount: Int, attentionCount: Int): String = when {
+    attentionCount > 0 -> "$attentionCount ${if (attentionCount == 1) "configuration needs" else "configurations need"} attention."
+    configuredCount == totalCount -> "MCP is configured for all $totalCount detected ${if (totalCount == 1) "agent" else "agents"}."
+    configuredCount > 0 -> "$configuredCount of $totalCount detected agents are configured."
+    else -> "MCP is ready to set up for $totalCount detected ${if (totalCount == 1) "agent" else "agents"}."
+}
+
+private fun McpAgentConfiguration.displayText(): String = when (state) {
+    McpConfigurationKind.NOT_CONFIGURED -> "Not configured"
+    McpConfigurationKind.STANDALONE -> if (owned) {
+        "Configured · Connection not verified"
+    } else {
+        "Configured externally · Connection not verified"
+    }
+    McpConfigurationKind.CLI_MANAGED -> "Managed by SonarQube CLI"
+    McpConfigurationKind.CLI_ONLY -> "Configure with SonarQube CLI"
+    McpConfigurationKind.UNKNOWN -> "Configuration state unknown"
+    McpConfigurationKind.MALFORMED -> "Malformed configuration"
 }
 
 private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBTextArea(text).apply {
