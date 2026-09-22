@@ -37,7 +37,8 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val panel: AiIntegrationsPanel,
     private val backendService: BackendService = getService(BackendService::class.java),
     private val registry: AiAgentRegistry = AiAgentRegistry(),
-    private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java)
+    private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java),
+    private val mcpCoordinator: McpConfigurationCoordinator = getService(McpConfigurationCoordinator::class.java)
 ) : Disposable {
     private val generation = AtomicLong()
     private val started = AtomicBoolean()
@@ -47,6 +48,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     init {
         panel.setIntentListener(::handleIntent)
         cliCoordinator.register(this, ::refresh)
+        mcpCoordinator.register(this, ::refresh)
     }
 
     fun loadInitially() {
@@ -63,6 +65,7 @@ class AiIntegrationsController @JvmOverloads constructor(
         publish(requestedGeneration, AiIntegrationsPanelState.Loading)
         CompletableFuture.supplyAsync(registry::detectedIdeAgents, AppExecutorUtil.getAppExecutorService())
             .thenCompose { detectedAgents -> backendService.getAiIntegrationState(project, detectedAgents) }
+            .thenCompose(mcpCoordinator::inspectSnapshot)
             .whenComplete { snapshot, error ->
                 val state = if (error != null) {
                     AiIntegrationsPanelState.Error(userFacingMessage(error))
@@ -99,6 +102,13 @@ class AiIntegrationsController @JvmOverloads constructor(
             is AiIntegrationsIntent.IntegrateCli -> latestSnapshot?.let { snapshot ->
                 cliCoordinator.execute(project, snapshot, intent)
             }
+            is AiIntegrationsIntent.SetUpMcp -> latestSnapshot?.let { snapshot ->
+                mcpCoordinator.setUp(project, snapshot, intent.agent)
+            }
+            is AiIntegrationsIntent.OpenMcpConfiguration -> latestSnapshot?.let { snapshot ->
+                mcpCoordinator.openConfiguration(project, intent.agent, snapshot)
+            }
+            AiIntegrationsIntent.OpenConnectionSettings -> mcpCoordinator.openConnectionSettings(project)
         }
     }
 
@@ -113,6 +123,7 @@ class AiIntegrationsController @JvmOverloads constructor(
         disposed.set(true)
         generation.incrementAndGet()
         cliCoordinator.unregister(this)
+        mcpCoordinator.unregister(this)
         panel.dispose()
     }
 }

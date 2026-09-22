@@ -49,7 +49,36 @@ data class AiIntegrationSnapshot(
     val cli: CliState,
     val agents: List<AgentCapability>,
     val connectionChoices: List<IntegrationConnection>,
-    val recommendedConnectionId: String?
+    val recommendedConnectionId: String?,
+    val mcpConfigurations: Map<AiAgent, McpAgentConfiguration> = emptyMap()
+)
+
+enum class McpConfigurationKind {
+    NOT_CONFIGURED,
+    STANDALONE,
+    CLI_MANAGED,
+    CLI_ONLY,
+    UNKNOWN,
+    MALFORMED
+}
+
+data class McpInspection(
+    val state: McpConfigurationKind,
+    val diagnostics: List<String>
+)
+
+data class McpUpdatePlan(
+    val state: McpConfigurationKind,
+    val updatedContent: String?,
+    val diagnostics: List<String>
+)
+
+data class McpAgentConfiguration(
+    val agent: AiAgent,
+    val path: java.nio.file.Path?,
+    val state: McpConfigurationKind,
+    val owned: Boolean,
+    val diagnostics: List<String>
 )
 
 data class CliCommand(
@@ -73,4 +102,7 @@ sealed interface AiIntegrationsIntent {
     data object InstallCli : AiIntegrationsIntent
     data object AuthenticateCli : AiIntegrationsIntent
     data class IntegrateCli(val agent: AiAgent) : AiIntegrationsIntent
+    data class SetUpMcp(val agent: AiAgent, val replaceExternal: Boolean = false) : AiIntegrationsIntent
+    data class OpenMcpConfiguration(val agent: AiAgent) : AiIntegrationsIntent
+    data object OpenConnectionSettings : AiIntegrationsIntent
 }
