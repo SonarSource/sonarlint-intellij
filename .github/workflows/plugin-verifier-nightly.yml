@@ -56,6 +56,8 @@ jobs:
           artifactory-reader-role: private-reader
           disable-caching: 'true'
 
+      # Verifier downloads IDE tarballs through Gradle ivy from jetbrains-download.
+      # Edge returns HTTP 404 for that repo; keep this job on SaaS (same as curl IDE fetches).
       - name: Run plugin verifier
         run: ./gradlew :verifyPlugin -PverifierEnv=LATEST
 

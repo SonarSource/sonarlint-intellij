@@ -4,7 +4,11 @@ import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
 pluginManagement {
     // This block is compiled earlier than the rest of the script, so keep it self-contained.
-    val artifactoryUrl = (System.getenv("ARTIFACTORY_URL") ?: providers.gradleProperty("artifactoryUrl").orNull)
+    // ARTIFACTORY_RESOLVE_URL is the CI Edge override. Local/off-VPN keeps ARTIFACTORY_URL
+    // or the artifactoryUrl Gradle property (SaaS).
+    val artifactoryUrl = (System.getenv("ARTIFACTORY_RESOLVE_URL")
+        ?: System.getenv("ARTIFACTORY_URL")
+        ?: providers.gradleProperty("artifactoryUrl").orNull)
         ?.removeSuffix("/")
     val artifactoryUsername = System.getenv("ARTIFACTORY_USERNAME")
         ?: System.getenv("ARTIFACTORY_ACCESS_USERNAME")
@@ -32,7 +36,9 @@ plugins {
 }
 
 rootProject.name = "sonarlint-intellij"
-val artifactoryUrl = ((System.getenv("ARTIFACTORY_URL") ?: extra.properties["artifactoryUrl"] as? String)
+val artifactoryUrl = ((System.getenv("ARTIFACTORY_RESOLVE_URL")
+    ?: System.getenv("ARTIFACTORY_URL")
+    ?: extra.properties["artifactoryUrl"] as? String)
     ?.removeSuffix("/")).orEmpty()
 val artifactoryUsername = (System.getenv("ARTIFACTORY_USERNAME")
     ?: System.getenv("ARTIFACTORY_ACCESS_USERNAME")
@@ -54,6 +60,8 @@ dependencyResolutionManagement {
                     password = artifactoryPassword
                 }
             }
+            // IDE installer tarballs are not on Edge (HTTP 404). Keep Ivy fetches on SaaS.
+            val installerArtifactoryUrl = "https://repox.jfrog.io/artifactory"
             intellijPlatform {
                 localPlatformArtifacts()
                 maven("$artifactoryUrl/jetbrains-intellij-dependencies") {
@@ -65,7 +73,7 @@ dependencyResolutionManagement {
                 }
                 ivy {
                     name = "JetBrains IDE Installers"
-                    url = URI("$artifactoryUrl/jetbrains-download")
+                    url = URI("$installerArtifactoryUrl/jetbrains-download")
                     credentials {
                         username = artifactoryUsername
                         password = artifactoryPassword
@@ -89,7 +97,7 @@ dependencyResolutionManagement {
                 }
                 ivy {
                     name = "Android Studio Installers"
-                    url = URI("$artifactoryUrl/android-studio")
+                    url = URI("$installerArtifactoryUrl/android-studio")
                     credentials {
                         username = artifactoryUsername
                         password = artifactoryPassword
