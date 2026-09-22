@@ -227,10 +227,18 @@ class AiIntegrationsPanel(
         if (metadata.isNotEmpty()) {
             addMetadata(metadata)
         }
+        addCliPrimaryAction(snapshot)
         addCapabilityOverview(
             snapshot.agents,
             { it.cliIntegrationSupported },
-            cliDetailsExpanded
+            cliDetailsExpanded,
+            rowActions = { capability ->
+                if (cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
+                    listOf(RowAction("Integrate", AiIntegrationsIntent.IntegrateCli(capability.agent)))
+                } else {
+                    emptyList()
+                }
+            }
         ) {
             cliDetailsExpanded = !cliDetailsExpanded
             rebuild()
@@ -244,10 +252,26 @@ class AiIntegrationsPanel(
         }
     }
 
+    private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot) {
+        when (snapshot.cli.installation) {
+            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli)
+            CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot", AiIntegrationsIntent.OpenCliDocumentation)
+            CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
+                CliAuthenticationStatus.UNAUTHENTICATED,
+                CliAuthenticationStatus.INVALID,
+                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
+                CliAuthenticationStatus.UNAVAILABLE,
+                CliAuthenticationStatus.UNKNOWN -> addPrimaryAction("Check again", AiIntegrationsIntent.Refresh)
+                CliAuthenticationStatus.AUTHENTICATED -> Unit
+            }
+        }
+    }
+
     private fun CardBuilder.addCapabilityOverview(
         capabilities: List<AgentCapability>,
         supported: (AgentCapability) -> Boolean,
         expanded: Boolean,
+        rowActions: (AgentCapability) -> List<RowAction> = { emptyList() },
         toggle: () -> Unit
     ) {
         addMetadata(listOf(agentCountText(capabilities.size)))
@@ -259,7 +283,8 @@ class AiIntegrationsPanel(
             capabilities.forEach { capability ->
                 addAgentRow(
                     registry.displayName(capability.agent),
-                    if (supported(capability)) "Supported" else "Not supported"
+                    if (supported(capability)) "Supported" else "Not supported",
+                    actions = rowActions(capability)
                 )
             }
         }
@@ -387,15 +412,19 @@ class AiIntegrationsPanel(
         }
 
         fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
-            panel.add(createPrimaryButton(label, intent).apply {
+            addPrimaryAction(label) { intentListener(intent) }
+        }
+
+        fun addPrimaryAction(label: String, action: () -> Unit) {
+            panel.add(createPrimaryButton(label, action).apply {
                 alignmentX = Component.LEFT_ALIGNMENT
             })
             panel.add(verticalSpace(6))
         }
     }
 
-    private fun createPrimaryButton(label: String, intent: AiIntegrationsIntent): JButton = FilledActionButton(label).apply {
-        addActionListener { intentListener(intent) }
+    private fun createPrimaryButton(label: String, action: () -> Unit): JButton = FilledActionButton(label).apply {
+        addActionListener { action() }
     }
 
     private fun createSecondaryButton(label: String, icon: Icon, intent: AiIntegrationsIntent): JButton = OutlinedActionButton(label, icon).apply {
