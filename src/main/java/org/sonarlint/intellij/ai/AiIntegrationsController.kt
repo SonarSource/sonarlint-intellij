@@ -32,14 +32,18 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val project: Project,
     private val panel: AiIntegrationsPanel,
     private val backendService: BackendService = getService(BackendService::class.java),
-    private val registry: AiAgentRegistry = AiAgentRegistry()
+    private val registry: AiAgentRegistry = AiAgentRegistry(),
+    private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java)
 ) : Disposable {
     private val generation = AtomicLong()
     private val started = AtomicBoolean()
     private val disposed = AtomicBoolean()
+    private var latestSnapshot: AiIntegrationSnapshot? = null
 
     init {
         panel.setRefreshListener(::refresh)
+        panel.setIntentListener(::handleIntent)
+        cliCoordinator.register(this, ::refresh)
     }
 
     fun loadInitially() {
@@ -73,9 +77,20 @@ class AiIntegrationsController @JvmOverloads constructor(
     private fun publish(requestedGeneration: Long, state: AiIntegrationsPanelState) {
         ApplicationManager.getApplication().invokeLater({
             if (!isDisposed() && generation.get() == requestedGeneration) {
+                latestSnapshot = when (state) {
+                    is AiIntegrationsPanelState.Ready -> state.snapshot
+                    is AiIntegrationsPanelState.Empty -> state.snapshot
+                    else -> null
+                }
                 panel.render(state)
             }
         }, project.disposed)
+    }
+
+    private fun handleIntent(intent: AiIntegrationsIntent) {
+        latestSnapshot?.let { snapshot ->
+            cliCoordinator.execute(project, snapshot, intent)
+        }
     }
 
     private fun isDisposed() = disposed.get() || project.isDisposed || panel.isDisposed
@@ -88,6 +103,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     override fun dispose() {
         disposed.set(true)
         generation.incrementAndGet()
+        cliCoordinator.unregister(this)
         panel.dispose()
     }
 }

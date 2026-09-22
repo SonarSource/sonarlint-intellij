@@ -91,7 +91,7 @@ dependencies {
         pluginComposedModule(runtimeOnly(project(":nodejs")))
         pluginComposedModule(runtimeOnly(project(":rider")))
         pluginComposedModule(runtimeOnly(project(":git")))
-        bundledPlugins("com.intellij.java", "Git4Idea")
+        bundledPlugins("com.intellij.java", "Git4Idea", "org.jetbrains.plugins.terminal")
         testFramework(TestFrameworkType.Platform)
         pluginVerifier("1.398")
     }

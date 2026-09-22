@@ -107,6 +107,7 @@ class AiIntegrationsPanel(
     private val cards = ContentColumn()
     private val disposed = AtomicBoolean()
     private var refreshListener: () -> Unit = {}
+    private var intentListener: (AiIntegrationsIntent) -> Unit = {}
     private var currentState: AiIntegrationsPanelState = AiIntegrationsPanelState.Loading
     private var wide = false
     private var cliDetailsExpanded = false
@@ -140,6 +141,10 @@ class AiIntegrationsPanel(
 
     fun setRefreshListener(listener: () -> Unit) {
         refreshListener = listener
+    }
+
+    fun setIntentListener(listener: (AiIntegrationsIntent) -> Unit) {
+        intentListener = listener
     }
 
     fun render(state: AiIntegrationsPanelState) {
@@ -256,10 +261,18 @@ class AiIntegrationsPanel(
         if (metadata.isNotEmpty()) {
             addMetadata(metadata)
         }
+        addCliPrimaryAction(snapshot)
         addCapabilityOverview(
             snapshot.agents,
             { it.cliIntegrationSupported },
-            cliDetailsExpanded
+            cliDetailsExpanded,
+            rowActions = { capability ->
+                if (cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
+                    listOf(RowAction("Integrate", AiIntegrationsIntent.IntegrateCli(capability.agent)))
+                } else {
+                    emptyList()
+                }
+            }
         ) { cliDetailsExpanded = it }
     }
 
@@ -267,10 +280,28 @@ class AiIntegrationsPanel(
         addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) { mcpDetailsExpanded = it }
     }
 
+    private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot) {
+        when (snapshot.cli.installation) {
+            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli)
+            CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot") {
+                openLink(SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
+            }
+            CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
+                CliAuthenticationStatus.UNAUTHENTICATED,
+                CliAuthenticationStatus.INVALID,
+                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
+                CliAuthenticationStatus.UNAVAILABLE,
+                CliAuthenticationStatus.UNKNOWN -> addPrimaryAction("Check again")
+                CliAuthenticationStatus.AUTHENTICATED -> Unit
+            }
+        }
+    }
+
     private fun CardBuilder.addCapabilityOverview(
         capabilities: List<AgentCapability>,
         supported: (AgentCapability) -> Boolean,
         expanded: Boolean,
+        rowActions: (AgentCapability) -> List<RowAction> = { emptyList() },
         onExpandedChange: (Boolean) -> Unit
     ) {
         addMetadata(listOf(agentCountText(capabilities.size)))
@@ -289,7 +320,8 @@ class AiIntegrationsPanel(
                 capabilities.forEach { capability ->
                     detailBuilder.addAgentRow(
                         registry.displayName(capability.agent),
-                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS
+                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS,
+                        actions = rowActions(capability)
                     )
                 }
             }
@@ -413,15 +445,23 @@ class AiIntegrationsPanel(
         }
 
         fun addPrimaryAction(label: String) {
-            panel.add(createPrimaryButton(label).apply {
+            addPrimaryAction(label, refreshListener)
+        }
+
+        fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
+            addPrimaryAction(label) { intentListener(intent) }
+        }
+
+        fun addPrimaryAction(label: String, action: () -> Unit) {
+            panel.add(createPrimaryButton(label, action).apply {
                 alignmentX = Component.LEFT_ALIGNMENT
             })
             panel.add(verticalSpace(6))
         }
     }
 
-    private fun createPrimaryButton(label: String): JButton = FilledActionButton(label).apply {
-        addActionListener { refreshListener() }
+    private fun createPrimaryButton(label: String, action: () -> Unit): JButton = FilledActionButton(label).apply {
+        addActionListener { action() }
     }
 
     private fun createSecondaryButton(label: String, icon: Icon): JButton = OutlinedActionButton(label, icon).apply {
@@ -462,6 +502,7 @@ class AiIntegrationsPanel(
     override fun dispose() {
         disposed.set(true)
         refreshListener = {}
+        intentListener = {}
     }
 
     private class ContentColumn : JBPanel<ContentColumn>() {
