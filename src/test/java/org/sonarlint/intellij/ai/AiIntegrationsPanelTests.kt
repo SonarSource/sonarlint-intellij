@@ -88,7 +88,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
 
         assertThat(labelTexts(panel)).doesNotContain("Not available")
-        descendants(panel).filterIsInstance<JButton>().first { it.text == "View agent details" }.doClick()
+        descendants(panel).filterIsInstance<JButton>().first { it.text == "Configure agents…" }.doClick()
         assertThat(labelTexts(panel)).contains("Available", "Not available")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).contains("Hide agent details")
     }

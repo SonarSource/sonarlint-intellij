@@ -208,6 +208,7 @@ class AiIntegrationsPanel(
             }
             cli.version?.let { add("v$it") }
         })
+        addCliPrimaryAction(snapshot)
         if (snapshot.agents.isEmpty()) {
             addMessage("No supported coding agents were detected.")
             return
@@ -216,10 +217,34 @@ class AiIntegrationsPanel(
             snapshot.agents,
             { it.cliIntegrationSupported },
             cliDetailsExpanded,
-            "CLI"
+            "CLI",
+            if (cli.authentication == CliAuthenticationState.AUTHENTICATED) "Configure agents…" else "View agent details",
+            prominentDisclosure = cli.authentication == CliAuthenticationState.AUTHENTICATED,
+            rowActions = { capability ->
+                if (cli.authentication == CliAuthenticationState.AUTHENTICATED && capability.cliIntegrationSupported) {
+                    listOf(RowAction("Integrate", AiIntegrationsIntent.IntegrateCli(capability.agent)))
+                } else {
+                    emptyList()
+                }
+            }
         ) {
             cliDetailsExpanded = !cliDetailsExpanded
             rebuild()
+        }
+    }
+
+    private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot) {
+        when (snapshot.cli.installation) {
+            CliInstallationState.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli)
+            CliInstallationState.UNUSABLE -> addPrimaryAction("Troubleshoot", AiIntegrationsIntent.OpenDocumentation)
+            CliInstallationState.INSTALLED -> when (snapshot.cli.authentication) {
+                CliAuthenticationState.UNAUTHENTICATED,
+                CliAuthenticationState.INVALID,
+                CliAuthenticationState.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
+                CliAuthenticationState.UNAVAILABLE,
+                CliAuthenticationState.UNKNOWN -> addPrimaryAction("Check again", AiIntegrationsIntent.Refresh)
+                CliAuthenticationState.AUTHENTICATED -> Unit
+            }
         }
     }
 
@@ -228,6 +253,9 @@ class AiIntegrationsPanel(
         supported: (AgentCapability) -> Boolean,
         expanded: Boolean,
         integrationName: String,
+        collapsedLabel: String = "View agent details",
+        prominentDisclosure: Boolean = false,
+        rowActions: (AgentCapability) -> List<RowAction> = { emptyList() },
         toggle: () -> Unit
     ) {
         val supportedCapabilities = capabilities.filter(supported)
@@ -237,12 +265,17 @@ class AiIntegrationsPanel(
         } else {
             addMessage(agentSummary(agentNames, integrationName))
         }
-        addDisclosure(if (expanded) "Hide agent details" else "View agent details", toggle)
+        when {
+            expanded -> addDisclosure("Hide agent details", toggle)
+            prominentDisclosure -> addPrimaryAction(collapsedLabel, toggle)
+            else -> addDisclosure(collapsedLabel, toggle)
+        }
         if (expanded) {
             capabilities.forEach { capability ->
                 addAgentRow(
                     registry.displayName(capability.agent),
-                    if (supported(capability)) "Available" else "Not available"
+                    if (supported(capability)) "Available" else "Not available",
+                    actions = rowActions(capability)
                 )
             }
         }
@@ -358,15 +391,19 @@ class AiIntegrationsPanel(
         }
 
         fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
-            panel.add(createPrimaryButton(label, intent).apply {
+            addPrimaryAction(label) { intentListener(intent) }
+        }
+
+        fun addPrimaryAction(label: String, action: () -> Unit) {
+            panel.add(createPrimaryButton(label, action).apply {
                 alignmentX = Component.LEFT_ALIGNMENT
             })
             panel.add(verticalSpace(6))
         }
     }
 
-    private fun createPrimaryButton(label: String, intent: AiIntegrationsIntent): JButton = FilledActionButton(label).apply {
-        addActionListener { intentListener(intent) }
+    private fun createPrimaryButton(label: String, action: () -> Unit): JButton = FilledActionButton(label).apply {
+        addActionListener { action() }
     }
 
     private fun createSecondaryButton(label: String, icon: Icon, intent: AiIntegrationsIntent): JButton = OutlinedActionButton(label, icon).apply {
