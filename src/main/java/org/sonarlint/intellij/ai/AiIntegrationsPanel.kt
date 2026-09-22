@@ -254,8 +254,8 @@ class AiIntegrationsPanel(
         when (state) {
             AiIntegrationsPanelState.Loading -> addMessage(MCP_LOADING_MESSAGE)
             is AiIntegrationsPanelState.Error -> addMessage(MCP_ERROR_MESSAGE)
-            is AiIntegrationsPanelState.Empty -> addMcpOverview(state.snapshot)
-            is AiIntegrationsPanelState.Ready -> addMcpOverview(state.snapshot)
+            is AiIntegrationsPanelState.Empty -> addMcpConfigurations(state.snapshot)
+            is AiIntegrationsPanelState.Ready -> addMcpConfigurations(state.snapshot)
         }
         addDocumentationLink(MCP_GUIDE_LABEL, SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK)
     }
@@ -287,6 +287,105 @@ class AiIntegrationsPanel(
             toolTipText = UNINSTALL_CLI_LABEL
             accessibleContext.accessibleName = UNINSTALL_CLI_LABEL
             maximumSize = preferredSize
+        }
+    }
+
+    private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
+        val configurations = snapshot.mcpConfigurations.values.toList()
+        addMetadata(listOf(agentCountText(snapshot.agents.size)))
+        val toggleDetails = {
+            mcpDetailsExpanded = !mcpDetailsExpanded
+            rebuild()
+        }
+        if (configurations.isEmpty()) {
+            addDisclosure(mcpDetailsExpanded, toggleDetails)
+            if (mcpDetailsExpanded) {
+                addMessage("No standalone MCP setup is available for the detected agents.")
+            }
+            return
+        }
+
+        val configuredCount = configurations.count {
+            it.state == McpConfigurationKind.STANDALONE || it.state == McpConfigurationKind.CLI_MANAGED
+        }
+        val attentionCount = configurations.count {
+            it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
+        }
+        addMessage(mcpSummary(configuredCount, configurations.size, attentionCount))
+
+        val nextActions = configurations.filter {
+            it.state == McpConfigurationKind.NOT_CONFIGURED || it.state == McpConfigurationKind.CLI_ONLY
+        }
+        if (!mcpDetailsExpanded && nextActions.size == 1) {
+            addMcpPrimaryAction(nextActions.single(), snapshot)
+        }
+        if (!mcpDetailsExpanded && nextActions.size > 1) {
+            addPrimaryAction("Set up an agent…", toggleDetails)
+        }
+        addDisclosure(mcpDetailsExpanded, toggleDetails)
+        if (mcpDetailsExpanded) {
+            configurations.forEach { addMcpConfigurationRow(it, snapshot) }
+        }
+    }
+
+    private fun CardBuilder.addMcpPrimaryAction(configuration: McpAgentConfiguration, snapshot: AiIntegrationSnapshot) {
+        val agentName = registry.displayName(configuration.agent)
+        when (configuration.state) {
+            McpConfigurationKind.NOT_CONFIGURED -> addPrimaryAction(
+                "Set up $agentName",
+                AiIntegrationsIntent.SetUpMcp(configuration.agent)
+            )
+            McpConfigurationKind.CLI_ONLY -> cliAction(snapshot, configuration.agent)?.let {
+                addPrimaryAction(it.label, it.intent)
+            }
+            else -> Unit
+        }
+    }
+
+    private fun CardBuilder.addMcpConfigurationRow(configuration: McpAgentConfiguration, snapshot: AiIntegrationSnapshot) {
+        val actions = when (configuration.state) {
+            McpConfigurationKind.NOT_CONFIGURED -> listOf(
+                RowAction("Set up", AiIntegrationsIntent.SetUpMcp(configuration.agent))
+            )
+            McpConfigurationKind.STANDALONE -> buildList {
+                if (!configuration.owned) {
+                    add(RowAction("Replace…", AiIntegrationsIntent.SetUpMcp(configuration.agent, true)))
+                }
+                add(RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent)))
+            }
+            McpConfigurationKind.CLI_MANAGED -> listOf(
+                RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
+            )
+            McpConfigurationKind.CLI_ONLY -> listOfNotNull(cliAction(snapshot, configuration.agent))
+            McpConfigurationKind.UNKNOWN,
+            McpConfigurationKind.MALFORMED -> listOf(
+                RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
+            )
+        }
+        addAgentRow(
+            registry.displayName(configuration.agent),
+            configuration.displayText(),
+            description = configuration.diagnostics.takeIf { it.isNotEmpty() }?.joinToString(" • "),
+            actions = actions
+        )
+    }
+
+    private fun cliAction(snapshot: AiIntegrationSnapshot, agent: AiAgent): RowAction? {
+        val capability = snapshot.agents.firstOrNull { it.agent == agent }
+        if (capability?.cliIntegrationSupported != true) {
+            return null
+        }
+        return when (snapshot.cli.installation) {
+            CliInstallationStatus.NOT_INSTALLED -> RowAction("Install CLI", AiIntegrationsIntent.InstallCli)
+            CliInstallationStatus.UNUSABLE -> RowAction("Troubleshoot", AiIntegrationsIntent.OpenCliDocumentation)
+            CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
+                CliAuthenticationStatus.UNAUTHENTICATED,
+                CliAuthenticationStatus.INVALID,
+                CliAuthenticationStatus.UNVERIFIED -> RowAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
+                CliAuthenticationStatus.UNAVAILABLE,
+                CliAuthenticationStatus.UNKNOWN -> RowAction("Check CLI", AiIntegrationsIntent.Refresh)
+                CliAuthenticationStatus.AUTHENTICATED -> RowAction("Integrate with CLI", AiIntegrationsIntent.IntegrateCli(agent))
+            }
         }
     }
 
@@ -328,10 +427,6 @@ class AiIntegrationsPanel(
                 }
             }
         ) { cliDetailsExpanded = it }
-    }
-
-    private fun CardBuilder.addMcpOverview(snapshot: AiIntegrationSnapshot) {
-        addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) { mcpDetailsExpanded = it }
     }
 
     private fun CardBuilder.addCliUninstallFeedback() {
@@ -514,7 +609,7 @@ class AiIntegrationsPanel(
             panel.add(createLinkButton(label, url))
         }
 
-        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null, actions: List<RowAction> = emptyList(), guidance: String? = null) {
+        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null, description: String? = null, actions: List<RowAction> = emptyList(), guidance: String? = null) {
             val row = NaturalHeightPanel().apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
                 isOpaque = false
@@ -531,6 +626,13 @@ class AiIntegrationsPanel(
                 if (guidance == null) {
                     add(verticalSpace(3))
                     add(statusLabel(integration?.recordingStatus?.toStatus() ?: CardStatus(status, StatusTone.NEUTRAL)).apply {
+                        alignmentX = Component.LEFT_ALIGNMENT
+                    })
+                }
+                description?.let {
+                    add(bodyText(it, secondary = true).apply {
+                        foreground = SECONDARY_TEXT
+                        font = JBFont.small()
                         alignmentX = Component.LEFT_ALIGNMENT
                     })
                 }
@@ -600,7 +702,7 @@ class AiIntegrationsPanel(
         }
 
         fun addPrimaryAction(label: String, intent: AiIntegrationsIntent, enabled: Boolean = true) {
-            addPrimaryAction(label, enabled) { intentListener(intent) }
+            addPrimaryAction(label, enabled) { dispatchIntent(intent) }
         }
 
         fun addPrimaryAction(label: String, enabled: Boolean = true, action: () -> Unit) {
@@ -625,7 +727,11 @@ class AiIntegrationsPanel(
 
     private fun createCompactButton(label: String, intent: AiIntegrationsIntent): JButton = JButton(label).apply {
         isOpaque = false
-        addActionListener { intentListener(intent) }
+        addActionListener { dispatchIntent(intent) }
+    }
+
+    private fun createLinkButton(label: String, intent: AiIntegrationsIntent): JButton = createLinkButton(label) {
+        dispatchIntent(intent)
     }
 
     private fun createDisclosureButton(expanded: Boolean, label: String = MANAGE_AGENTS_LABEL, toggle: (Boolean) -> Unit): JToggleButton =
@@ -647,6 +753,10 @@ class AiIntegrationsPanel(
     private fun createLinkButton(label: String, url: String): JButton = ActionLink(label, { openLink(url) }).apply {
         setExternalLinkIcon()
         alignmentX = Component.LEFT_ALIGNMENT
+    }
+
+    private fun dispatchIntent(intent: AiIntegrationsIntent) {
+        intentListener(intent)
     }
 
     override fun dispose() {
@@ -771,6 +881,26 @@ private fun CliIntegrationCheckStatus.displayText(): String = when (this) {
 private fun disclosureLabel(expanded: Boolean, label: String): String = "${if (expanded) "▾" else "▸"} $label"
 
 private fun agentCountText(count: Int): String = "$count ${if (count == 1) "agent" else "agents"} detected"
+
+private fun mcpSummary(configuredCount: Int, totalCount: Int, attentionCount: Int): String = when {
+    attentionCount > 0 -> "$attentionCount ${if (attentionCount == 1) "configuration needs" else "configurations need"} attention."
+    configuredCount == totalCount -> "MCP is configured for all $totalCount detected ${if (totalCount == 1) "agent" else "agents"}."
+    configuredCount > 0 -> "$configuredCount of $totalCount detected agents are configured."
+    else -> "MCP is ready to set up for $totalCount detected ${if (totalCount == 1) "agent" else "agents"}."
+}
+
+private fun McpAgentConfiguration.displayText(): String = when (state) {
+    McpConfigurationKind.NOT_CONFIGURED -> "Not configured"
+    McpConfigurationKind.STANDALONE -> if (owned) {
+        "Configured · Connection not verified"
+    } else {
+        "Configured externally · Connection not verified"
+    }
+    McpConfigurationKind.CLI_MANAGED -> "Managed by SonarQube CLI"
+    McpConfigurationKind.CLI_ONLY -> "Configure with SonarQube CLI"
+    McpConfigurationKind.UNKNOWN -> "Configuration state unknown"
+    McpConfigurationKind.MALFORMED -> "Malformed configuration"
+}
 
 private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBTextArea(text).apply {
     font = JBFont.label()

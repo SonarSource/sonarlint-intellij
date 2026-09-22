@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
+import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -92,6 +93,22 @@ class AiAgentRegistryTests {
         expectedNames.forEach { (agent, name) ->
             assertThat(registry.displayName(agent)).isEqualTo(name)
         }
+    }
+
+    @Test
+    fun `provides normalized standalone MCP paths for all supported agents`() {
+        val registry = AiAgentRegistry { false }
+        val home = Path.of("/users/me").toAbsolutePath()
+
+        assertThat(registry.standaloneMcpPath(AiAgent.GITHUB_COPILOT, home, false, null))
+            .isEqualTo(home.resolve(".config/github-copilot/intellij/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgent.GITHUB_COPILOT, home, true, Path.of("/local/appdata")))
+            .isEqualTo(Path.of("/local/appdata/github-copilot/intellij/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgent.CURSOR, home, false, null))
+            .isEqualTo(home.resolve(".cursor/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE, home, false, null))
+            .isEqualTo(home.resolve(".claude.json"))
+        assertThat(registry.standaloneMcpPath(AiAgent.KIRO, home, false, null)).isNull()
     }
 
     private val supportedPlugins = mapOf(
