@@ -60,6 +60,7 @@ import org.sonarlint.intellij.ai.AgentDetectionSource
 import org.sonarlint.intellij.ai.AiAgentId
 import org.sonarlint.intellij.ai.AiIntegrationSnapshot
 import org.sonarlint.intellij.ai.CliAuthenticationState
+import org.sonarlint.intellij.ai.CliCommand
 import org.sonarlint.intellij.ai.CliInstallationState
 import org.sonarlint.intellij.ai.CliState
 import org.sonarlint.intellij.ai.IntegrationConnection
@@ -111,6 +112,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticateCliCommandParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -1210,5 +1214,21 @@ class BackendService : Disposable {
             response.recommendedConnectionId
         )
     }
+
+    fun prepareInstallCliCommand(): CompletableFuture<CliCommand> =
+        requestFromBackend { it.aiAgentService.prepareInstallCommand() }.thenApply(::toCliCommand)
+
+    fun prepareAuthenticateCliCommand(connectionId: String?): CompletableFuture<CliCommand> =
+        requestFromBackend {
+            it.aiAgentService.prepareAuthenticateCommand(PrepareAuthenticateCliCommandParams(null, null, connectionId))
+        }.thenApply(::toCliCommand)
+
+    fun prepareIntegrateCliCommand(agent: AiAgentId): CompletableFuture<CliCommand> =
+        requestFromBackend {
+            it.aiAgentService.prepareIntegrateCommand(PrepareIntegrateCliCommandParams(AiAgent.valueOf(agent.name)))
+        }.thenApply(::toCliCommand)
+
+    private fun toCliCommand(response: PrepareCliCommandResponse) =
+        CliCommand(response.executable, response.arguments.toList(), response.isInteractive)
 
 }

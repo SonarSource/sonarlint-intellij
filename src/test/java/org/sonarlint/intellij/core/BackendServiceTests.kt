@@ -70,6 +70,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticateCliCommandParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.SonarQubeCliState
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -311,6 +314,27 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         assertThat(snapshot.cli.authentication).isEqualTo(CliAuthenticationState.UNVERIFIED)
         assertThat(snapshot.agents.single().cliIntegrationSupported).isTrue()
         assertThat(snapshot.agents.single().standaloneMcpSupported).isFalse()
+    }
+
+    @Test
+    fun test_prepare_cli_commands_keep_arguments_structured_and_authentication_uses_connection_id_only() {
+        val response = PrepareCliCommandResponse("sonar", listOf("auth", "--connection", "connection"))
+        `when`(backendAiAgentService.prepareInstallCommand()).thenReturn(CompletableFuture.completedFuture(response))
+        `when`(backendAiAgentService.prepareAuthenticateCommand(any())).thenReturn(CompletableFuture.completedFuture(response))
+        `when`(backendAiAgentService.prepareIntegrateCommand(any())).thenReturn(CompletableFuture.completedFuture(response))
+
+        assertThat(service.prepareInstallCliCommand().get().arguments).containsExactly("auth", "--connection", "connection")
+        service.prepareAuthenticateCliCommand("connection").get()
+        service.prepareIntegrateCliCommand(AiAgentId.CURSOR).get()
+
+        val authCaptor = argumentCaptor<PrepareAuthenticateCliCommandParams>()
+        verify(backendAiAgentService).prepareAuthenticateCommand(authCaptor.capture())
+        assertThat(authCaptor.firstValue.connectionId).isEqualTo("connection")
+        assertThat(authCaptor.firstValue.serverUrl).isNull()
+        assertThat(authCaptor.firstValue.organization).isNull()
+        val integrateCaptor = argumentCaptor<PrepareIntegrateCliCommandParams>()
+        verify(backendAiAgentService).prepareIntegrateCommand(integrateCaptor.capture())
+        assertThat(integrateCaptor.firstValue.agent).isEqualTo(AiAgent.CURSOR)
     }
 
     @Test

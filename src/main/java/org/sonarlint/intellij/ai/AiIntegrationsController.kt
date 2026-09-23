@@ -37,14 +37,17 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val panel: AiIntegrationsPanel,
     private val backendService: BackendService = getService(BackendService::class.java),
     private val registry: AiAgentRegistry = AiAgentRegistry(),
-    private val environment: AiIntegrationEnvironment = IntellijAiIntegrationEnvironment()
+    private val environment: AiIntegrationEnvironment = IntellijAiIntegrationEnvironment(),
+    private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java)
 ) : Disposable {
     private val generation = AtomicLong()
     private val started = AtomicBoolean()
     private val disposed = AtomicBoolean()
+    private var latestSnapshot: AiIntegrationSnapshot? = null
 
     init {
         panel.setIntentListener(::handleIntent)
+        cliCoordinator.register(this, ::refresh)
     }
 
     fun loadInitially() {
@@ -80,6 +83,11 @@ class AiIntegrationsController @JvmOverloads constructor(
     private fun publish(requestedGeneration: Long, state: AiIntegrationsPanelState) {
         ApplicationManager.getApplication().invokeLater({
             if (!isDisposed() && generation.get() == requestedGeneration) {
+                latestSnapshot = when (state) {
+                    is AiIntegrationsPanelState.Ready -> state.snapshot
+                    is AiIntegrationsPanelState.Empty -> state.snapshot
+                    else -> null
+                }
                 panel.render(state)
             }
         }, project.disposed)
@@ -89,6 +97,11 @@ class AiIntegrationsController @JvmOverloads constructor(
         when (intent) {
             AiIntegrationsIntent.Refresh -> refresh()
             AiIntegrationsIntent.OpenDocumentation -> BrowserUtil.browse(SonarLintDocumentation.Intellij.AI_INTEGRATIONS_LINK)
+            AiIntegrationsIntent.InstallCli,
+            AiIntegrationsIntent.AuthenticateCli,
+            is AiIntegrationsIntent.IntegrateCli -> latestSnapshot?.let { snapshot ->
+                cliCoordinator.execute(project, snapshot, intent)
+            }
         }
     }
 
@@ -102,6 +115,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     override fun dispose() {
         disposed.set(true)
         generation.incrementAndGet()
+        cliCoordinator.unregister(this)
         panel.dispose()
     }
 }
