@@ -17,14 +17,15 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui
+package org.sonarlint.intellij.ai
 
-object ToolWindowConstants {
+import com.intellij.util.PlatformUtils
 
-    const val TOOL_WINDOW_ID: String = "SonarQube for IDE"
-    const val LOG_TAB_TITLE: String = "Log"
-    const val CURRENT_FILE_TAB_TITLE: String = "Findings"
-    const val AI_INTEGRATIONS_TAB_TITLE: String = "AI Integrations"
-    const val HELP_AND_FEEDBACK_TAB_TITLE: String = "Help & Feedback"
+fun interface AiIntegrationEnvironment {
+    fun isRemote(): Boolean
+}
 
+class IntellijAiIntegrationEnvironment : AiIntegrationEnvironment {
+    override fun isRemote(): Boolean = PlatformUtils.isJetBrainsClient() ||
+        System.getProperty("idea.is.remote", "false").toBoolean()
 }
