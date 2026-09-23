@@ -64,6 +64,10 @@ import org.sonarlint.intellij.ai.CliCommand
 import org.sonarlint.intellij.ai.CliInstallationState
 import org.sonarlint.intellij.ai.CliState
 import org.sonarlint.intellij.ai.IntegrationConnection
+import org.sonarlint.intellij.ai.McpConfigurationCoordinator
+import org.sonarlint.intellij.ai.McpConfigurationKind
+import org.sonarlint.intellij.ai.McpInspection
+import org.sonarlint.intellij.ai.McpUpdatePlan
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -83,6 +87,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilities
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.CredentialsChangeListener
+import org.sonarlint.intellij.messages.BackendReadyListener
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.monitoring.MonitoringService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
@@ -115,6 +120,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationSt
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationUpdateParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.GetMCPServerConfigurationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -291,6 +299,8 @@ class BackendService : Disposable {
                     initRpcServer(sloop.rpcServer)[1, TimeUnit.MINUTES]
                     getService(GlobalLogOutput::class.java).log("SonarQube for IDE service initialized...", ClientLogOutput.Level.INFO)
                     backendFuture.complete(sloop.rpcServer)
+                    getService(McpConfigurationCoordinator::class.java)
+                    ApplicationManager.getApplication().messageBus.syncPublisher(BackendReadyListener.TOPIC).backendReady()
                 } catch (_: TimeoutException) {
                     GlobalLogOutput.get().log(
                         "The 'Starting SonarQube for IDE service...' task timed out, please capture thread dumps of the 'SonarLintServerCli' process and report the problem to the SonarQube for IDE maintainers",
@@ -1230,5 +1240,44 @@ class BackendService : Disposable {
 
     private fun toCliCommand(response: PrepareCliCommandResponse) =
         CliCommand(response.executable, response.arguments.toList(), response.isInteractive)
+
+    fun inspectMcpConfiguration(agent: AiAgentId, content: String): CompletableFuture<McpInspection> =
+        requestFromBackend {
+            it.aiAgentService.inspectMcpConfiguration(
+                McpConfigurationInspectionParams(AiAgent.valueOf(agent.name), content)
+            )
+        }.thenApply { response ->
+            McpInspection(McpConfigurationKind.valueOf(response.state.name), response.diagnostics.toList())
+        }
+
+    fun planMcpConfigurationUpdate(
+        agent: AiAgentId,
+        content: String,
+        sonarMcpConfiguration: String
+    ): CompletableFuture<McpUpdatePlan> = requestFromBackend {
+        it.aiAgentService.planMcpConfigurationUpdate(
+            McpConfigurationUpdateParams(AiAgent.valueOf(agent.name), content, sonarMcpConfiguration)
+        )
+    }.thenApply { response ->
+        McpUpdatePlan(
+            McpConfigurationKind.valueOf(response.state.name),
+            response.updatedContent,
+            response.diagnostics.toList()
+        )
+    }
+
+    fun generateMcpConfiguration(
+        connectionId: String,
+        credentials: Either<TokenDto, UsernamePasswordDto>
+    ): CompletableFuture<String> {
+        if (!credentials.isLeft) {
+            return CompletableFuture.failedFuture(IllegalArgumentException("MCP configuration requires token credentials"))
+        }
+        return requestFromBackend {
+            it.connectionService.getMCPServerConfiguration(
+                GetMCPServerConfigurationParams(connectionId, credentials.left.token)
+            )
+        }.thenApply { it.jsonConfiguration }
+    }
 
 }
