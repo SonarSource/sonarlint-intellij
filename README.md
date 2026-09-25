@@ -5,33 +5,21 @@
   </picture>
 </p>
 
-# SonarQube for IntelliJ
-
-<p>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://assets-eu-01.kc-usercontent.com/ef593040-b591-0198-9506-ed88b30bc023/7934b7e0-d989-42aa-9c75-73af00b948b7/SQ_Logo_IDE_Dark%20Backgrounds.svg">
-    <img src="https://assets-eu-01.kc-usercontent.com/ef593040-b591-0198-9506-ed88b30bc023/b839fc43-d33c-44b5-9e14-f9dee4e9a047/SQ_Logo_IDE_Light%20Backgrounds.png" alt="SonarQube for IDE logo" width="400">
-  </picture>
-</p>
-
 [![Build Status](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/build.yml/badge.svg)](https://github.com/SonarSource/sonarlint-intellij/actions/workflows/build.yml?query=branch%3Amaster)
 [![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
-[![JetBrains Plugin](https://img.shields.io/jetbrains/plugin/v/7973-sonarlint)](https://plugins.jetbrains.com/plugin/7973-sonarqube-for-ide)
-[![GitHub stars](https://img.shields.io/github/stars/SonarSource/sonarlint-intellij?style=flat)](https://github.com/SonarSource/sonarlint-intellij)
-[![License](https://img.shields.io/badge/license-LGPL--3.0-blue)](#license)
-[![Community forum](https://img.shields.io/badge/community-forum-blue)](https://community.sonarsource.com/c/sl/11)
 
-SonarQube for IntelliJ analyzes code as you edit in JetBrains IDEs, highlighting code quality and security findings where they can be fixed before commit.
+<!-- sonar-marketing:start -->
+<!-- Marketing maintains this section. For wording changes, consult the relevant Product Marketing Manager (PMM). Repository CODEOWNERS review accuracy and merge changes. -->
 
-This repository contains the source for the IDE plugin. It applies the same analysis to code written by developers and AI assistants, and it can connect to SonarQube Server or SonarQube Cloud to share team rules and settings.
+# SonarQube for IntelliJ
 
-What it does
-------------
+SonarQube for IDE is an IDE extension that helps you detect and fix quality issues, ensuring you
+deliver [integrated code quality and security](https://www.sonarsource.com/solutions/for-developers/).
+Like a spell checker, SonarQube for IntelliJ squiggles flaws so they can be fixed before committing code.
 
-- Detects code quality and security issues as you edit.
-- Highlights issues in the editor and explains why they matter.
-- Supports connected analysis with [SonarQube Server](https://www.sonarsource.com/products/sonarqube/server/) and [SonarQube Cloud](https://www.sonarsource.com/products/sonarqube/cloud/).
-- Helps verify developer-written and AI-generated code before commit.
+Install it from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarqube-for-ide), or learn more about [SonarQube for IDE](https://www.sonarsource.com/products/sonarqube/ide/).
+
+<!-- sonar-marketing:end -->
 
 Useful links
 ------------
@@ -45,7 +33,7 @@ Useful links
 How to install
 --------------
 
-You can install SonarQube for IntelliJ from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly
+You can install SonarQube for IntelliJ from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarqube-for-ide), directly
 available in the IDE preferences.
 
 Full up-to-date details are available on
