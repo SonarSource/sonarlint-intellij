@@ -179,6 +179,9 @@ class ConfigurationTests : BaseUiTest() {
 
         @Test
         fun `should use configured project and module bindings for analysis`() = uiTest {
+            // SharedConfigTests.clearConnections() can run first (JUnit nested order is not source order)
+            // and remove the Orchestrator connection created in the outer BeforeAll.
+            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, tokenValue)
             // Scala should only be supported in connected mode
             openExistingProject("sample-scala")
             verifyCurrentFileShowsCard("EmptyCard")
@@ -243,6 +246,11 @@ class ConfigurationTests : BaseUiTest() {
             closeProject()
             openExistingProject("shared-connected-mode", copyProjectFiles = false)
             importConfiguration(tokenValue)
+        }
+
+        @AfterAll
+        fun restoreOrchestratorConnection() {
+            clearConnectionsAndAddSonarQubeConnection(ORCHESTRATOR.server.url, tokenValue)
         }
 
     }

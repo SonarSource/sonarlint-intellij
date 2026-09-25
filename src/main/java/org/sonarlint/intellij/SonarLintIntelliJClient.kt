@@ -42,26 +42,9 @@ import com.intellij.openapi.project.guessModuleDir
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.TestSourcesFilter.isTestSources
 import com.intellij.openapi.ui.MessageDialogBuilder
-import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.net.JdkProxyProvider
 import com.intellij.util.net.ssl.CertificateManager
-import com.intellij.util.proxy.CommonProxy
-import java.io.ByteArrayInputStream
-import java.io.IOException
-import java.net.Authenticator
-import java.net.InetSocketAddress
-import java.net.Proxy
-import java.net.URI
-import java.net.URL
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.security.cert.CertificateException
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
-import java.util.UUID
-import java.util.concurrent.CancellationException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeoutException
 import kotlinx.html.emptyMap
 import org.apache.commons.text.StringEscapeUtils
 import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
@@ -85,6 +68,7 @@ import org.sonarlint.intellij.cayc.NewCodePeriodCache
 import org.sonarlint.intellij.common.analysis.FilesContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.FileUtils
 import org.sonarlint.intellij.common.util.FileUtils.isFileValidForSonarLintWithExtensiveChecks
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.util.SonarLintUtils.isRider
@@ -181,6 +165,22 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TextRangeDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
+import java.io.ByteArrayInputStream
+import java.io.IOException
+import java.net.Authenticator
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.URI
+import java.net.URL
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.UUID
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeoutException
 
 private const val INTERRUPTED_MESSAGE = "Interrupted while waiting for Sonar project branch matching result"
 private const val TIMEOUT_MESSAGE = "Timeout while waiting for Sonar project branch matching result"
@@ -616,7 +616,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         scheme: String,
         targetHost: URL,
     ): GetProxyPasswordAuthenticationResponse {
-        val auth = CommonProxy.getInstance().authenticator.requestPasswordAuthenticationInstance(host, null, port, protocol, prompt, scheme, targetHost, Authenticator.RequestorType.PROXY)
+        val auth = JdkProxyProvider.getInstance().authenticator.requestPasswordAuthenticationInstance(host, null, port, protocol, prompt, scheme, targetHost, Authenticator.RequestorType.PROXY)
         return GetProxyPasswordAuthenticationResponse(auth?.userName, auth?.let { String(it.password) })
     }
 
@@ -633,7 +633,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun selectProxies(uri: URI): List<ProxyDto> {
-        return CommonProxy.getInstance().select(uri).stream().map {
+        return JdkProxyProvider.getInstance().proxySelector.select(uri).stream().map {
             if (it.type() != Proxy.Type.DIRECT && it.address() is InetSocketAddress) {
                 val socketAddress = it.address() as InetSocketAddress
                 ProxyDto(it.type(), socketAddress.hostString, socketAddress.port)
@@ -709,7 +709,6 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             project,
             "Matching project branch…",
             true,
-            ALWAYS_BACKGROUND
         ) {
             override fun run(indicator: ProgressIndicator) {
                 try {
@@ -881,7 +880,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
         language: Language?,
         includeFileContent: Boolean = false,
     ): ClientFileDto? {
-        if (!file.isValid || FileUtilRt.isTooLarge(file.length)) return null
+        if (!file.isValid || FileUtils.isTooLarge(file)) return null
         val uri = VirtualFileUtils.toURI(file) ?: return null
         return try {
             computeReadActionSafely(file, project) {
@@ -910,7 +909,7 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
             || file.parent?.name == SONARLINT_CONFIGURATION_FOLDER
             // Notebooks require special parsing, we should always send the content
             || file.extension == "ipynb"
-        if (!shouldReadContent || FileUtilRt.isTooLarge(file.length)) return null
+        if (!shouldReadContent || FileUtils.isTooLarge(file)) return null
         return getFileContent(file)
     }
 

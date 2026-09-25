@@ -79,7 +79,13 @@ dependencies {
                 }
             }
         } else {
-            intellijIdeaCommunity(intellijBuildVersion)
+            val ideaHome = System.getenv("IDEA_HOME")
+            if (!ideaHome.isNullOrBlank() && File(ideaHome).exists()) {
+                println("ITs: Using local IDE from IDEA_HOME=$ideaHome")
+                local(ideaHome)
+            } else {
+                intellijIdeaCommunity(intellijBuildVersion)
+            }
         }
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Bundled)
@@ -90,6 +96,11 @@ dependencies {
     testImplementation(libs.its.sonar.scala)
     testImplementation(libs.its.sonar.ws)
     testImplementation(libs.bundles.its.remote)
+    // remote-robot → retrofit and sonar-ws still request okhttp 3.14.x; orchestrator brings okhttp-jvm 5.x.
+    // Without this constraint both jars land on the ITS classpath with duplicate okhttp3 classes.
+    constraints {
+        testImplementation(libs.its.okhttp)
+    }
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.four)
@@ -127,6 +138,15 @@ tasks.named<Test>("test") {
             languageVersion.set(JavaLanguageVersion.of(21))
         }
     )
+    // Keep Orchestrator on SaaS: Edge returns HTTP 404 for api/search/versions on
+    // sonarsource-releases, which Orchestrator uses to resolve SQ distributions.
+    systemProperty("orchestrator.artifactory.url", "https://repox.jfrog.io/repox")
+    val artifactoryToken = System.getenv("ARTIFACTORY_ACCESS_TOKEN")
+        ?: System.getenv("ARTIFACTORY_PASSWORD")
+    if (!artifactoryToken.isNullOrEmpty()) {
+        systemProperty("orchestrator.artifactory.accessToken", artifactoryToken)
+        systemProperty("orchestrator.artifactory.apiKey", artifactoryToken)
+    }
 }
 
 val runIdeForUiTests by intellijPlatformTesting.runIde.registering {

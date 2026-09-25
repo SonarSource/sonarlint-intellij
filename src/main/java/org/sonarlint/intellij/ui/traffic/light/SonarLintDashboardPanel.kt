@@ -25,6 +25,7 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.editor.Editor
 import com.intellij.ui.HyperlinkAdapter
@@ -226,7 +227,7 @@ class SonarLintDashboardPanel(private val editor: Editor) {
             add(ShowLogAction())
             templatePresentation.isPopupGroup = true
             templatePresentation.icon = AllIcons.Actions.More
-            templatePresentation.putClientProperty(ActionButton.HIDE_DROPDOWN_ICON, true)
+            templatePresentation.putClientProperty(ActionUtil.HIDE_DROPDOWN_ICON, true)
         }
     }
 

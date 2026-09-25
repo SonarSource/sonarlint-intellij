@@ -80,6 +80,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
 
   @Override
   public void commit(CommitType commitType) {
+    // Nothing to commit: this confirmation step has no state to persist or validation to perform.
   }
 
   @Nullable

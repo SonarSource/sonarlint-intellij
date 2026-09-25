@@ -31,6 +31,7 @@ import javax.swing.tree.MutableTreeNode;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
+import static org.sonarlint.intellij.common.ui.ReadActionUtils.computeReadActionSafely;
 import static org.sonarlint.intellij.common.ui.ReadActionUtils.runReadActionSafely;
 
 public abstract class AbstractNode extends DefaultMutableTreeNode {
@@ -97,10 +98,14 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
       return UNKNOWN_RANGE_COORDINATES;
     }
 
-    var document = rangeMarker.getDocument();
-    var line = document.getLineNumber(rangeMarker.getStartOffset());
-    var offset = rangeMarker.getStartOffset() - document.getLineStartOffset(line);
-    return String.format("(%d, %d) ", line + 1, offset);
+    // Rendering happens on the EDT; use a synchronous read action here (no thread hop) to avoid UI freezes
+    var coordinates = computeReadActionSafely(file, () -> {
+      var document = rangeMarker.getDocument();
+      var line = document.getLineNumber(rangeMarker.getStartOffset());
+      var offset = rangeMarker.getStartOffset() - document.getLineStartOffset(line);
+      return String.format("(%d, %d) ", line + 1, offset);
+    });
+    return coordinates != null ? coordinates : UNKNOWN_RANGE_COORDINATES;
   }
 
   public void openFileFromRangeMarker(Project project, @Nullable RangeMarker rangeMarker) {

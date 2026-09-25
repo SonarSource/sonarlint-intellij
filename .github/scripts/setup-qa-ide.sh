@@ -8,7 +8,6 @@
 #   IDE_VERSION: IDE identifier (e.g., IC-2025.3.2, PY-2023.3.7, CL-2024.3.6)
 #
 # Environment variables (optional):
-#   ARTIFACTORY_URL:          Required for non-embedded IDEs (unless cached)
 #   ARTIFACTORY_USERNAME:     Authentication username
 #   ARTIFACTORY_ACCESS_TOKEN: Required for non-embedded IDEs (unless cached)
 #   GITHUB_ENV:               GitHub Actions environment file (for setting variables)

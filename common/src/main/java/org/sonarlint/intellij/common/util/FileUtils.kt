@@ -25,7 +25,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyFilter
 import com.intellij.openapi.roots.ProjectRootManager
-import com.intellij.openapi.util.io.FileUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.computeReadActionSafely
@@ -33,11 +32,16 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole
 
 object FileUtils {
 
+    private const val KILOBYTE: Long = 1024
+    private const val MEGABYTE: Long = KILOBYTE * KILOBYTE
+    // copied from FileUtilRt and simplified
+    private const val LARGE_FILE_SIZE: Long = 20 * MEGABYTE
+
     // To be used with iterateContent, because it already skips ignored and excluded files
     fun isFileValidForSonarLint(file: VirtualFile, project: Project): Boolean {
         try {
             val toSkip = computeReadActionSafely(file, project) {
-                (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
+                (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && isTooLarge(file))
                     || FileElement.isArchive(file)
                     || ProjectCoreUtil.isProjectOrWorkspaceFile(file)
                     || isGeneratedSourceByAnyFilter(file, project)
@@ -53,12 +57,16 @@ object FileUtils {
         }
     }
 
+    fun isTooLarge(file: VirtualFile): Boolean {
+        return file.length > LARGE_FILE_SIZE
+    }
+
     // To be used when using iterating over all children
     fun isFileValidForSonarLintWithExtensiveChecks(file: VirtualFile, project: Project): Boolean {
         try {
             val fileIndex = ProjectRootManager.getInstance(project).fileIndex
             val toSkip = computeReadActionSafely(file, project) {
-                (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && FileUtilRt.isTooLarge(file.length))
+                (!ApplicationManager.getApplication().isUnitTestMode && !file.isDirectory && isTooLarge(file))
                     || FileElement.isArchive(file)
                     || !fileIndex.isInContent(file)
                     || fileIndex.isInLibrarySource(file)

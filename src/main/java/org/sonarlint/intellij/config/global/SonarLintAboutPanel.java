@@ -62,7 +62,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
     panel.add(createTelemetryPanel(), BorderLayout.CENTER);
   }
 
-  private JComponent createSonarLintPanel() {
+  private static JComponent createSonarLintPanel() {
     var sonarlintIcon = new JBLabel(SonarLintIcons.SONARQUBE_FOR_INTELLIJ_32PX);
     var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
     var title = new JBLabel("<html><b>SonarQube for IDE " + plugin.getVersion() + "</b></html>");

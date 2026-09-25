@@ -248,7 +248,7 @@ class SonarLintHelpAndFeedbackPanel(private val project: Project) : SimpleToolWi
 
     private fun runLongAction(title: String, runnable: Runnable) {
         disableAllButtons()
-        ProgressManager.getInstance().run(object : Backgroundable(project, title, false, ALWAYS_BACKGROUND) {
+        ProgressManager.getInstance().run(object : Backgroundable(project, title, false) {
             override fun run(indicator: ProgressIndicator) {
                 try {
                     indicator.isIndeterminate = true

@@ -90,7 +90,7 @@ class IdeaUltimateTests : BaseUiTest() {
         openFile("file.js")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
-            "Unexpected comma in middle of array."
+            "Correct one of the identical sub-expressions on both sides of operator \"&&\""
         )
 
         openFile("file2.ts")
