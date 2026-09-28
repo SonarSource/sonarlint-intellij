@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>13.0 - Raise minimal supported SonarQube Server version to 2025.1. 23 new rules for Java. 5 new rules for JS/TS. 1 new rule for C#. Fewer FPs for PHP and JS/TS. Bug fixes for Go.</li>
         <li>12.8 - Drop support for Node.js 20, the minimum version is now 22.12.</li>
         <li>12.7 - Fix service startup failure on IntelliJ 2026.2 when the JCEF module is unavailable. Fix rule configuration panel not updating the active rules without a restart. More rules and FPs fixes for JS, extend JavaScript test rules to Bun and node:test. Improvements and fewer FPs in secrets. New Pytest/Pydantic rules, bugfixes for Python. </li>
         <li>12.6 - Faster issue highlighting on large files. 5 new rules for Python testing frameworks. Fewer FPs for PHP and secrets detection.</li>
