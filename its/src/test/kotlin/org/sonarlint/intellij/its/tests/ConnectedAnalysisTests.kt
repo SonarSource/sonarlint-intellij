@@ -127,6 +127,11 @@ class ConnectedAnalysisTests : BaseUiTest() {
                 "java",
                 "SonarLint IT Java Taint Hotspot Issue"
             )
+            ORCHESTRATOR.server.associateProjectToQualityProfile(
+                TAINT_VULNERABILITY_PROJECT_KEY,
+                "swift",
+                "Sonar way comprehensive"
+            )
             ORCHESTRATOR.server.newHttpCall("/api/new_code_periods/set")
                 .setMethod(HttpMethod.POST)
                 .setAdminCredentials()
