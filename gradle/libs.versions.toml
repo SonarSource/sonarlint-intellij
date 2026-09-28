@@ -11,7 +11,7 @@ sonar-ruby = "1.25.0.2597"
 sonar-go = "1.45.0.9057"
 sonar-html = "3.28.0.8018"
 sonar-xml = "2.19.0.8138"
-sonar-omnisharp = "1.46.0.102069"
+sonar-omnisharp = "1.47.0.102096"
 sonar-text = "2.51.0.13430"
 sonar-iac = "2.20.0.24052"
 
