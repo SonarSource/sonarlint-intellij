@@ -46,6 +46,9 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
+import org.sonarlint.intellij.ai.AiAgentId
+import org.sonarlint.intellij.ai.CliAuthenticationState
+import org.sonarlint.intellij.ai.CliInstallationState
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.eraseToken
 import org.sonarlint.intellij.config.global.credentials.eraseUsernamePassword
@@ -56,6 +59,18 @@ import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
 import org.sonarsource.sonarlint.core.rpc.protocol.SonarLintRpcServer
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.BindingRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationAgentCapability
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationConnection
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationHost
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationScope
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.SonarQubeCliState
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.SonarProjectBranchRpcService
@@ -108,6 +123,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     private lateinit var backendBranchService: SonarProjectBranchRpcService
     private lateinit var backendFileService: FileRpcService
     private lateinit var backendTelemetryService: TelemetryRpcService
+    private lateinit var backendAiAgentService: AiAgentRpcService
     private lateinit var service: BackendService
     private var previousTelemetryDisabledValue: String = System.getProperty("sonarlint.telemetry.disabled")
     private var previousMonitoringDisabledValue: String = System.getProperty("sonarlint.monitoring.disabled")
@@ -133,6 +149,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         backendBranchService = mock(SonarProjectBranchRpcService::class.java)
         backendFileService = mock(FileRpcService::class.java)
         backendTelemetryService = mock(TelemetryRpcService::class.java)
+        backendAiAgentService = mock(AiAgentRpcService::class.java)
         val taintService = mock(TaintVulnerabilityTrackingRpcService::class.java)
         `when`(taintService.listAll(any())).thenReturn(CompletableFuture.completedFuture(ListAllResponse(emptyList())))
         `when`(backend.fileService).thenReturn(backendFileService)
@@ -144,6 +161,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(backend.hotspotService).thenReturn(backendHotspotService)
         `when`(backend.sonarProjectBranchService).thenReturn(backendBranchService)
         `when`(backend.telemetryService).thenReturn(backendTelemetryService)
+        `when`(backend.aiAgentService).thenReturn(backendAiAgentService)
         `when`(backend.taintVulnerabilityTrackingService).thenReturn(taintService)
         sloop = mock(Sloop::class.java)
         `when`(sloop.rpcServer).thenReturn(backend)
@@ -265,6 +283,34 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability.TELEMETRY,
             org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.BackendCapability.MONITORING
         )
+    }
+
+    @Test
+    fun test_get_ai_integration_state_uses_global_intellij_scope_and_maps_statuses() {
+        `when`(backendAiAgentService.getIntegrationState(any())).thenReturn(
+            CompletableFuture.completedFuture(
+                GetAiIntegrationStateResponse(
+                    SonarQubeCliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNVERIFIED, null, "1.2.3", null, null),
+                    listOf(AiIntegrationAgentCapability(AiAgent.GITHUB_COPILOT, listOf(AiAgentDetectionSource.IDE), true, false, false, false)),
+                    listOf(AiIntegrationConnection("connection", "https://sonar.example", null)),
+                    "connection"
+                )
+            )
+        )
+
+        val snapshot = service.getAiIntegrationState(project, listOf(AiAgentId.GITHUB_COPILOT)).get(2, TimeUnit.SECONDS)
+
+        val captor = argumentCaptor<GetAiIntegrationStateParams>()
+        verify(backendAiAgentService).getIntegrationState(captor.capture())
+        assertThat(captor.firstValue.ideHost).isEqualTo(AiIntegrationHost.INTELLIJ)
+        assertThat(captor.firstValue.scope).isEqualTo(AiIntegrationScope.GLOBAL)
+        assertThat(captor.firstValue.configurationScopeId).isEqualTo(BackendService.projectId(project))
+        assertThat(captor.firstValue.detectedAgents).containsExactly(AiAgent.GITHUB_COPILOT)
+        assertThat(captor.firstValue.isDiscoverLocalAgentClis).isTrue()
+        assertThat(snapshot.cli.installation).isEqualTo(CliInstallationState.INSTALLED)
+        assertThat(snapshot.cli.authentication).isEqualTo(CliAuthenticationState.UNVERIFIED)
+        assertThat(snapshot.agents.single().cliIntegrationSupported).isTrue()
+        assertThat(snapshot.agents.single().standaloneMcpSupported).isFalse()
     }
 
     @Test
