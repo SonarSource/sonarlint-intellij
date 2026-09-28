@@ -19,28 +19,38 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.ide.plugins.IdeaPluginDescriptor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 
 class AiAgentRegistryTests {
     @Test
     fun `detects enabled GitHub Copilot plugin`() {
-        val registry = AiAgentRegistry { pluginId -> pluginId == AiAgentRegistry.GITHUB_COPILOT_PLUGIN_ID }
+        val descriptor = pluginDescriptor(enabled = true)
+        val registry = AiAgentRegistry(IntellijIdePluginDetector { pluginId ->
+            assertThat(pluginId.idString).isEqualTo(AiAgentRegistry.GITHUB_COPILOT_PLUGIN_ID)
+            descriptor
+        })
 
         assertThat(registry.detectedIdeAgents()).containsExactly(AiAgentId.GITHUB_COPILOT)
     }
 
     @Test
     fun `does not detect a disabled GitHub Copilot plugin`() {
-        val registry = AiAgentRegistry { false }
+        val registry = AiAgentRegistry(IntellijIdePluginDetector { pluginDescriptor(enabled = false) })
 
         assertThat(registry.detectedIdeAgents()).isEmpty()
     }
 
     @Test
     fun `does not detect an absent GitHub Copilot plugin`() {
-        val registry = AiAgentRegistry { false }
+        val registry = AiAgentRegistry(IntellijIdePluginDetector { null })
 
         assertThat(registry.detectedIdeAgents()).isEmpty()
     }
+
+    private fun pluginDescriptor(enabled: Boolean): IdeaPluginDescriptor =
+        mock(IdeaPluginDescriptor::class.java).also { `when`(it.isEnabled).thenReturn(enabled) }
 }

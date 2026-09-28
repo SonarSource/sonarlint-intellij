@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
 
@@ -26,9 +27,11 @@ fun interface IdePluginDetector {
     fun isInstalledAndEnabled(pluginId: String): Boolean
 }
 
-class IntellijIdePluginDetector : IdePluginDetector {
+class IntellijIdePluginDetector(
+    private val pluginLookup: (PluginId) -> IdeaPluginDescriptor? = { PluginManagerCore.getPlugin(it) }
+) : IdePluginDetector {
     override fun isInstalledAndEnabled(pluginId: String): Boolean =
-        PluginManagerCore.getPlugin(PluginId.getId(pluginId))?.isEnabled == true
+        pluginLookup(PluginId.getId(pluginId))?.isEnabled == true
 }
 
 class AiAgentRegistry(private val pluginDetector: IdePluginDetector = IntellijIdePluginDetector()) {
