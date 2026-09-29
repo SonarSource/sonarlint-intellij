@@ -46,15 +46,13 @@ interface McpUiAdapter {
 class IntellijMcpUiAdapter : McpUiAdapter {
     override fun chooseConnection(project: Project, connections: List<IntegrationConnection>): String? {
         val values = connections.map { it.connectionId }.toTypedArray()
-        val selected = Messages.showChooseDialog(
+        val selected = ConnectionChoiceDialog(
             project,
             "Choose a SonarQube connection for the MCP server.",
             "SonarQube MCP Server",
-            null,
-            values,
-            values.firstOrNull()
-        )
-        return selected.takeIf { it >= 0 }?.let { connections[it].connectionId }
+            values.toList()
+        ).choose()
+        return selected?.let { connections[it].connectionId }
     }
 
     override fun confirmExternalTakeover(project: Project): Boolean = Messages.showYesNoDialog(
