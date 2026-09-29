@@ -19,48 +19,22 @@
  */
 package org.sonarlint.intellij.ai
 
-enum class AiAgentId {
-    CURSOR,
-    GITHUB_COPILOT,
-    KIRO,
-    WINDSURF,
-    CLAUDE_CODE,
-    CODEX,
-    GITHUB_COPILOT_CLI,
-    ANTIGRAVITY
-}
-
-enum class AgentDetectionSource {
-    IDE,
-    CLI
-}
-
-enum class CliInstallationState {
-    NOT_INSTALLED,
-    INSTALLED,
-    UNUSABLE
-}
-
-enum class CliAuthenticationState {
-    AUTHENTICATED,
-    UNAUTHENTICATED,
-    INVALID,
-    UNVERIFIED,
-    UNAVAILABLE,
-    UNKNOWN
-}
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent // pragma: allowlist secret
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource // pragma: allowlist secret
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus // pragma: allowlist secret
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus // pragma: allowlist secret
 
 data class CliState(
-    val installation: CliInstallationState,
-    val authentication: CliAuthenticationState,
+    val installation: CliInstallationStatus,
+    val authentication: CliAuthenticationStatus,
     val version: String?,
     val serverUrl: String?,
     val organization: String?
 )
 
 data class AgentCapability(
-    val agent: AiAgentId,
-    val detectionSources: Set<AgentDetectionSource>,
+    val agent: AiAgent,
+    val detectionSources: Set<AiAgentDetectionSource>,
     val cliIntegrationSupported: Boolean,
     val standaloneMcpSupported: Boolean
 )

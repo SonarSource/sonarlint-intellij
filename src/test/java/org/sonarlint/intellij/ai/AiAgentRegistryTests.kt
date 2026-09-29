@@ -24,6 +24,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent // pragma: allowlist secret
 
 class AiAgentRegistryTests {
     @Test
@@ -34,7 +35,7 @@ class AiAgentRegistryTests {
             descriptor
         })
 
-        assertThat(registry.detectedIdeAgents()).containsExactly(AiAgentId.GITHUB_COPILOT)
+        assertThat(registry.detectedIdeAgents()).containsExactly(AiAgent.GITHUB_COPILOT)
     }
 
     @Test

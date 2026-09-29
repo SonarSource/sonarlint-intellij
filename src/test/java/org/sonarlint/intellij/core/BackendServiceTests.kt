@@ -46,10 +46,6 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
-import org.sonarlint.intellij.ai.AgentDetectionSource
-import org.sonarlint.intellij.ai.AiAgentId
-import org.sonarlint.intellij.ai.CliAuthenticationState
-import org.sonarlint.intellij.ai.CliInstallationState
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.eraseToken
 import org.sonarlint.intellij.config.global.credentials.eraseUsernamePassword
@@ -299,7 +295,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             )
         )
 
-        val snapshot = service.getAiIntegrationState(project, listOf(AiAgentId.GITHUB_COPILOT)).get(2, TimeUnit.SECONDS)
+        val snapshot = service.getAiIntegrationState(project, listOf(AiAgent.GITHUB_COPILOT)).get(2, TimeUnit.SECONDS)
 
         val captor = argumentCaptor<GetAiIntegrationStateParams>()
         verify(backendAiAgentService).getIntegrationState(captor.capture())
@@ -308,10 +304,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         assertThat(captor.firstValue.configurationScopeId).isEqualTo(BackendService.projectId(project))
         assertThat(captor.firstValue.detectedAgents).containsExactly(AiAgent.GITHUB_COPILOT)
         assertThat(captor.firstValue.isDiscoverLocalAgentClis).isTrue()
-        assertThat(snapshot.cli.installation).isEqualTo(CliInstallationState.INSTALLED)
-        assertThat(snapshot.cli.authentication).isEqualTo(CliAuthenticationState.UNVERIFIED)
+        assertThat(snapshot.cli.installation).isEqualTo(CliInstallationStatus.INSTALLED)
+        assertThat(snapshot.cli.authentication).isEqualTo(CliAuthenticationStatus.UNVERIFIED)
         assertThat(snapshot.cli.version).isEqualTo("1.2.3")
-        assertThat(snapshot.agents.single().detectionSources).containsExactly(AgentDetectionSource.IDE)
+        assertThat(snapshot.agents.single().detectionSources).containsExactly(AiAgentDetectionSource.IDE)
         assertThat(snapshot.agents.single().cliIntegrationSupported).isTrue()
         assertThat(snapshot.agents.single().standaloneMcpSupported).isFalse()
         assertThat(snapshot.connectionChoices.single().connectionId).isEqualTo("connection")

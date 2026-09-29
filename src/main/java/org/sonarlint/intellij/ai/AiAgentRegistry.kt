@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent // pragma: allowlist secret
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
 
@@ -35,26 +36,26 @@ class IntellijIdePluginDetector(
 }
 
 class AiAgentRegistry(private val pluginDetector: IdePluginDetector = IntellijIdePluginDetector()) {
-    fun detectedIdeAgents(): List<AiAgentId> = buildList {
+    fun detectedIdeAgents(): List<AiAgent> = buildList {
         if (pluginDetector.isInstalledAndEnabled(GITHUB_COPILOT_PLUGIN_ID)) {
-            add(AiAgentId.GITHUB_COPILOT)
+            add(AiAgent.GITHUB_COPILOT)
         }
     }
 
-    fun displayName(agent: AiAgentId): String = DISPLAY_NAMES.getValue(agent)
+    fun displayName(agent: AiAgent): String = DISPLAY_NAMES.getValue(agent)
 
     companion object {
         const val GITHUB_COPILOT_PLUGIN_ID = "com.github.copilot"
 
         private val DISPLAY_NAMES = mapOf(
-            AiAgentId.CURSOR to "Cursor",
-            AiAgentId.GITHUB_COPILOT to "GitHub Copilot",
-            AiAgentId.KIRO to "Kiro",
-            AiAgentId.WINDSURF to "Windsurf",
-            AiAgentId.CLAUDE_CODE to "Claude Code",
-            AiAgentId.CODEX to "Codex",
-            AiAgentId.GITHUB_COPILOT_CLI to "GitHub Copilot CLI",
-            AiAgentId.ANTIGRAVITY to "Antigravity"
+            AiAgent.CURSOR to "Cursor",
+            AiAgent.GITHUB_COPILOT to "GitHub Copilot",
+            AiAgent.KIRO to "Kiro",
+            AiAgent.WINDSURF to "Windsurf",
+            AiAgent.CLAUDE_CODE to "Claude Code",
+            AiAgent.CODEX to "Codex",
+            AiAgent.GITHUB_COPILOT_CLI to "GitHub Copilot CLI",
+            AiAgent.ANTIGRAVITY to "Antigravity"
         )
     }
 }

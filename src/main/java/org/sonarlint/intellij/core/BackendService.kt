@@ -56,11 +56,7 @@ import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.ai.AgentCapability
-import org.sonarlint.intellij.ai.AgentDetectionSource
-import org.sonarlint.intellij.ai.AiAgentId
 import org.sonarlint.intellij.ai.AiIntegrationSnapshot
-import org.sonarlint.intellij.ai.CliAuthenticationState
-import org.sonarlint.intellij.ai.CliInstallationState
 import org.sonarlint.intellij.ai.CliState
 import org.sonarlint.intellij.ai.IntegrationConnection
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
@@ -104,11 +100,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeAut
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.DidChangeClientNodeJsPathParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationHost
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationScope
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
@@ -1172,10 +1165,10 @@ class BackendService : Disposable {
         return requestFromBackend { it.pluginService.getPluginStatuses(GetPluginStatusesParams(projectId)) }
     }
 
-    fun getAiIntegrationState(project: Project, detectedAgents: List<AiAgentId>): CompletableFuture<AiIntegrationSnapshot> {
+    fun getAiIntegrationState(project: Project, detectedAgents: List<AiAgent>): CompletableFuture<AiIntegrationSnapshot> {
         val params = GetAiIntegrationStateParams(
             AiIntegrationHost.INTELLIJ,
-            detectedAgents.map(::toProtocolAgent),
+            detectedAgents,
             AiIntegrationScope.GLOBAL,
             projectId(project),
             true
@@ -1188,16 +1181,16 @@ class BackendService : Disposable {
         val cli = response.cli
         return AiIntegrationSnapshot(
             CliState(
-                toCliInstallationState(cli.installationStatus),
-                toCliAuthenticationState(cli.authenticationStatus),
+                cli.installationStatus,
+                cli.authenticationStatus,
                 cli.version,
                 cli.serverUrl,
                 cli.organization
             ),
             response.agents.map { capability ->
                 AgentCapability(
-                    toAiAgentId(capability.agent),
-                    capability.detectionSources.mapTo(mutableSetOf(), ::toAgentDetectionSource),
+                    capability.agent,
+                    capability.detectionSources.toSet(),
                     capability.isCliIntegrationSupported,
                     capability.isStandaloneMcpSupported
                 )
@@ -1207,48 +1200,6 @@ class BackendService : Disposable {
             },
             response.recommendedConnectionId
         )
-    }
-
-    private fun toProtocolAgent(agent: AiAgentId): AiAgent = when (agent) {
-        AiAgentId.CURSOR -> AiAgent.CURSOR
-        AiAgentId.GITHUB_COPILOT -> AiAgent.GITHUB_COPILOT
-        AiAgentId.KIRO -> AiAgent.KIRO
-        AiAgentId.WINDSURF -> AiAgent.WINDSURF
-        AiAgentId.CLAUDE_CODE -> AiAgent.CLAUDE_CODE
-        AiAgentId.CODEX -> AiAgent.CODEX
-        AiAgentId.GITHUB_COPILOT_CLI -> AiAgent.GITHUB_COPILOT_CLI
-        AiAgentId.ANTIGRAVITY -> AiAgent.ANTIGRAVITY
-    }
-
-    private fun toAiAgentId(agent: AiAgent): AiAgentId = when (agent) {
-        AiAgent.CURSOR -> AiAgentId.CURSOR
-        AiAgent.GITHUB_COPILOT -> AiAgentId.GITHUB_COPILOT
-        AiAgent.KIRO -> AiAgentId.KIRO
-        AiAgent.WINDSURF -> AiAgentId.WINDSURF
-        AiAgent.CLAUDE_CODE -> AiAgentId.CLAUDE_CODE
-        AiAgent.CODEX -> AiAgentId.CODEX
-        AiAgent.GITHUB_COPILOT_CLI -> AiAgentId.GITHUB_COPILOT_CLI
-        AiAgent.ANTIGRAVITY -> AiAgentId.ANTIGRAVITY
-    }
-
-    private fun toAgentDetectionSource(source: AiAgentDetectionSource): AgentDetectionSource = when (source) {
-        AiAgentDetectionSource.IDE -> AgentDetectionSource.IDE
-        AiAgentDetectionSource.CLI -> AgentDetectionSource.CLI
-    }
-
-    private fun toCliInstallationState(status: CliInstallationStatus): CliInstallationState = when (status) {
-        CliInstallationStatus.NOT_INSTALLED -> CliInstallationState.NOT_INSTALLED
-        CliInstallationStatus.INSTALLED -> CliInstallationState.INSTALLED
-        CliInstallationStatus.UNUSABLE -> CliInstallationState.UNUSABLE
-    }
-
-    private fun toCliAuthenticationState(status: CliAuthenticationStatus): CliAuthenticationState = when (status) {
-        CliAuthenticationStatus.AUTHENTICATED -> CliAuthenticationState.AUTHENTICATED
-        CliAuthenticationStatus.UNAUTHENTICATED -> CliAuthenticationState.UNAUTHENTICATED
-        CliAuthenticationStatus.INVALID -> CliAuthenticationState.INVALID
-        CliAuthenticationStatus.UNVERIFIED -> CliAuthenticationState.UNVERIFIED
-        CliAuthenticationStatus.UNAVAILABLE -> CliAuthenticationState.UNAVAILABLE
-        CliAuthenticationStatus.UNKNOWN -> CliAuthenticationState.UNKNOWN
     }
 
 }
