@@ -56,12 +56,13 @@ class AiAgentRegistryTests {
     @Test
     fun `provides normalized standalone MCP paths for all supported agents`() {
         val registry = AiAgentRegistry { false }
-        val home = Path.of("/users/me").toAbsolutePath()
+        val home = Path.of("/users/me").toAbsolutePath().normalize()
+        val localAppData = Path.of("/local/appdata").toAbsolutePath().normalize()
 
         assertThat(registry.standaloneMcpPath(AiAgent.GITHUB_COPILOT, home, false, null))
             .isEqualTo(home.resolve(".config/github-copilot/intellij/mcp.json"))
-        assertThat(registry.standaloneMcpPath(AiAgent.GITHUB_COPILOT, home, true, Path.of("/local/appdata")))
-            .isEqualTo(Path.of("/local/appdata/github-copilot/intellij/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgent.GITHUB_COPILOT, home, true, localAppData))
+            .isEqualTo(localAppData.resolve("github-copilot/intellij/mcp.json").toAbsolutePath().normalize())
         assertThat(registry.standaloneMcpPath(AiAgent.CURSOR, home, false, null))
             .isEqualTo(home.resolve(".cursor/mcp.json"))
         assertThat(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE, home, false, null))
