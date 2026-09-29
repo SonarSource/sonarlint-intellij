@@ -36,10 +36,12 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.sca.DependencyRisksCache
 import org.sonarlint.intellij.finding.sca.aDependencyRiskDto
@@ -59,7 +61,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageActionI
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.ClientFileDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Language
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
 class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     lateinit var client: SonarLintIntelliJClient
@@ -69,6 +73,51 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         // Important as this starts the notification manager service
         clearNotifications()
         client = SonarLintIntelliJClient
+    }
+
+    @Test
+    fun it_should_get_credentials_for_an_unapplied_connection() {
+        globalSettings.serverConnections = emptyList()
+        val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("https://example.org").build()
+        val backendService = mock(BackendService::class.java)
+        val credentialsService = mock(CredentialsService::class.java)
+        replaceApplicationService(BackendService::class.java, backendService)
+        replaceApplicationService(CredentialsService::class.java, credentialsService)
+        whenever(backendService.getCurrentConnection("draft")).thenReturn(draft)
+        whenever(credentialsService.getCredentials(draft)).thenReturn(Either.forLeft(TokenDto("draft-token")))
+
+        assertThat(client.getCredentials("draft").left).isEqualTo(TokenDto("draft-token"))
+        verify(credentialsService).getCredentials(draft)
+    }
+
+    @Test
+    fun it_should_still_get_credentials_for_an_applied_connection() {
+        val applied = ServerConnection.newBuilder().setName("connection").setHostUrl("https://example.org").build()
+        globalSettings.serverConnections = listOf(applied)
+        val backendService = mock(BackendService::class.java)
+        val credentialsService = mock(CredentialsService::class.java)
+        replaceApplicationService(BackendService::class.java, backendService)
+        replaceApplicationService(CredentialsService::class.java, credentialsService)
+        whenever(credentialsService.getCredentials(applied)).thenReturn(Either.forLeft(TokenDto("applied-token")))
+
+        assertThat(client.getCredentials("connection").left).isEqualTo(TokenDto("applied-token"))
+        verify(credentialsService).getCredentials(applied)
+    }
+
+    @Test
+    fun it_should_prefer_an_edited_draft_over_the_applied_connection_for_credentials() {
+        val applied = ServerConnection.newBuilder().setName("connection").setHostUrl("https://old.example.org").build()
+        val draft = ServerConnection.newBuilder().setName("connection").setHostUrl("https://new.example.org").build()
+        globalSettings.serverConnections = listOf(applied)
+        val backendService = mock(BackendService::class.java)
+        val credentialsService = mock(CredentialsService::class.java)
+        replaceApplicationService(BackendService::class.java, backendService)
+        replaceApplicationService(CredentialsService::class.java, credentialsService)
+        whenever(backendService.getCurrentConnection("connection")).thenReturn(draft)
+        whenever(credentialsService.getCredentials(draft)).thenReturn(Either.forLeft(TokenDto("edited-token")))
+
+        assertThat(client.getCredentials("connection").left).isEqualTo(TokenDto("edited-token"))
+        verify(credentialsService).getCredentials(draft)
     }
 
     @Test

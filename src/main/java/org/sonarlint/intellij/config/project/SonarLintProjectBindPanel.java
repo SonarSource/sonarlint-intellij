@@ -60,12 +60,12 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListModel;
 import org.apache.commons.lang3.Strings;
-import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.sharing.ConfigurationSharing;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
+import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto;
 
 import static java.awt.GridBagConstraints.EAST;
@@ -303,14 +303,14 @@ public class SonarLintProjectBindPanel {
         }
         var projects = downloadProjectList(selectedConnection);
         if (projects != null) {
-          var dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), projects, selectedConnection.isSonarCloud());
+          var dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), projects, selectedConnection);
           if (dialog.showAndGet()) {
             projectKeyTextField.setText(dialog.getSelectedProjectKey() != null ? dialog.getSelectedProjectKey() : "");
           }
         }
       }
     });
-    searchProjectButton.setText("Search in list\u2026");
+    searchProjectButton.setText("Search projects\u2026");
 
     connectionListLabel.setLabelFor(connectionComboBox);
 

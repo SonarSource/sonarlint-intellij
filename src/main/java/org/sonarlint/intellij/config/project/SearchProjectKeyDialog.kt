@@ -19,9 +19,9 @@
  */
 package org.sonarlint.intellij.config.project
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.IdeBorderFactory
@@ -40,25 +40,60 @@ import javax.swing.DefaultListModel
 import javax.swing.JComponent
 import javax.swing.JList
 import javax.swing.ListSelectionModel
+import javax.swing.SwingUtilities
+import javax.swing.Timer
 import javax.swing.event.DocumentEvent
 import javax.swing.event.ListSelectionEvent
 import javax.swing.event.ListSelectionListener
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.BackendService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto
+
+private const val NO_PROJECTS_FOUND = "No projects found"
 
 class SearchProjectKeyDialog(
     parent: Component,
     private val lastSelectedProjectKey: String?,
     private val projectsByKey: Map<String, SonarProjectDto>,
-    isSonarCloud: Boolean,
+    private val connection: ServerConnection,
 ) : DialogWrapper(
     parent, false
 ) {
+    private val logger = Logger.getInstance(SearchProjectKeyDialog::class.java)
     private lateinit var mainPanel: JBPanel<JBPanel<*>>
     private lateinit var projectList: JBList<SonarProjectDto>
     private lateinit var searchTextField: SearchTextField
+    private var searchGeneration = 0
+    private var disposed = false
+    private var rememberedSelectedProjectKey = lastSelectedProjectKey
+    private val initialProjects = projectsByKey.values
+        .sortedWith(compareBy({ it.name.lowercase(Locale.ENGLISH) }, { it.key.lowercase(Locale.ENGLISH) }))
+    private val searchTimer = Timer(300) {
+        if (disposed || searchTextField.text.isBlank()) {
+            return@Timer
+        }
+        val generation = searchGeneration
+        getService(BackendService::class.java).fuzzySearchProjects(connection, searchTextField.text.trim())
+            .whenComplete { response, error ->
+                runOnEdt {
+                    if (disposed || generation != searchGeneration) {
+                        return@runOnEdt
+                    }
+                    if (error == null) {
+                        projectList.setEmptyText(NO_PROJECTS_FOUND)
+                        showProjects(response.topResults)
+                    } else {
+                        logger.warn("Could not search projects for connection ${connection.name}", error)
+                        projectList.setEmptyText("Could not search projects. Check the connection and try again.")
+                        showProjects(emptyList())
+                    }
+                }
+            }
+    }.apply { isRepeats = false }
 
     init {
-        title = "Select " + (if (isSonarCloud) "SonarQube Cloud" else "SonarQube Server") + " Project To Bind"
+        title = "Select " + (if (connection.isSonarCloud) "SonarQube Cloud" else "SonarQube Server") + " Project To Bind"
         init()
     }
 
@@ -97,7 +132,7 @@ class SearchProjectKeyDialog(
 
     private fun createProjectList(): JBList<SonarProjectDto> {
         val projectList = JBList<SonarProjectDto>(DefaultListModel())
-        val emptyText = StringBuilder("No projects found")
+        val emptyText = StringBuilder(NO_PROJECTS_FOUND)
         if (projectsByKey.isEmpty()) {
             emptyText.append(" for the selected connection")
         }
@@ -112,41 +147,51 @@ class SearchProjectKeyDialog(
         return projectList
     }
 
-    private fun updateProjectsInList() {
-        val filterText = searchTextField.text
-        val selection: SonarProjectDto? = projectList.selectedValue
-        val model = (projectList.model as? DefaultListModel)
-        model!!.clear()
-        val sortedProjects = projectsByKey.values
-            .sortedWith(compareBy({ it.name.lowercase(Locale.ENGLISH) }, { it.key.lowercase(Locale.ENGLISH) }))
-
-        var selectedIndex = -1
-        var index = 0
-        for (sortedProject in sortedProjects) {
-            if (StringUtil.containsIgnoreCase(sortedProject.key, filterText) || StringUtil.containsIgnoreCase(
-                    sortedProject.name,
-                    filterText
-                )
-            ) {
-                model.addElement(sortedProject)
-                if ((selection != null && selection === sortedProject) || lastSelectedProjectKey == sortedProject.key) {
-                    selectedIndex = index
-                }
-                index++
-            }
+    private fun runOnEdt(action: () -> Unit) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            action()
+        } else {
+            SwingUtilities.invokeLater(action)
         }
-        if (!model.isEmpty) {
-            if (selectedIndex >= 0) {
-                projectList.selectedIndex = selectedIndex
-                projectList.ensureIndexIsVisible(selectedIndex)
-            } else {
-                projectList.clearSelection()
-            }
+    }
+
+    private fun updateProjectsInList() {
+        searchGeneration++
+        searchTimer.stop()
+        if (searchTextField.text.isBlank()) {
+            projectList.setEmptyText(
+                if (projectsByKey.isEmpty()) "$NO_PROJECTS_FOUND for the selected connection" else NO_PROJECTS_FOUND
+            )
+            showProjects(initialProjects)
+        } else {
+            projectList.setEmptyText("Searching projects...")
+            showProjects(emptyList())
+            searchTimer.restart()
+        }
+    }
+
+    private fun showProjects(projects: List<SonarProjectDto>) {
+        val model = projectList.model as DefaultListModel<SonarProjectDto>
+        model.clear()
+        projects.forEach(model::addElement)
+
+        val selectedIndex = projects.indexOfFirst { it.key == rememberedSelectedProjectKey }
+        if (selectedIndex >= 0) {
+            projectList.selectedIndex = selectedIndex
+            projectList.ensureIndexIsVisible(selectedIndex)
+        } else {
+            projectList.clearSelection()
         }
         projectList.revalidate()
         projectList.repaint()
-
         updateOk()
+    }
+
+    public override fun dispose() {
+        disposed = true
+        searchGeneration++
+        searchTimer.stop()
+        super.dispose()
     }
 
     private class ProjectListRenderer : ColoredListCellRenderer<SonarProjectDto>() {
@@ -169,6 +214,7 @@ class SearchProjectKeyDialog(
 
     private inner class ProjectItemListener : ListSelectionListener {
         override fun valueChanged(event: ListSelectionEvent) {
+            projectList.selectedValue?.key?.let { rememberedSelectedProjectKey = it }
             updateOk()
         }
     }

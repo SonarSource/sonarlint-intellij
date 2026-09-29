@@ -594,11 +594,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     }
 
     override fun getCredentials(connectionId: String): Either<TokenDto, UsernamePasswordDto> {
-        val connectionOpt = getGlobalSettings().getServerConnectionByName(connectionId)
-        if (connectionOpt.isEmpty) {
-            throw ResponseErrorException(ResponseError(ResponseErrorCode.InvalidParams, "Unknown connection: $connectionId", connectionId))
-        }
-        val connection = connectionOpt.get()
+        val connection = getService(BackendService::class.java).getCurrentConnection(connectionId)
+            ?: getGlobalSettings().getServerConnectionByName(connectionId).orElse(null)
+            ?: throw ResponseErrorException(ResponseError(ResponseErrorCode.InvalidParams, "Unknown connection: $connectionId", connectionId))
         return runCatching {
             getService(CredentialsService::class.java).getCredentials(connection)
         }.getOrElse { e ->

@@ -79,6 +79,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   private GlobalConfigurationListener connectionChangeListener;
   private final List<ServerConnection> connections = new ArrayList<>();
   private final Set<String> deletedServerIds = new HashSet<>();
+  private boolean hasUnappliedConnectionChanges;
 
   private void create() {
     var app = ApplicationManager.getApplication();
@@ -239,6 +240,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   public void load(SonarLintGlobalSettings settings) {
     connections.clear();
     deletedServerIds.clear();
+    hasUnappliedConnectionChanges = false;
 
     var listModel = new CollectionListModel<ServerConnection>(new ArrayList<>());
     listModel.add(settings.getServerConnections());
@@ -259,6 +261,19 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     return connections;
   }
 
+  boolean hasUnappliedConnectionChanges() {
+    return hasUnappliedConnectionChanges;
+  }
+
+  void markConnectionChangesApplied() {
+    hasUnappliedConnectionChanges = false;
+  }
+
+  private void connectionsChanged() {
+    hasUnappliedConnectionChanges = true;
+    connectionChangeListener.changed(connections);
+  }
+
   private void editSelectedConnection() {
     var selectedConnection = getSelectedConnection();
     int selectedIndex = connectionList.getSelectedIndex();
@@ -270,7 +285,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
           var editedConnection = serverEditor.getConnection();
           ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(editedConnection, selectedIndex);
           connections.set(connections.indexOf(selectedConnection), editedConnection);
-          connectionChangeListener.changed(connections);
+          connectionsChanged();
         }
       } catch (Exception e) {
         Messages.showErrorDialog(
@@ -292,7 +307,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
         connections.add(created);
         ((CollectionListModel<ServerConnection>) connectionList.getModel()).add(created);
         connectionList.setSelectedIndex(connectionList.getModel().getSize() - 1);
-        connectionChangeListener.changed(connections);
+        connectionsChanged();
       }
     }
   }
@@ -327,7 +342,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       connections.remove(server);
       SonarLintUtils.getService(CredentialsService.class)
           .eraseCredentials(server);
-      connectionChangeListener.changed(connections);
+      connectionsChanged();
 
       if (model.getSize() > 0) {
         var newIndex = Math.clamp(selectedIndex - 1, 0, model.getSize() - 1);

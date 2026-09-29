@@ -92,7 +92,7 @@ object ProjectBindingUtils {
 
             pressOk()
             errorMessage("Project key for module '$moduleName' should not be empty")
-            buttons(JButtonFixture.byText("Search in list\u2026"))[1].click()
+            buttons(JButtonFixture.byText("Search projects\u2026"))[1].click()
             dialog("Select SonarQube Server Project To Bind") {
                 jList {
                     clickItem(moduleProjectKey, false)
