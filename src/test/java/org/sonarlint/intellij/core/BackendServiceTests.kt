@@ -46,6 +46,7 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
+import org.sonarlint.intellij.ai.AgentDetectionSource
 import org.sonarlint.intellij.ai.AiAgentId
 import org.sonarlint.intellij.ai.CliAuthenticationState
 import org.sonarlint.intellij.ai.CliInstallationState
@@ -309,8 +310,14 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         assertThat(captor.firstValue.isDiscoverLocalAgentClis).isTrue()
         assertThat(snapshot.cli.installation).isEqualTo(CliInstallationState.INSTALLED)
         assertThat(snapshot.cli.authentication).isEqualTo(CliAuthenticationState.UNVERIFIED)
+        assertThat(snapshot.cli.version).isEqualTo("1.2.3")
+        assertThat(snapshot.agents.single().detectionSources).containsExactly(AgentDetectionSource.IDE)
         assertThat(snapshot.agents.single().cliIntegrationSupported).isTrue()
         assertThat(snapshot.agents.single().standaloneMcpSupported).isFalse()
+        assertThat(snapshot.connectionChoices.single().connectionId).isEqualTo("connection")
+        assertThat(snapshot.connectionChoices.single().serverUrl).isEqualTo("https://sonar.example")
+        assertThat(snapshot.connectionChoices.single().organization).isNull()
+        assertThat(snapshot.recommendedConnectionId).isEqualTo("connection")
     }
 
     @Test
