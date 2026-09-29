@@ -456,7 +456,6 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         credentials,
         fileSystem,
         ui,
-        AiIntegrationEnvironment { false },
         executor,
         false
     )
