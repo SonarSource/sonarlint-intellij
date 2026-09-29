@@ -132,6 +132,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
         val terminal = mock<CliTerminalAdapter>()
         whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Failed(IllegalStateException("failed")))
+        whenever(terminal.shellFor(any())).thenReturn(CommandShell.POSIX)
         val launchNotifications = mutableListOf<Notification>()
         val launchCoordinator = coordinator(backend, terminal, notifications = launchNotifications)
         launchCoordinator.register(this, refreshes::incrementAndGet)
@@ -159,6 +160,73 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Copied)
         assertThat(copied).contains("'sonar'").contains("''")
         assertThat(notifications.single().message).contains("Paste").contains("refresh")
+    }
+
+    @Test
+    fun `releases the lease when the terminal adapter throws`() {
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        val terminal = mock<CliTerminalAdapter>()
+        whenever(terminal.launch(any(), any())).thenThrow(IllegalStateException("project closed"))
+        val notifications = mutableListOf<Notification>()
+        val coordinator = coordinator(backend, terminal, notifications = notifications)
+
+        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)).isTrue()
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.LaunchFailed)
+        assertThat(notifications.single().message).contains("could not be started").contains("Retry")
+        whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Unsupported)
+        whenever(terminal.shellFor(any())).thenReturn(CommandShell.POSIX)
+        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)).isTrue()
+    }
+
+    @Test
+    fun `copies fallback commands with the adapter shell quoting`() {
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        var copied: String? = null
+        val coordinator = coordinator(
+            backend,
+            ShellTerminal(CommandShell.POWERSHELL),
+            copier = { copied = it }
+        )
+
+        coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
+
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Copied)
+        assertThat(copied).startsWith("& ").contains("'sonar'")
+    }
+
+    @Test
+    fun `does not copy a command when the configured shell is unsupported`() {
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        var copied: String? = null
+        val notifications = mutableListOf<Notification>()
+        val coordinator = coordinator(
+            backend,
+            ShellTerminal(null),
+            copier = { copied = it },
+            notifications = notifications
+        )
+
+        coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
+
+        assertThat(copied).isNull()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.LaunchFailed)
+        assertThat(notifications.single().message).contains("could not be copied")
+    }
+
+    @Test
+    fun `classifies the configured terminal shell on every operating system`() {
+        assertThat(classifyTerminalShell("/usr/local/bin/pwsh")).isEqualTo(CommandShell.POWERSHELL)
+        assertThat(classifyTerminalShell("C:\\Program Files\\PowerShell\\7\\pwsh.exe")).isEqualTo(CommandShell.POWERSHELL)
+        assertThat(classifyTerminalShell("/bin/zsh")).isEqualTo(CommandShell.POSIX)
+        assertThat(classifyTerminalShell("/bin/sh")).isEqualTo(CommandShell.POSIX)
+        assertThat(classifyTerminalShell("C:\\Windows\\System32\\bash.exe")).isEqualTo(CommandShell.POSIX)
+        assertThat(classifyTerminalShell("C:\\Windows\\System32\\cmd.exe")).isNull()
+        assertThat(classifyTerminalShell("/usr/bin/fish")).isNull()
     }
 
     @Test
@@ -197,4 +265,13 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
     )
 
     private data class Notification(val message: String, val type: NotificationType)
+
+    private class ShellTerminal(private val shell: CommandShell?) : CliTerminalAdapter {
+        override fun launch(project: com.intellij.openapi.project.Project, command: CliCommand): TerminalLaunch =
+            TerminalLaunch.Unsupported
+
+        override fun focus(handle: Any): Boolean = false
+
+        override fun shellFor(project: com.intellij.openapi.project.Project): CommandShell? = shell
+    }
 }
