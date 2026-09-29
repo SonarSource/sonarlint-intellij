@@ -49,7 +49,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     private val credentialsService: CredentialsService = getService(CredentialsService::class.java),
     private val fileSystem: McpFileSystem = NioMcpFileSystem(),
     private val ui: McpUiAdapter = IntellijMcpUiAdapter(),
-    private val environment: AiIntegrationEnvironment = IntellijAiIntegrationEnvironment(),
     private val executor: Executor = AppExecutorUtil.getAppExecutorService(),
     subscribeToBackendReady: Boolean = true
 ) : Disposable {
@@ -104,9 +103,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     fun setUp(project: Project, snapshot: AiIntegrationSnapshot, agent: AiAgent): Boolean {
-        if (environment.isRemote()) {
-            return false
-        }
         val configuration = snapshot.mcpConfigurations[agent]
         if (configuration == null) {
             ui.showMessage(project, "MCP configuration details are unavailable. Refresh this view and try again.", NotificationType.WARNING)
@@ -164,9 +160,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     fun backendReady() {
-        if (environment.isRemote()) {
-            return
-        }
         refreshRequested.set(true)
         if (refreshWorkerRunning.compareAndSet(false, true)) {
             CompletableFuture.runAsync(::drainBackendRefreshes, executor)
