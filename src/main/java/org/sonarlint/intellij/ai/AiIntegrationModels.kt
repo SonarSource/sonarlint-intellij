@@ -83,7 +83,6 @@ sealed interface AiIntegrationsPanelState {
     data class Ready(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
     data class Empty(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
     data class Error(val message: String) : AiIntegrationsPanelState
-    data object Remote : AiIntegrationsPanelState
 }
 
 sealed interface AiIntegrationsIntent {
