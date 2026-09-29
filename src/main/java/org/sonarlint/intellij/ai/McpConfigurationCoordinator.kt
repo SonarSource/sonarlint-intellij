@@ -271,13 +271,9 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         }
         val snapshot = fileSystem.read(normalizedPath)
         val inspection = backendService.inspectMcpConfiguration(agent, snapshot.toText()).join()
-        when (inspection.state) {
-            McpConfigurationKind.CLI_MANAGED,
-            McpConfigurationKind.CLI_ONLY,
-            McpConfigurationKind.UNKNOWN,
-            McpConfigurationKind.MALFORMED -> return McpTransactionResult.Protected
-            McpConfigurationKind.STANDALONE -> if (!allowExistingStandalone) return McpTransactionResult.Protected
-            McpConfigurationKind.NOT_CONFIGURED -> Unit
+        if (isProtectedMcpState(inspection.state) ||
+            (inspection.state == McpConfigurationKind.STANDALONE && !allowExistingStandalone)) {
+            return McpTransactionResult.Protected
         }
         val connection = getGlobalSettings().serverConnections.firstOrNull { it.name == connectionId }
             ?: return McpTransactionResult.MissingConnection
@@ -288,10 +284,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         }
         val generated = backendService.generateMcpConfiguration(connectionId, credentials).join()
         val plan = backendService.planMcpConfigurationUpdate(agent, snapshot.toText(), generated).join()
-        if (plan.state == McpConfigurationKind.CLI_MANAGED ||
-            plan.state == McpConfigurationKind.CLI_ONLY ||
-            plan.state == McpConfigurationKind.UNKNOWN ||
-            plan.state == McpConfigurationKind.MALFORMED) {
+        if (isProtectedMcpState(plan.state)) {
             return McpTransactionResult.Protected
         }
         val updatedBytes = plan.updatedContent?.toByteArray(StandardCharsets.UTF_8)
@@ -309,7 +302,8 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         var temp: Path? = null
         var backup: Path? = null
         var completed = false
-        return try {
+        var primaryError: Throwable? = null
+        try {
             backup = snapshot?.let { fileSystem.createBackup(normalizedPath, it) }
             temp = fileSystem.writeSiblingTemp(normalizedPath, updatedBytes)
             if (fileSystem.isSymbolicLink(normalizedPath)) {
@@ -322,21 +316,43 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             temp = null
             ownership.remember(agent, connectionId, managedFingerprint(updatedBytes))
             completed = true
-            McpTransactionResult.Updated
+            return McpTransactionResult.Updated
+        } catch (error: Throwable) {
+            primaryError = error
+            throw error
         } finally {
-            val cleanupFailures = mutableListOf<Throwable>()
-            temp?.let { path ->
+            discardPartialUpdate(temp, backup, completed, primaryError)
+        }
+    }
+
+    private fun isProtectedMcpState(state: McpConfigurationKind): Boolean = when (state) {
+        McpConfigurationKind.CLI_MANAGED,
+        McpConfigurationKind.CLI_ONLY,
+        McpConfigurationKind.UNKNOWN,
+        McpConfigurationKind.MALFORMED -> true
+        McpConfigurationKind.STANDALONE,
+        McpConfigurationKind.NOT_CONFIGURED -> false
+    }
+
+    private fun discardPartialUpdate(temp: Path?, backup: Path?, completed: Boolean, primaryError: Throwable?) {
+        val cleanupFailures = mutableListOf<Throwable>()
+        temp?.let { path ->
+            runCatching { fileSystem.deleteIfExists(path) }.exceptionOrNull()?.let(cleanupFailures::add)
+        }
+        if (!completed) {
+            backup?.let { path ->
                 runCatching { fileSystem.deleteIfExists(path) }.exceptionOrNull()?.let(cleanupFailures::add)
             }
-            if (!completed) {
-                backup?.let { path ->
-                    runCatching { fileSystem.deleteIfExists(path) }.exceptionOrNull()?.let(cleanupFailures::add)
-                }
-            }
-            if (cleanupFailures.isNotEmpty()) {
-                cleanupFailures.drop(1).forEach(cleanupFailures.first()::addSuppressed)
-                throw cleanupFailures.first()
-            }
+        }
+        if (cleanupFailures.isEmpty()) {
+            return
+        }
+        cleanupFailures.drop(1).forEach(cleanupFailures.first()::addSuppressed)
+        val cleanupError = cleanupFailures.first()
+        if (primaryError != null) {
+            primaryError.addSuppressed(cleanupError)
+        } else {
+            GlobalLogOutput.get().logError("Unable to remove temporary MCP configuration files", cleanupError)
         }
     }
 
