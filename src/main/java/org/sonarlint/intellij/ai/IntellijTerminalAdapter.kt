@@ -61,8 +61,8 @@ private class IntellijTerminalSession : TerminalSession {
         runOnUiThread {
             result = try {
                 val manager = TerminalToolWindowManager.getInstance(project)
-                val widget = manager.createLocalShellWidget(project.basePath, "SonarQube CLI")
-                widget.executeCommand(renderedCommand)
+                val widget = manager.createShellWidget(project.basePath, "SonarQube CLI", true, true)
+                widget.sendCommandToExecute(renderedCommand)
                 TerminalLaunch.Started(
                     TerminalHandle(manager),
                     CompletableFuture.completedFuture(TerminalCompletion.ClosedWithoutExitStatus)
@@ -83,7 +83,7 @@ private class IntellijTerminalSession : TerminalSession {
     }
 
     private fun readConfiguredShellPath(project: Project): String? = try {
-        TerminalProjectOptionsProvider.getInstance(project).shellPath?.takeIf { it.isNotBlank() }
+        TerminalProjectOptionsProvider.getInstance(project).shellPath.takeIf { it.isNotBlank() }
     } catch (_: Throwable) {
         null
     }
