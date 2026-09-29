@@ -628,6 +628,8 @@ jobs:
           if [ -n "$KEY_VAR" ]; then
             echo "Writing license key to ${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
             echo "${!KEY_VAR}" | base64 -d > "${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
+            mkdir -p "${GITHUB_WORKSPACE}/its/idea-config"
+            echo "${!KEY_VAR}" | base64 -d > "${GITHUB_WORKSPACE}/its/idea-config/${KEY_FILE}"
           else
             echo "No license key required for $IDE_CODE"
           fi
@@ -637,6 +639,7 @@ jobs:
           sleep 3
 
       - name: Start IDE in background
+        if: matrix.test_suite == 'OpenInIdeTests' || matrix.test_suite == 'ConnectedAnalysisTests' || matrix.test_suite == 'ConfigurationTests'
         env:
           ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
           ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
@@ -648,6 +651,7 @@ jobs:
           echo "IDE_PID=$!" >> $GITHUB_ENV
 
       - name: Wait for IDE to start
+        if: matrix.test_suite == 'OpenInIdeTests' || matrix.test_suite == 'ConnectedAnalysisTests' || matrix.test_suite == 'ConfigurationTests'
         run: |
           echo "Waiting for IDE to start..."
           # retry every 5 seconds, max 150 times (750 seconds total)
@@ -686,7 +690,13 @@ jobs:
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
           ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
-        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
+        run: |
+          GRADLE_ARGS="--stacktrace -i -PijVersion=${IDEA_VERSION} --rerun-tasks"
+          if [ -z "${TEST_SUITE}" ] || [ "${TEST_SUITE}" = "Standalone" ]; then
+            ./gradlew :its:integrationTest ${GRADLE_ARGS}
+          else
+            ./gradlew :its:check ${GRADLE_ARGS} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin
+          fi
 
       - name: Stop recording
         if: always()

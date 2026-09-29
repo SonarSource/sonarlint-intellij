@@ -14,33 +14,27 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ * License along with the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  */
 package org.sonarlint.intellij.its.tests.flavor
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.condition.EnabledIf
-import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
+import org.sonarlint.intellij.its.BaseStandaloneIntegrationTest
+import org.sonarlint.intellij.its.driver.openProjectFile
+import org.sonarlint.intellij.its.driver.verifyCurrentFileTabContainsMessages
 
-
-/** Tests for Go language support (not limited to GoLand) */
-@EnabledIf("isGoPlugin")
-class GoPluginTests : BaseUiTest() {
+@EnabledIf("isPhpStorm")
+class PhpStormTests : BaseStandaloneIntegrationTest() {
 
     @Test
-    fun should_analyze_go() = uiTest {
-        openExistingProject("sample-go")
-
-        openFile("file.go")
-
+    fun should_analyze_php(testInfo: TestInfo) = uiTest(testInfo, "sample-php") {
+        openProjectFile("file.php")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
-            "Remove or correct this useless self-assignment."
+            "Replace the \"var\" keyword with the modifier \"public\".",
         )
     }
-
 }

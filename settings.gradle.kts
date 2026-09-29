@@ -114,7 +114,7 @@ dependencyResolutionManagement {
                     }
                     metadataSources { artifact() }
                 }
-                maven("$artifactoryUrl/intellij-releases") {
+                maven("$artifactoryUrl/jetbrains-intellij") {
                     name = "IntelliJ Repository (Releases)"
                     credentials {
                         username = artifactoryUsername
