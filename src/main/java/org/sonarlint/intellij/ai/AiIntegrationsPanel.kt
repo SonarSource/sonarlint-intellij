@@ -313,14 +313,12 @@ class AiIntegrationsPanel(
                 }
                 add(RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent)))
             }
-            McpConfigurationKind.CLI_MANAGED -> listOf(
-                RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
-            )
-            McpConfigurationKind.CLI_ONLY -> listOfNotNull(cliAction(snapshot, configuration.agent))
+            McpConfigurationKind.CLI_MANAGED,
             McpConfigurationKind.UNKNOWN,
             McpConfigurationKind.MALFORMED -> listOf(
                 RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
             )
+            McpConfigurationKind.CLI_ONLY -> listOfNotNull(cliAction(snapshot, configuration.agent))
         }
         addAgentRow(
             registry.displayName(configuration.agent),
