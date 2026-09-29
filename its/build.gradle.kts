@@ -10,6 +10,28 @@ plugins {
 
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 
+sourceSets {
+    create("integrationTest") {
+        kotlin.srcDir("src/integrationTest/kotlin")
+        resources.srcDir("src/integrationTest/resources")
+        compileClasspath += sourceSets["test"].output + sourceSets["test"].compileClasspath
+        runtimeClasspath += sourceSets["test"].output + sourceSets["test"].runtimeClasspath
+    }
+}
+
+val integrationTestImplementation by configurations.getting {
+    extendsFrom(configurations.testImplementation.get())
+}
+val integrationTestRuntimeOnly by configurations.getting {
+    extendsFrom(configurations.testRuntimeOnly.get())
+}
+
+// Repox serves the POM but Gradle's cached metadata omits the jar artifact for this legacy
+// coordinate; screen recording is unused by our Standalone ITs.
+configurations.matching { it.name.startsWith("integrationTest") }.configureEach {
+    exclude(group = "com.github.stephenc.monte", module = "monte-screen-recorder")
+}
+
 // ITs require IDEs whose test-framework JARs introduce transitive deps that vary by environment
 dependencyLocking {
     lockMode.set(LockMode.LENIENT)
@@ -89,6 +111,7 @@ dependencies {
         }
         testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Bundled)
+        testFramework(TestFrameworkType.Starter, configurationName = "integrationTestImplementation")
     }
     testImplementation(libs.its.orchestrator) {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
@@ -105,6 +128,10 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.four)
     testRuntimeOnly(libs.junit.launcher)
+
+    // ide-starter-squashed POM declares these but Gradle does not always resolve them onto
+    // integrationTestRuntimeClasspath (legacy monte coordinate; IntelliJ-repackaged coroutines).
+    integrationTestRuntimeOnly("com.intellij.platform:kotlinx-coroutines-core-jvm:1.8.0-intellij-9")
 }
 
 tasks {
@@ -120,11 +147,17 @@ tasks {
         }
     }
 
+    named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compileIntegrationTestKotlin") {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_21)
+        }
+    }
+
     test {
         useJUnitPlatform {
             val tag = System.getenv("TEST_SUITE")
             if (tag != null && (tag == "OpenInIdeTests" || tag == "ConnectedAnalysisTests"
-                    || tag == "ConfigurationTests" || tag == "Standalone")) {
+                    || tag == "ConfigurationTests")) {
                 includeTags(tag)
             }
         }
@@ -216,6 +249,104 @@ intellijPlatform {
         name = "sonarlint-intellij-its"
     }
     instrumentCode.set(false)
+}
+
+fun itsIdeProductCode(): String =
+    if (project.hasProperty("ijVersion")) project.property("ijVersion").toString().substringBefore('-')
+    else "IC"
+
+fun itsIdeVersion(): String =
+    if (project.hasProperty("ijVersion")) project.property("ijVersion").toString().substringAfter('-')
+    else intellijBuildVersion
+
+fun itsIdeBuildNumber(): String? {
+    val ideHome = itsIdeHome()?.let { File(it) } ?: return null
+    val productInfo = ideHome.resolve("product-info.json")
+    if (!productInfo.isFile) return null
+    return Regex(""""buildNumber"\s*:\s*"([^"]+)"""")
+        .find(productInfo.readText())
+        ?.groupValues
+        ?.get(1)
+}
+
+fun itsIdeHome(): String? {
+    val type = itsIdeProductCode()
+    val envVarPath = when (type) {
+        "IC", "IU" -> System.getenv("IDEA_HOME")
+        "CL" -> System.getenv("CLION_HOME")
+        "RD" -> System.getenv("RIDER_HOME")
+        "PY", "PC" -> System.getenv("PYCHARM_HOME")
+        "PS" -> System.getenv("PHPSTORM_HOME")
+        "GO" -> System.getenv("GOLAND_HOME")
+        else -> null
+    }
+    if (!envVarPath.isNullOrBlank() && File(envVarPath).exists()) {
+        return envVarPath
+    }
+    val downloaded = rootProject.layout.projectDirectory.dir(".intellijPlatform/ides/${type}-${itsIdeVersion()}").asFile
+    return downloaded.takeIf { it.exists() }?.absolutePath
+}
+
+val integrationTest by intellijPlatformTesting.testIdeUi.registering {
+    task {
+        val integrationTestSourceSet = sourceSets.getByName("integrationTest")
+        testClassesDirs = integrationTestSourceSet.output.classesDirs
+        classpath = integrationTestSourceSet.runtimeClasspath
+
+        dependsOn(":buildPlugin")
+        systemProperty(
+            "its.plugin.distributions.dir",
+            rootProject.layout.buildDirectory.dir("distributions").get().asFile.absolutePath,
+        )
+        systemProperty("its.ide.product", itsIdeProductCode())
+        systemProperty("its.ide.version", itsIdeVersion())
+        itsIdeHome()?.let { systemProperty("its.ide.home", it) }
+        itsIdeBuildNumber()?.let { systemProperty("its.ide.buildNumber", it) }
+        systemProperty("its.projects.dir", layout.projectDirectory.dir("projects").asFile.absolutePath)
+        systemProperty("its.idea.config.dir", layout.projectDirectory.dir("idea-config").asFile.absolutePath)
+
+        useJUnitPlatform {
+            val tag = System.getenv("TEST_SUITE")
+            if (tag == "Standalone") {
+                includeTags(tag)
+            }
+        }
+        testLogging.showStandardStreams = true
+    }
+}
+
+tasks.named<Test>("integrationTest") {
+    doFirst {
+        val pluginZip = rootProject.layout.buildDirectory
+            .file("distributions/sonarlint-intellij-${rootProject.version}.zip")
+            .get()
+            .asFile
+        check(pluginZip.isFile) { "Plugin zip not found: $pluginZip" }
+        systemProperty("its.plugin.archive", pluginZip.absolutePath)
+    }
+    javaLauncher.set(
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
+    )
+    // ide-starter transitives register xerces XML parser SPIs without the implementation jar on the classpath
+    systemProperty(
+        "javax.xml.parsers.SAXParserFactory",
+        "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
+    )
+    systemProperty(
+        "javax.xml.parsers.DocumentBuilderFactory",
+        "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+    )
+    // Starter skips its built-in xvfb-run wrapper whenever DISPLAY is set. On Wayland desktops DISPLAY is
+    // often :0 but Gradle-spawned IDE processes cannot connect to that socket — unset it so Starter starts
+    // its own virtual display. CI pre-starts Xvfb on :10; set ITS_USE_SYSTEM_DISPLAY=true to watch locally.
+    doFirst {
+        if (System.getenv("ITS_USE_SYSTEM_DISPLAY") != "true" && System.getenv("CI") != "true") {
+            environment.remove("DISPLAY")
+            environment.remove("WAYLAND_DISPLAY")
+        }
+    }
 }
 
 license {
