@@ -24,7 +24,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent // pragma: allowlist secret
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
 class AiAgentRegistryTests {
     @Test

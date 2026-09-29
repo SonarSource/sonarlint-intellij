@@ -19,10 +19,10 @@
  */
 package org.sonarlint.intellij.ai
 
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent // pragma: allowlist secret
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource // pragma: allowlist secret
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus // pragma: allowlist secret
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus // pragma: allowlist secret
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 
 data class CliState(
     val installation: CliInstallationStatus,

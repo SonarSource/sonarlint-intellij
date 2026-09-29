@@ -20,9 +20,9 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent // pragma: allowlist secret
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
 fun interface IdePluginDetector {
     fun isInstalledAndEnabled(pluginId: String): Boolean
