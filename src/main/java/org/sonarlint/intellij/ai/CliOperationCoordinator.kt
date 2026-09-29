@@ -39,7 +39,6 @@ class CliOperationCoordinator @JvmOverloads constructor(
     private val backendService: BackendService = getService(BackendService::class.java),
     private val terminalAdapter: CliTerminalAdapter = CliTerminalAdapterProvider.create(),
     private val connectionSelector: CliConnectionSelector = CliConnectionSelector(),
-    private val environment: AiIntegrationEnvironment = IntellijAiIntegrationEnvironment(),
     private val copyCommand: (String) -> Unit = { CopyPasteManager.getInstance().setContents(StringSelection(it)) },
     private val notifyUser: (Project, String, NotificationType) -> Unit = { project, message, type ->
         projectLessNotification("SonarQube CLI", message, type)
@@ -61,9 +60,6 @@ class CliOperationCoordinator @JvmOverloads constructor(
     }
 
     fun execute(project: Project, snapshot: AiIntegrationSnapshot, intent: AiIntegrationsIntent): Boolean {
-        if (environment.isRemote()) {
-            return false
-        }
         val action = when (val resolution = toAction(project, snapshot, intent)) {
             is ActionResolution.Ready -> resolution.action
             ActionResolution.Cancelled -> {

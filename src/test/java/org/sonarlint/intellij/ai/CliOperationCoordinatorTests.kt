@@ -181,27 +181,16 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(launchedCommand).contains("'sonar'").contains("''")
     }
 
-    @Test
-    fun `remote IDE never prepares or executes a local command`() {
-        val backend = mock<BackendService>()
-        val coordinator = coordinator(backend, SafeOptionalTerminalAdapter(), remote = true)
-
-        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)).isFalse()
-        verifyNoInteractions(backend)
-    }
-
     private fun coordinator(
         backend: BackendService,
         terminal: CliTerminalAdapter,
         copier: (String) -> Unit = {},
-        remote: Boolean = false,
         selector: CliConnectionSelector = CliConnectionSelector(),
         notifications: MutableList<Notification> = mutableListOf()
     ) = CliOperationCoordinator(
         backend,
         terminal,
         selector,
-        AiIntegrationEnvironment { remote },
         copier,
         { _, message, type -> notifications += Notification(message, type) },
         { refresh -> refresh() }
