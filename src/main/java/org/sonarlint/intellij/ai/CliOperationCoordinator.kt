@@ -24,7 +24,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.SystemInfo
 import java.awt.datatransfer.StringSelection
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -75,11 +74,16 @@ class CliOperationCoordinator @JvmOverloads constructor(
             return false
         }
         prepare(action).whenComplete { command, preparationError ->
-            if (preparationError != null) {
+            if (preparationError != null || command == null) {
                 complete(lease, CliOperationOutcome.PreparationFailed)
                 notify(project, "Unable to prepare the SonarQube CLI command. Check the selected connection and retry.", NotificationType.ERROR)
             } else {
-                launchOrCopy(lease, command)
+                try {
+                    launchOrCopy(lease, command)
+                } catch (_: Throwable) {
+                    complete(lease, CliOperationOutcome.LaunchFailed)
+                    notify(project, "The SonarQube CLI command could not be started. Retry from this view.", NotificationType.ERROR)
+                }
             }
         }
         return true
@@ -119,7 +123,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
                 }
             }
             is TerminalLaunch.Failed -> {
-                val copied = copyFallback(command)
+                val copied = copyFallback(lease.project, command)
                 complete(lease, CliOperationOutcome.LaunchFailed)
                 val message = if (copied) {
                     "The terminal could not be started. The command was copied; paste it into a terminal, run it, then refresh this view."
@@ -129,7 +133,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
                 notify(lease.project, message, NotificationType.WARNING)
             }
             TerminalLaunch.Unsupported -> {
-                if (copyFallback(command)) {
+                if (copyFallback(lease.project, command)) {
                     complete(lease, CliOperationOutcome.Copied)
                     notify(lease.project, "The SonarQube CLI command was copied. Paste it into a terminal, run it, then refresh this view.", NotificationType.INFORMATION)
                 } else {
@@ -140,8 +144,8 @@ class CliOperationCoordinator @JvmOverloads constructor(
         }
     }
 
-    private fun copyFallback(command: CliCommand): Boolean = try {
-        val shell = if (SystemInfo.isWindows) CommandShell.POWERSHELL else CommandShell.POSIX
+    private fun copyFallback(project: Project, command: CliCommand): Boolean = try {
+        val shell = terminalAdapter.shellFor(project) ?: return false
         copyCommand(CliCommandRenderer.render(command, shell))
         true
     } catch (_: RuntimeException) {

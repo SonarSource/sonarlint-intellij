@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.SystemInfo
 import java.util.concurrent.CompletableFuture
 import org.jetbrains.plugins.terminal.TerminalProjectOptionsProvider
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
@@ -39,6 +38,8 @@ class IntellijTerminalAdapter() : CliTerminalAdapter {
     }
 
     override fun focus(handle: Any): Boolean = terminalSession.focus(handle)
+
+    override fun shellFor(project: Project): CommandShell? = terminalSession.commandShell(project)
 }
 
 internal interface TerminalSession {
@@ -51,15 +52,8 @@ internal interface TerminalSession {
 
 private class IntellijTerminalSession : TerminalSession {
     override fun commandShell(project: Project): CommandShell? {
-        if (!SystemInfo.isWindows) {
-            return CommandShell.POSIX
-        }
-        val shellPath = TerminalProjectOptionsProvider.getInstance(project).shellPath.lowercase()
-        return when {
-            shellPath.contains("powershell") || shellPath.contains("pwsh") -> CommandShell.POWERSHELL
-            shellPath.contains("bash") || shellPath.contains("zsh") || shellPath.endsWith("sh.exe") -> CommandShell.POSIX
-            else -> null
-        }
+        val shellPath = readConfiguredShellPath(project) ?: return osDefaultCommandShell()
+        return classifyTerminalShell(shellPath)
     }
 
     override fun launch(project: Project, renderedCommand: String): TerminalLaunch {
@@ -88,6 +82,12 @@ private class IntellijTerminalSession : TerminalSession {
         return true
     }
 
+    private fun readConfiguredShellPath(project: Project): String? = try {
+        TerminalProjectOptionsProvider.getInstance(project).shellPath?.takeIf { it.isNotBlank() }
+    } catch (_: Throwable) {
+        null
+    }
+
     private fun runOnUiThread(action: () -> Unit) {
         val application = ApplicationManager.getApplication()
         if (application.isDispatchThread) {
@@ -99,3 +99,12 @@ private class IntellijTerminalSession : TerminalSession {
 }
 
 private data class TerminalHandle(val manager: TerminalToolWindowManager)
+
+internal fun classifyTerminalShell(shellPath: String): CommandShell? {
+    val fileName = shellPath.lowercase().substringAfterLast('/').substringAfterLast('\\')
+    return when {
+        "powershell" in fileName || "pwsh" in fileName -> CommandShell.POWERSHELL
+        "bash" in fileName || "zsh" in fileName || fileName == "sh" || fileName == "sh.exe" -> CommandShell.POSIX
+        else -> null
+    }
+}
