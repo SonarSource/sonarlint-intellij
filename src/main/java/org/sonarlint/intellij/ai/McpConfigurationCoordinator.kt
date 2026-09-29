@@ -39,6 +39,7 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.BackendReadyListener
+import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
 @Service(Service.Level.APP)
@@ -78,7 +79,22 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         val inspections = snapshot.agents.map { capability ->
             val path = registry.standaloneMcpPath(capability.agent)
             if (path != null && capability.standaloneMcpSupported) {
-                inspectForPresentation(capability.agent, path)
+                inspectForPresentation(capability.agent, path).exceptionally { error ->
+                    val detail = error.cause?.message ?: error.message
+                    McpAgentConfiguration(
+                        capability.agent,
+                        path,
+                        McpConfigurationKind.UNKNOWN,
+                        false,
+                        listOf(
+                            if (detail.isNullOrBlank()) {
+                                "Unable to inspect the MCP configuration."
+                            } else {
+                                "Unable to inspect the MCP configuration: $detail"
+                            }
+                        )
+                    )
+                }
             } else {
                 CompletableFuture.completedFuture(
                     McpAgentConfiguration(
@@ -170,11 +186,15 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         try {
             while (refreshRequested.getAndSet(false)) {
                 ownership.all().forEach { (agent, record) ->
-                    val path = registry.standaloneMcpPath(agent)
-                    if (path == null) {
-                        ownership.clearIfMatches(agent, record)
-                    } else {
-                        runSerialized(path) { refreshOwned(agent, path, record) }
+                    try {
+                        val path = registry.standaloneMcpPath(agent)
+                        if (path == null) {
+                            ownership.clearIfMatches(agent, record)
+                        } else {
+                            runSerialized(path) { refreshOwned(agent, path, record) }
+                        }
+                    } catch (error: Throwable) {
+                        logRefreshFailure(agent, error)
                     }
                 }
             }
@@ -373,6 +393,12 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     override fun dispose() {
         busConnection?.disconnect()
         refreshCallbacks.clear()
+    }
+
+    private fun logRefreshFailure(agent: AiAgent, error: Throwable) {
+        runCatching {
+            GlobalLogOutput.get().logError("Unable to refresh the managed MCP configuration for $agent", error)
+        }
     }
 }
 

@@ -112,6 +112,37 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun `one failed inspection leaves the other agents in the snapshot`() {
+        val registry = mock<AiAgentRegistry>()
+        val cursorPath = tempDir.resolve("cursor.json")
+        val claudePath = tempDir.resolve("claude.json")
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(cursorPath)
+        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(claudePath)
+        whenever(backend.inspectMcpConfiguration(eq(AiAgent.CURSOR), any())).thenReturn(
+            CompletableFuture.failedFuture(IllegalStateException("access denied"))
+        )
+        whenever(backend.inspectMcpConfiguration(eq(AiAgent.CLAUDE_CODE), any())).thenReturn(
+            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
+        )
+
+        val inspected = coordinator(registry = registry).inspectSnapshot(
+            baseSnapshot(
+                listOf(
+                    capability(AiAgent.CURSOR, standalone = true),
+                    capability(AiAgent.CLAUDE_CODE, standalone = true)
+                )
+            )
+        ).get()
+
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).state).isEqualTo(McpConfigurationKind.UNKNOWN)
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).owned).isFalse()
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).diagnostics)
+            .anyMatch { it.contains("access denied") }
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state)
+            .isEqualTo(McpConfigurationKind.NOT_CONFIGURED)
+    }
+
+    @Test
     fun `transaction preserves unrelated content creates backup and records ownership after success`() {
         val path = tempDir.resolve("mcp.json")
         Files.writeString(path, "{\"unrelated\":true}")
@@ -443,6 +474,20 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         )
         coordinator.backendReady()
         assertThat(ownership.connectionId(AiAgent.CLAUDE_CODE)).isNull()
+    }
+
+    @Test
+    fun `one failing owned agent does not stop refresh of the others`() {
+        val registry = mock<AiAgentRegistry>()
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenThrow(IllegalStateException("unreadable"))
+        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(null)
+        ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("cursor".toByteArray()))
+        ownership.remember(AiAgent.CLAUDE_CODE, "connection", managedFingerprint("claude".toByteArray()))
+
+        coordinator(registry = registry).backendReady()
+
+        assertThat(ownership.record(AiAgent.CURSOR)?.connectionId).isEqualTo("connection")
+        assertThat(ownership.record(AiAgent.CLAUDE_CODE)).isNull()
     }
 
     private fun coordinator(
