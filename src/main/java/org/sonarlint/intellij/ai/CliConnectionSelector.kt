@@ -20,7 +20,13 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBList
+import com.intellij.ui.components.JBScrollPane
+import java.awt.BorderLayout
+import javax.swing.JComponent
+import javax.swing.JPanel
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 
 fun interface ConnectionChoiceUi {
@@ -32,15 +38,13 @@ class IntellijConnectionChoiceUi : ConnectionChoiceUi {
         val labels = connections.map { connection ->
             connection.organization?.let { "${connection.connectionId} ($it)" } ?: connection.connectionId
         }.toTypedArray()
-        val selected = Messages.showChooseDialog(
+        val selected = ConnectionChoiceDialog(
             project,
             "Choose a SonarQube connection for the CLI sign-in.",
             "SonarQube CLI",
-            null,
-            labels,
-            labels.firstOrNull()
-        )
-        return selected.takeIf { it >= 0 }?.let { connections[it].connectionId }
+            labels.toList()
+        ).choose()
+        return selected?.let { connections[it].connectionId }
     }
 }
 
@@ -69,4 +73,33 @@ sealed interface ConnectionSelection {
     data class Selected(val connectionId: String) : ConnectionSelection
     data object InteractiveLogin : ConnectionSelection
     data object Cancelled : ConnectionSelection
+}
+
+internal class ConnectionChoiceDialog(
+    project: Project,
+    private val message: String,
+    dialogTitle: String,
+    choices: List<String>
+) : DialogWrapper(project) {
+    private val choiceList = JBList(choices)
+
+    init {
+        title = dialogTitle
+        init()
+        if (choices.isEmpty()) {
+            okAction.isEnabled = false
+        } else {
+            choiceList.selectedIndex = 0
+        }
+    }
+
+    fun choose(): Int? = if (showAndGet()) choiceList.selectedIndex.takeIf { it >= 0 } else null
+
+    override fun createCenterPanel(): JComponent {
+        choiceList.visibleRowCount = choiceList.model.size.coerceIn(2, 8)
+        val panel = JPanel(BorderLayout(0, 8))
+        panel.add(JBLabel(message), BorderLayout.NORTH)
+        panel.add(JBScrollPane(choiceList), BorderLayout.CENTER)
+        return panel
+    }
 }

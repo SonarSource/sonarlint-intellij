@@ -39,7 +39,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
     private val terminalAdapter: CliTerminalAdapter = CliTerminalAdapterProvider.create(),
     private val connectionSelector: CliConnectionSelector = CliConnectionSelector(),
     private val copyCommand: (String) -> Unit = { CopyPasteManager.getInstance().setContents(StringSelection(it)) },
-    private val notifyUser: (Project, String, NotificationType) -> Unit = { project, message, type ->
+    private val notifyUser: (Project, String, NotificationType) -> Unit = { _, message, type ->
         projectLessNotification("SonarQube CLI", message, type)
     },
     private val dispatchRefresh: (() -> Unit) -> Unit = { refresh ->
