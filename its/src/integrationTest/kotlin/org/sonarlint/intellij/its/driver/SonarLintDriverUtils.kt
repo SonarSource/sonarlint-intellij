@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.its.driver
 
 import com.intellij.driver.client.Driver
+import com.intellij.driver.client.Remote
 import com.intellij.driver.sdk.invokeAction
 import com.intellij.driver.sdk.openFile
 import com.intellij.driver.sdk.ui.enabled
@@ -32,7 +33,6 @@ import com.intellij.driver.sdk.ui.components.dialog
 import com.intellij.driver.sdk.ui.components.StripeButtonUi
 import com.intellij.driver.sdk.ui.components.ideFrame
 import com.intellij.driver.sdk.ui.components.settingsDialog
-import com.intellij.driver.sdk.ui.components.showSettings
 import com.intellij.driver.sdk.ui.components.welcomeScreen
 import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.sdk.waitForIndicators
@@ -64,9 +64,14 @@ fun Driver.openExistingProject(projectName: String) {
 fun Driver.closeProject() {
     invokeAction("CloseProject", false)
     waitFor(duration = 2.minutes, errorMessage = "project to close") {
-        var projectClosed = false
-        ideFrame { projectClosed = project == null }
-        projectClosed
+        val onWelcomeScreen = runCatching { welcomeScreen { } }.isSuccess
+        if (onWelcomeScreen) {
+            true
+        } else {
+            var projectClosed = false
+            runCatching { ideFrame { projectClosed = project == null } }
+            projectClosed
+        }
     }
 }
 
@@ -104,6 +109,11 @@ fun Driver.analyzeCurrentFileFromToolWindow() {
 
 fun Driver.analyzeAndVerifyReportTabContainsMessages(vararg expectedMessages: String) {
     invokeAction("SonarLint.AnalyzeAllFiles", false)
+    optionalStep {
+        ui.dialog(title = "SonarQube for IDE - Analyze All Files") {
+            pressButton("Proceed")
+        }
+    }
     waitForIndicators(5.minutes)
     sonarLintPanel("ReportPanel") {
         expectedMessages.forEach { message ->
@@ -114,22 +124,35 @@ fun Driver.analyzeAndVerifyReportTabContainsMessages(vararg expectedMessages: St
 
 fun Driver.toggleRule(ruleKey: String, ruleText: String) {
     ideFrame {
-        showSettings()
+        invokeAction("ShowSettings", false)
+        waitForIndicators(1.minutes)
         settingsDialog {
-            Thread.sleep(3000)
-            x(xQuery { byClass("SettingsSearch") }).keyboard { enterText("SonarQube for IDE") }
-            Thread.sleep(1000)
+            val settingsSearch = x(xQuery { byClass("SettingsSearch") })
+                .x(xQuery { byClass("TextFieldWithProcessing") })
+            settingsSearch.shouldBe("Settings search field", enabled, timeout = 1.minutes)
+            settingsSearch.click()
+            keyboard {
+                hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_A)
+                enterText("SonarQube for IDE")
+            }
+            settingsTree.shouldBe("SonarQube for IDE in settings tree", haveText("SonarQube for IDE"), timeout = 2.minutes)
             settingsTree.clickPath("Tools", "SonarQube for IDE")
-            x(xQuery { byVisibleText("Rules") }).shouldBe("SonarQube for IDE Rules tab", present, timeout = 1.minutes).click()
-            Thread.sleep(2000)
-            x(xQuery { byClass("SearchTextField") }).keyboard { enterText(ruleKey) }
-            x(xQuery { byVisibleText(ruleText) }).shouldBe("Rule '$ruleText'", present, timeout = 2.minutes).click()
-            Thread.sleep(1000)
-            findText(ruleText).doubleClick()
-            x(xQuery { byVisibleText("Apply") }).shouldBe("Apply to become enabled", enabled, timeout = 10.seconds).click()
+            x(xQuery { byVisibleText("Rules") }).shouldBe("SonarQube for IDE Rules tab", present, timeout = 2.minutes).click()
+            content {
+                val ruleSearch = x(xQuery { byClass("SearchTextField") })
+                    .x(xQuery { byClass("TextFieldWithProcessing") })
+                ruleSearch.shouldBe("Rules search field", present, timeout = 1.minutes)
+                ruleSearch.click()
+                keyboard { enterText(ruleKey) }
+                val rulesTable = x(xQuery { byClass("RulesTreeTable") })
+                rulesTable.shouldBe("Rule '$ruleText' visible", haveText(ruleText), timeout = 2.minutes)
+                rulesTable.findAllText { it.text == ruleText }.first().doubleClick()
+            }
+            x(xQuery { byVisibleText("Apply") }).shouldBe("Apply to become enabled", enabled, timeout = 2.minutes).click()
             okButton.click()
         }
     }
+    waitForIndicators(1.minutes)
 }
 
 fun Driver.setFocusOnNewCode() {
@@ -142,9 +165,16 @@ fun Driver.resetFocusOnNewCode() {
 
 private fun Driver.toggleFocusOnNewCodeFilter() {
     sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
-        x(xQuery { byAccessibleName("Filter") }).click()
-        x(xQuery { byTooltip("Focus on new code") }).click()
-        x(xQuery { byAccessibleName("Filter") }).click()
+        val filterToggle = x(xQuery { byTooltip("Show Filters") })
+        val focusOnNewCode = x(xQuery { byTooltip("Focus on new code") })
+        if (!focusOnNewCode.present() || !focusOnNewCode.isVisible()) {
+            filterToggle.click()
+            focusOnNewCode.shouldBe("Focus on new code filter", present, timeout = 30.seconds)
+        }
+        focusOnNewCode.click()
+        if (focusOnNewCode.present() && focusOnNewCode.isVisible()) {
+            filterToggle.click()
+        }
     }
 }
 
@@ -154,15 +184,17 @@ fun Driver.excludeFile(filePath: String) {
     }
     ui.dialog(title = "Project Settings") {
         findText("File Exclusions").click()
-        x(xQuery { byAccessibleName("Add") }).click()
+        x(xQuery { byTooltip("Add") }).click()
         dialog(title = "Add SonarQube for IDE File Exclusion") {
-            x(xQuery { byClass("TextFieldWithBrowseButton") }).click()
+            xx(xQuery { byClass("TextFieldWithBrowseButton") }).list().first().click()
             keyboard { enterText(filePath) }
-            x(xQuery { byVisibleText("OK") }).shouldBe("OK to become enabled", enabled, timeout = 5.seconds)
+            x(xQuery { and(byClass("JButton"), byVisibleText("OK")) })
+                .shouldBe("OK to become enabled", enabled, timeout = 30.seconds)
             pressButton("OK")
         }
         pressButton("OK")
     }
+    waitForIndicators(1.minutes)
 }
 
 fun Driver.removeFileExclusion(filePath: String) {
@@ -175,13 +207,13 @@ fun Driver.removeFileExclusion(filePath: String) {
         xx(xQuery { byClass("ActionButton") }).list()[1].click()
         pressButton("OK")
     }
+    waitForIndicators(1.minutes)
 }
 
 fun Driver.closeWalkthrough() {
     optionalStep {
         ideFrame {
-            openToolWindowFromStripe(WALKTHROUGH_TOOL_WINDOW)
-            findText("Next: Learn as You Code").click()
+            openToolWindow(title = WALKTHROUGH_TOOL_WINDOW)
             keyboard { hotKey(KeyEvent.VK_SHIFT, KeyEvent.VK_ESCAPE) }
         }
     }
@@ -220,16 +252,31 @@ fun Driver.handleClionCppSetup() {
 private fun Driver.ensureSonarLintToolWindowVisible() {
     optionalStep { closeWalkthrough() }
     ideFrame {
-        openToolWindowFromStripe(SONARLINT_TOOL_WINDOW)
+        openToolWindow(title = SONARLINT_TOOL_WINDOW)
     }
 }
 
-private fun com.intellij.driver.sdk.ui.components.IdeaFrameUI.openToolWindowFromStripe(title: String) {
-    val stripeButton = x(StripeButtonUi::class.java) { byTooltip(title) }
-    stripeButton.shouldBe("Tool window stripe button '$title'", present, timeout = 1.minutes)
-    if (!stripeButton.isSelected()) {
-        stripeButton.open()
+@Remote("com.intellij.ide.actions.ActivateToolWindowAction\$Manager")
+private interface ActivateToolWindowActionManager {
+    fun getActionIdForToolWindow(id: String): String
+}
+
+private fun Driver.activateToolWindow(toolWindowId: String) {
+    val actionId = utility(ActivateToolWindowActionManager::class).getActionIdForToolWindow(toolWindowId)
+    invokeAction(actionId, false)
+}
+
+private fun com.intellij.driver.sdk.ui.components.IdeaFrameUI.openToolWindow(title: String) {
+    runCatching {
+        val stripeButton = x(StripeButtonUi::class.java) { or(byTooltip(title), byAccessibleName(title)) }
+        if (stripeButton.present()) {
+            if (!stripeButton.isSelected()) {
+                stripeButton.open()
+            }
+            return
+        }
     }
+    driver.activateToolWindow(title)
 }
 
 private const val FINDINGS_TAB = "Findings"
@@ -254,22 +301,26 @@ private fun Driver.sonarLintPanel(
 
 private fun Driver.openProjectInFileBrowser(projectPath: java.nio.file.Path) {
     val dialogTitle = if (System.getProperty("its.ide.product") == "RD") "Select Path" else "Open File or Project"
+    val projectsDir = projectPath.parent.normalize().toString()
+    val normalizedPath = projectPath.normalize().toString()
+    val projectDirName = projectPath.fileName.toString()
     ui.dialog(title = dialogTitle) {
         val textField = x(xQuery { or(byClass("BorderlessTextField"), byClass("JTextField")) })
-        val projectsDir = projectPath.parent.normalize().toString()
+        x(xQuery { and(byClass("JButton"), byVisibleText("OK")) })
+            .shouldBe("OK button", enabled, timeout = 1.minutes)
         textField.click()
         keyboard {
             hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_A)
             enterText(projectsDir)
         }
         x(xQuery { byAccessibleName("Refresh") }).click()
-        Thread.sleep(2000)
+        findFirst(projectDirName, duration = 1.minutes)
         textField.click()
         keyboard {
             hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_A)
-            enterText(projectPath.normalize().toString())
+            enterText(normalizedPath)
         }
-        Thread.sleep(2000)
+        findFirst(projectDirName, duration = 1.minutes)
         pressButton("OK")
     }
 }
