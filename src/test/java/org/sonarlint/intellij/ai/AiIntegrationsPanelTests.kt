@@ -200,8 +200,8 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),
             listOf(
-                AgentCapability(AiAgent.CURSOR, setOf(AiAgentDetectionSource.IDE), true, true),
-                AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, false)
+                AgentCapability(AiAgent.CURSOR, setOf(AiAgentDetectionSource.IDE), true, false),
+                AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, true)
             ),
             emptyList(),
             null
@@ -210,19 +210,28 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
 
         assertThat(labelTexts(panel)).contains("2 agents detected").doesNotContain("Not supported")
-        val disclosure = descendants(panel).filterIsInstance<JToggleButton>().first { it.text.contains("Manage agents") }
-        assertThat(disclosure.isSelected).isFalse()
-        assertThat(disclosure.text).startsWith("▸")
-        disclosure.doClick()
-        assertThat(labelTexts(panel)).contains("Supported", "Not supported")
-        val expandedDisclosure = descendants(panel).filterIsInstance<JToggleButton>().first { it.text.contains("Manage agents") }
-        assertThat(expandedDisclosure).isSameAs(disclosure)
-        assertThat(expandedDisclosure.isSelected).isTrue()
-        assertThat(expandedDisclosure.text).startsWith("▾")
-        expandedDisclosure.doClick()
-        assertThat(labelTexts(panel)).doesNotContain("Not supported")
-        assertThat(disclosure.isSelected).isFalse()
-        assertThat(disclosure.text).startsWith("▸")
+        val disclosures = descendants(panel).filterIsInstance<JToggleButton>()
+        assertThat(disclosures).hasSize(2)
+        val cliDisclosure = disclosures[0]
+        val mcpDisclosure = disclosures[1]
+        val cliCard = cliDisclosure.parent.parent as Container
+        val mcpCard = mcpDisclosure.parent.parent as Container
+
+        cliDisclosure.doClick()
+        assertThat(descendants(panel).filterIsInstance<JToggleButton>()[0]).isSameAs(cliDisclosure)
+        assertThat(cliDisclosure.isSelected).isTrue()
+        assertThat(cliDisclosure.text).startsWith("▾")
+        assertThat(labelTexts(cliCard)).containsSubsequence("Cursor", "Supported", "GitHub Copilot", "Not supported")
+        assertThat(labelTexts(mcpCard)).doesNotContain("Not supported")
+
+        mcpDisclosure.doClick()
+        assertThat(labelTexts(mcpCard)).containsSubsequence("Cursor", "Not supported", "GitHub Copilot", "Supported")
+
+        cliDisclosure.doClick()
+        assertThat(labelTexts(cliCard)).doesNotContain("Not supported")
+        assertThat(cliDisclosure.isSelected).isFalse()
+        assertThat(cliDisclosure.text).startsWith("▸")
+        assertThat(mcpDisclosure.isSelected).isTrue()
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }

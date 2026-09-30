@@ -361,12 +361,12 @@ class AiIntegrationsPanel(
             panel.add(verticalSpace(8))
         }
 
-        fun addAgentRow(name: String, status: String, description: String? = null, actions: List<RowAction> = emptyList()) {
+        fun addAgentRow(name: String, status: String) {
             val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10).apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
                 border = JBUI.Borders.empty(9, 11)
                 alignmentX = Component.LEFT_ALIGNMENT
-                maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(if (description == null) 48 else 66))
+                maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(48))
             }
             row.add(JBPanel<JBPanel<*>>().apply {
                 isOpaque = false
@@ -380,26 +380,7 @@ class AiIntegrationsPanel(
                     font = JBFont.small()
                     alignmentX = Component.LEFT_ALIGNMENT
                 })
-                description?.let {
-                    add(JBLabel(it).apply {
-                        foreground = SECONDARY_TEXT
-                        font = JBFont.small()
-                        alignmentX = Component.LEFT_ALIGNMENT
-                    })
-                }
             }, BorderLayout.CENTER)
-            if (actions.isNotEmpty()) {
-                row.add(JBPanel<JBPanel<*>>().apply {
-                    isOpaque = false
-                    layout = BoxLayout(this, BoxLayout.X_AXIS)
-                    actions.forEachIndexed { index, action ->
-                        if (index > 0) {
-                            add(horizontalSpace(4))
-                        }
-                        add(createCompactButton(action.label, action.intent))
-                    }
-                }, BorderLayout.EAST)
-            }
             panel.add(row)
             panel.add(verticalSpace(6))
         }
@@ -417,11 +398,6 @@ class AiIntegrationsPanel(
     }
 
     private fun createSecondaryButton(label: String, icon: Icon, intent: AiIntegrationsIntent): JButton = OutlinedActionButton(label, icon).apply {
-        addActionListener { intentListener(intent) }
-    }
-
-    private fun createCompactButton(label: String, intent: AiIntegrationsIntent): JButton = JButton(label).apply {
-        margin = JBUI.insets(2, 8)
         addActionListener { intentListener(intent) }
     }
 
@@ -445,8 +421,6 @@ class AiIntegrationsPanel(
         disposed.set(true)
         intentListener = {}
     }
-
-    internal data class RowAction(val label: String, val intent: AiIntegrationsIntent)
 
     private class ContentColumn : JBPanel<ContentColumn>() {
         var contentWidth = NARROW_CONTENT_WIDTH
@@ -667,8 +641,6 @@ private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBT
 }
 
 private fun verticalSpace(size: Int): Component = Box.createRigidArea(Dimension(0, JBUI.scale(size)))
-
-private fun horizontalSpace(size: Int): Component = Box.createRigidArea(Dimension(JBUI.scale(size), 0))
 
 private fun CliAuthenticationStatus.displayText() = when (this) {
     CliAuthenticationStatus.AUTHENTICATED -> "Authenticated"
