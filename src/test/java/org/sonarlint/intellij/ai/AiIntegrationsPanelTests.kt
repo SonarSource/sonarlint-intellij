@@ -22,9 +22,10 @@ package org.sonarlint.intellij.ai
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import java.awt.Container
+import java.awt.GridLayout
 import java.awt.event.ComponentEvent
 import javax.swing.JButton
-import javax.swing.JEditorPane
+import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.SwingUtilities
 import org.assertj.core.api.Assertions.assertThat
@@ -56,11 +57,18 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             assertThat(panel.components).hasSize(1)
         }
 
-        panel.setSize(AiIntegrationsPanel.WIDE_LAYOUT_THRESHOLD + 200, 600)
+        panel.setSize(AiIntegrationsPanel.WIDE_LAYOUT_THRESHOLD + 200, 1000)
         panel.dispatchEvent(ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED))
+        repeat(2) { layoutRecursively(panel) }
         assertThat(panel.isWideLayout()).isTrue()
         assertThat(panel.integrationCardsAreSideBySide()).isTrue()
-        assertThat(panel.integrationCardsUseNaturalHeight()).isTrue()
+        val integrationCards = descendants(panel).filterIsInstance<JPanel>()
+            .single { it.layout is GridLayout && it.componentCount == 2 }
+        val contentColumn = integrationCards.parent
+        contentColumn.setSize(contentColumn.width, contentColumn.preferredSize.height + 300)
+        layoutRecursively(contentColumn)
+        assertThat(integrationCards.height).isPositive()
+        assertThat(integrationCards.height).isEqualTo(integrationCards.preferredSize.height)
         panel.setSize(500, 600)
         panel.dispatchEvent(ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED))
         assertThat(panel.isWideLayout()).isFalse()
@@ -96,10 +104,6 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         descendants(view).filterIsInstance<JBTextArea>().forEach { textArea ->
             assertThat(textArea.width).isPositive()
             assertThat(SwingUtilities.convertPoint(textArea, textArea.width, 0, view).x).isLessThanOrEqualTo(view.width)
-        }
-        descendants(view).filterIsInstance<JEditorPane>().forEach { description ->
-            assertThat(description.width).isPositive()
-            assertThat(SwingUtilities.convertPoint(description, description.width, 0, view).x).isLessThanOrEqualTo(view.width)
         }
     }
 

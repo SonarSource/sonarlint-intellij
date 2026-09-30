@@ -106,10 +106,6 @@ class AiIntegrationsPanel : JBPanel<AiIntegrationsPanel>(BorderLayout()), Dispos
 
     internal fun integrationCardsAreSideBySide(): Boolean = integrationCards?.layout is GridLayout
 
-    internal fun integrationCardsUseNaturalHeight(): Boolean = integrationCards?.let {
-        it.maximumSize.height == it.preferredSize.height
-    } == true
-
     private fun rebuild() {
         cards.removeAll()
         cards.contentWidth = if (wide) WIDE_CONTENT_WIDTH else NARROW_CONTENT_WIDTH
