@@ -237,38 +237,49 @@ class AiIntegrationsPanel(
             snapshot.agents,
             { it.cliIntegrationSupported },
             cliDetailsExpanded
-        ) {
-            cliDetailsExpanded = !cliDetailsExpanded
-            rebuild()
-        }
+        ) { cliDetailsExpanded = it }
     }
 
     private fun CardBuilder.addMcpOverview(snapshot: AiIntegrationSnapshot) {
-        addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) {
-            mcpDetailsExpanded = !mcpDetailsExpanded
-            rebuild()
-        }
+        addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) { mcpDetailsExpanded = it }
     }
 
     private fun CardBuilder.addCapabilityOverview(
         capabilities: List<AgentCapability>,
         supported: (AgentCapability) -> Boolean,
         expanded: Boolean,
-        toggle: () -> Unit
+        onExpandedChange: (Boolean) -> Unit
     ) {
         addMetadata(listOf(agentCountText(capabilities.size)))
-        addDisclosure(expanded, toggle)
-        if (expanded) {
-            if (capabilities.isEmpty()) {
-                addMessage(NO_AGENTS_MESSAGE)
-            }
-            capabilities.forEach { capability ->
-                addAgentRow(
-                    registry.displayName(capability.agent),
-                    if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS
-                )
-            }
+        val details = JBPanel<JBPanel<*>>().apply {
+            isOpaque = false
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            alignmentX = Component.LEFT_ALIGNMENT
         }
+        fun updateDetails(show: Boolean) {
+            details.removeAll()
+            if (show) {
+                val detailBuilder = CardBuilder(details)
+                if (capabilities.isEmpty()) {
+                    detailBuilder.addMessage(NO_AGENTS_MESSAGE)
+                }
+                capabilities.forEach { capability ->
+                    detailBuilder.addAgentRow(
+                        registry.displayName(capability.agent),
+                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS
+                    )
+                }
+            }
+            details.isVisible = show
+            cards.revalidate()
+            cards.repaint()
+        }
+        addDisclosure(expanded) { show ->
+            onExpandedChange(show)
+            updateDetails(show)
+        }
+        panel.add(details)
+        updateDetails(expanded)
     }
 
     private fun createCard(
@@ -330,7 +341,7 @@ class AiIntegrationsPanel(
         add(Box.createHorizontalGlue())
     }
 
-    private inner class CardBuilder(private val panel: JPanel) {
+    private inner class CardBuilder(val panel: JPanel) {
         fun addMessage(text: String) {
             panel.add(bodyText(text))
             panel.add(verticalSpace(10))
@@ -345,7 +356,7 @@ class AiIntegrationsPanel(
             panel.add(verticalSpace(10))
         }
 
-        fun addDisclosure(expanded: Boolean, toggle: () -> Unit) {
+        fun addDisclosure(expanded: Boolean, toggle: (Boolean) -> Unit) {
             panel.add(createDisclosureButton(expanded, toggle))
             panel.add(verticalSpace(8))
         }
@@ -414,8 +425,8 @@ class AiIntegrationsPanel(
         addActionListener { intentListener(intent) }
     }
 
-    private fun createDisclosureButton(expanded: Boolean, toggle: () -> Unit): JToggleButton =
-        JToggleButton("${if (expanded) "▾" else "▸"} $MANAGE_AGENTS_LABEL", expanded).apply {
+    private fun createDisclosureButton(expanded: Boolean, toggle: (Boolean) -> Unit): JToggleButton =
+        JToggleButton(disclosureLabel(expanded), expanded).apply {
             isOpaque = false
             isContentAreaFilled = false
             isBorderPainted = false
@@ -424,7 +435,10 @@ class AiIntegrationsPanel(
             alignmentX = Component.LEFT_ALIGNMENT
             foreground = LINK_TEXT
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            addActionListener { toggle() }
+            addActionListener {
+                text = disclosureLabel(isSelected)
+                toggle(isSelected)
+            }
         }
 
     override fun dispose() {
@@ -633,6 +647,8 @@ private fun CliState.toStatus(): CardStatus = when (installation) {
     CliInstallationStatus.UNUSABLE -> CardStatus(UNAVAILABLE_STATUS, StatusTone.WARNING)
     CliInstallationStatus.INSTALLED -> CardStatus(INSTALLED_STATUS, StatusTone.SUCCESS)
 }
+
+private fun disclosureLabel(expanded: Boolean): String = "${if (expanded) "▾" else "▸"} $MANAGE_AGENTS_LABEL"
 
 private fun agentCountText(count: Int): String = "$count ${if (count == 1) "agent" else "agents"} detected"
 

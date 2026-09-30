@@ -216,8 +216,13 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         disclosure.doClick()
         assertThat(labelTexts(panel)).contains("Supported", "Not supported")
         val expandedDisclosure = descendants(panel).filterIsInstance<JToggleButton>().first { it.text.contains("Manage agents") }
+        assertThat(expandedDisclosure).isSameAs(disclosure)
         assertThat(expandedDisclosure.isSelected).isTrue()
         assertThat(expandedDisclosure.text).startsWith("▾")
+        expandedDisclosure.doClick()
+        assertThat(labelTexts(panel)).doesNotContain("Not supported")
+        assertThat(disclosure.isSelected).isFalse()
+        assertThat(disclosure.text).startsWith("▸")
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }
