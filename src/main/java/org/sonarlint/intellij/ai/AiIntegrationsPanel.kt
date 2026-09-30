@@ -83,7 +83,6 @@ class AiIntegrationsPanel : JBPanel<AiIntegrationsPanel>(BorderLayout()), Dispos
     private var intentListener: (AiIntegrationsIntent) -> Unit = {}
     private var currentState: AiIntegrationsPanelState = AiIntegrationsPanelState.Loading
     private var wide = false
-    private var integrationCards: JPanel? = null
 
     val isDisposed: Boolean
         get() = disposed.get()
@@ -123,20 +122,12 @@ class AiIntegrationsPanel : JBPanel<AiIntegrationsPanel>(BorderLayout()), Dispos
         rebuild()
     }
 
-    internal fun renderedState(): AiIntegrationsPanelState = currentState
-
-    internal fun isWideLayout(): Boolean = wide
-
-    internal fun integrationCardsAreSideBySide(): Boolean = integrationCards?.layout is GridLayout
-
     private fun rebuild() {
         cards.removeAll()
         cards.contentWidth = if (wide) WIDE_CONTENT_WIDTH else NARROW_CONTENT_WIDTH
         cards.add(createPageHeader())
         cards.add(verticalSpace(20))
-        val newIntegrationCards = createIntegrationCards(createCliCard(currentState), createMcpCard(currentState))
-        integrationCards = newIntegrationCards
-        cards.add(newIntegrationCards)
+        cards.add(createIntegrationCards(createCliCard(currentState), createMcpCard(currentState)))
         cards.add(verticalSpace(12))
         cards.add(createPageFooter())
         cards.revalidate()
