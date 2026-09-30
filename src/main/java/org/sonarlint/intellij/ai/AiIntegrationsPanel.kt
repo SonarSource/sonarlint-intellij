@@ -28,6 +28,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.SwingHelper
 import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.Color
@@ -52,6 +53,8 @@ import javax.swing.JScrollPane
 import javax.swing.JToggleButton
 import javax.swing.ScrollPaneConstants
 import javax.swing.Scrollable
+import javax.swing.SwingConstants
+import javax.swing.event.HyperlinkEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 
@@ -59,7 +62,9 @@ private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
 private const val PAGE_DESCRIPTION = "Find and fix issues as your agent writes code."
 private const val CLI_CARD_TITLE = "SonarQube CLI"
 private const val CLI_CARD_HEADLINE = "Catch issues as AI writes code"
-private const val CLI_CARD_DESCRIPTION = "Give your agents local code analysis to find bugs and vulnerabilities before you commit."
+private const val SONAR_VORTEX_ANCHOR = "#SonarVortex"
+private val CLI_CARD_DESCRIPTION_HTML =
+    "Give your agents local code analysis with <a href=\"$SONAR_VORTEX_ANCHOR\">Sonar Vortex&nbsp;<icon src=\"ide/external_link_arrow.svg\"></a> to find bugs and vulnerabilities before you commit."
 private const val MCP_CARD_TITLE = "SonarQube MCP Server"
 private const val MCP_CARD_HEADLINE = "Bring project context to your agent"
 private const val MCP_CARD_DESCRIPTION = "Ask your agent about issues, quality gates, and coverage in your SonarQube projects."
@@ -78,6 +83,8 @@ private const val MANAGE_AGENTS_LABEL = "Manage agents"
 private const val SUPPORTED_STATUS = "Supported"
 private const val NOT_SUPPORTED_STATUS = "Not supported"
 private const val ZERO_SUPPORTED_STATUS = "0 supported"
+private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
+private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 
 class AiIntegrationsPanel(
     private val registry: AiAgentRegistry = AiAgentRegistry()
@@ -190,7 +197,7 @@ class AiIntegrationsPanel(
     private fun createCliCard(state: AiIntegrationsPanelState): JPanel = createCard(
         CLI_CARD_TITLE,
         CLI_CARD_HEADLINE,
-        bodyText(CLI_CARD_DESCRIPTION, secondary = true),
+        createCliDescription(),
         cliStatus(state)
     ) {
         when (state) {
@@ -202,6 +209,7 @@ class AiIntegrationsPanel(
             is AiIntegrationsPanelState.Empty -> addCliOverview(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addCliOverview(state.snapshot)
         }
+        addDocumentationLink(CLI_GUIDE_LABEL, AiIntegrationsIntent.OpenCliDocumentation)
     }
 
     private fun createMcpCard(state: AiIntegrationsPanelState): JPanel = createCard(
@@ -215,6 +223,19 @@ class AiIntegrationsPanel(
             is AiIntegrationsPanelState.Error -> addMessage(MCP_ERROR_MESSAGE)
             is AiIntegrationsPanelState.Empty -> addMcpOverview(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addMcpOverview(state.snapshot)
+        }
+        addDocumentationLink(MCP_GUIDE_LABEL, AiIntegrationsIntent.OpenMcpDocumentation)
+    }
+
+    private fun createCliDescription() = SwingHelper.createHtmlViewer(false, JBFont.label(), null, null).apply {
+        text = CLI_CARD_DESCRIPTION_HTML
+        border = JBUI.Borders.empty()
+        isOpaque = false
+        alignmentX = Component.LEFT_ALIGNMENT
+        addHyperlinkListener { event ->
+            if (event.eventType == HyperlinkEvent.EventType.ACTIVATED && event.description == SONAR_VORTEX_ANCHOR) {
+                intentListener(AiIntegrationsIntent.OpenVortexDocumentation)
+            }
         }
     }
 
@@ -361,6 +382,10 @@ class AiIntegrationsPanel(
             panel.add(verticalSpace(8))
         }
 
+        fun addDocumentationLink(label: String, intent: AiIntegrationsIntent) {
+            panel.add(createLinkButton(label, intent))
+        }
+
         fun addAgentRow(name: String, status: String) {
             val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10).apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
@@ -401,6 +426,10 @@ class AiIntegrationsPanel(
         addActionListener { intentListener(intent) }
     }
 
+    private fun createLinkButton(label: String, intent: AiIntegrationsIntent): JButton = createLinkButton(label) {
+        intentListener(intent)
+    }
+
     private fun createDisclosureButton(expanded: Boolean, toggle: (Boolean) -> Unit): JToggleButton =
         JToggleButton(disclosureLabel(expanded), expanded).apply {
             isOpaque = false
@@ -416,6 +445,21 @@ class AiIntegrationsPanel(
                 toggle(isSelected)
             }
         }
+
+    private fun createLinkButton(label: String, action: () -> Unit): JButton = JButton(label, AllIcons.Ide.External_link_arrow).apply {
+        isOpaque = false
+        isContentAreaFilled = false
+        isBorderPainted = false
+        border = JBUI.Borders.empty()
+        margin = JBUI.emptyInsets()
+        horizontalAlignment = SwingConstants.LEFT
+        horizontalTextPosition = SwingConstants.LEFT
+        iconTextGap = JBUI.scale(4)
+        alignmentX = Component.LEFT_ALIGNMENT
+        foreground = LINK_TEXT
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        addActionListener { action() }
+    }
 
     override fun dispose() {
         disposed.set(true)

@@ -61,5 +61,7 @@ sealed interface AiIntegrationsPanelState {
 
 sealed interface AiIntegrationsIntent {
     data object Refresh : AiIntegrationsIntent
-    data object OpenDocumentation : AiIntegrationsIntent
+    data object OpenCliDocumentation : AiIntegrationsIntent
+    data object OpenVortexDocumentation : AiIntegrationsIntent
+    data object OpenMcpDocumentation : AiIntegrationsIntent
 }

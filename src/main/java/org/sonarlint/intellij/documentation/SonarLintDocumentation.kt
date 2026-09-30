@@ -41,6 +41,9 @@ object SonarLintDocumentation {
         const val INVESTIGATING_ISSUES_LINK = "$BASE_DOCS_URL/using/investigating-issues"
         const val OPEN_IN_IDE_LINK = "$BASE_DOCS_URL/using/investigating-issues/#opening-issues-in-the-ide"
         const val AI_CAPABILITIES = "$BASE_DOCS_URL/ai-capabilities/ai-codefix"
+        const val SONARQUBE_CLI_GUIDE_LINK = "https://docs.sonarsource.com/sonarqube-cli"
+        const val SONAR_VORTEX_LINK = "https://docs.sonarsource.com/agent-centric-development-cycle/inside-your-agent-the-agentic-loop/sonar-vortex"
+        const val MCP_CONFIGURATION_GUIDE_LINK = "https://mcp.sonarqube.com/"
     }
 
     object Community {
