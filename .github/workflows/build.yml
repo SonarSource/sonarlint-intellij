@@ -590,6 +590,7 @@ jobs:
         shell: bash --noprofile --norc -euo pipefail {0}
         run: |
           echo "Using project version: ${PROJECT_VERSION}"
+          mkdir -p ${GITHUB_WORKSPACE}/downloaded-plugin
           curl -fsSL -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_ACCESS_TOKEN}" \
             -o ${GITHUB_WORKSPACE}/downloaded-plugin/sonarlint-intellij.zip \
             "${ARTIFACTORY_RESOLVE_URL:-${ARTIFACTORY_URL}}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
