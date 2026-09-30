@@ -293,10 +293,16 @@ val integrationTest by intellijPlatformTesting.testIdeUi.registering {
         testClassesDirs = integrationTestSourceSet.output.classesDirs
         classpath = integrationTestSourceSet.runtimeClasspath
 
-        dependsOn(":buildPlugin")
+        if (!project.hasProperty("slPluginDirectory")) {
+            dependsOn(":buildPlugin")
+        }
         systemProperty(
             "its.plugin.distributions.dir",
-            rootProject.layout.buildDirectory.dir("distributions").get().asFile.absolutePath,
+            if (project.hasProperty("slPluginDirectory")) {
+                file(project.property("slPluginDirectory").toString()).absolutePath
+            } else {
+                rootProject.layout.buildDirectory.dir("distributions").get().asFile.absolutePath
+            },
         )
         systemProperty("its.ide.product", itsIdeProductCode())
         systemProperty("its.ide.version", itsIdeVersion())
@@ -317,12 +323,24 @@ val integrationTest by intellijPlatformTesting.testIdeUi.registering {
 
 tasks.named<Test>("integrationTest") {
     doFirst {
-        val pluginZip = rootProject.layout.buildDirectory
-            .file("distributions/sonarlint-intellij-${rootProject.version}.zip")
-            .get()
-            .asFile
-        check(pluginZip.isFile) { "Plugin zip not found: $pluginZip" }
-        systemProperty("its.plugin.archive", pluginZip.absolutePath)
+        val pluginArchive = if (project.hasProperty("slPluginDirectory")) {
+            val pluginDir = file(project.property("slPluginDirectory").toString())
+            pluginDir.resolve("sonarlint-intellij.zip").takeIf { it.isFile }
+                ?: pluginDir.walkTopDown()
+                    .filter { file ->
+                        file.isFile && file.name.startsWith("sonarlint-intellij-")
+                            && file.extension == "zip" && !file.name.contains(".blockmap")
+                    }
+                    .maxByOrNull { it.lastModified() }
+        } else {
+            rootProject.layout.buildDirectory
+                .file("distributions/sonarlint-intellij-${rootProject.version}.zip")
+                .get()
+                .asFile
+                .takeIf { it.isFile }
+        }
+        checkNotNull(pluginArchive) { "Plugin archive not found for integration tests" }
+        systemProperty("its.plugin.archive", pluginArchive.absolutePath)
     }
     javaLauncher.set(
         javaToolchains.launcherFor {

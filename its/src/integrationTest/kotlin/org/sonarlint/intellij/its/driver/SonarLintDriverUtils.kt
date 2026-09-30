@@ -14,8 +14,8 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 package org.sonarlint.intellij.its.driver
 
@@ -83,14 +83,10 @@ fun Driver.openFileViaMenu(fileName: String) {
 
 fun Driver.verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
     waitForIndicators(5.minutes)
-    ensureSonarLintToolWindowVisible()
-    expectedMessages.forEach { message ->
-        waitFor(duration = 5.minutes, errorMessage = "Expected '$message' in Current File tab") {
-            var found = false
-            ideFrame {
-                found = x(xQuery { contains(byVisibleText(message)) }).present()
-            }
-            found
+    sonarLintPanel("CurrentFilePanel") {
+        selectFindingsTab()
+        expectedMessages.forEach { message ->
+            shouldBe("Expected '$message' in Current File tab") { hasText(message) }
         }
     }
 }
