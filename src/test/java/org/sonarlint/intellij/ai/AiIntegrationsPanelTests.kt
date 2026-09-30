@@ -169,6 +169,12 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             .first { it.text == "Find and fix issues as your agent writes code." }
         assertThat(subtitle.font.family).isEqualTo(JBFont.label().family)
 
+        val cliDescription = descendants(panel).filterIsInstance<JEditorPane>()
+            .first { it.text.contains(SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK) }
+        val mcpDescription = descendants(panel).filterIsInstance<JBTextArea>()
+            .first { it.text.startsWith("Ask your agent about issues") }
+        assertThat(cliDescription.foreground).isEqualTo(mcpDescription.foreground)
+
         val status = descendants(panel).filterIsInstance<JBLabel>().first { it.text == "Installed" }.parent as JPanel
         assertThat(status.height).isEqualTo(status.preferredSize.height)
         assertThat(status.height).isLessThan(status.parent.height)

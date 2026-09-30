@@ -229,7 +229,7 @@ class AiIntegrationsPanel(
         addDocumentationLink(MCP_GUIDE_LABEL, SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK)
     }
 
-    private fun createCliDescription() = SwingHelper.createHtmlViewer(false, JBFont.label(), null, null).apply {
+    private fun createCliDescription() = SwingHelper.createHtmlViewer(false, JBFont.label(), null, SECONDARY_TEXT).apply {
         text = CLI_CARD_DESCRIPTION_HTML
         border = JBUI.Borders.empty()
         isOpaque = false
