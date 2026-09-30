@@ -83,17 +83,17 @@ fun Driver.openFileViaMenu(fileName: String) {
 
 fun Driver.verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
     waitForIndicators(5.minutes)
-    sonarLintPanel("CurrentFilePanel") {
-        selectFindingsTab()
-        expectedMessages.forEach { message ->
-            shouldBe("Expected '$message' in Current File tab") { hasText(message) }
+    expectedMessages.forEach { message ->
+        sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
+            waitFor(duration = 5.minutes, errorMessage = "Expected '$message' in Current File tab") {
+                hasText(message)
+            }
         }
     }
 }
 
 fun Driver.analyzeCurrentFileFromToolWindow() {
-    sonarLintPanel("CurrentFilePanel") {
-        selectFindingsTab()
+    sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
         x(xQuery { byAccessibleName("Analyze Current File") }).click()
     }
     waitForIndicators(5.minutes)
@@ -113,12 +113,18 @@ fun Driver.toggleRule(ruleKey: String, ruleText: String) {
     ideFrame {
         showSettings()
         settingsDialog {
+            Thread.sleep(3000)
             x(xQuery { byClass("SettingsSearch") }).keyboard { enterText("SonarQube for IDE") }
             Thread.sleep(1000)
             settingsTree.clickPath("Tools", "SonarQube for IDE")
-            Thread.sleep(2000)
+            waitFor(duration = 30.seconds, errorMessage = "SonarQube for IDE Rules tab") {
+                x(xQuery { byVisibleText("Rules") }).present()
+            }
             findText("Rules").click()
             x(xQuery { byClass("SearchTextField") }).keyboard { enterText(ruleKey) }
+            waitFor(duration = 30.seconds, errorMessage = "Rule '$ruleText'") {
+                x(xQuery { byVisibleText(ruleText) }).present()
+            }
             findText(ruleText).click()
             Thread.sleep(1000)
             findText(ruleText).doubleClick()
@@ -140,8 +146,7 @@ fun Driver.resetFocusOnNewCode() {
 }
 
 private fun Driver.toggleFocusOnNewCodeFilter() {
-    sonarLintPanel("CurrentFilePanel") {
-        selectFindingsTab()
+    sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
         x(xQuery { byAccessibleName("Filter") }).click()
         x(xQuery { byTooltip("Focus on new code") }).click()
         x(xQuery { byAccessibleName("Filter") }).click()
@@ -149,8 +154,7 @@ private fun Driver.toggleFocusOnNewCodeFilter() {
 }
 
 fun Driver.excludeFile(filePath: String) {
-    sonarLintPanel("CurrentFilePanel") {
-        selectFindingsTab()
+    sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
         x(xQuery { byAccessibleName("Configure SonarQube for IDE") }).click()
     }
     ui.dialog(title = "Project Settings") {
@@ -169,8 +173,7 @@ fun Driver.excludeFile(filePath: String) {
 }
 
 fun Driver.removeFileExclusion(filePath: String) {
-    sonarLintPanel("CurrentFilePanel") {
-        selectFindingsTab()
+    sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
         x(xQuery { byAccessibleName("Configure SonarQube for IDE") }).click()
     }
     ui.dialog(title = "Project Settings") {
@@ -228,8 +231,24 @@ private fun Driver.ensureSonarLintToolWindowVisible() {
     }
 }
 
-private fun Driver.sonarLintPanel(panelClass: String, block: com.intellij.driver.sdk.ui.components.UiComponent.() -> Unit) {
+private const val FINDINGS_TAB = "Findings"
+
+private fun Driver.sonarLintPanel(
+    panelClass: String,
+    tabTitle: String? = null,
+    block: com.intellij.driver.sdk.ui.components.UiComponent.() -> Unit,
+) {
     ensureSonarLintToolWindowVisible()
+    if (tabTitle != null) {
+        ideFrame {
+            toolWindow(SONARLINT_TOOL_WINDOW) {
+                waitFor(duration = 1.minutes, errorMessage = "SonarQube for IDE tab '$tabTitle'") {
+                    x(xQuery { byVisibleText(tabTitle) }).present()
+                }
+                x(xQuery { byVisibleText(tabTitle) }).click()
+            }
+        }
+    }
     waitFor(duration = 5.minutes, errorMessage = "SonarQube for IDE $panelClass") {
         var panelPresent = false
         ideFrame {
@@ -240,10 +259,6 @@ private fun Driver.sonarLintPanel(panelClass: String, block: com.intellij.driver
     ideFrame {
         x(xQuery { byClass(panelClass) }).apply(block)
     }
-}
-
-private fun com.intellij.driver.sdk.ui.components.UiComponent.selectFindingsTab() {
-    x(xQuery { byVisibleText("Findings") }).click()
 }
 
 private fun Driver.openProjectInFileBrowser(projectPath: java.nio.file.Path) {
