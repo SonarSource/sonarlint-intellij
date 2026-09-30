@@ -20,12 +20,15 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBTextArea
+import com.intellij.util.ui.JBFont
 import java.awt.Container
 import java.awt.GridLayout
 import java.awt.event.ComponentEvent
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.JScrollPane
+import javax.swing.JToggleButton
 import javax.swing.SwingUtilities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -126,6 +129,98 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             assertThat(SwingUtilities.convertPoint(label, label.width, 0, view).x).isLessThanOrEqualTo(view.width)
         }
     }
+
+    @Test
+    fun `keeps shorter card content at its natural height in wide layout`() {
+        val panel = AiIntegrationsPanel()
+        panel.render(AiIntegrationsPanelState.Error("failed"))
+        panel.setSize(AiIntegrationsPanel.WIDE_LAYOUT_THRESHOLD + 200, 700)
+        panel.dispatchEvent(ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED))
+        repeat(2) { layoutRecursively(panel) }
+
+        val cards = descendants(panel).filterIsInstance<JPanel>().first { it.layout is GridLayout && it.componentCount == 2 }
+        val mcpCard = cards.components[1] as Container
+        val message = descendants(mcpCard).filterIsInstance<JBTextArea>().first { it.text == "MCP capabilities could not be loaded." }
+
+        assertThat(mcpCard.height).isGreaterThan(mcpCard.preferredSize.height)
+        assertThat(message.height).isPositive()
+        assertThat(message.height).isLessThanOrEqualTo(message.preferredSize.height)
+    }
+
+    @Test
+    fun `uses the IDE label font for body copy and keeps the status badge compact`() {
+        val panel = AiIntegrationsPanel()
+        panel.render(AiIntegrationsPanelState.Ready(AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),
+            emptyList(),
+            emptyList(),
+            null
+        )))
+        panel.setSize(AiIntegrationsPanel.WIDE_LAYOUT_THRESHOLD + 200, 700)
+        panel.dispatchEvent(ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED))
+        repeat(2) { layoutRecursively(panel) }
+
+        val subtitle = descendants(panel).filterIsInstance<JBTextArea>()
+            .first { it.text == "Find and fix issues as your agent writes code." }
+        assertThat(subtitle.font.family).isEqualTo(JBFont.label().family)
+
+        val status = descendants(panel).filterIsInstance<JBLabel>().first { it.text == "Installed" }.parent as JPanel
+        assertThat(status.height).isEqualTo(status.preferredSize.height)
+        assertThat(status.height).isLessThan(status.parent.height)
+    }
+
+    @Test
+    fun `aligns agent disclosures with card text`() {
+        val panel = AiIntegrationsPanel()
+        panel.render(AiIntegrationsPanelState.Ready(AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),
+            emptyList(),
+            emptyList(),
+            null
+        )))
+        panel.setSize(AiIntegrationsPanel.WIDE_LAYOUT_THRESHOLD + 200, 700)
+        panel.dispatchEvent(ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED))
+        repeat(2) { layoutRecursively(panel) }
+
+        val cards = descendants(panel).filterIsInstance<JPanel>().first { it.layout is GridLayout && it.componentCount == 2 }
+        listOf(
+            (cards.components[0] as Container) to "SonarQube CLI",
+            (cards.components[1] as Container) to "SonarQube MCP Server"
+        ).forEach { (card, title) ->
+            val titleLabel = descendants(card).filterIsInstance<JBLabel>().first { it.text == title }
+            val disclosure = descendants(card).filterIsInstance<JToggleButton>().single()
+            val textLeft = SwingUtilities.convertPoint(titleLabel, 0, 0, card).x
+            assertThat(SwingUtilities.convertPoint(disclosure, disclosure.insets.left, 0, card).x).isEqualTo(textLeft)
+        }
+    }
+
+    @Test
+    fun `keeps the agent inventory collapsed until details are requested`() {
+        val panel = AiIntegrationsPanel()
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),
+            listOf(
+                AgentCapability(AiAgent.CURSOR, setOf(AiAgentDetectionSource.IDE), true, true),
+                AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, false)
+            ),
+            emptyList(),
+            null
+        )
+
+        panel.render(AiIntegrationsPanelState.Ready(snapshot))
+
+        assertThat(labelTexts(panel)).contains("2 agents detected").doesNotContain("Not supported")
+        val disclosure = descendants(panel).filterIsInstance<JToggleButton>().first { it.text.contains("Manage agents") }
+        assertThat(disclosure.isSelected).isFalse()
+        assertThat(disclosure.text).startsWith("▸")
+        disclosure.doClick()
+        assertThat(labelTexts(panel)).contains("Supported", "Not supported")
+        val expandedDisclosure = descendants(panel).filterIsInstance<JToggleButton>().first { it.text.contains("Manage agents") }
+        assertThat(expandedDisclosure.isSelected).isTrue()
+        assertThat(expandedDisclosure.text).startsWith("▾")
+    }
+
+    private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }
 
     private fun layoutRecursively(container: Container) {
         container.doLayout()
