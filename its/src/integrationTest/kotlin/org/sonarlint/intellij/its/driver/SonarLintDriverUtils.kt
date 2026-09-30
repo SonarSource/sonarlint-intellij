@@ -29,13 +29,14 @@ import com.intellij.driver.sdk.ui.shouldBe
 import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.ui.xQuery
 import com.intellij.driver.sdk.ui.components.dialog
+import com.intellij.driver.sdk.ui.components.StripeButtonUi
 import com.intellij.driver.sdk.ui.components.ideFrame
 import com.intellij.driver.sdk.ui.components.settingsDialog
 import com.intellij.driver.sdk.ui.components.showSettings
-import com.intellij.driver.sdk.ui.components.toolWindow
 import com.intellij.driver.sdk.ui.components.welcomeScreen
 import com.intellij.driver.sdk.waitFor
 import com.intellij.driver.sdk.waitForIndicators
+import com.intellij.driver.sdk.waitForProjectOpen
 import java.awt.Point
 import java.awt.event.KeyEvent
 import kotlin.time.Duration.Companion.minutes
@@ -56,6 +57,7 @@ fun Driver.openExistingProject(projectName: String) {
         invokeAction("OpenFile", false)
     }
     openProjectInFileBrowser(projectPath)
+    waitForProjectOpen(5.minutes)
     waitForIndicators(5.minutes)
 }
 
@@ -118,9 +120,10 @@ fun Driver.toggleRule(ruleKey: String, ruleText: String) {
             x(xQuery { byClass("SettingsSearch") }).keyboard { enterText("SonarQube for IDE") }
             Thread.sleep(1000)
             settingsTree.clickPath("Tools", "SonarQube for IDE")
-            x(xQuery { byVisibleText("Rules") }).shouldBe("SonarQube for IDE Rules tab", present, timeout = 30.seconds).click()
+            x(xQuery { byVisibleText("Rules") }).shouldBe("SonarQube for IDE Rules tab", present, timeout = 1.minutes).click()
+            Thread.sleep(2000)
             x(xQuery { byClass("SearchTextField") }).keyboard { enterText(ruleKey) }
-            x(xQuery { byVisibleText(ruleText) }).shouldBe("Rule '$ruleText'", present, timeout = 30.seconds).click()
+            x(xQuery { byVisibleText(ruleText) }).shouldBe("Rule '$ruleText'", present, timeout = 2.minutes).click()
             Thread.sleep(1000)
             findText(ruleText).doubleClick()
             x(xQuery { byVisibleText("Apply") }).shouldBe("Apply to become enabled", enabled, timeout = 10.seconds).click()
@@ -175,8 +178,9 @@ fun Driver.removeFileExclusion(filePath: String) {
 }
 
 fun Driver.closeWalkthrough() {
-    ideFrame {
-        toolWindow(WALKTHROUGH_TOOL_WINDOW) {
+    optionalStep {
+        ideFrame {
+            openToolWindowFromStripe(WALKTHROUGH_TOOL_WINDOW)
             findText("Next: Learn as You Code").click()
             keyboard { hotKey(KeyEvent.VK_SHIFT, KeyEvent.VK_ESCAPE) }
         }
@@ -184,6 +188,7 @@ fun Driver.closeWalkthrough() {
 }
 
 fun Driver.verifyWalkthroughIsNotShowing() {
+    waitForProjectOpen(5.minutes)
     ideFrame {
         val walkthrough = x(xQuery {
             and(
@@ -215,9 +220,15 @@ fun Driver.handleClionCppSetup() {
 private fun Driver.ensureSonarLintToolWindowVisible() {
     optionalStep { closeWalkthrough() }
     ideFrame {
-        optionalStep {
-            x(xQuery { byAccessibleName(SONARLINT_TOOL_WINDOW) }).click()
-        }
+        openToolWindowFromStripe(SONARLINT_TOOL_WINDOW)
+    }
+}
+
+private fun com.intellij.driver.sdk.ui.components.IdeaFrameUI.openToolWindowFromStripe(title: String) {
+    val stripeButton = x(StripeButtonUi::class.java) { byTooltip(title) }
+    stripeButton.shouldBe("Tool window stripe button '$title'", present, timeout = 1.minutes)
+    if (!stripeButton.isSelected()) {
+        stripeButton.open()
     }
 }
 
@@ -231,11 +242,9 @@ private fun Driver.sonarLintPanel(
     ensureSonarLintToolWindowVisible()
     ideFrame {
         if (tabTitle != null) {
-            toolWindow(SONARLINT_TOOL_WINDOW) {
-                x(xQuery { byVisibleText(tabTitle) })
-                    .shouldBe("SonarQube for IDE tab '$tabTitle'", present, timeout = 1.minutes)
-                    .click()
-            }
+            x(xQuery { and(byClass("ContentTabLabel"), byVisibleText(tabTitle)) })
+                .shouldBe("SonarQube for IDE tab '$tabTitle'", present, timeout = 1.minutes)
+                .click()
         }
         x(xQuery { byClass(panelClass) })
             .shouldBe("SonarQube for IDE $panelClass", present, timeout = 5.minutes)
