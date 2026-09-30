@@ -462,7 +462,10 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
 
         assertThat(labelTexts(panel)).doesNotContain("Not configured", "Malformed configuration")
+        val disclosure = descendants(panel).filterIsInstance<JToggleButton>().last()
         descendants(panel).filterIsInstance<JButton>().first { it.text == "Set up an agent…" }.doClick()
+        assertThat(descendants(panel).filterIsInstance<JToggleButton>().last()).isSameAs(disclosure)
+        assertThat(disclosure.isSelected).isTrue()
 
         val buttonLabels = descendants(panel).filterIsInstance<JButton>().map { it.text }
         val text = descendants(panel).filter { it is JBLabel || it is JBTextArea }.joinToString(" ") {
@@ -485,6 +488,9 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
 
         descendants(panel).filterIsInstance<JButton>().first { it.text == "Integrate with CLI" }.doClick()
         assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.IntegrateCli(AiAgent.GITHUB_COPILOT_CLI))
+        disclosure.doClick()
+        assertThat(disclosure.isSelected).isFalse()
+        assertThat(labelTexts(panel)).doesNotContain("Malformed configuration")
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }

@@ -253,39 +253,60 @@ class AiIntegrationsPanel(
     private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
         val configurations = snapshot.mcpConfigurations.values.toList()
         addMetadata(listOf(agentCountText(snapshot.agents.size)))
-        val toggleDetails = {
-            mcpDetailsExpanded = !mcpDetailsExpanded
-            rebuild()
-        }
-        if (configurations.isEmpty()) {
-            addDisclosure(mcpDetailsExpanded, toggleDetails)
-            if (mcpDetailsExpanded) {
-                addMessage("No standalone MCP setup is available for the detected agents.")
+        if (configurations.isNotEmpty()) {
+            val configuredCount = configurations.count {
+                it.state == McpConfigurationKind.STANDALONE || it.state == McpConfigurationKind.CLI_MANAGED
             }
-            return
+            val attentionCount = configurations.count {
+                it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
+            }
+            addMessage(mcpSummary(configuredCount, configurations.size, attentionCount))
         }
 
-        val configuredCount = configurations.count {
-            it.state == McpConfigurationKind.STANDALONE || it.state == McpConfigurationKind.CLI_MANAGED
+        val collapsedActions = JBPanel<JBPanel<*>>().apply {
+            isOpaque = false
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            alignmentX = Component.LEFT_ALIGNMENT
         }
-        val attentionCount = configurations.count {
-            it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
+        val details = JBPanel<JBPanel<*>>().apply {
+            isOpaque = false
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            alignmentX = Component.LEFT_ALIGNMENT
         }
-        addMessage(mcpSummary(configuredCount, configurations.size, attentionCount))
-
+        fun updateDetails(show: Boolean) {
+            mcpDetailsExpanded = show
+            details.removeAll()
+            if (show) {
+                val detailBuilder = CardBuilder(details)
+                if (configurations.isEmpty()) {
+                    detailBuilder.addMessage("No standalone MCP setup is available for the detected agents.")
+                } else {
+                    configurations.forEach { detailBuilder.addMcpConfigurationRow(it, snapshot) }
+                }
+            }
+            collapsedActions.isVisible = !show
+            details.isVisible = show
+            cards.revalidate()
+            cards.repaint()
+        }
+        val disclosure = createDisclosureButton(mcpDetailsExpanded, ::updateDetails)
         val nextActions = configurations.filter {
             it.state == McpConfigurationKind.NOT_CONFIGURED || it.state == McpConfigurationKind.CLI_ONLY
         }
-        if (!mcpDetailsExpanded && nextActions.size == 1) {
-            addMcpPrimaryAction(nextActions.single(), snapshot)
+        val collapsedBuilder = CardBuilder(collapsedActions)
+        if (nextActions.size == 1) {
+            collapsedBuilder.addMcpPrimaryAction(nextActions.single(), snapshot)
+        } else if (nextActions.size > 1) {
+            collapsedBuilder.addPrimaryAction("Set up an agent…") {
+                disclosure.doClick()
+                disclosure.requestFocusInWindow()
+            }
         }
-        if (!mcpDetailsExpanded && nextActions.size > 1) {
-            addPrimaryAction("Set up an agent…", toggleDetails)
-        }
-        addDisclosure(mcpDetailsExpanded, toggleDetails)
-        if (mcpDetailsExpanded) {
-            configurations.forEach { addMcpConfigurationRow(it, snapshot) }
-        }
+        panel.add(collapsedActions)
+        panel.add(disclosure)
+        panel.add(verticalSpace(8))
+        panel.add(details)
+        updateDetails(mcpDetailsExpanded)
     }
 
     private fun CardBuilder.addMcpPrimaryAction(configuration: McpAgentConfiguration, snapshot: AiIntegrationSnapshot) {
