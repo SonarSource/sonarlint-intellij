@@ -50,7 +50,7 @@ class StandaloneIdeaTests : BaseStandaloneIntegrationTest() {
         toggleRule("java:S2094", "Classes should not be empty")
         setFocusOnNewCode()
         analyzeAndVerifyReportTabContainsMessages(
-            "Found 1 new issue from last 30 days",
+            "Found 2 new issues in 2 files from last 30 days",
             "No new Security Hotspots from last 30 days",
             "No older issues",
             "No older Security Hotspots",

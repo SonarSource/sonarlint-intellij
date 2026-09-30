@@ -30,6 +30,12 @@ val integrationTestRuntimeOnly by configurations.getting {
 // coordinate; screen recording is unused by our Standalone ITs.
 configurations.matching { it.name.startsWith("integrationTest") }.configureEach {
     exclude(group = "com.github.stephenc.monte", module = "monte-screen-recorder")
+    // Driver UI helpers moved packages in 253; compile and run ITs against the 242 SDK API.
+    resolutionStrategy.force(
+        "com.jetbrains.intellij.driver:driver-sdk:242.20224.300",
+        "com.jetbrains.intellij.driver:driver-client:242.20224.300",
+        "com.jetbrains.intellij.driver:driver-model:242.20224.300",
+    )
 }
 
 // ITs require IDEs whose test-framework JARs introduce transitive deps that vary by environment
@@ -73,6 +79,11 @@ dependencies {
             if (envVarPath != null && File(envVarPath).exists()) {
                 println("ITs: Using IDE from setup-qa-ide.sh: $envVarPath (ijVersion=$ijVersion)")
                 local(envVarPath)
+            } else if (type == "IC" && version.startsWith("2025.3")) {
+                println("ITs: WARNING: No *_HOME env var set, downloading IDEA $version from Repox (local development only)")
+                intellijIdea(version) {
+                    useCache = true
+                }
             } else {
                 val isCI = System.getenv("CI") == "true"
                 if (isCI) {
@@ -269,6 +280,20 @@ fun itsIdeBuildNumber(): String? {
         ?.get(1)
 }
 
+fun cleanupStaleXvfbLock(displayNumber: Int) {
+    val lockFile = File("/tmp/.X${displayNumber}-lock")
+    if (!lockFile.exists()) return
+    val process = ProcessBuilder("pgrep", "-f", "Xvfb.*:$displayNumber")
+        .redirectErrorStream(true)
+        .start()
+    val running = process.inputStream.bufferedReader().readText().trim().isNotEmpty()
+    process.waitFor()
+    if (!running) {
+        lockFile.delete()
+        println("ITs: removed stale Xvfb lock /tmp/.X${displayNumber}-lock")
+    }
+}
+
 fun itsIdeHome(): String? {
     val type = itsIdeProductCode()
     val envVarPath = when (type) {
@@ -361,6 +386,7 @@ tasks.named<Test>("integrationTest") {
     // its own virtual display. CI pre-starts Xvfb on :10; set ITS_USE_SYSTEM_DISPLAY=true to watch locally.
     doFirst {
         if (System.getenv("ITS_USE_SYSTEM_DISPLAY") != "true" && System.getenv("CI") != "true") {
+            cleanupStaleXvfbLock(88)
             environment.remove("DISPLAY")
             environment.remove("WAYLAND_DISPLAY")
         }
