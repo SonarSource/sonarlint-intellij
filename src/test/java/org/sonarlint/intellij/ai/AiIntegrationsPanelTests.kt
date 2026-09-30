@@ -249,7 +249,14 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
                 AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, true)
             ),
             emptyList(),
-            null
+            null,
+            mapOf(AiAgent.GITHUB_COPILOT to McpAgentConfiguration(
+                AiAgent.GITHUB_COPILOT,
+                java.nio.file.Path.of("/tmp/mcp.json"),
+                McpConfigurationKind.NOT_CONFIGURED,
+                false,
+                emptyList()
+            ))
         )
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
@@ -270,7 +277,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(labelTexts(mcpCard)).doesNotContain("Not supported")
 
         mcpDisclosure.doClick()
-        assertThat(labelTexts(mcpCard)).containsSubsequence("Cursor", "Not supported", "GitHub Copilot", "Supported")
+        assertThat(labelTexts(mcpCard)).containsSubsequence("GitHub Copilot", "Not configured").doesNotContain("Cursor")
 
         cliDisclosure.doClick()
         assertThat(labelTexts(cliCard)).doesNotContain("Not supported")
