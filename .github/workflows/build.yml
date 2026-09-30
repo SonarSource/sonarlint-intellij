@@ -591,11 +591,10 @@ jobs:
         run: |
           echo "Using project version: ${PROJECT_VERSION}"
           curl -fsSL -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_ACCESS_TOKEN}" \
-            -o sonarlint-intellij.zip \
+            -o ${GITHUB_WORKSPACE}/downloaded-plugin/sonarlint-intellij.zip \
             "${ARTIFACTORY_RESOLVE_URL:-${ARTIFACTORY_URL}}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
-          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
+          unzip ${GITHUB_WORKSPACE}/downloaded-plugin/sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
           mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
-          rm sonarlint-intellij.zip
           
           # IntelliJ Platform Gradle Plugin 2.13+ introduced a sandbox layout change:
           #   <sandboxContainer>/<project.name>/<productCode>-<productVersion>/config_<task>/
@@ -692,10 +691,14 @@ jobs:
           ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
         run: |
           GRADLE_ARGS="--stacktrace -i -PijVersion=${IDEA_VERSION} --rerun-tasks"
+          PLUGIN_ARGS="-PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin"
           if [ -z "${TEST_SUITE}" ] || [ "${TEST_SUITE}" = "Standalone" ]; then
-            ./gradlew :its:integrationTest ${GRADLE_ARGS}
+            ./gradlew :its:integrationTest ${GRADLE_ARGS} ${PLUGIN_ARGS}
+            if [ -z "${TEST_SUITE}" ]; then
+              ./gradlew :its:test ${GRADLE_ARGS} ${PLUGIN_ARGS}
+            fi
           else
-            ./gradlew :its:check ${GRADLE_ARGS} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin
+            ./gradlew :its:check ${GRADLE_ARGS} ${PLUGIN_ARGS}
           fi
 
       - name: Stop recording

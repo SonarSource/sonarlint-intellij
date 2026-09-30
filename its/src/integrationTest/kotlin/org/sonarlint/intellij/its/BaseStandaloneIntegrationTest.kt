@@ -14,8 +14,8 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 package org.sonarlint.intellij.its
 
@@ -129,7 +129,13 @@ open class BaseStandaloneIntegrationTest {
             "IC" -> IdeProductProvider.IC
             "IU" -> IdeProductProvider.IU
             "CL" -> IdeProductProvider.CL
-            "RD" -> IdeProductProvider.RR
+            // IdeProductProvider has RR (RustRover) but no RD; define Rider metadata explicitly.
+            "RD" -> IdeProductProvider.CL.copy(
+                productCode = "RD",
+                platformPrefix = "Rider",
+                executableFileName = "rider",
+                fullName = "Rider",
+            )
             "PS" -> IdeProductProvider.PS
             "PY" -> IdeProductProvider.PY
             "PC" -> IdeProductProvider.PC
