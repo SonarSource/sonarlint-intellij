@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
@@ -57,14 +58,14 @@ import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
 private const val PAGE_DESCRIPTION = "Find and fix issues as your agent writes code."
 private const val CLI_CARD_TITLE = "SonarQube CLI"
 private const val CLI_CARD_HEADLINE = "Catch issues as AI writes code"
-private const val SONAR_VORTEX_ANCHOR = "#SonarVortex"
 private val CLI_CARD_DESCRIPTION_HTML =
-    "Give your agents local code analysis with <a href=\"$SONAR_VORTEX_ANCHOR\">Sonar Vortex&nbsp;<icon src=\"ide/external_link_arrow.svg\"></a> to find bugs and vulnerabilities before you commit."
+    "Give your agents local code analysis with <a href=\"${SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK}\">Sonar Vortex&nbsp;<icon src=\"ide/external_link_arrow.svg\"></a> to find bugs and vulnerabilities before you commit."
 private const val MCP_CARD_TITLE = "SonarQube MCP Server"
 private const val MCP_CARD_HEADLINE = "Bring project context to your agent"
 private const val MCP_CARD_DESCRIPTION = "Ask your agent about issues, quality gates, and coverage in your SonarQube projects."
@@ -87,7 +88,8 @@ private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
 private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 
 class AiIntegrationsPanel(
-    private val registry: AiAgentRegistry = AiAgentRegistry()
+    private val registry: AiAgentRegistry = AiAgentRegistry(),
+    private val openLink: (String) -> Unit = { BrowserUtil.browse(it) }
 ) : JBPanel<AiIntegrationsPanel>(BorderLayout()), Disposable {
     companion object {
         internal const val WIDE_LAYOUT_THRESHOLD = 900
@@ -104,7 +106,7 @@ class AiIntegrationsPanel(
 
     private val cards = ContentColumn()
     private val disposed = AtomicBoolean()
-    private var intentListener: (AiIntegrationsIntent) -> Unit = {}
+    private var refreshListener: () -> Unit = {}
     private var currentState: AiIntegrationsPanelState = AiIntegrationsPanelState.Loading
     private var wide = false
     private var cliDetailsExpanded = false
@@ -136,8 +138,8 @@ class AiIntegrationsPanel(
         render(AiIntegrationsPanelState.Loading)
     }
 
-    fun setIntentListener(listener: (AiIntegrationsIntent) -> Unit) {
-        intentListener = listener
+    fun setRefreshListener(listener: () -> Unit) {
+        refreshListener = listener
     }
 
     fun render(state: AiIntegrationsPanelState) {
@@ -204,12 +206,12 @@ class AiIntegrationsPanel(
             AiIntegrationsPanelState.Loading -> addMessage(CLI_LOADING_MESSAGE)
             is AiIntegrationsPanelState.Error -> {
                 addMessage(state.message)
-                addPrimaryAction(RETRY_LABEL, AiIntegrationsIntent.Refresh)
+                addPrimaryAction(RETRY_LABEL)
             }
             is AiIntegrationsPanelState.Empty -> addCliOverview(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addCliOverview(state.snapshot)
         }
-        addDocumentationLink(CLI_GUIDE_LABEL, AiIntegrationsIntent.OpenCliDocumentation)
+        addDocumentationLink(CLI_GUIDE_LABEL, SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
     }
 
     private fun createMcpCard(state: AiIntegrationsPanelState): JPanel = createCard(
@@ -224,7 +226,7 @@ class AiIntegrationsPanel(
             is AiIntegrationsPanelState.Empty -> addMcpOverview(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addMcpOverview(state.snapshot)
         }
-        addDocumentationLink(MCP_GUIDE_LABEL, AiIntegrationsIntent.OpenMcpDocumentation)
+        addDocumentationLink(MCP_GUIDE_LABEL, SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK)
     }
 
     private fun createCliDescription() = SwingHelper.createHtmlViewer(false, JBFont.label(), null, null).apply {
@@ -233,8 +235,8 @@ class AiIntegrationsPanel(
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
         addHyperlinkListener { event ->
-            if (event.eventType == HyperlinkEvent.EventType.ACTIVATED && event.description == SONAR_VORTEX_ANCHOR) {
-                intentListener(AiIntegrationsIntent.OpenVortexDocumentation)
+            if (event.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                event.description?.let(openLink)
             }
         }
     }
@@ -358,7 +360,7 @@ class AiIntegrationsPanel(
         layout = BoxLayout(this, BoxLayout.X_AXIS)
         alignmentX = Component.LEFT_ALIGNMENT
         maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(36))
-        add(createSecondaryButton(REFRESH_LABEL, AllIcons.Actions.Refresh, AiIntegrationsIntent.Refresh))
+        add(createSecondaryButton(REFRESH_LABEL, AllIcons.Actions.Refresh))
         add(Box.createHorizontalGlue())
     }
 
@@ -382,8 +384,8 @@ class AiIntegrationsPanel(
             panel.add(verticalSpace(8))
         }
 
-        fun addDocumentationLink(label: String, intent: AiIntegrationsIntent) {
-            panel.add(createLinkButton(label, intent))
+        fun addDocumentationLink(label: String, url: String) {
+            panel.add(createLinkButton(label, url))
         }
 
         fun addAgentRow(name: String, status: String) {
@@ -410,24 +412,20 @@ class AiIntegrationsPanel(
             panel.add(verticalSpace(6))
         }
 
-        fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
-            panel.add(createPrimaryButton(label, intent).apply {
+        fun addPrimaryAction(label: String) {
+            panel.add(createPrimaryButton(label).apply {
                 alignmentX = Component.LEFT_ALIGNMENT
             })
             panel.add(verticalSpace(6))
         }
     }
 
-    private fun createPrimaryButton(label: String, intent: AiIntegrationsIntent): JButton = FilledActionButton(label).apply {
-        addActionListener { intentListener(intent) }
+    private fun createPrimaryButton(label: String): JButton = FilledActionButton(label).apply {
+        addActionListener { refreshListener() }
     }
 
-    private fun createSecondaryButton(label: String, icon: Icon, intent: AiIntegrationsIntent): JButton = OutlinedActionButton(label, icon).apply {
-        addActionListener { intentListener(intent) }
-    }
-
-    private fun createLinkButton(label: String, intent: AiIntegrationsIntent): JButton = createLinkButton(label) {
-        intentListener(intent)
+    private fun createSecondaryButton(label: String, icon: Icon): JButton = OutlinedActionButton(label, icon).apply {
+        addActionListener { refreshListener() }
     }
 
     private fun createDisclosureButton(expanded: Boolean, toggle: (Boolean) -> Unit): JToggleButton =
@@ -446,7 +444,7 @@ class AiIntegrationsPanel(
             }
         }
 
-    private fun createLinkButton(label: String, action: () -> Unit): JButton = JButton(label, AllIcons.Ide.External_link_arrow).apply {
+    private fun createLinkButton(label: String, url: String): JButton = JButton(label, AllIcons.Ide.External_link_arrow).apply {
         isOpaque = false
         isContentAreaFilled = false
         isBorderPainted = false
@@ -458,12 +456,12 @@ class AiIntegrationsPanel(
         alignmentX = Component.LEFT_ALIGNMENT
         foreground = LINK_TEXT
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        addActionListener { action() }
+        addActionListener { openLink(url) }
     }
 
     override fun dispose() {
         disposed.set(true)
-        intentListener = {}
+        refreshListener = {}
     }
 
     private class ContentColumn : JBPanel<ContentColumn>() {

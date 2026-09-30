@@ -58,10 +58,3 @@ sealed interface AiIntegrationsPanelState {
     data class Empty(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
     data class Error(val message: String) : AiIntegrationsPanelState
 }
-
-sealed interface AiIntegrationsIntent {
-    data object Refresh : AiIntegrationsIntent
-    data object OpenCliDocumentation : AiIntegrationsIntent
-    data object OpenVortexDocumentation : AiIntegrationsIntent
-    data object OpenMcpDocumentation : AiIntegrationsIntent
-}

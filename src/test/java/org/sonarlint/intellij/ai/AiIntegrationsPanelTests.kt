@@ -37,6 +37,7 @@ import javax.swing.event.HyperlinkEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
@@ -105,15 +106,15 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `refresh button emits an intent`() {
+    fun `refresh button invokes the refresh callback`() {
         val panel = AiIntegrationsPanel()
-        var emittedIntent: AiIntegrationsIntent? = null
-        panel.setIntentListener { emittedIntent = it }
+        var refreshCount = 0
+        panel.setRefreshListener { refreshCount++ }
 
         val refreshButton = descendants(panel).filterIsInstance<JButton>().first { it.text == "Refresh" }
         assertThat(refreshButton.icon).isNotNull()
         refreshButton.doClick()
-        assertThat(emittedIntent).isEqualTo(AiIntegrationsIntent.Refresh)
+        assertThat(refreshCount).isEqualTo(1)
     }
 
     @Test
@@ -203,22 +204,22 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
 
     @Test
     fun `opens the matching guide from each card`() {
-        val panel = AiIntegrationsPanel()
-        val intents = mutableListOf<AiIntegrationsIntent>()
-        panel.setIntentListener { intent -> intents += intent }
+        val openedUrls = mutableListOf<String>()
+        val panel = AiIntegrationsPanel(openLink = { openedUrls += it })
 
-        val cliDescription = descendants(panel).filterIsInstance<JEditorPane>().first { it.text.contains("SonarVortex") }
-        val vortexClick = HyperlinkEvent(cliDescription, HyperlinkEvent.EventType.ACTIVATED, null, "#SonarVortex")
+        val vortexUrl = SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK
+        val cliDescription = descendants(panel).filterIsInstance<JEditorPane>().first { it.text.contains(vortexUrl) }
+        val vortexClick = HyperlinkEvent(cliDescription, HyperlinkEvent.EventType.ACTIVATED, null, vortexUrl)
         cliDescription.hyperlinkListeners.forEach { it.hyperlinkUpdate(vortexClick) }
 
         listOf("SonarQube CLI guide", "MCP configuration guide").forEach { label ->
             descendants(panel).filterIsInstance<JButton>().first { it.text == label }.doClick()
         }
 
-        assertThat(intents).containsExactly(
-            AiIntegrationsIntent.OpenVortexDocumentation,
-            AiIntegrationsIntent.OpenCliDocumentation,
-            AiIntegrationsIntent.OpenMcpDocumentation
+        assertThat(openedUrls).containsExactly(
+            vortexUrl,
+            SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK,
+            SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK
         )
     }
 

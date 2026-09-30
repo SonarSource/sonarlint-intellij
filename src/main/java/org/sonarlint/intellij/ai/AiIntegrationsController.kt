@@ -19,18 +19,14 @@
  */
 package org.sonarlint.intellij.ai
 
-import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.util.concurrency.AppExecutorUtil
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 class AiIntegrationsController @JvmOverloads constructor(
     private val project: Project,
@@ -43,7 +39,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val disposed = AtomicBoolean()
 
     init {
-        panel.setIntentListener(::handleIntent)
+        panel.setRefreshListener(::refresh)
     }
 
     fun loadInitially() {
@@ -58,9 +54,8 @@ class AiIntegrationsController @JvmOverloads constructor(
         }
         val requestedGeneration = generation.incrementAndGet()
         publish(requestedGeneration, AiIntegrationsPanelState.Loading)
-        CompletableFuture.supplyAsync(registry::detectedIdeAgents, AppExecutorUtil.getAppExecutorService())
-            .thenCompose { detectedAgents -> backendService.getAiIntegrationState(project, detectedAgents) }
-            .whenComplete { snapshot, error ->
+        try {
+            backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
                 val state = if (error != null) {
                     AiIntegrationsPanelState.Error(userFacingMessage(error))
                 } else if (snapshot.agents.isEmpty()) {
@@ -70,6 +65,9 @@ class AiIntegrationsController @JvmOverloads constructor(
                 }
                 publish(requestedGeneration, state)
             }
+        } catch (error: Exception) {
+            publish(requestedGeneration, AiIntegrationsPanelState.Error(userFacingMessage(error)))
+        }
     }
 
     private fun publish(requestedGeneration: Long, state: AiIntegrationsPanelState) {
@@ -78,15 +76,6 @@ class AiIntegrationsController @JvmOverloads constructor(
                 panel.render(state)
             }
         }, project.disposed)
-    }
-
-    private fun handleIntent(intent: AiIntegrationsIntent) {
-        when (intent) {
-            AiIntegrationsIntent.Refresh -> refresh()
-            AiIntegrationsIntent.OpenCliDocumentation -> BrowserUtil.browse(SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
-            AiIntegrationsIntent.OpenVortexDocumentation -> BrowserUtil.browse(SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK)
-            AiIntegrationsIntent.OpenMcpDocumentation -> BrowserUtil.browse(SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK)
-        }
     }
 
     private fun isDisposed() = disposed.get() || project.isDisposed || panel.isDisposed

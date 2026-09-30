@@ -90,18 +90,20 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   private static void addAiIntegrationsTab(Project project, ContentManager contentManager) {
     var panel = new AiIntegrationsPanel();
     var controller = new AiIntegrationsController(project, panel);
-    Disposer.register(project, controller);
     var content = contentManager.getFactory().createContent(panel, AI_INTEGRATIONS_TAB_TITLE, false);
+    content.setDisposer(controller);
     content.setCloseable(false);
     contentManager.addContent(content);
-    contentManager.addContentManagerListener(new ContentManagerListener() {
+    var selectionListener = new ContentManagerListener() {
       @Override
       public void selectionChanged(ContentManagerEvent event) {
         if (event.getContent() == content && event.getOperation() == ContentManagerEvent.ContentOperation.add) {
           controller.loadInitially();
         }
       }
-    });
+    };
+    contentManager.addContentManagerListener(selectionListener);
+    Disposer.register(controller, () -> contentManager.removeContentManagerListener(selectionListener));
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
