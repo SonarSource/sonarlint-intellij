@@ -19,18 +19,23 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.icons.AllIcons
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBFont
 import java.awt.Container
 import java.awt.GridLayout
 import java.awt.event.ComponentEvent
+import java.awt.image.BufferedImage
 import javax.swing.JButton
 import javax.swing.JEditorPane
 import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.JToggleButton
+import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
+import javax.swing.event.HyperlinkEvent
+import javax.swing.text.View
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -149,7 +154,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `aligns agent disclosures with card text`() {
+    fun `aligns disclosures and guide links with card text`() {
         val panel = AiIntegrationsPanel()
         panel.render(AiIntegrationsPanelState.Ready(AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),
@@ -163,13 +168,58 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
 
         val cards = descendants(panel).filterIsInstance<JPanel>().first { it.layout is GridLayout && it.componentCount == 2 }
         listOf(
-            (cards.components[0] as Container) to "SonarQube CLI",
-            (cards.components[1] as Container) to "SonarQube MCP Server"
-        ).forEach { (card, title) ->
+            Triple(cards.components[0] as Container, "SonarQube CLI", "SonarQube CLI guide"),
+            Triple(cards.components[1] as Container, "SonarQube MCP Server", "MCP configuration guide")
+        ).forEach { (card, title, guideText) ->
             val titleLabel = descendants(card).filterIsInstance<JBLabel>().first { it.text == title }
             val disclosure = descendants(card).filterIsInstance<JToggleButton>().single()
+            val guide = descendants(card).filterIsInstance<JButton>().first { it.text == guideText }
             val textLeft = SwingUtilities.convertPoint(titleLabel, 0, 0, card).x
+
             assertThat(SwingUtilities.convertPoint(disclosure, disclosure.insets.left, 0, card).x).isEqualTo(textLeft)
+            assertThat(SwingUtilities.convertPoint(guide, guide.insets.left, 0, card).x).isEqualTo(textLeft)
+        }
+    }
+
+    @Test
+    fun `opens the matching guide from each card`() {
+        val panel = AiIntegrationsPanel()
+        val intents = mutableListOf<AiIntegrationsIntent>()
+        panel.setIntentListener { intent -> intents += intent }
+
+        val cliDescription = descendants(panel).filterIsInstance<JEditorPane>().first { it.text.contains("SonarVortex") }
+        val vortexClick = HyperlinkEvent(cliDescription, HyperlinkEvent.EventType.ACTIVATED, null, "#SonarVortex")
+        cliDescription.hyperlinkListeners.forEach { it.hyperlinkUpdate(vortexClick) }
+
+        listOf("SonarQube CLI guide", "MCP configuration guide").forEach { label ->
+            descendants(panel).filterIsInstance<JButton>().first { it.text == label }.doClick()
+        }
+
+        assertThat(intents).containsExactly(
+            AiIntegrationsIntent.OpenVortexDocumentation,
+            AiIntegrationsIntent.OpenCliDocumentation,
+            AiIntegrationsIntent.OpenMcpDocumentation
+        )
+    }
+
+    @Test
+    fun `external documentation links show a browser icon after the text`() {
+        val panel = AiIntegrationsPanel()
+        val cliDescription = descendants(panel).filterIsInstance<JEditorPane>().first { it.text.contains("SonarVortex") }
+        cliDescription.setSize(500, 100)
+        val graphics = BufferedImage(500, 100, BufferedImage.TYPE_INT_ARGB).createGraphics()
+        try {
+            cliDescription.paint(graphics)
+        } finally {
+            graphics.dispose()
+        }
+
+        assertThat(htmlViews(cliDescription.ui.getRootView(cliDescription)).map { it.javaClass.simpleName })
+            .contains("JBIconView")
+        listOf("SonarQube CLI guide", "MCP configuration guide").forEach { label ->
+            val guide = descendants(panel).filterIsInstance<JButton>().first { it.text == label }
+            assertThat(guide.icon).isSameAs(AllIcons.Ide.External_link_arrow)
+            assertThat(guide.horizontalTextPosition).isEqualTo(SwingConstants.LEFT)
         }
     }
 
@@ -200,6 +250,8 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }
+
+    private fun htmlViews(view: View): List<View> = listOf(view) + (0 until view.viewCount).flatMap { htmlViews(view.getView(it)) }
 
     private fun layoutRecursively(container: Container) {
         container.doLayout()

@@ -28,6 +28,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.SwingHelper
 import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.Color
@@ -53,6 +54,8 @@ import javax.swing.JScrollPane
 import javax.swing.JToggleButton
 import javax.swing.ScrollPaneConstants
 import javax.swing.Scrollable
+import javax.swing.SwingConstants
+import javax.swing.event.HyperlinkEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 
@@ -167,7 +170,7 @@ class AiIntegrationsPanel(
     private fun createCliCard(state: AiIntegrationsPanelState): JPanel = createCard(
         "SonarQube CLI",
         "Catch issues as AI writes code",
-        bodyText("Give your agents local code analysis to find bugs and vulnerabilities before you commit.", secondary = true),
+        createCliDescription(),
         cliStatus(state)
     ) {
         when (state) {
@@ -179,6 +182,7 @@ class AiIntegrationsPanel(
             is AiIntegrationsPanelState.Empty -> addCliOverview(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addCliOverview(state.snapshot)
         }
+        addDocumentationLink("SonarQube CLI guide", AiIntegrationsIntent.OpenCliDocumentation)
     }
 
     private fun createMcpCard(state: AiIntegrationsPanelState): JPanel = createCard(
@@ -192,6 +196,19 @@ class AiIntegrationsPanel(
             is AiIntegrationsPanelState.Error -> addMessage("MCP capabilities could not be loaded.")
             is AiIntegrationsPanelState.Empty -> addMcpOverview(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addMcpOverview(state.snapshot)
+        }
+        addDocumentationLink("MCP configuration guide", AiIntegrationsIntent.OpenMcpDocumentation)
+    }
+
+    private fun createCliDescription() = SwingHelper.createHtmlViewer(false, JBFont.label(), null, null).apply {
+        text = "Give your agents local code analysis with <a href=\"#SonarVortex\">Sonar Vortex&nbsp;<icon src=\"ide/external_link_arrow.svg\"></a> to find bugs and vulnerabilities before you commit."
+        border = JBUI.Borders.empty()
+        isOpaque = false
+        alignmentX = Component.LEFT_ALIGNMENT
+        addHyperlinkListener { event ->
+            if (event.eventType == HyperlinkEvent.EventType.ACTIVATED && event.description == "#SonarVortex") {
+                intentListener(AiIntegrationsIntent.OpenVortexDocumentation)
+            }
         }
     }
 
@@ -322,6 +339,10 @@ class AiIntegrationsPanel(
             panel.add(verticalSpace(8))
         }
 
+        fun addDocumentationLink(label: String, intent: AiIntegrationsIntent) {
+            panel.add(createLinkButton(label, intent))
+        }
+
         fun addAgentRow(name: String, status: String, description: String? = null, actions: List<RowAction> = emptyList()) {
             val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10).apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
@@ -386,6 +407,10 @@ class AiIntegrationsPanel(
         addActionListener { intentListener(intent) }
     }
 
+    private fun createLinkButton(label: String, intent: AiIntegrationsIntent): JButton = createLinkButton(label) {
+        intentListener(intent)
+    }
+
     private fun createDisclosureButton(expanded: Boolean, toggle: () -> Unit): JToggleButton =
         JToggleButton("${if (expanded) "▾" else "▸"} Manage agents", expanded).apply {
             isOpaque = false
@@ -398,6 +423,21 @@ class AiIntegrationsPanel(
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             addActionListener { toggle() }
         }
+
+    private fun createLinkButton(label: String, action: () -> Unit): JButton = JButton(label, AllIcons.Ide.External_link_arrow).apply {
+        isOpaque = false
+        isContentAreaFilled = false
+        isBorderPainted = false
+        border = JBUI.Borders.empty()
+        margin = JBUI.emptyInsets()
+        horizontalAlignment = SwingConstants.LEFT
+        horizontalTextPosition = SwingConstants.LEFT
+        iconTextGap = JBUI.scale(4)
+        alignmentX = Component.LEFT_ALIGNMENT
+        foreground = LINK_TEXT
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        addActionListener { action() }
+    }
 
     override fun dispose() {
         disposed.set(true)

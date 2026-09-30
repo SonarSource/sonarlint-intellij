@@ -20,18 +20,25 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.ContentManager;
+import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManagerEvent;
+import com.intellij.ui.content.ContentManagerListener;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
+import org.sonarlint.intellij.ai.AiIntegrationsController;
+import org.sonarlint.intellij.ai.AiIntegrationsPanel;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.HELP_AND_FEEDBACK_TAB_TITLE;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.AI_INTEGRATIONS_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
@@ -46,10 +53,12 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     runOnUiThread(project, () -> {
       configureAdditionalGearActions(toolWindow);
       var contentManager = toolWindow.getContentManager();
-      addCurrentFileTab(project, contentManager);
+      var findingsContent = addCurrentFileTab(project, contentManager);
       var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
+      addAiIntegrationsTab(project, contentManager);
       addLogTab(project, toolWindow);
       addHelpAndFeedbackTab(project, toolWindow);
+      contentManager.setSelectedContent(findingsContent);
       toolWindow.setType(ToolWindowType.DOCKED, null);
       contentManager.addContentManagerListener(sonarLintToolWindow);
     });
@@ -61,12 +70,12 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     toolWindow.setAdditionalGearActions(gearActions);
   }
 
-  private static void addCurrentFileTab(Project project, ContentManager contentManager) {
+  private static Content addCurrentFileTab(Project project, ContentManager contentManager) {
     var currentFilePanel = new CurrentFilePanel(project);
-    addCurrentFileTab(currentFilePanel, contentManager);
+    return addCurrentFileTab(currentFilePanel, contentManager);
   }
 
-  private static void addCurrentFileTab(SimpleToolWindowPanel panel, ContentManager contentManager) {
+  private static Content addCurrentFileTab(SimpleToolWindowPanel panel, ContentManager contentManager) {
     var content = contentManager.getFactory()
       .createContent(
         panel,
@@ -75,6 +84,24 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     content.setCloseable(false);
     contentManager.addDataProvider(panel);
     contentManager.addContent(content);
+    return content;
+  }
+
+  private static void addAiIntegrationsTab(Project project, ContentManager contentManager) {
+    var panel = new AiIntegrationsPanel();
+    var controller = new AiIntegrationsController(project, panel);
+    Disposer.register(project, controller);
+    var content = contentManager.getFactory().createContent(panel, AI_INTEGRATIONS_TAB_TITLE, false);
+    content.setCloseable(false);
+    contentManager.addContent(content);
+    contentManager.addContentManagerListener(new ContentManagerListener() {
+      @Override
+      public void selectionChanged(ContentManagerEvent event) {
+        if (event.getContent() == content && event.getOperation() == ContentManagerEvent.ContentOperation.add) {
+          controller.loadInitially();
+        }
+      }
+    });
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
