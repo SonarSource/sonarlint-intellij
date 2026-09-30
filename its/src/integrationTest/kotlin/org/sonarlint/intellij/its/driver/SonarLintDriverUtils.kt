@@ -22,6 +22,9 @@ package org.sonarlint.intellij.its.driver
 import com.intellij.driver.client.Driver
 import com.intellij.driver.sdk.invokeAction
 import com.intellij.driver.sdk.openFile
+import com.intellij.driver.sdk.ui.enabled
+import com.intellij.driver.sdk.ui.haveText
+import com.intellij.driver.sdk.ui.present
 import com.intellij.driver.sdk.ui.shouldBe
 import com.intellij.driver.sdk.ui.ui
 import com.intellij.driver.sdk.ui.xQuery
@@ -85,9 +88,7 @@ fun Driver.verifyCurrentFileTabContainsMessages(vararg expectedMessages: String)
     waitForIndicators(5.minutes)
     expectedMessages.forEach { message ->
         sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
-            waitFor(duration = 5.minutes, errorMessage = "Expected '$message' in Current File tab") {
-                hasText(message)
-            }
+            shouldBe("Expected '$message' in Current File tab", haveText(message), timeout = 5.minutes)
         }
     }
 }
@@ -104,7 +105,7 @@ fun Driver.analyzeAndVerifyReportTabContainsMessages(vararg expectedMessages: St
     waitForIndicators(5.minutes)
     sonarLintPanel("ReportPanel") {
         expectedMessages.forEach { message ->
-            shouldBe("Expected '$message' in Report tab") { hasText(message) }
+            shouldBe("Expected '$message' in Report tab", haveText(message), timeout = 5.minutes)
         }
     }
 }
@@ -117,21 +118,12 @@ fun Driver.toggleRule(ruleKey: String, ruleText: String) {
             x(xQuery { byClass("SettingsSearch") }).keyboard { enterText("SonarQube for IDE") }
             Thread.sleep(1000)
             settingsTree.clickPath("Tools", "SonarQube for IDE")
-            waitFor(duration = 30.seconds, errorMessage = "SonarQube for IDE Rules tab") {
-                x(xQuery { byVisibleText("Rules") }).present()
-            }
-            findText("Rules").click()
+            x(xQuery { byVisibleText("Rules") }).shouldBe("SonarQube for IDE Rules tab", present, timeout = 30.seconds).click()
             x(xQuery { byClass("SearchTextField") }).keyboard { enterText(ruleKey) }
-            waitFor(duration = 30.seconds, errorMessage = "Rule '$ruleText'") {
-                x(xQuery { byVisibleText(ruleText) }).present()
-            }
-            findText(ruleText).click()
+            x(xQuery { byVisibleText(ruleText) }).shouldBe("Rule '$ruleText'", present, timeout = 30.seconds).click()
             Thread.sleep(1000)
             findText(ruleText).doubleClick()
-            waitFor(duration = 10.seconds, errorMessage = "Apply to become enabled") {
-                x(xQuery { byVisibleText("Apply") }).isEnabled()
-            }
-            x(xQuery { byVisibleText("Apply") }).click()
+            x(xQuery { byVisibleText("Apply") }).shouldBe("Apply to become enabled", enabled, timeout = 10.seconds).click()
             okButton.click()
         }
     }
@@ -163,9 +155,7 @@ fun Driver.excludeFile(filePath: String) {
         dialog(title = "Add SonarQube for IDE File Exclusion") {
             x(xQuery { byClass("TextFieldWithBrowseButton") }).click()
             keyboard { enterText(filePath) }
-            waitFor(duration = 5.seconds, errorMessage = "OK to become enabled") {
-                x(xQuery { byVisibleText("OK") }).isEnabled()
-            }
+            x(xQuery { byVisibleText("OK") }).shouldBe("OK to become enabled", enabled, timeout = 5.seconds)
             pressButton("OK")
         }
         pressButton("OK")
@@ -239,25 +229,17 @@ private fun Driver.sonarLintPanel(
     block: com.intellij.driver.sdk.ui.components.UiComponent.() -> Unit,
 ) {
     ensureSonarLintToolWindowVisible()
-    if (tabTitle != null) {
-        ideFrame {
+    ideFrame {
+        if (tabTitle != null) {
             toolWindow(SONARLINT_TOOL_WINDOW) {
-                waitFor(duration = 1.minutes, errorMessage = "SonarQube for IDE tab '$tabTitle'") {
-                    x(xQuery { byVisibleText(tabTitle) }).present()
-                }
-                x(xQuery { byVisibleText(tabTitle) }).click()
+                x(xQuery { byVisibleText(tabTitle) })
+                    .shouldBe("SonarQube for IDE tab '$tabTitle'", present, timeout = 1.minutes)
+                    .click()
             }
         }
-    }
-    waitFor(duration = 5.minutes, errorMessage = "SonarQube for IDE $panelClass") {
-        var panelPresent = false
-        ideFrame {
-            panelPresent = x(xQuery { byClass(panelClass) }).present()
-        }
-        panelPresent
-    }
-    ideFrame {
-        x(xQuery { byClass(panelClass) }).apply(block)
+        x(xQuery { byClass(panelClass) })
+            .shouldBe("SonarQube for IDE $panelClass", present, timeout = 5.minutes)
+            .apply(block)
     }
 }
 
