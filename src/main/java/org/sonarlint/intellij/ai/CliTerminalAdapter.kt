@@ -27,13 +27,11 @@ import java.util.concurrent.CompletableFuture
 interface CliTerminalAdapter {
     fun launch(project: Project, command: CliCommand): TerminalLaunch
 
-    fun focus(handle: Any): Boolean
-
     fun shellFor(project: Project): CommandShell? = osDefaultCommandShell()
 }
 
 sealed interface TerminalLaunch {
-    data class Started(val handle: Any, val completion: CompletableFuture<TerminalCompletion>) : TerminalLaunch
+    data class Started(val focus: () -> Unit, val completion: CompletableFuture<TerminalCompletion>) : TerminalLaunch
     data object Unsupported : TerminalLaunch
     data class Failed(val error: Throwable) : TerminalLaunch
 }
@@ -49,8 +47,6 @@ internal fun osDefaultCommandShell(): CommandShell =
 
 class SafeOptionalTerminalAdapter : CliTerminalAdapter {
     override fun launch(project: Project, command: CliCommand): TerminalLaunch = TerminalLaunch.Unsupported
-
-    override fun focus(handle: Any): Boolean = false
 }
 
 object CliTerminalAdapterProvider {

@@ -20,13 +20,14 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -49,14 +50,94 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
         val completion = CompletableFuture<TerminalCompletion>()
         val terminal = mock<CliTerminalAdapter>()
-        whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started("handle", completion))
+        val focuses = AtomicInteger()
+        whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started({ focuses.incrementAndGet() }, completion))
         val coordinator = coordinator(backend, terminal)
 
         assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)).isTrue()
         assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)).isFalse()
-        verify(terminal).focus("handle")
+        assertThat(focuses.get()).isEqualTo(1)
         completion.complete(TerminalCompletion.Exited(0))
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.ExitZero)
+    }
+
+    @Test
+    fun `focuses the active terminal without opening another connection chooser`() {
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        val terminal = mock<CliTerminalAdapter>()
+        val focuses = AtomicInteger()
+        whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started({ focuses.incrementAndGet() }, CompletableFuture()))
+        var choices = 0
+        val selector = CliConnectionSelector { _, _ -> choices++; null }
+        val coordinator = coordinator(backend, terminal, selector = selector)
+        val connections = snapshot.copy(connectionChoices = listOf(
+            IntegrationConnection("first", "https://first", null),
+            IntegrationConnection("second", "https://second", null)
+        ))
+
+        coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
+        assertThat(coordinator.execute(project, connections, AiIntegrationsIntent.AuthenticateCli)).isFalse()
+
+        assertThat(choices).isZero()
+        assertThat(focuses.get()).isEqualTo(1)
+        assertThat(coordinator.activeOperation()).isTrue()
+    }
+
+    @Test
+    fun `releases the lease when command preparation throws synchronously`() {
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenThrow(IllegalStateException("startup failed"))
+            .thenReturn(CompletableFuture.completedFuture(command))
+        val coordinator = coordinator(backend, SafeOptionalTerminalAdapter())
+
+        coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.PreparationFailed)
+        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)).isTrue()
+    }
+
+    @Test
+    fun `project disposal releases the lease and ignores late preparation`() {
+        val closingProject = mock<Project>()
+        val preparation = CompletableFuture<CliCommand>()
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(preparation)
+        val terminal = mock<CliTerminalAdapter>()
+        val notifications = mutableListOf<Notification>()
+        val refreshes = AtomicInteger()
+        val coordinator = coordinator(backend, terminal, notifications = notifications, refresh = { refreshes.incrementAndGet() })
+
+        coordinator.execute(closingProject, snapshot, AiIntegrationsIntent.InstallCli)
+        Disposer.dispose(closingProject)
+        preparation.complete(command)
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Cancelled)
+        assertThat(refreshes.get()).isEqualTo(1)
+        assertThat(notifications).isEmpty()
+        verifyNoInteractions(terminal)
+    }
+
+    @Test
+    fun `ignores terminal completion after its project has been disposed`() {
+        val closingProject = mock<Project>()
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        val completion = CompletableFuture<TerminalCompletion>()
+        val terminal = mock<CliTerminalAdapter>()
+        whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started({}, completion))
+        val notifications = mutableListOf<Notification>()
+        val coordinator = coordinator(backend, terminal, notifications = notifications)
+
+        coordinator.execute(closingProject, snapshot, AiIntegrationsIntent.InstallCli)
+        Disposer.dispose(closingProject)
+        completion.complete(TerminalCompletion.Exited(0))
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Cancelled)
+        assertThat(notifications).isEmpty()
     }
 
     @Test
@@ -73,7 +154,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
             whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
             val completion = CompletableFuture<TerminalCompletion>()
             val terminal = mock<CliTerminalAdapter>()
-            whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started(Any(), completion))
+            whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started({}, completion))
             val notifications = mutableListOf<Notification>()
             val coordinator = coordinator(backend, terminal, notifications = notifications)
             coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
@@ -121,9 +202,9 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         val preparationCoordinator = coordinator(
             failedBackend,
             SafeOptionalTerminalAdapter(),
-            notifications = preparationNotifications
+            notifications = preparationNotifications,
+            refresh = { refreshes.incrementAndGet() }
         )
-        preparationCoordinator.register(this, refreshes::incrementAndGet)
         preparationCoordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
         assertThat(preparationCoordinator.lastOutcome()).isEqualTo(CliOperationOutcome.PreparationFailed)
         assertThat(preparationNotifications.single().message).contains("Check").contains("retry")
@@ -134,8 +215,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Failed(IllegalStateException("failed")))
         whenever(terminal.shellFor(any())).thenReturn(CommandShell.POSIX)
         val launchNotifications = mutableListOf<Notification>()
-        val launchCoordinator = coordinator(backend, terminal, notifications = launchNotifications)
-        launchCoordinator.register(this, refreshes::incrementAndGet)
+        val launchCoordinator = coordinator(backend, terminal, notifications = launchNotifications, refresh = { refreshes.incrementAndGet() })
         launchCoordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
         assertThat(launchCoordinator.lastOutcome()).isEqualTo(CliOperationOutcome.LaunchFailed)
         assertThat(launchNotifications.single().message).contains("terminal").contains("copied").contains("refresh")
@@ -238,10 +318,8 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
 
             override fun launch(project: com.intellij.openapi.project.Project, renderedCommand: String): TerminalLaunch {
                 launchedCommand = renderedCommand
-                return TerminalLaunch.Started(Any(), CompletableFuture.completedFuture(TerminalCompletion.ClosedWithoutExitStatus))
+                return TerminalLaunch.Started({}, CompletableFuture.completedFuture(TerminalCompletion.ClosedWithoutExitStatus))
             }
-
-            override fun focus(handle: Any): Boolean = true
         }
 
         IntellijTerminalAdapter(session).launch(project, command)
@@ -254,14 +332,15 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         terminal: CliTerminalAdapter,
         copier: (String) -> Unit = {},
         selector: CliConnectionSelector = CliConnectionSelector(),
-        notifications: MutableList<Notification> = mutableListOf()
+        notifications: MutableList<Notification> = mutableListOf(),
+        refresh: () -> Unit = {}
     ) = CliOperationCoordinator(
         backend,
         terminal,
         selector,
         copier,
         { _, message, type -> notifications += Notification(message, type) },
-        { refresh -> refresh() }
+        refresh
     )
 
     private data class Notification(val message: String, val type: NotificationType)
@@ -269,8 +348,6 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
     private class ShellTerminal(private val shell: CommandShell?) : CliTerminalAdapter {
         override fun launch(project: com.intellij.openapi.project.Project, command: CliCommand): TerminalLaunch =
             TerminalLaunch.Unsupported
-
-        override fun focus(handle: Any): Boolean = false
 
         override fun shellFor(project: com.intellij.openapi.project.Project): CommandShell? = shell
     }

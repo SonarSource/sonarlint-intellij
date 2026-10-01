@@ -20,18 +20,20 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import java.awt.datatransfer.StringSelection
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicReference
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarlint.intellij.messages.CliOperationListener
 
 @Service(Service.Level.APP)
 class CliOperationCoordinator @JvmOverloads constructor(
@@ -42,47 +44,48 @@ class CliOperationCoordinator @JvmOverloads constructor(
     private val notifyUser: (Project, String, NotificationType) -> Unit = { _, message, type ->
         projectLessNotification("SonarQube CLI", message, type)
     },
-    private val dispatchRefresh: (() -> Unit) -> Unit = { refresh ->
-        ApplicationManager.getApplication().invokeLater(refresh)
+    private val refreshViews: () -> Unit = {
+        ApplicationManager.getApplication().invokeLater {
+            ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
+        }
     }
 ) {
     private val active = AtomicReference<OperationLease?>()
     private val lastOutcome = AtomicReference<CliOperationOutcome?>()
-    private val refreshCallbacks = ConcurrentHashMap<Any, () -> Unit>()
-
-    fun register(owner: Any, refresh: () -> Unit) {
-        refreshCallbacks[owner] = refresh
-    }
-
-    fun unregister(owner: Any) {
-        refreshCallbacks.remove(owner)
-    }
-
     fun execute(project: Project, snapshot: AiIntegrationSnapshot, intent: AiIntegrationsIntent): Boolean {
-        val action = when (val resolution = toAction(project, snapshot, intent)) {
-            is ActionResolution.Ready -> resolution.action
-            ActionResolution.Cancelled -> {
-                publishOutcome(CliOperationOutcome.Cancelled)
-                notify(project, "SonarQube CLI sign-in was cancelled. No command was run; choose Sign in to try again.", NotificationType.INFORMATION)
-                return false
-            }
-            ActionResolution.NotApplicable -> return false
-        }
-        val lease = OperationLease(project, action)
-        if (!active.compareAndSet(null, lease)) {
-            active.get()?.terminalHandle?.let(terminalAdapter::focus)
+        if (project.isDisposed) {
             return false
         }
-        prepare(action).whenComplete { command, preparationError ->
-            if (preparationError != null || command == null) {
-                complete(lease, CliOperationOutcome.PreparationFailed)
-                notify(project, "Unable to prepare the SonarQube CLI command. Check the selected connection and retry.", NotificationType.ERROR)
+        val lease = OperationLease(project) { complete(it, CliOperationOutcome.Cancelled) }
+        if (!active.compareAndSet(null, lease)) {
+            active.get()?.terminal?.focus?.invoke()
+            return false
+        }
+        val preparation = try {
+            Disposer.register(project, lease)
+            prepare(project, snapshot, intent)
+        } catch (_: CancellationException) {
+            finish(lease, CliOperationOutcome.Cancelled,
+                "SonarQube CLI sign-in was cancelled. No command was run; choose Sign in to try again.", NotificationType.INFORMATION)
+            return false
+        } catch (error: Exception) {
+            CompletableFuture.failedFuture(error)
+        }
+        preparation.whenComplete { command, preparationError ->
+            if (active.get() != lease) {
+                return@whenComplete
+            }
+            if (project.isDisposed) {
+                complete(lease, CliOperationOutcome.Cancelled)
+            } else if (preparationError != null || command == null) {
+                finish(lease, CliOperationOutcome.PreparationFailed,
+                    "Unable to prepare the SonarQube CLI command. Check the selected connection and retry.", NotificationType.ERROR)
             } else {
                 try {
                     launchOrCopy(lease, command)
-                } catch (_: Throwable) {
-                    complete(lease, CliOperationOutcome.LaunchFailed)
-                    notify(project, "The SonarQube CLI command could not be started. Retry from this view.", NotificationType.ERROR)
+                } catch (_: Exception) {
+                    finish(lease, CliOperationOutcome.LaunchFailed,
+                        "The SonarQube CLI command could not be started. Retry from this view.", NotificationType.ERROR)
                 }
             }
         }
@@ -93,52 +96,39 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
     internal fun lastOutcome(): CliOperationOutcome? = lastOutcome.get()
 
-    private fun toAction(
-        project: Project,
-        snapshot: AiIntegrationSnapshot,
-        intent: AiIntegrationsIntent
-    ): ActionResolution = when (intent) {
-        AiIntegrationsIntent.InstallCli -> ActionResolution.Ready(CliOperationAction.Install)
-        AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot)) {
-            ConnectionSelection.Cancelled -> ActionResolution.Cancelled
-            ConnectionSelection.InteractiveLogin -> ActionResolution.Ready(CliOperationAction.Authenticate(null))
-            is ConnectionSelection.Selected -> ActionResolution.Ready(CliOperationAction.Authenticate(selection.connectionId))
+    private fun prepare(project: Project, snapshot: AiIntegrationSnapshot, intent: AiIntegrationsIntent): CompletableFuture<CliCommand> =
+        when (intent) {
+            AiIntegrationsIntent.InstallCli -> backendService.prepareInstallCliCommand()
+            AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot)) {
+                ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
+                ConnectionSelection.InteractiveLogin -> backendService.prepareAuthenticateCliCommand(null)
+                is ConnectionSelection.Selected -> backendService.prepareAuthenticateCliCommand(selection.connectionId)
+            }
+            is AiIntegrationsIntent.IntegrateCli -> backendService.prepareIntegrateCliCommand(intent.agent)
         }
-        is AiIntegrationsIntent.IntegrateCli -> ActionResolution.Ready(CliOperationAction.Integrate(intent.agent))
-        else -> ActionResolution.NotApplicable
-    }
-
-    private fun prepare(action: CliOperationAction): CompletableFuture<CliCommand> = when (action) {
-        CliOperationAction.Install -> backendService.prepareInstallCliCommand()
-        is CliOperationAction.Authenticate -> backendService.prepareAuthenticateCliCommand(action.connectionId)
-        is CliOperationAction.Integrate -> backendService.prepareIntegrateCliCommand(action.agent)
-    }
 
     private fun launchOrCopy(lease: OperationLease, command: CliCommand) {
         when (val launch = terminalAdapter.launch(lease.project, command)) {
             is TerminalLaunch.Started -> {
-                lease.terminalHandle = launch.handle
+                lease.terminal = launch
                 launch.completion.whenComplete { completion, error ->
                     completeTerminalOperation(lease, completion, error)
                 }
             }
             is TerminalLaunch.Failed -> {
                 val copied = copyFallback(lease.project, command)
-                complete(lease, CliOperationOutcome.LaunchFailed)
                 val message = if (copied) {
                     "The terminal could not be started. The command was copied; paste it into a terminal, run it, then refresh this view."
                 } else {
                     "The terminal could not be started and the command could not be copied. Open a terminal and retry from this view."
                 }
-                notify(lease.project, message, NotificationType.WARNING)
+                finish(lease, CliOperationOutcome.LaunchFailed, message, NotificationType.WARNING)
             }
             TerminalLaunch.Unsupported -> {
                 if (copyFallback(lease.project, command)) {
-                    complete(lease, CliOperationOutcome.Copied)
-                    notify(lease.project, "The SonarQube CLI command was copied. Paste it into a terminal, run it, then refresh this view.", NotificationType.INFORMATION)
+                    finish(lease, CliOperationOutcome.Copied, "The SonarQube CLI command was copied. Paste it into a terminal, run it, then refresh this view.", NotificationType.INFORMATION)
                 } else {
-                    complete(lease, CliOperationOutcome.LaunchFailed)
-                    notify(lease.project, "No compatible terminal is available and the command could not be copied. Open a terminal and retry from this view.", NotificationType.ERROR)
+                    finish(lease, CliOperationOutcome.LaunchFailed, "No compatible terminal is available and the command could not be copied. Open a terminal and retry from this view.", NotificationType.ERROR)
                 }
             }
         }
@@ -184,47 +174,31 @@ class CliOperationCoordinator @JvmOverloads constructor(
                 NotificationType.WARNING
             )
         }
-        complete(lease, outcome)
-        notify(lease.project, message, type)
+        finish(lease, outcome, message, type)
     }
 
-    private fun complete(lease: OperationLease, outcome: CliOperationOutcome) {
+    private fun complete(lease: OperationLease, outcome: CliOperationOutcome): Boolean {
+        if (!active.compareAndSet(lease, null)) {
+            return false
+        }
         lastOutcome.set(outcome)
-        lease.outcome.complete(outcome)
-        if (active.compareAndSet(lease, null)) {
-            refreshCallbacks.values.forEach { refresh ->
-                dispatchRefresh(refresh)
-            }
+        Disposer.dispose(lease)
+        refreshViews()
+        return true
+    }
+
+    private fun finish(lease: OperationLease, outcome: CliOperationOutcome, message: String, type: NotificationType) {
+        if (complete(lease, outcome)) {
+            notifyUser(lease.project, message, type)
         }
     }
-
-    private fun notify(project: Project, message: String, type: NotificationType) {
-        notifyUser(project, message, type)
-    }
-
-    private fun publishOutcome(outcome: CliOperationOutcome) {
-        lastOutcome.set(outcome)
-        refreshCallbacks.values.forEach { refresh -> dispatchRefresh(refresh) }
-    }
 }
 
-internal data class OperationLease(
-    val project: Project,
-    val action: CliOperationAction,
-    val outcome: CompletableFuture<CliOperationOutcome> = CompletableFuture(),
-    var terminalHandle: Any? = null
-)
+private class OperationLease(val project: Project, private val onDispose: (OperationLease) -> Unit) : Disposable {
+    @Volatile
+    var terminal: TerminalLaunch.Started? = null
 
-sealed interface CliOperationAction {
-    data object Install : CliOperationAction
-    data class Authenticate(val connectionId: String?) : CliOperationAction
-    data class Integrate(val agent: AiAgent) : CliOperationAction
-}
-
-private sealed interface ActionResolution {
-    data class Ready(val action: CliOperationAction) : ActionResolution
-    data object Cancelled : ActionResolution
-    data object NotApplicable : ActionResolution
+    override fun dispose() = onDispose(this)
 }
 
 enum class CliOperationOutcome {

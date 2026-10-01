@@ -21,6 +21,8 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
+import com.intellij.terminal.ui.TerminalWidget
 import java.util.concurrent.CompletableFuture
 import org.jetbrains.plugins.terminal.TerminalProjectOptionsProvider
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
@@ -37,8 +39,6 @@ class IntellijTerminalAdapter() : CliTerminalAdapter {
         return terminalSession.launch(project, CliCommandRenderer.render(command, shell))
     }
 
-    override fun focus(handle: Any): Boolean = terminalSession.focus(handle)
-
     override fun shellFor(project: Project): CommandShell? = terminalSession.commandShell(project)
 }
 
@@ -46,8 +46,6 @@ internal interface TerminalSession {
     fun commandShell(project: Project): CommandShell?
 
     fun launch(project: Project, renderedCommand: String): TerminalLaunch
-
-    fun focus(handle: Any): Boolean
 }
 
 private class IntellijTerminalSession : TerminalSession {
@@ -60,26 +58,27 @@ private class IntellijTerminalSession : TerminalSession {
         var result: TerminalLaunch? = null
         runOnUiThread {
             result = try {
+                check(!project.isDisposed) { "The project was closed." }
                 val manager = TerminalToolWindowManager.getInstance(project)
                 val widget = manager.createShellWidget(project.basePath, "SonarQube CLI", true, true)
+                val completion = observeTerminalCompletion(widget)
+                widget.writePlainMessage("Close this terminal tab when the command finishes to continue SonarQube CLI setup.\r\n")
                 widget.sendCommandToExecute(renderedCommand)
                 TerminalLaunch.Started(
-                    TerminalHandle(manager),
-                    CompletableFuture.completedFuture(TerminalCompletion.ClosedWithoutExitStatus)
+                    focus = {
+                        runOnUiThread {
+                            val content = manager.getContainer(widget)?.content ?: return@runOnUiThread
+                            manager.toolWindow.contentManager.setSelectedContent(content)
+                            manager.toolWindow.show { widget.requestFocus() }
+                        }
+                    },
+                    completion = completion
                 )
             } catch (error: Throwable) {
                 TerminalLaunch.Failed(error)
             }
         }
         return result ?: TerminalLaunch.Failed(IllegalStateException("The terminal session was not created."))
-    }
-
-    override fun focus(handle: Any): Boolean {
-        if (handle !is TerminalHandle) {
-            return false
-        }
-        runOnUiThread { handle.manager.toolWindow.show() }
-        return true
     }
 
     private fun readConfiguredShellPath(project: Project): String? = try {
@@ -98,7 +97,12 @@ private class IntellijTerminalSession : TerminalSession {
     }
 }
 
-private data class TerminalHandle(val manager: TerminalToolWindowManager)
+internal fun observeTerminalCompletion(widget: TerminalWidget): CompletableFuture<TerminalCompletion> {
+    val completion = CompletableFuture<TerminalCompletion>()
+    widget.addTerminationCallback({ completion.complete(TerminalCompletion.ClosedWithoutExitStatus) }, widget)
+    Disposer.register(widget) { completion.complete(TerminalCompletion.ClosedWithoutExitStatus) }
+    return completion
+}
 
 internal fun classifyTerminalShell(shellPath: String): CommandShell? {
     val fileName = shellPath.lowercase().substringAfterLast('/').substringAfterLast('\\')
