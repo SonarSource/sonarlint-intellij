@@ -49,6 +49,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import java.util.logging.Filter
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -103,6 +104,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyze
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationHost
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationScope
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticateCliCommandParams
@@ -1287,6 +1290,30 @@ class BackendService : Disposable {
         requestFromBackend {
             it.aiAgentService.prepareAuthenticateCommand(PrepareAuthenticateCliCommandParams(null, null, connectionId))
         }.thenApply(::toCliCommand)
+
+    fun authenticateCliWithConnection(connectionId: String): CompletableFuture<AuthenticateCliWithConnectionResponse> {
+        val result = CompletableFuture<AuthenticateCliWithConnectionResponse>()
+        val rpcRequest = AtomicReference<CompletableFuture<AuthenticateCliWithConnectionResponse>>()
+        result.whenComplete { _, _ ->
+            if (result.isCancelled) rpcRequest.get()?.cancel(true)
+        }
+        ensureBackendInitialized().thenAcceptAsync { backend ->
+            if (!result.isCancelled) {
+                val request = backend.aiAgentService.authenticateCliWithConnection(AuthenticateCliWithConnectionParams(connectionId))
+                rpcRequest.set(request)
+                if (result.isCancelled) {
+                    request.cancel(true)
+                } else {
+                    request.whenComplete { response, error ->
+                        if (error == null) result.complete(response) else result.completeExceptionally(error)
+                    }
+                }
+            }
+        }.whenComplete { _, error ->
+            if (error != null) result.completeExceptionally(error)
+        }
+        return result
+    }
 
     fun prepareIntegrateCliCommand(agent: AiAgent): CompletableFuture<CliCommand> =
         requestFromBackend {
