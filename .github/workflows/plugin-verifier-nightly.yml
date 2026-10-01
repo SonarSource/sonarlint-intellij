@@ -48,16 +48,15 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           sonar-platform: none
           use-develocity: true
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           disable-caching: 'true'
 
-      # Verifier downloads IDE tarballs through Gradle ivy from jetbrains-download.
-      # Edge returns HTTP 404 for that repo; keep this job on SaaS (same as curl IDE fetches).
       - name: Run plugin verifier
         run: ./gradlew :verifyPlugin -PverifierEnv=LATEST
 
