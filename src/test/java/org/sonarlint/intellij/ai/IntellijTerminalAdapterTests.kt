@@ -25,12 +25,36 @@ import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 
 class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
+    @Test
+    fun classifies_only_the_shell_executable_even_when_arguments_contain_paths() {
+        assertThat(classifyTerminalShell("pwsh.exe -WorkingDirectory C:/work")).isEqualTo(CommandShell.POWERSHELL)
+        assertThat(classifyTerminalShell("\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -WorkingDirectory C:/work"))
+            .isEqualTo(CommandShell.POWERSHELL)
+        assertThat(classifyTerminalShell("'/opt/shell path/bash' -l")).isEqualTo(CommandShell.POSIX)
+        assertThat(classifyTerminalShell("/bin/sh -l")).isEqualTo(CommandShell.POSIX)
+        assertThat(classifyTerminalShell("cmd.exe /k C:\\tools\\bash-env.bat")).isNull()
+        assertThat(classifyTerminalShell("cmd.exe /k C:\\tools\\pwsh.exe")).isNull()
+        assertThat(classifyTerminalShell("/usr/bin/notbash")).isNull()
+    }
+
+    @Test
+    fun unsupported_shell_still_provides_a_shell_for_clipboard_copy() {
+        val session = mock<TerminalSession>()
+        val adapter = IntellijTerminalAdapter(session)
+
+        assertThat(adapter.launch(project, CliCommand("sonar", listOf("auth"), true))).isSameAs(TerminalLaunch.Unsupported)
+        assertThat(adapter.shellFor(project)).isEqualTo(osDefaultCommandShell())
+        verify(session, never()).launch(any(), any())
+    }
+
     @Test
     fun `holds completion until the terminal session terminates`() {
         val widget = mock<TerminalWidget>()
@@ -58,7 +82,7 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
     @Test
     fun `classifies the configured terminal shell on every operating system`() {
         assertThat(classifyTerminalShell("/usr/local/bin/pwsh")).isEqualTo(CommandShell.POWERSHELL)
-        assertThat(classifyTerminalShell("C:\\Program Files\\PowerShell\\7\\pwsh.exe")).isEqualTo(CommandShell.POWERSHELL)
+        assertThat(classifyTerminalShell("\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\"")).isEqualTo(CommandShell.POWERSHELL)
         assertThat(classifyTerminalShell("/bin/zsh")).isEqualTo(CommandShell.POSIX)
         assertThat(classifyTerminalShell("/bin/sh")).isEqualTo(CommandShell.POSIX)
         assertThat(classifyTerminalShell("C:\\Windows\\System32\\bash.exe")).isEqualTo(CommandShell.POSIX)
