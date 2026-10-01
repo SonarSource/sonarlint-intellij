@@ -79,6 +79,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
                     is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)
                 }
                 is AiIntegrationsIntent.IntegrateCli -> prepareAndLaunch(lease, backendService.prepareIntegrateCliCommand(intent.agent))
+                else -> throw IllegalArgumentException("Not a CLI operation: $intent")
             }
         } catch (_: CancellationException) {
             releaseAndNotify(lease, CliOperationOutcome.Cancelled,
