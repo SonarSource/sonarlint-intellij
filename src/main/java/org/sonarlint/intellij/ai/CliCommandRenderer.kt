@@ -25,6 +25,8 @@ enum class CommandShell {
 }
 
 object CliCommandRenderer {
+    private val POWERSHELL_SINGLE_QUOTES = Regex("['\u2018\u2019\u201A\u201B]")
+
     fun render(command: CliCommand, shell: CommandShell): String {
         val tokens = listOf(command.executable) + command.arguments
         return when (shell) {
@@ -35,5 +37,6 @@ object CliCommandRenderer {
 
     private fun quotePosix(value: String): String = "'${value.replace("'", "'\"'\"'")}'"
 
-    private fun quotePowerShell(value: String): String = "'${value.replace("'", "''")}'"
+    private fun quotePowerShell(value: String): String =
+        "'" + value.replace(POWERSHELL_SINGLE_QUOTES) { it.value + it.value } + "'"
 }

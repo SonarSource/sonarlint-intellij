@@ -36,4 +36,15 @@ class CliCommandRendererTests {
         assertThat(CliCommandRenderer.render(command, CommandShell.POWERSHELL))
             .isEqualTo("& '/path with spaces/sonar' 'a''b' '' '$&|;()!'")
     }
+
+    @Test
+    fun `doubles every PowerShell single quote character inside an argument`() {
+        val connectionId = "Bob\u2019s server; Write-Output unexpected"
+        val command = CliCommand("sonar", listOf("a'b\u2018c\u2019d\u201Ae\u201Bf", connectionId), true)
+        val expected = "& 'sonar' 'a''b\u2018\u2018c\u2019\u2019d\u201A\u201Ae\u201B\u201Bf' " +
+            "'Bob\u2019\u2019s server; Write-Output unexpected'"
+
+        assertThat(CliCommandRenderer.render(command, CommandShell.POWERSHELL))
+            .isEqualTo(expected)
+    }
 }
