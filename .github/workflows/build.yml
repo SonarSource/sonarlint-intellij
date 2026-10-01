@@ -695,9 +695,6 @@ jobs:
           PLUGIN_ARGS="-PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin"
           if [ -z "${TEST_SUITE}" ] || [ "${TEST_SUITE}" = "Standalone" ]; then
             ./gradlew :its:integrationTest ${GRADLE_ARGS} ${PLUGIN_ARGS}
-            if [ -z "${TEST_SUITE}" ]; then
-              ./gradlew :its:test ${GRADLE_ARGS} ${PLUGIN_ARGS}
-            fi
           else
             ./gradlew :its:check ${GRADLE_ARGS} ${PLUGIN_ARGS}
           fi
