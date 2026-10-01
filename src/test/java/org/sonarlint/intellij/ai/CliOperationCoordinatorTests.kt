@@ -20,14 +20,18 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.util.ui.UIUtil
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -298,16 +302,84 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(notifications.single().message).contains("could not be copied")
     }
 
+    @Test
+    fun background_preparation_launches_and_copies_on_the_edt() {
+        val preparation = CompletableFuture<CliCommand>()
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(preparation)
+        val terminal = mock<CliTerminalAdapter>()
+        whenever(terminal.launch(any(), any())).thenAnswer {
+            assertThat(ApplicationManager.getApplication().isDispatchThread).isTrue()
+            TerminalLaunch.Unsupported
+        }
+        whenever(terminal.shellFor(any())).thenReturn(CommandShell.POSIX)
+        var copied: String? = null
+        val coordinator = coordinator(backend, terminal, copier = {
+            assertThat(ApplicationManager.getApplication().isDispatchThread).isTrue()
+            copied = it
+        })
+        coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
+
+        CompletableFuture.runAsync { preparation.complete(command) }.get(10, TimeUnit.SECONDS)
+        verifyNoInteractions(terminal)
+        assertThat(copied).isNull()
+        UIUtil.dispatchAllInvocationEvents()
+
+        assertThat(copied).isEqualTo(CliCommandRenderer.render(command, CommandShell.POSIX))
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Copied)
+    }
+
+    @Test
+    fun project_disposal_cancels_a_launch_queued_on_the_edt() {
+        val closingProject = mock<Project>()
+        val preparation = CompletableFuture<CliCommand>()
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(preparation)
+        val terminal = mock<CliTerminalAdapter>()
+        val coordinator = coordinator(backend, terminal)
+        coordinator.execute(closingProject, snapshot, AiIntegrationsIntent.InstallCli)
+
+        CompletableFuture.runAsync { preparation.complete(command) }.get(10, TimeUnit.SECONDS)
+        Disposer.dispose(closingProject)
+        UIUtil.dispatchAllInvocationEvents()
+
+        verifyNoInteractions(terminal)
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Cancelled)
+    }
+
+    @Test
+    fun resolves_the_current_terminal_adapter_for_each_operation() {
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        val first = ShellTerminal(CommandShell.POSIX)
+        val replacement = mock<CliTerminalAdapter>()
+        whenever(replacement.launch(any(), any())).thenReturn(TerminalLaunch.Unsupported)
+        whenever(replacement.shellFor(any())).thenReturn(CommandShell.POWERSHELL)
+        var selected: CliTerminalAdapter = first
+        var copied: String? = null
+        val coordinator = coordinator(backend, first, copier = { copied = it }, provider = { selected })
+
+        coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
+        assertThat(copied).isEqualTo(CliCommandRenderer.render(command, CommandShell.POSIX))
+        selected = replacement
+        coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
+
+        verify(replacement).launch(project, command)
+        assertThat(copied).isEqualTo(CliCommandRenderer.render(command, CommandShell.POWERSHELL))
+    }
+
     private fun coordinator(
         backend: BackendService,
         terminal: CliTerminalAdapter,
         copier: (String) -> Unit = {},
         selector: CliConnectionSelector = CliConnectionSelector(),
         notifications: MutableList<Notification> = mutableListOf(),
-        refresh: () -> Unit = {}
+        refresh: () -> Unit = {},
+        provider: () -> CliTerminalAdapter = { terminal }
     ) = CliOperationCoordinator(
         backend,
-        terminal,
+        provider,
         selector,
         copier,
         { _, message, type -> notifications += Notification(message, type) },
