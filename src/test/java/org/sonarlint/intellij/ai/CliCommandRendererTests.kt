@@ -19,8 +19,15 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.openapi.util.SystemInfo
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.Base64
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class CliCommandRendererTests {
     private val command = CliCommand("/path with spaces/sonar", listOf("a'b", "", "$&|;()!"), true)
@@ -34,7 +41,9 @@ class CliCommandRendererTests {
     @Test
     fun `quotes every token for PowerShell`() {
         assertThat(CliCommandRenderer.render(command, CommandShell.POWERSHELL))
-            .isEqualTo("& '/path with spaces/sonar' 'a''b' '' '$&|;()!'")
+            .contains("\$PSNativeCommandArgumentPassing = 'Standard'")
+            .contains("& '/path with spaces/sonar' 'a''b' '' '$&|;()!'")
+            .contains("& '/path with spaces/sonar' '\"a''b\"' '\"\"' '\"$&|;()!\"'")
     }
 
     @Test
@@ -45,6 +54,45 @@ class CliCommandRendererTests {
             "'Bob\u2019\u2019s server; Write-Output unexpected'"
 
         assertThat(CliCommandRenderer.render(command, CommandShell.POWERSHELL))
-            .isEqualTo(expected)
+            .contains(expected)
     }
+
+    @Test
+    fun powershell_preserves_native_argv_and_restores_argument_passing_preference(@TempDir directory: Path) {
+        val powerShell = System.getenv("TEST_POWERSHELL_EXECUTABLE")
+            ?: if (SystemInfo.isWindows) "powershell.exe" else null
+        assumeTrue(powerShell != null, "Requires PowerShell; set TEST_POWERSHELL_EXECUTABLE on non-Windows hosts")
+        val javaExecutable = Path.of(System.getProperty("java.home"), "bin", if (SystemInfo.isWindows) "java.exe" else "java").toString()
+        val source = Files.createDirectories(directory.resolve("path with spaces")).resolve("ArgvProbe.java")
+        Files.writeString(source, """
+            class ArgvProbe {
+                public static void main(String[] arguments) {
+                    for (String argument : arguments) {
+                        System.out.println(java.util.Base64.getEncoder().encodeToString(
+                            argument.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                    }
+                }
+            }
+        """.trimIndent())
+        val arguments = listOf(
+            "", " ", "a\"b", "a\\\"b", "two words", "two words\\", "two words\\\\",
+            "C:\\path with spaces\\", "line1\nline2", "a'b\u2018c\u2019d\u201Ae\u201Bf", "$&|;()!"
+        )
+        val command = CliCommand(javaExecutable, listOf(source.toString()) + arguments, true)
+        val rendered = CliCommandRenderer.render(command, CommandShell.POWERSHELL)
+
+        listOf("Legacy", "Windows", "Standard").forEach { mode ->
+            val script = "\$PSNativeCommandArgumentPassing = '$mode'; $rendered; " +
+                "if (\$PSNativeCommandArgumentPassing -ne '$mode') { throw 'Argument-passing preference leaked' }"
+            val process = ProcessBuilder(requireNotNull(powerShell), "-NoProfile", "-NonInteractive", "-Command", script)
+                .redirectErrorStream(true).start()
+            assertThat(process.waitFor(30, TimeUnit.SECONDS)).isTrue()
+            val output = process.inputStream.bufferedReader().readLines()
+            assertThat(process.exitValue()).withFailMessage(output.joinToString("\n")).isZero()
+            assertThat(output).containsExactlyElementsOf(arguments.map {
+                Base64.getEncoder().encodeToString(it.toByteArray(Charsets.UTF_8))
+            })
+        }
+    }
+
 }

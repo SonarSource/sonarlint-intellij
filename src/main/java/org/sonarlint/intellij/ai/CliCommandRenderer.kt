@@ -26,12 +26,14 @@ enum class CommandShell {
 
 object CliCommandRenderer {
     private val POWERSHELL_SINGLE_QUOTES = Regex("['\u2018\u2019\u201A\u201B]")
+    private val BACKSLASHES_BEFORE_DOUBLE_QUOTE = Regex("(\\\\*)\"")
+    private val TRAILING_BACKSLASHES = Regex("(\\\\+)$")
 
     fun render(command: CliCommand, shell: CommandShell): String {
         val tokens = listOf(command.executable) + command.arguments
         return when (shell) {
             CommandShell.POSIX -> tokens.joinToString(" ") { quotePosix(it) }
-            CommandShell.POWERSHELL -> "& " + tokens.joinToString(" ") { quotePowerShell(it) }
+            CommandShell.POWERSHELL -> renderPowerShell(command)
         }
     }
 
@@ -39,4 +41,18 @@ object CliCommandRenderer {
 
     private fun quotePowerShell(value: String): String =
         "'" + value.replace(POWERSHELL_SINGLE_QUOTES) { it.value + it.value } + "'"
+
+    private fun renderPowerShell(command: CliCommand): String {
+        val executable = quotePowerShell(command.executable)
+        val standardArguments = command.arguments.joinToString(" ") { quotePowerShell(it) }
+        val legacyArguments = command.arguments.joinToString(" ") { quotePowerShell(quoteWindowsArgument(it)) }
+        // Scope the preference to this invocation; older hosts need native command-line quoting.
+        return "& { if (\$PSVersionTable.PSVersion -ge [version]'7.3') { " +
+            "\$PSNativeCommandArgumentPassing = 'Standard'; & $executable $standardArguments " +
+            "} else { & $executable $legacyArguments } }"
+    }
+
+    private fun quoteWindowsArgument(value: String): String =
+        "\"" + value.replace(BACKSLASHES_BEFORE_DOUBLE_QUOTE) { it.groupValues[1].repeat(2) + "\\\"" }
+            .replace(TRAILING_BACKSLASHES) { it.groupValues[1].repeat(2) } + "\""
 }
