@@ -71,16 +71,14 @@ class CliOperationCoordinator @JvmOverloads constructor(
         Disposer.register(project, lease)
         try {
             when (intent) {
-                AiIntegrationsIntent.InstallCli ->
-                    prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
-                AiIntegrationsIntent.AuthenticateCli ->
-                    when (val selection = connectionSelector.select(project, snapshot)) {
-                        ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
-                        ConnectionSelection.InteractiveLogin -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
-                        is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)
-                    }
-                is AiIntegrationsIntent.IntegrateCli ->
-                    prepareAndLaunch(lease, backendService.prepareIntegrateCliCommand(intent.agent))
+                AiIntegrationsIntent.InstallCli -> prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
+                AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot)) {
+                    ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
+                    ConnectionSelection.InteractiveLogin -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
+                    is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)
+                }
+                is AiIntegrationsIntent.IntegrateCli -> prepareAndLaunch(lease, backendService.prepareIntegrateCliCommand(intent.agent))
+                else -> throw IllegalArgumentException("Not a CLI operation: $intent")
             }
         } catch (_: CancellationException) {
             releaseAndNotify(lease, CliOperationOutcome.Cancelled,
