@@ -138,15 +138,6 @@ tasks.named<Test>("test") {
             languageVersion.set(JavaLanguageVersion.of(21))
         }
     )
-    // Keep Orchestrator on SaaS: Edge returns HTTP 404 for api/search/versions on
-    // sonarsource-releases, which Orchestrator uses to resolve SQ distributions.
-    systemProperty("orchestrator.artifactory.url", "https://repox.jfrog.io/repox")
-    val artifactoryToken = System.getenv("ARTIFACTORY_ACCESS_TOKEN")
-        ?: System.getenv("ARTIFACTORY_PASSWORD")
-    if (!artifactoryToken.isNullOrEmpty()) {
-        systemProperty("orchestrator.artifactory.accessToken", artifactoryToken)
-        systemProperty("orchestrator.artifactory.apiKey", artifactoryToken)
-    }
 }
 
 val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
