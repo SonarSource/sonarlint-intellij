@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.config.project
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -40,7 +42,6 @@ import javax.swing.DefaultListModel
 import javax.swing.JComponent
 import javax.swing.JList
 import javax.swing.ListSelectionModel
-import javax.swing.SwingUtilities
 import javax.swing.Timer
 import javax.swing.event.DocumentEvent
 import javax.swing.event.ListSelectionEvent
@@ -48,6 +49,7 @@ import javax.swing.event.ListSelectionListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.ui.UiUtils
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.SonarProjectDto
 
 private const val NO_PROJECTS_FOUND = "No projects found"
@@ -142,10 +144,10 @@ class SearchProjectKeyDialog(
     }
 
     private fun runOnEdt(action: () -> Unit) {
-        if (SwingUtilities.isEventDispatchThread()) {
+        if (ApplicationManager.getApplication().isDispatchThread) {
             action()
         } else {
-            SwingUtilities.invokeLater(action)
+            UiUtils.runOnUiThread(ModalityState.any(), action)
         }
     }
 
@@ -167,7 +169,7 @@ class SearchProjectKeyDialog(
     private fun showProjects(projects: List<SonarProjectDto>) {
         val model = projectList.model as DefaultListModel<SonarProjectDto>
         model.clear()
-        projects.forEach(model::addElement)
+        model.addAll(projects)
 
         val selectedIndex = projects.indexOfFirst { it.key == rememberedSelectedProjectKey }
         if (selectedIndex >= 0) {
