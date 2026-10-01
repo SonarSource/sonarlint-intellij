@@ -30,7 +30,7 @@ sentry = "8.34.0"
 junit = "6.1.3"
 junit-four = "4.13.2"
 mockito-kotlin = "5.4.0"
-mockito = "5.21.0"
+mockito = "5.24.0"
 assertj = "3.27.7"
 awaitility = "4.3.0"
 
