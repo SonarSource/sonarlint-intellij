@@ -227,6 +227,10 @@ class BackendService : Disposable {
             override fun changed(serverList: List<ServerConnection>) {
                 connectionsUpdated(serverList)
             }
+
+            override fun draftChanged(serverList: List<ServerConnection>) {
+                updateConnections(serverList, true)
+            }
         })
         busConnection.subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
             override fun projectClosing(project: Project) {
@@ -250,9 +254,9 @@ class BackendService : Disposable {
         ensureBackendInitialized().thenAcceptAsync(action)
     }
 
-    private fun dispatchConnectionUpdate(serverConnections: List<ServerConnection>, action: (SonarLintRpcServer) -> Unit) {
+    private fun dispatchConnectionUpdate(serverConnections: List<ServerConnection>, isDraft: Boolean, action: (SonarLintRpcServer) -> Unit) {
         synchronized(connectionDispatchLock) {
-            currentConnectionsById = serverConnections.associateBy { it.name }
+            currentConnectionsById = if (isDraft) serverConnections.associateBy { it.name } else null
             val generation = connectionDispatchGeneration
             connectionDispatchTail = connectionDispatchTail
                 .handle<Void> { _, _ -> null }
@@ -580,9 +584,13 @@ class BackendService : Disposable {
     private fun getLocalStoragePath(): Path = Paths.get(PathManager.getSystemPath()).resolve("sonarlint/storage")
 
     fun connectionsUpdated(serverConnections: List<ServerConnection>) {
+        updateConnections(serverConnections, false)
+    }
+
+    private fun updateConnections(serverConnections: List<ServerConnection>, isDraft: Boolean) {
         val scConnections = serverConnections.filter { it.isSonarCloud && it.organizationKey != null }.map { toSonarCloudBackendConnection(it) }
         val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
-        dispatchConnectionUpdate(serverConnections) {
+        dispatchConnectionUpdate(serverConnections, isDraft) {
             it.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
         }
     }

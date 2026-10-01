@@ -350,10 +350,10 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("url").build()
         val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
 
-        publisher.changed(listOf(draft))
+        publisher.draftChanged(listOf(draft))
         assertThat(service.getCurrentConnection("draft")).isSameAs(draft)
 
-        publisher.changed(emptyList())
+        publisher.changed(globalSettings.serverConnections)
         assertThat(service.getCurrentConnection("draft")).isNull()
     }
 
@@ -363,7 +363,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("https://sonarcloud.io").build()
 
         ApplicationManager.getApplication().messageBus
-            .syncPublisher(GlobalConfigurationListener.TOPIC).changed(listOf(draft))
+            .syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(listOf(draft))
 
         val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
         verify(backendConnectionService, timeout(2000)).didUpdateConnections(paramsCaptor.capture())
@@ -430,7 +430,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         clearInvocations(backend)
         val edited = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("new-url").build()
         val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("draft-url").build()
-        service.connectionsUpdated(listOf(edited, draft))
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(listOf(edited, draft))
 
         service.restartBackendService()
 
@@ -446,7 +447,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     fun test_restart_does_not_restore_applied_connections_removed_from_draft() {
         verify(backend, timeout(2000)).initialize(any())
         clearInvocations(backend)
-        service.connectionsUpdated(emptyList())
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(emptyList())
 
         service.restartBackendService()
 
@@ -457,7 +459,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     }
 
     @Test
-    fun test_discarding_connection_drafts_restores_applied_connections_before_and_after_restart() {
+    fun test_discarding_connection_drafts_restores_saved_connections_and_restart_reads_latest_settings() {
         clearInvocations(backendConnectionService)
         val savedServer = ServerConnection.newBuilder().setName("server").setHostUrl("url").build()
         val savedCloud = ServerConnection.newBuilder().setName("cloud").setHostUrl("https://sonarcloud.io").setOrganizationKey("org").build()
@@ -465,12 +467,12 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val edited = ServerConnection.newBuilder().setName("server").setHostUrl("discarded-url").build()
         val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("draft-url").build()
         ApplicationManager.getApplication().messageBus
-            .syncPublisher(GlobalConfigurationListener.TOPIC).changed(listOf(edited, draft))
+            .syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(listOf(edited, draft))
 
         service.discardConnectionDrafts()
 
         assertThat(service.getCurrentConnection("draft")).isNull()
-        assertThat(service.getCurrentConnection("server")).isSameAs(savedServer)
+        assertThat(service.getCurrentConnection("server")).isNull()
         val updateCaptor = argumentCaptor<DidUpdateConnectionsParams>()
         verify(backendConnectionService, timeout(2000).times(2)).didUpdateConnections(updateCaptor.capture())
         val restoredConnections = updateCaptor.allValues.last()
@@ -479,13 +481,15 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         assertThat(restoredConnections.sonarCloudConnections).extracting("connectionId", "organization")
             .containsExactly(tuple("cloud", "org"))
 
+        val latestSavedServer = ServerConnection.newBuilder().setName("server").setHostUrl("updated-url").build()
+        globalSettings.serverConnections = listOf(latestSavedServer, savedCloud)
         clearInvocations(backend)
         service.restartBackendService()
 
         val initializeCaptor = argumentCaptor<InitializeParams>()
         verify(backend, timeout(2000)).initialize(initializeCaptor.capture())
         assertThat(initializeCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
-            .containsExactly(tuple("server", "url"))
+            .containsExactly(tuple("server", "updated-url"))
         assertThat(initializeCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
             .containsExactly(tuple("cloud", "org"))
     }

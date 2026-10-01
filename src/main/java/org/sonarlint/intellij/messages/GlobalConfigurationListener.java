@@ -27,10 +27,13 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 public interface GlobalConfigurationListener {
   Topic<GlobalConfigurationListener> TOPIC = Topic.create("Global configuration events", GlobalConfigurationListener.class);
 
-  /**
-   * Called immediately when list of servers is changed (servers added or removed), even before saving
-   */
+  /** Called when the saved list of servers changes outside Settings. */
   void changed(List<ServerConnection> serverList);
+
+  /** Called for connection edits that have not yet been saved. */
+  default void draftChanged(List<ServerConnection> serverList) {
+    changed(serverList);
+  }
 
   /**
    * Called when settings are saved (clicking "Apply" or "Ok")

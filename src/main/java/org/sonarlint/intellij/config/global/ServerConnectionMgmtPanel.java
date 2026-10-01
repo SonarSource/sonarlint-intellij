@@ -271,7 +271,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   private void connectionsChanged() {
     hasUnappliedConnectionChanges = true;
-    connectionChangeListener.changed(connections);
+    connectionChangeListener.draftChanged(connections);
   }
 
   private void editSelectedConnection() {
