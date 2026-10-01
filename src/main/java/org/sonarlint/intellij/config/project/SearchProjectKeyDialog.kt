@@ -54,7 +54,7 @@ private const val NO_PROJECTS_FOUND = "No projects found"
 
 class SearchProjectKeyDialog(
     parent: Component,
-    private val lastSelectedProjectKey: String?,
+    lastSelectedProjectKey: String?,
     private val projectsByKey: Map<String, SonarProjectDto>,
     private val connection: ServerConnection,
 ) : DialogWrapper(
@@ -132,18 +132,12 @@ class SearchProjectKeyDialog(
 
     private fun createProjectList(): JBList<SonarProjectDto> {
         val projectList = JBList<SonarProjectDto>(DefaultListModel())
-        val emptyText = StringBuilder(NO_PROJECTS_FOUND)
-        if (projectsByKey.isEmpty()) {
-            emptyText.append(" for the selected connection")
-        }
-        projectList.setEmptyText(emptyText.toString())
         projectList.cellRenderer = ProjectListRenderer()
         projectList.addListSelectionListener(ProjectItemListener())
         projectList.addMouseListener(ProjectMouseListener())
         projectList.selectionMode = ListSelectionModel.SINGLE_SELECTION
         projectList.visibleRowCount = 10
         projectList.border = IdeBorderFactory.createBorder()
-        projectList.cellRenderer = ProjectListRenderer()
         return projectList
     }
 
