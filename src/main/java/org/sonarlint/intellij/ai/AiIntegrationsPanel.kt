@@ -667,10 +667,6 @@ class AiIntegrationsPanel(
         addActionListener { dispatchIntent(intent) }
     }
 
-    private fun createLinkButton(label: String, intent: AiIntegrationsIntent): JButton = createLinkButton(label) {
-        dispatchIntent(intent)
-    }
-
     private fun createDisclosureButton(expanded: Boolean, label: String = MANAGE_AGENTS_LABEL, toggle: (Boolean) -> Unit): JToggleButton =
         JToggleButton(disclosureLabel(expanded, label), expanded).apply {
             isOpaque = false
