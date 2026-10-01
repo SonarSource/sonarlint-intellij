@@ -125,7 +125,7 @@ open class BaseStandaloneIntegrationTest {
 
         private fun ideProduct(): String = System.getProperty("its.ide.product", "IC")
 
-        private fun resolveIdeInfo() = when (ideProduct()) {
+        private fun resolveIdeInfoForProductCode(productCode: String) = when (productCode) {
             "IC" -> IdeProductProvider.IC
             "IU" -> IdeProductProvider.IU
             "CL" -> IdeProductProvider.CL
@@ -140,17 +140,40 @@ open class BaseStandaloneIntegrationTest {
             "PY" -> IdeProductProvider.PY
             "PC" -> IdeProductProvider.PC
             "GO" -> IdeProductProvider.GO
-            else -> throw IllegalArgumentException("Unsupported IDE product for standalone ITs: ${ideProduct()}")
+            else -> throw IllegalArgumentException("Unsupported IDE product for standalone ITs: $productCode")
+        }
+
+        private fun readInstalledIdeInfo(ideHome: Path): InstalledIdeInfo {
+            val productInfo = ideHome.resolve("product-info.json")
+            check(Files.isRegularFile(productInfo)) { "Missing product-info.json in $ideHome" }
+            val json = Files.readString(productInfo)
+            fun field(name: String): String =
+                Regex(""""$name"\s*:\s*"([^"]+)"""")
+                    .find(json)?.groupValues?.get(1)
+                    ?: error("Missing '$name' in $productInfo")
+            return InstalledIdeInfo(
+                productCode = field("productCode"),
+                buildNumber = field("buildNumber"),
+                version = field("version"),
+            )
         }
 
         private fun resolveIdeInfoWithLocalInstaller(): IdeInfo {
             val ideHome = resolveLocalIdeHome()
-            return resolveIdeInfo().copy(
-                buildNumber = requiredProperty("its.ide.buildNumber"),
-                version = requiredProperty("its.ide.version"),
+            val installed = readInstalledIdeInfo(ideHome)
+            // 2025.3+ unified distributions report IU/PY even when CI matrix uses IC/PC.
+            return resolveIdeInfoForProductCode(installed.productCode).copy(
+                buildNumber = installed.buildNumber,
+                version = installed.version,
                 getInstaller = { ExistingIdeInstaller(ideHome) },
             )
         }
+
+        private data class InstalledIdeInfo(
+            val productCode: String,
+            val buildNumber: String,
+            val version: String,
+        )
 
         private fun resolveLocalIdeHome(): Path {
             System.getProperty("its.ide.home")?.takeIf { it.isNotBlank() }?.let { return Path.of(it) }
