@@ -93,7 +93,7 @@ dependencies {
         pluginComposedModule(runtimeOnly(project(":git")))
         bundledPlugins("com.intellij.java", "Git4Idea")
         testFramework(TestFrameworkType.Platform)
-        pluginVerifier("1.398")
+        pluginVerifier(libs.versions.plugin.verifier.get())
     }
     implementation(libs.sonarlint.java.client.utils)
     implementation(libs.sonarlint.rpc.java.client)
@@ -375,6 +375,8 @@ tasks {
     }
 
     val buildPluginBlockmap by registering {
+        group = "build"
+        description = "Generates the blockmap and hash files for the plugin distribution."
         inputs.files(buildPlugin.flatMap { it.archiveFile })
             .withPropertyName("distribZip")
             .skipWhenEmpty()
@@ -436,16 +438,16 @@ artifacts {
         extension = "zip"
         type = "zip"
     }
-    add("archives", tasks.named<Zip>("buildPlugin").map {
-        file(it.archiveFile.get().asFile.absolutePath + ".blockmap.zip")
+    add("archives", tasks.named<Zip>("buildPlugin").flatMap { it.archiveFile }.map {
+        file(it.asFile.absolutePath + ".blockmap.zip")
     }) {
         name = project.name
         extension = "zip.blockmap.zip"
         type = "zip"
         builtBy(tasks.named("buildPluginBlockmap"))
     }
-    add("archives", tasks.named<Zip>("buildPlugin").map {
-        file(it.archiveFile.get().asFile.absolutePath + ".hash.json")
+    add("archives", tasks.named<Zip>("buildPlugin").flatMap { it.archiveFile }.map {
+        file(it.asFile.absolutePath + ".hash.json")
     }) {
         name = project.name
         extension = "zip.hash.json"
