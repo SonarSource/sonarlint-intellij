@@ -51,6 +51,10 @@ class GlobalConfigurationListenerTests extends AbstractSonarLintLightTests {
     getProject().getMessageBus().connect().subscribe(GlobalConfigurationListener.TOPIC, listener);
     getProject().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC).changed(testList);
     assertThat(servers).isEqualTo(testList);
+
+    servers.clear();
+    getProject().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(testList);
+    assertThat(servers).isEqualTo(testList);
   }
 
   @Test

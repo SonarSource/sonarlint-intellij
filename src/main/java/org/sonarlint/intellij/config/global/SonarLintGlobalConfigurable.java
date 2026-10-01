@@ -95,6 +95,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       .applied(currentSettings, newSettings);
 
     // Force reload of the node version and rules in case the Node.js path has been changed
+    connectionsPanel.markConnectionChangesApplied();
     reset();
 
     runOnPooledThread(() -> {
@@ -125,6 +126,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public void reset() {
+    if (connectionsPanel.hasUnappliedConnectionChanges()) {
+      getService(BackendService.class).discardConnectionDrafts();
+    }
     var globalSettings = getGlobalSettings();
     var telemetry = getService(SonarLintTelemetry.class);
 
@@ -137,6 +141,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public void disposeUIResources() {
+    if (connectionsPanel != null && connectionsPanel.hasUnappliedConnectionChanges()) {
+      getService(BackendService.class).discardConnectionDrafts();
+    }
     if (rootPanel != null) {
       rootPanel.setVisible(false);
       rootPanel = null;

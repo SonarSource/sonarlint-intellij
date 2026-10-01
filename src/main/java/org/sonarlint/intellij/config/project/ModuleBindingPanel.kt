@@ -146,14 +146,14 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
                     rootPanel,
                     projectKeyTextField.text,
                     map,
-                    selectedConnection.isSonarCloud
+                    selectedConnection
                 )
                 if (dialog.showAndGet() && dialog.selectedProjectKey != null) {
                     projectKeyTextField.text = dialog.selectedProjectKey
                 }
             }
         }
-        searchProjectKeyButton.text = "Search in list\u2026"
+        searchProjectKeyButton.text = "Search projects\u2026"
 
         projectKeyTextField.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent?) {

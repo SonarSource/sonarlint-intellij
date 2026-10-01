@@ -125,6 +125,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrg
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.ListUserOrganizationsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.ListUserOrganizationsResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.FuzzySearchProjectsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.FuzzySearchProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.GetAllProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.validate.ValidateConnectionParams
@@ -194,6 +196,11 @@ class BackendService : Disposable {
     private val projectsOpened = mutableSetOf<Project>()
     private var initializationTriedOnce = AtomicBoolean(false)
     private var backendFuture = CompletableFuture<SonarLintRpcServer>()
+    private val connectionDispatchLock = Any()
+    private val connectionInvocationLock = Any()
+    private var connectionDispatchTail: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
+    private var currentConnectionsById: Map<String, ServerConnection>? = null
+    private var connectionDispatchGeneration = 0L
     private var sloop: Sloop? = null
     private var defaultSloopLauncher: SloopLauncher? = null
     private var intentionalRestart = AtomicBoolean(false)
@@ -214,13 +221,15 @@ class BackendService : Disposable {
         val busConnection = ApplicationManager.getApplication().messageBus.connect()
         busConnection.subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
             override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-                runOnPooledThread {
-                    connectionsUpdated(newSettings.serverConnections)
-                }
+                connectionsUpdated(newSettings.serverConnections)
             }
 
             override fun changed(serverList: List<ServerConnection>) {
-                runOnPooledThread { connectionsUpdated(serverList) }
+                connectionsUpdated(serverList)
+            }
+
+            override fun draftChanged(serverList: List<ServerConnection>) {
+                updateConnections(serverList, true)
             }
         })
         busConnection.subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
@@ -243,6 +252,45 @@ class BackendService : Disposable {
 
     private fun notifyBackend(action: (SonarLintRpcServer) -> Unit) {
         ensureBackendInitialized().thenAcceptAsync(action)
+    }
+
+    private fun dispatchConnectionUpdate(serverConnections: List<ServerConnection>, isDraft: Boolean, action: (SonarLintRpcServer) -> Unit) {
+        synchronized(connectionDispatchLock) {
+            currentConnectionsById = if (isDraft) serverConnections.associateBy { it.name } else null
+            val generation = connectionDispatchGeneration
+            connectionDispatchTail = connectionDispatchTail
+                .handle<Void> { _, _ -> null }
+                .thenCompose { ensureBackendInitialized() }
+                .thenAcceptAsync { backend ->
+                    synchronized(connectionInvocationLock) {
+                        if (generation == connectionDispatchGeneration) {
+                            action(backend)
+                        }
+                    }
+                }
+        }
+    }
+
+    private fun <T> dispatchConnectionRequest(action: (SonarLintRpcServer) -> CompletableFuture<T>): CompletableFuture<T> {
+        return synchronized(connectionDispatchLock) {
+            val generation = connectionDispatchGeneration
+            val initialized = connectionDispatchTail.thenCompose { ensureBackendInitialized() }
+            val invocation = initialized.thenApplyAsync { backend ->
+                synchronized(connectionInvocationLock) {
+                    if (generation != connectionDispatchGeneration) {
+                        throw CancellationException("Backend restarted before project search")
+                    }
+                    action(backend)
+                }
+            }
+            connectionDispatchTail = invocation.handle<Void> { _, error ->
+                if (error != null && initialized.isCompletedExceptionally) {
+                    throw error
+                }
+                null
+            }
+            invocation.thenCompose { it }
+        }
     }
 
     private fun ensureBackendInitialized(): CompletableFuture<SonarLintRpcServer> {
@@ -352,7 +400,8 @@ class BackendService : Disposable {
     }
 
     private fun initRpcServer(rpcServer: SonarLintRpcServer): CompletableFuture<Void> {
-        val serverConnections = getGlobalSettings().serverConnections
+        val serverConnections = synchronized(connectionDispatchLock) { currentConnectionsById?.values?.toList() }
+            ?: getGlobalSettings().serverConnections
         val sonarCloudConnections =
             serverConnections.filter { it.isSonarCloud && it.organizationKey != null }.map { toSonarCloudBackendConnection(it) }
         val sonarQubeConnections =
@@ -509,6 +558,12 @@ class BackendService : Disposable {
         return requestFromBackend { it.connectionService.getAllProjects(params) }
     }
 
+    fun fuzzySearchProjects(server: ServerConnection, searchText: String): CompletableFuture<FuzzySearchProjectsResponse> {
+        return dispatchConnectionRequest {
+            it.connectionService.fuzzySearchProjects(FuzzySearchProjectsParams(server.name, searchText))
+        }
+    }
+
     /**
      * SLI-657
      */
@@ -529,10 +584,23 @@ class BackendService : Disposable {
     private fun getLocalStoragePath(): Path = Paths.get(PathManager.getSystemPath()).resolve("sonarlint/storage")
 
     fun connectionsUpdated(serverConnections: List<ServerConnection>) {
-        val scConnections = serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
-        val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
-        notifyBackend { it.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections)) }
+        updateConnections(serverConnections, false)
     }
+
+    private fun updateConnections(serverConnections: List<ServerConnection>, isDraft: Boolean) {
+        val scConnections = serverConnections.filter { it.isSonarCloud && it.organizationKey != null }.map { toSonarCloudBackendConnection(it) }
+        val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
+        dispatchConnectionUpdate(serverConnections, isDraft) {
+            it.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
+        }
+    }
+
+    fun discardConnectionDrafts() {
+        connectionsUpdated(getGlobalSettings().serverConnections)
+    }
+
+    fun getCurrentConnection(connectionId: String): ServerConnection? =
+        synchronized(connectionDispatchLock) { currentConnectionsById?.get(connectionId) }
 
     private fun toSonarQubeBackendConnection(createdConnection: ServerConnection): SonarQubeConnectionConfigurationDto {
         return SonarQubeConnectionConfigurationDto(
@@ -925,9 +993,15 @@ class BackendService : Disposable {
             }
 
             // Reset everything for clean restart
-            initializationTriedOnce.set(false)
-            backendFuture = CompletableFuture()
-            sloop = null
+            synchronized(connectionDispatchLock) {
+                synchronized(connectionInvocationLock) {
+                    connectionDispatchGeneration++
+                    connectionDispatchTail = CompletableFuture.completedFuture(null)
+                    initializationTriedOnce.set(false)
+                    backendFuture = CompletableFuture()
+                    sloop = null
+                }
+            }
 
             // Start the new backend
             ensureBackendInitialized().thenAcceptAsync { catchUpWithBackend(it) }

@@ -29,15 +29,21 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.tuple
 import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.doAnswer
+import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
@@ -51,6 +57,7 @@ import org.sonarlint.intellij.config.global.credentials.eraseToken
 import org.sonarlint.intellij.config.global.credentials.eraseUsernamePassword
 import org.sonarlint.intellij.config.global.credentials.setToken
 import org.sonarlint.intellij.messages.CredentialsChangeListener
+import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.client.Sloop
 import org.sonarsource.sonarlint.core.rpc.client.SloopLauncher
@@ -82,6 +89,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.Did
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.GetOrganizationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.org.ListUserOrganizationsParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.projects.FuzzySearchProjectsResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.DidOpenFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.file.FileRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.ChangeHotspotStatusParams
@@ -335,6 +343,191 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         verify(backendConnectionService, timeout(500)).didUpdateConnections(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
             .containsExactly(tuple(CONNECTION_NAME, "org"))
+    }
+
+    @Test
+    fun test_current_connection_snapshot_tracks_unapplied_drafts() {
+        val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("url").build()
+        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+
+        publisher.draftChanged(listOf(draft))
+        assertThat(service.getCurrentConnection("draft")).isSameAs(draft)
+
+        publisher.changed(globalSettings.serverConnections)
+        assertThat(service.getCurrentConnection("draft")).isNull()
+    }
+
+    @Test
+    fun test_connection_change_listener_accepts_incomplete_cloud_draft() {
+        clearInvocations(backendConnectionService)
+        val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("https://sonarcloud.io").build()
+
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(listOf(draft))
+
+        val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
+        verify(backendConnectionService, timeout(2000)).didUpdateConnections(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue.sonarCloudConnections).isEmpty()
+    }
+
+    @Test
+    fun test_dispatches_connection_update_before_search_and_releases_chain_after_search_invocation() {
+        clearInvocations(backendConnectionService)
+        val updateStarted = CountDownLatch(1)
+        val releaseUpdate = CountDownLatch(1)
+        doAnswer {
+            updateStarted.countDown()
+            releaseUpdate.await(5, TimeUnit.SECONDS)
+            null
+        }.`when`(backendConnectionService).didUpdateConnections(any())
+        val response = mock(FuzzySearchProjectsResponse::class.java)
+        val responseFuture = CompletableFuture<FuzzySearchProjectsResponse>()
+        `when`(backendConnectionService.fuzzySearchProjects(any())).thenReturn(responseFuture)
+        val connection = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("url").build()
+
+        service.connectionsUpdated(listOf(connection))
+        assertThat(updateStarted.await(2, TimeUnit.SECONDS)).isTrue()
+        val searchFuture = service.fuzzySearchProjects(connection, "project")
+        verify(backendConnectionService, never()).fuzzySearchProjects(any())
+
+        releaseUpdate.countDown()
+        verify(backendConnectionService, timeout(2000)).fuzzySearchProjects(any())
+        service.connectionsUpdated(listOf(connection))
+        verify(backendConnectionService, timeout(2000).times(2)).didUpdateConnections(any())
+        assertThat(searchFuture).isNotDone()
+
+        responseFuture.complete(response)
+        assertThat(searchFuture.join()).isSameAs(response)
+    }
+
+    @Test
+    fun test_propagates_connection_dispatch_failure_to_search_and_recovers_on_later_update() {
+        clearInvocations(backendConnectionService)
+        doThrow(IllegalStateException("dispatch failed"))
+            .doNothing()
+            .`when`(backendConnectionService).didUpdateConnections(any())
+        val response = mock(FuzzySearchProjectsResponse::class.java)
+        `when`(backendConnectionService.fuzzySearchProjects(any()))
+            .thenReturn(CompletableFuture.completedFuture(response))
+        val connection = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("url").build()
+
+        service.connectionsUpdated(listOf(connection))
+        val failedSearch = service.fuzzySearchProjects(connection, "project")
+
+        assertThatThrownBy { failedSearch.join() }
+            .hasRootCauseInstanceOf(IllegalStateException::class.java)
+            .hasRootCauseMessage("dispatch failed")
+        verify(backendConnectionService, never()).fuzzySearchProjects(any())
+
+        service.connectionsUpdated(listOf(connection))
+        assertThat(service.fuzzySearchProjects(connection, "project").join()).isSameAs(response)
+        verify(backendConnectionService, times(1)).fuzzySearchProjects(any())
+    }
+
+    @Test
+    fun test_restart_initializes_backend_with_unapplied_connections() {
+        verify(backend, timeout(2000)).initialize(any())
+        clearInvocations(backend)
+        val edited = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("new-url").build()
+        val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("draft-url").build()
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(listOf(edited, draft))
+
+        service.restartBackendService()
+
+        val paramsCaptor = argumentCaptor<InitializeParams>()
+        verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
+            .containsExactly(tuple(CONNECTION_NAME, "new-url"), tuple("draft", "draft-url"))
+        assertThat(paramsCaptor.firstValue.sonarCloudConnections).isEmpty()
+        assertThat(service.getCurrentConnection("draft")).isSameAs(draft)
+    }
+
+    @Test
+    fun test_restart_does_not_restore_applied_connections_removed_from_draft() {
+        verify(backend, timeout(2000)).initialize(any())
+        clearInvocations(backend)
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(emptyList())
+
+        service.restartBackendService()
+
+        val paramsCaptor = argumentCaptor<InitializeParams>()
+        verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue.sonarQubeConnections).isEmpty()
+        assertThat(paramsCaptor.firstValue.sonarCloudConnections).isEmpty()
+    }
+
+    @Test
+    fun test_discarding_connection_drafts_restores_saved_connections_and_restart_reads_latest_settings() {
+        clearInvocations(backendConnectionService)
+        val savedServer = ServerConnection.newBuilder().setName("server").setHostUrl("url").build()
+        val savedCloud = ServerConnection.newBuilder().setName("cloud").setHostUrl("https://sonarcloud.io").setOrganizationKey("org").build()
+        globalSettings.serverConnections = listOf(savedServer, savedCloud)
+        val edited = ServerConnection.newBuilder().setName("server").setHostUrl("discarded-url").build()
+        val draft = ServerConnection.newBuilder().setName("draft").setHostUrl("draft-url").build()
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(GlobalConfigurationListener.TOPIC).draftChanged(listOf(edited, draft))
+
+        service.discardConnectionDrafts()
+
+        assertThat(service.getCurrentConnection("draft")).isNull()
+        assertThat(service.getCurrentConnection("server")).isNull()
+        val updateCaptor = argumentCaptor<DidUpdateConnectionsParams>()
+        verify(backendConnectionService, timeout(2000).times(2)).didUpdateConnections(updateCaptor.capture())
+        val restoredConnections = updateCaptor.allValues.last()
+        assertThat(restoredConnections.sonarQubeConnections).extracting("connectionId", "serverUrl")
+            .containsExactly(tuple("server", "url"))
+        assertThat(restoredConnections.sonarCloudConnections).extracting("connectionId", "organization")
+            .containsExactly(tuple("cloud", "org"))
+
+        val latestSavedServer = ServerConnection.newBuilder().setName("server").setHostUrl("updated-url").build()
+        globalSettings.serverConnections = listOf(latestSavedServer, savedCloud)
+        clearInvocations(backend)
+        service.restartBackendService()
+
+        val initializeCaptor = argumentCaptor<InitializeParams>()
+        verify(backend, timeout(2000)).initialize(initializeCaptor.capture())
+        assertThat(initializeCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
+            .containsExactly(tuple("server", "updated-url"))
+        assertThat(initializeCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
+            .containsExactly(tuple("cloud", "org"))
+    }
+
+    @Test
+    fun test_failed_connection_dispatch_recovers_after_backend_restart() {
+        clearInvocations(backendConnectionService)
+        doThrow(IllegalStateException("dispatch failed"))
+            .`when`(backendConnectionService).didUpdateConnections(any())
+        val connection = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("url").build()
+        service.connectionsUpdated(listOf(connection))
+
+        assertThatThrownBy { service.fuzzySearchProjects(connection, "before restart").join() }
+            .hasRootCauseInstanceOf(IllegalStateException::class.java)
+
+        val response = mock(FuzzySearchProjectsResponse::class.java)
+        `when`(backendConnectionService.fuzzySearchProjects(any()))
+            .thenReturn(CompletableFuture.completedFuture(response))
+        service.restartBackendService()
+        verify(backend, timeout(2000).times(2)).initialize(any())
+
+        assertThat(service.fuzzySearchProjects(connection, "after restart").get(5, TimeUnit.SECONDS))
+            .isSameAs(response)
+    }
+
+    @Test
+    fun test_search_invocation_failure_does_not_block_fresh_retry() {
+        clearInvocations(backendConnectionService)
+        val response = mock(FuzzySearchProjectsResponse::class.java)
+        `when`(backendConnectionService.fuzzySearchProjects(any()))
+            .thenThrow(IllegalStateException("search dispatch failed"))
+            .thenReturn(CompletableFuture.completedFuture(response))
+        val connection = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("url").build()
+
+        assertThatThrownBy { service.fuzzySearchProjects(connection, "first").join() }
+            .hasRootCauseInstanceOf(IllegalStateException::class.java)
+        assertThat(service.fuzzySearchProjects(connection, "retry").join()).isSameAs(response)
+        verify(backendConnectionService, times(2)).fuzzySearchProjects(any())
     }
 
     @Test
