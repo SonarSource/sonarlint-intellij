@@ -23,6 +23,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.terminal.ui.TerminalWidget
+import com.intellij.util.execution.ParametersListUtil
 import java.util.concurrent.CompletableFuture
 import org.jetbrains.plugins.terminal.TerminalProjectOptionsProvider
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
@@ -39,7 +40,8 @@ class IntellijTerminalAdapter() : CliTerminalAdapter {
         return terminalSession.launch(project, CliCommandRenderer.render(command, shell))
     }
 
-    override fun shellFor(project: Project): CommandShell? = terminalSession.commandShell(project)
+    override fun shellFor(project: Project): CommandShell =
+        terminalSession.commandShell(project) ?: osDefaultCommandShell()
 }
 
 internal interface TerminalSession {
@@ -105,10 +107,11 @@ internal fun observeTerminalCompletion(widget: TerminalWidget): CompletableFutur
 }
 
 internal fun classifyTerminalShell(shellPath: String): CommandShell? {
-    val fileName = shellPath.lowercase().substringAfterLast('/').substringAfterLast('\\')
-    return when {
-        "powershell" in fileName || "pwsh" in fileName -> CommandShell.POWERSHELL
-        "bash" in fileName || "zsh" in fileName || fileName == "sh" || fileName == "sh.exe" -> CommandShell.POSIX
+    val executable = ParametersListUtil.parse(shellPath, false, true).firstOrNull() ?: return null
+    val fileName = executable.lowercase().substringAfterLast('/').substringAfterLast('\\')
+    return when (fileName) {
+        "powershell", "powershell.exe", "pwsh", "pwsh.exe" -> CommandShell.POWERSHELL
+        "bash", "bash.exe", "zsh", "zsh.exe", "sh", "sh.exe" -> CommandShell.POSIX
         else -> null
     }
 }
