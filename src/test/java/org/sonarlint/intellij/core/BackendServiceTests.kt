@@ -70,6 +70,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationConnection
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationHost
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationScope
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateParams
@@ -325,6 +328,50 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         assertThat(snapshot.connectionChoices.single().serverUrl).isEqualTo("https://sonar.example")
         assertThat(snapshot.connectionChoices.single().organization).isNull()
         assertThat(snapshot.recommendedConnectionId).isEqualTo("connection")
+    }
+
+    @Test
+    fun test_saved_token_authentication_forwards_connection_id_and_all_responses() {
+        Status.entries.forEach { status ->
+            val response = AuthenticateCliWithConnectionResponse(status, "diagnostic")
+            `when`(backendAiAgentService.authenticateCliWithConnection(any())).thenReturn(CompletableFuture.completedFuture(response))
+
+            assertThat(service.authenticateCliWithConnection("connection").get(2, TimeUnit.SECONDS)).isSameAs(response)
+        }
+        val captor = argumentCaptor<AuthenticateCliWithConnectionParams>()
+        verify(backendAiAgentService, times(4)).authenticateCliWithConnection(captor.capture())
+        assertThat(captor.allValues.map { it.connectionId }).containsOnly("connection")
+    }
+
+    @Test
+    fun test_saved_token_authentication_cancellation_reaches_the_rpc_future() {
+        val rpcFuture = CompletableFuture<AuthenticateCliWithConnectionResponse>()
+        `when`(backendAiAgentService.authenticateCliWithConnection(any())).thenReturn(rpcFuture)
+
+        val request = service.authenticateCliWithConnection("connection")
+        verify(backendAiAgentService, timeout(2000)).authenticateCliWithConnection(any())
+        request.cancel(true)
+
+        await().atMost(Duration.ofSeconds(2)).untilAsserted { assertThat(rpcFuture).isCancelled() }
+    }
+
+    @Test
+    fun test_saved_token_authentication_cancellation_during_rpc_dispatch() {
+        val dispatchStarted = CountDownLatch(1)
+        val releaseDispatch = CountDownLatch(1)
+        val rpcFuture = CompletableFuture<AuthenticateCliWithConnectionResponse>()
+        `when`(backendAiAgentService.authenticateCliWithConnection(any())).thenAnswer {
+            dispatchStarted.countDown()
+            releaseDispatch.await(2, TimeUnit.SECONDS)
+            rpcFuture
+        }
+
+        val request = service.authenticateCliWithConnection("connection")
+        assertThat(dispatchStarted.await(2, TimeUnit.SECONDS)).isTrue()
+        request.cancel(true)
+        releaseDispatch.countDown()
+
+        await().atMost(Duration.ofSeconds(2)).untilAsserted { assertThat(rpcFuture).isCancelled() }
     }
 
     @Test
