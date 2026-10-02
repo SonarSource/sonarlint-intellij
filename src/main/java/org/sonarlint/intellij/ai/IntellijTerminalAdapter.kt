@@ -29,12 +29,13 @@ import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 import org.jetbrains.plugins.terminal.ShellStartupOptions
 import org.jetbrains.plugins.terminal.TerminalTabState
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarlint.intellij.util.computeInEDT
 
 class IntellijTerminalAdapter : CliTerminalAdapter {
-    override fun launch(project: Project, command: CliCommand): TerminalLaunch {
-        var result: TerminalLaunch? = null
-        runOnUiThread {
-            result = try {
+    override fun launch(project: Project, command: CliCommand): TerminalLaunch =
+        ApplicationManager.getApplication().computeInEDT {
+            try {
                 check(!project.isDisposed) { "The project was closed." }
                 val manager = TerminalToolWindowManager.getInstance(project)
                 val runner = CliTerminalRunner(project, command)
@@ -43,7 +44,7 @@ class IntellijTerminalAdapter : CliTerminalAdapter {
                 val completion = observeTerminalCompletion(widget)
                 TerminalLaunch.Started(
                     focus = {
-                        runOnUiThread {
+                        runOnUiThread(project) {
                             val content = manager.getContainer(widget)?.content ?: return@runOnUiThread
                             manager.toolWindow.contentManager.setSelectedContent(content)
                             manager.toolWindow.show { widget.requestFocus() }
@@ -55,17 +56,6 @@ class IntellijTerminalAdapter : CliTerminalAdapter {
                 TerminalLaunch.Failed(error)
             }
         }
-        return result ?: TerminalLaunch.Failed(IllegalStateException("The terminal session was not created."))
-    }
-
-    private fun runOnUiThread(action: () -> Unit) {
-        val application = ApplicationManager.getApplication()
-        if (application.isDispatchThread) {
-            action()
-        } else {
-            application.invokeAndWait(action)
-        }
-    }
 }
 
 internal class CliTerminalRunner(project: Project, command: CliCommand) : LocalTerminalDirectRunner(project) {
