@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
 class AiIntegrationsController @JvmOverloads constructor(
     private val project: Project,
@@ -77,7 +78,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     private fun publish(requestedGeneration: Long, state: AiIntegrationsPanelState) {
-        ApplicationManager.getApplication().invokeLater({
+        runOnUiThread(project) {
             if (!isDisposed() && generation.get() == requestedGeneration) {
                 latestSnapshot = when (state) {
                     is AiIntegrationsPanelState.Ready -> state.snapshot
@@ -86,7 +87,7 @@ class AiIntegrationsController @JvmOverloads constructor(
                 }
                 panel.render(state)
             }
-        }, project.disposed)
+        }
     }
 
     private fun handleIntent(intent: AiIntegrationsIntent) {
