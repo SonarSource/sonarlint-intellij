@@ -196,7 +196,7 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
     }
 
     plugins {
-        robotServerPlugin("0.11.23")
+        robotServerPlugin(libs.versions.its.remote.get())
         // Only depend on building the root project plugin if slPluginDirectory is not provided
         if (!project.hasProperty("slPluginDirectory")) {
             localPlugin(rootProject.dependencies.project(":"))

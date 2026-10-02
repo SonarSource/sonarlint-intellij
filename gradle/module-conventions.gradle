@@ -29,7 +29,7 @@ tasks.withType(Test).configureEach {
 // CLion 2024.2 ships lib/junit5.jar (JUnit 5, no JSpecify) on the platform classpath,
 // ahead of the catalog junit-jupiter-api 6.1.1. Drop it so every module compiles against
 // JUnit 6. Gradle cannot exclude that jar as a Maven coordinate.
-afterEvaluate {
+pluginManager.withPlugin("java") {
     sourceSets.test {
         compileClasspath = compileClasspath.filter { it.name != 'junit5.jar' }
         runtimeClasspath = runtimeClasspath.filter { it.name != 'junit5.jar' }
