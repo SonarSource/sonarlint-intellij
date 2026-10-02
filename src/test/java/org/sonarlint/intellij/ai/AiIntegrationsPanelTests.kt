@@ -42,6 +42,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
 
 class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     @Test
@@ -277,6 +279,84 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(cliDisclosure.isSelected).isFalse()
         assertThat(cliDisclosure.text).startsWith("▸")
         assertThat(mcpDisclosure.isSelected).isTrue()
+    }
+
+    @Test
+    fun `shows recording badges for detected CLI agents independently of authentication and standalone MCP`() {
+        val panel = AiIntegrationsPanel()
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNAUTHENTICATED, "1.0", null, null),
+            listOf(
+                AgentCapability(AiAgent.CLAUDE_CODE, setOf(AiAgentDetectionSource.CLI), true, false),
+                AgentCapability(AiAgent.CODEX, setOf(AiAgentDetectionSource.CLI), true, true),
+                AgentCapability(AiAgent.KIRO, setOf(AiAgentDetectionSource.CLI), true, false),
+                AgentCapability(AiAgent.WINDSURF, setOf(AiAgentDetectionSource.CLI), true, false)
+            ),
+            emptyList(),
+            null,
+            listOf(
+                AgentCliIntegration(AiAgent.CLAUDE_CODE, CliIntegrationRecordingStatus.RECORDED, emptyList()),
+                AgentCliIntegration(AiAgent.CODEX, CliIntegrationRecordingStatus.NOT_RECORDED, emptyList()),
+                AgentCliIntegration(AiAgent.KIRO, CliIntegrationRecordingStatus.UNKNOWN, emptyList()),
+                AgentCliIntegration(AiAgent.GITHUB_COPILOT_CLI, CliIntegrationRecordingStatus.RECORDED, emptyList())
+            )
+        )
+        panel.render(AiIntegrationsPanelState.Ready(snapshot))
+        val disclosures = descendants(panel).filterIsInstance<JToggleButton>()
+        val cliCard = disclosures[0].parent.parent as Container
+        val mcpCard = disclosures[1].parent.parent as Container
+        disclosures.forEach { it.doClick() }
+
+        assertThat(labelTexts(cliCard).filter { it in setOf("Integration recorded", "No integration recorded", "Unknown") })
+            .containsExactly("Integration recorded", "No integration recorded", "Unknown", "Unknown")
+        assertThat(labelTexts(cliCard)).doesNotContain("GitHub Copilot CLI")
+        assertThat(labelTexts(cliCard).any { it.contains("Not signed in") }).isTrue()
+        assertThat(labelTexts(mcpCard)).containsSubsequence("Claude Code", "Not supported", "Codex", "Supported")
+            .doesNotContain("Integration recorded", "No integration recorded", "Unknown")
+    }
+
+    @Test
+    fun `expands configuration paths and only the reported checks while preserving duplicates`() {
+        val panel = AiIntegrationsPanel()
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),
+            listOf(AgentCapability(AiAgent.CLAUDE_CODE, setOf(AiAgentDetectionSource.CLI), true, true)),
+            emptyList(),
+            null,
+            listOf(AgentCliIntegration(AiAgent.CLAUDE_CODE, CliIntegrationRecordingStatus.RECORDED, listOf(
+                CliIntegrationConfig("/config.json", CliIntegrationCheckStatus.CONFIGURED, CliIntegrationCheckStatus.INVALID),
+                CliIntegrationConfig("/config.json", CliIntegrationCheckStatus.NOT_CONFIGURED, CliIntegrationCheckStatus.UNKNOWN),
+                CliIntegrationConfig(null, null, CliIntegrationCheckStatus.CONFIGURED),
+                CliIntegrationConfig(null, null, null)
+            )))
+        )
+        panel.render(AiIntegrationsPanelState.Ready(snapshot))
+        descendants(panel).filterIsInstance<JToggleButton>().first().doClick()
+        val configurationDisclosure = descendants(panel).filterIsInstance<JToggleButton>()
+            .single { it.text.endsWith("Configuration details") }
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain("/config.json")
+
+        configurationDisclosure.doClick()
+
+        val paths = descendants(panel).filterIsInstance<JBTextArea>().map { it.text }
+            .filter { it in setOf("/config.json", "Configuration path not reported") }
+        assertThat(paths).containsExactly("/config.json", "/config.json", "Configuration path not reported", "Configuration path not reported")
+        assertThat(labelTexts(panel).filter { it.startsWith("MCP:") || it.startsWith("Hooks:") }).containsExactly(
+            "MCP: Configured", "Hooks: Invalid configuration", "MCP: Not configured", "Hooks: Unknown", "Hooks: Configured"
+        )
+        panel.setSize(500, 1000)
+        panel.dispatchEvent(ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED))
+        repeat(2) { layoutRecursively(panel) }
+        val agentRow = configurationDisclosure.parent.parent as JPanel
+        assertThat(agentRow.maximumSize.height).isEqualTo(agentRow.preferredSize.height)
+        assertThat(agentRow.height).isEqualTo(agentRow.preferredSize.height)
+
+        panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(cli = snapshot.cli.copy(authentication = CliAuthenticationStatus.INVALID))))
+        assertThat(descendants(panel).filterIsInstance<JToggleButton>().single { it.text.endsWith("Configuration details") }.isSelected).isTrue()
+        assertThat(labelTexts(panel)).contains("Integration recorded", "MCP: Configured")
+
+        descendants(panel).filterIsInstance<JToggleButton>().single { it.text.endsWith("Configuration details") }.doClick()
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain("/config.json")
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }
