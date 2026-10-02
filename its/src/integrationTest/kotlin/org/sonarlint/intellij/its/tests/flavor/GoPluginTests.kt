@@ -20,27 +20,23 @@
 package org.sonarlint.intellij.its.tests.flavor
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.condition.EnabledIf
-import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
+import org.sonarlint.intellij.its.BaseStandaloneIntegrationTest
+import org.sonarlint.intellij.its.driver.analyzeCurrentFileFromToolWindow
+import org.sonarlint.intellij.its.driver.openProjectFile
+import org.sonarlint.intellij.its.driver.verifyCurrentFileTabContainsMessages
 
-
-/** Tests for Go language support (not limited to GoLand) */
 @EnabledIf("isGoPlugin")
-class GoPluginTests : BaseUiTest() {
+class GoPluginTests : BaseStandaloneIntegrationTest() {
 
     @Test
-    fun should_analyze_go() = uiTest {
-        openExistingProject("sample-go")
-
-        openFile("file.go")
-
+    fun should_analyze_go(testInfo: TestInfo) = uiTest(testInfo, "sample-go") {
+        openProjectFile("file.go")
+        analyzeCurrentFileFromToolWindow()
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
-            "Remove or correct this useless self-assignment."
+            "Remove or correct this useless self-assignment.",
         )
     }
-
 }

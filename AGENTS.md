@@ -108,7 +108,18 @@ The sandbox (instance files, JDK config) is stored under `build/sonarlint-test`.
 
 ITs require a running display and `SONARCLOUD_IT_TOKEN`. Supported on **Windows and Linux only** — macOS is not supported due to native file dialog incompatibility with the UI test framework.
 
-On headless Linux, `xvfb` is required. On Windows and Linux with a display, start the IDE with the plugin, wait for it to be ready, then run the tests:
+On Linux, standalone ITs need a virtual display. Starter wraps the IDE in `xvfb-run` automatically
+unless `DISPLAY` is already set — on Wayland desktops `DISPLAY=:0` is common but unusable from Gradle,
+so the build clears it locally. Install `xvfb` (`mise install` or `apt install xvfb`). To run against
+your real desktop display instead, set `ITS_USE_SYSTEM_DISPLAY=true`.
+
+**Standalone tests** (Starter/Driver — no background IDE required):
+
+```bash
+./gradlew :buildPlugin :its:integrationTest -PijVersion=IC-2024.2
+```
+
+**Connected tests** (Remote Robot — requires a running IDE):
 
 ```bash
 ./gradlew :its:runIdeForUiTests -PijVersion=IC-2024.2 &

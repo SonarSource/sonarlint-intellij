@@ -367,9 +367,10 @@ jobs:
           - ide_version: 'IC-2025.3.2'
             qa_category: 'Idea2025'
             test_suite: 'ConfigurationTests'
-          - ide_version: 'IC-2025.3.2'
-            qa_category: 'Idea2025'
-            test_suite: 'Standalone'
+          # Driver IT helpers target the 242 SDK API; 253+ IDEs need a separate migration.
+          #          - ide_version: 'IC-2025.3.2'
+          #            qa_category: 'Idea2025'
+          #            test_suite: 'Standalone'
           - ide_version: 'IU-2024.2'
             qa_category: 'IdeaUltimate2024'
           #          - ide_version: 'IU-2025.3.2'
@@ -389,16 +390,17 @@ jobs:
           #            qa_category: 'Rider2025'
           - ide_version: 'PS-2024.2'
             qa_category: 'PhpStorm2024'
-          - ide_version: 'PS-2025.3.2'
-            qa_category: 'PhpStorm2025'
+          # Driver IT helpers target the 242 SDK API; 253+ IDEs need a separate migration.
+          #          - ide_version: 'PS-2025.3.2'
+          #            qa_category: 'PhpStorm2025'
           - ide_version: 'GO-2024.2'
             qa_category: 'GoLand2024'
-          - ide_version: 'GO-2025.3.2'
-            qa_category: 'GoLand2025'
+          #          - ide_version: 'GO-2025.3.2'
+          #            qa_category: 'GoLand2025'
           - ide_version: 'CL-2024.2'
             qa_category: 'CLion2024'
-          - ide_version: 'CL-2025.3.2'
-            qa_category: 'CLion2025'
+          #          - ide_version: 'CL-2025.3.2'
+          #            qa_category: 'CLion2025'
     env:
       DISPLAY: ':10'
       JDK_VERSION: '21'
@@ -590,12 +592,12 @@ jobs:
         shell: bash --noprofile --norc -euo pipefail {0}
         run: |
           echo "Using project version: ${PROJECT_VERSION}"
+          mkdir -p ${GITHUB_WORKSPACE}/downloaded-plugin
           curl -fsSL -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_ACCESS_TOKEN}" \
-            -o sonarlint-intellij.zip \
+            -o ${GITHUB_WORKSPACE}/downloaded-plugin/sonarlint-intellij.zip \
             "${ARTIFACTORY_RESOLVE_URL:-${ARTIFACTORY_URL}}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
-          unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
+          unzip ${GITHUB_WORKSPACE}/downloaded-plugin/sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
           mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
-          rm sonarlint-intellij.zip
           
           # IntelliJ Platform Gradle Plugin 2.13+ introduced a sandbox layout change:
           #   <sandboxContainer>/<project.name>/<productCode>-<productVersion>/config_<task>/
@@ -628,6 +630,8 @@ jobs:
           if [ -n "$KEY_VAR" ]; then
             echo "Writing license key to ${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
             echo "${!KEY_VAR}" | base64 -d > "${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
+            mkdir -p "${GITHUB_WORKSPACE}/its/idea-config"
+            echo "${!KEY_VAR}" | base64 -d > "${GITHUB_WORKSPACE}/its/idea-config/${KEY_FILE}"
           else
             echo "No license key required for $IDE_CODE"
           fi
@@ -637,6 +641,7 @@ jobs:
           sleep 3
 
       - name: Start IDE in background
+        if: matrix.test_suite == 'OpenInIdeTests' || matrix.test_suite == 'ConnectedAnalysisTests' || matrix.test_suite == 'ConfigurationTests'
         env:
           ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
           ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
@@ -648,6 +653,7 @@ jobs:
           echo "IDE_PID=$!" >> $GITHUB_ENV
 
       - name: Wait for IDE to start
+        if: matrix.test_suite == 'OpenInIdeTests' || matrix.test_suite == 'ConnectedAnalysisTests' || matrix.test_suite == 'ConfigurationTests'
         run: |
           echo "Waiting for IDE to start..."
           # retry every 5 seconds, max 150 times (750 seconds total)
@@ -686,7 +692,14 @@ jobs:
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
           ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
-        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
+        run: |
+          GRADLE_ARGS="--stacktrace -i -PijVersion=${IDEA_VERSION} --rerun-tasks"
+          PLUGIN_ARGS="-PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin"
+          if [ -z "${TEST_SUITE}" ] || [ "${TEST_SUITE}" = "Standalone" ]; then
+            ./gradlew :its:integrationTest ${GRADLE_ARGS} ${PLUGIN_ARGS}
+          else
+            ./gradlew :its:check ${GRADLE_ARGS} ${PLUGIN_ARGS}
+          fi
 
       - name: Stop recording
         if: always()
