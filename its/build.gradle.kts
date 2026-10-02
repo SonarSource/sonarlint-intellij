@@ -30,13 +30,14 @@ val integrationTestRuntimeOnly by configurations.getting {
 // coordinate; screen recording is unused by our Standalone ITs.
 configurations.matching { it.name.startsWith("integrationTest") }.configureEach {
     exclude(group = "com.github.stephenc.monte", module = "monte-screen-recorder")
-    // Match driver SDK to the target IDE build: 242 IDEs need a pinned SDK for compile-time
-    // API stability; 253+ IDEs must use their own driver version at runtime (242 causes NoSuchMethodError).
-    val driverVersion = itsDriverSdkVersion()
+}
+
+// Pin driver SDK to 242: our test helpers compile against that API surface.
+configurations.matching { it.name.startsWith("integrationTest") }.configureEach {
     resolutionStrategy.force(
-        "com.jetbrains.intellij.driver:driver-sdk:$driverVersion",
-        "com.jetbrains.intellij.driver:driver-client:$driverVersion",
-        "com.jetbrains.intellij.driver:driver-model:$driverVersion",
+        "com.jetbrains.intellij.driver:driver-sdk:${itsDriverSdkVersion()}",
+        "com.jetbrains.intellij.driver:driver-client:${itsDriverSdkVersion()}",
+        "com.jetbrains.intellij.driver:driver-model:${itsDriverSdkVersion()}",
     )
 }
 
@@ -282,19 +283,7 @@ fun itsIdeBuildNumber(): String? {
         ?.get(1)
 }
 
-fun itsDriverSdkVersion(): String {
-    // Read product-info.json directly from *_HOME env vars to avoid accessing Gradle
-    // project properties during early configuration (configurations {} runs before by project).
-    val ideHome = sequenceOf(
-        "IDEA_HOME", "CLION_HOME", "RIDER_HOME", "PYCHARM_HOME", "PHPSTORM_HOME", "GOLAND_HOME",
-    ).mapNotNull { System.getenv(it)?.takeIf { path -> File(path).exists() } }.firstOrNull()
-        ?: return "242.20224.300"
-    val productInfo = File(ideHome, "product-info.json")
-    if (!productInfo.isFile) return "242.20224.300"
-    val buildNumber = Regex(""""buildNumber"\s*:\s*"([^"]+)"""")
-        .find(productInfo.readText())?.groupValues?.get(1)
-    return if (buildNumber != null && buildNumber.startsWith("253.")) buildNumber else "242.20224.300"
-}
+fun itsDriverSdkVersion(): String = "242.20224.300"
 
 fun cleanupStaleXvfbLock(displayNumber: Int) {
     val lockFile = File("/tmp/.X${displayNumber}-lock")
