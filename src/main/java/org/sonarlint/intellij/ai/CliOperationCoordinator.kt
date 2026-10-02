@@ -111,6 +111,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
                 is ConnectionSelection.Selected -> backendService.prepareAuthenticateCliCommand(selection.connectionId)
             }
             is AiIntegrationsIntent.IntegrateCli -> backendService.prepareIntegrateCliCommand(intent.agent)
+            else -> throw IllegalArgumentException("Not a CLI operation: $intent")
         }
 
     private fun launch(lease: OperationLease, command: CliCommand) {

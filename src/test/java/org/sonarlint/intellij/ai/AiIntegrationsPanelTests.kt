@@ -249,7 +249,14 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
                 AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, true)
             ),
             emptyList(),
-            null
+            null,
+            mapOf(AiAgent.GITHUB_COPILOT to McpAgentConfiguration(
+                AiAgent.GITHUB_COPILOT,
+                java.nio.file.Path.of("/tmp/mcp.json"),
+                McpConfigurationKind.NOT_CONFIGURED,
+                false,
+                emptyList()
+            ))
         )
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
@@ -270,13 +277,70 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(labelTexts(mcpCard)).doesNotContain("Not supported")
 
         mcpDisclosure.doClick()
-        assertThat(labelTexts(mcpCard)).containsSubsequence("Cursor", "Not supported", "GitHub Copilot", "Supported")
+        assertThat(labelTexts(mcpCard)).containsSubsequence("GitHub Copilot", "Not configured").doesNotContain("Cursor")
 
         cliDisclosure.doClick()
         assertThat(labelTexts(cliCard)).doesNotContain("Not supported")
         assertThat(cliDisclosure.isSelected).isFalse()
         assertThat(cliDisclosure.text).startsWith("▸")
         assertThat(mcpDisclosure.isSelected).isTrue()
+    }
+
+    @Test
+    fun `reveals compact MCP actions while preserving ownership and protected states`() {
+        val panel = AiIntegrationsPanel()
+        val path = java.nio.file.Path.of("/tmp/mcp.json")
+        val configurations = listOf(
+            McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.NOT_CONFIGURED, false, emptyList()),
+            McpAgentConfiguration(AiAgent.GITHUB_COPILOT, path, McpConfigurationKind.STANDALONE, true, emptyList()),
+            McpAgentConfiguration(AiAgent.CLAUDE_CODE, path, McpConfigurationKind.STANDALONE, false, emptyList()),
+            McpAgentConfiguration(AiAgent.KIRO, path, McpConfigurationKind.CLI_MANAGED, false, emptyList()),
+            McpAgentConfiguration(AiAgent.GITHUB_COPILOT_CLI, null, McpConfigurationKind.CLI_ONLY, false, emptyList()),
+            McpAgentConfiguration(AiAgent.CODEX, path, McpConfigurationKind.UNKNOWN, false, listOf("inspect manually")),
+            McpAgentConfiguration(AiAgent.WINDSURF, path, McpConfigurationKind.MALFORMED, false, listOf("invalid json"))
+        ).associateBy { it.agent }
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),
+            listOf(AgentCapability(AiAgent.GITHUB_COPILOT_CLI, setOf(AiAgentDetectionSource.CLI), true, false)),
+            emptyList(),
+            null,
+            configurations
+        )
+
+        var lastIntent: AiIntegrationsIntent? = null
+        panel.setIntentListener { lastIntent = it }
+        panel.render(AiIntegrationsPanelState.Ready(snapshot))
+
+        assertThat(labelTexts(panel)).doesNotContain("Not configured", "Malformed configuration")
+        val disclosure = descendants(panel).filterIsInstance<JToggleButton>().last()
+        descendants(panel).filterIsInstance<JButton>().first { it.text == "Set up an agent…" }.doClick()
+        assertThat(descendants(panel).filterIsInstance<JToggleButton>().last()).isSameAs(disclosure)
+        assertThat(disclosure.isSelected).isTrue()
+
+        val buttonLabels = descendants(panel).filterIsInstance<JButton>().map { it.text }
+        val text = descendants(panel).filter { it is JBLabel || it is JBTextArea }.joinToString(" ") {
+            when (it) {
+                is JBLabel -> it.text
+                is JBTextArea -> it.text
+                else -> ""
+            }
+        }
+        assertThat(buttonLabels).contains("Set up", "Replace…", "Open", "Integrate with CLI")
+            .doesNotContain("CLI", "Use CLI")
+        assertThat(text).contains("Configured · Connection not verified")
+            .contains("Configured externally · Connection not verified")
+            .contains("Managed by SonarQube CLI")
+            .contains("Configure with SonarQube CLI")
+            .contains("Configuration state unknown")
+            .contains("Malformed configuration")
+            .contains("inspect manually")
+            .contains("invalid json")
+
+        descendants(panel).filterIsInstance<JButton>().first { it.text == "Integrate with CLI" }.doClick()
+        assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.IntegrateCli(AiAgent.GITHUB_COPILOT_CLI))
+        disclosure.doClick()
+        assertThat(disclosure.isSelected).isFalse()
+        assertThat(labelTexts(panel)).doesNotContain("Malformed configuration")
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }
