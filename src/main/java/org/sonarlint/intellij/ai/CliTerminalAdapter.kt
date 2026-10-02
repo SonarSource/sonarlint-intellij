@@ -21,13 +21,10 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.extensions.ExtensionPointName
-import com.intellij.openapi.util.SystemInfo
 import java.util.concurrent.CompletableFuture
 
 interface CliTerminalAdapter {
     fun launch(project: Project, command: CliCommand): TerminalLaunch
-
-    fun shellFor(project: Project): CommandShell? = osDefaultCommandShell()
 }
 
 sealed interface TerminalLaunch {
@@ -41,9 +38,6 @@ sealed interface TerminalCompletion {
     data object Cancelled : TerminalCompletion
     data object ClosedWithoutExitStatus : TerminalCompletion
 }
-
-internal fun osDefaultCommandShell(): CommandShell =
-    if (SystemInfo.isWindows) CommandShell.POWERSHELL else CommandShell.POSIX
 
 class SafeOptionalTerminalAdapter : CliTerminalAdapter {
     override fun launch(project: Project, command: CliCommand): TerminalLaunch = TerminalLaunch.Unsupported

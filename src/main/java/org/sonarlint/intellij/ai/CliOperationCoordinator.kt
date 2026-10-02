@@ -24,10 +24,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import java.awt.datatransfer.StringSelection
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicReference
@@ -41,7 +39,6 @@ class CliOperationCoordinator @JvmOverloads constructor(
     private val backendService: BackendService = getService(BackendService::class.java),
     private val terminalAdapterProvider: () -> CliTerminalAdapter = { CliTerminalAdapterProvider.create() },
     private val connectionSelector: CliConnectionSelector = CliConnectionSelector(),
-    private val copyCommand: (String) -> Unit = { CopyPasteManager.getInstance().setContents(StringSelection(it)) },
     private val notifyUser: (Project, String, NotificationType) -> Unit = { _, message, type ->
         projectLessNotification("SonarQube CLI", message, type)
     },
@@ -89,7 +86,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
                 "Unable to prepare the SonarQube CLI command. Check the selected connection and retry.", NotificationType.ERROR)
         } else {
             try {
-                launchOrCopy(lease, command)
+                launch(lease, command)
             } catch (_: Exception) {
                 finish(lease, CliOperationOutcome.LaunchFailed,
                     "The SonarQube CLI command could not be started. Retry from this view.", NotificationType.ERROR)
@@ -121,40 +118,19 @@ class CliOperationCoordinator @JvmOverloads constructor(
             is AiIntegrationsIntent.IntegrateCli -> backendService.prepareIntegrateCliCommand(intent.agent)
         }
 
-    private fun launchOrCopy(lease: OperationLease, command: CliCommand) {
-        val terminalAdapter = terminalAdapterProvider()
-        when (val launch = terminalAdapter.launch(lease.project, command)) {
+    private fun launch(lease: OperationLease, command: CliCommand) {
+        when (val launch = terminalAdapterProvider().launch(lease.project, command)) {
             is TerminalLaunch.Started -> {
                 lease.terminal = launch
                 launch.completion.whenComplete { completion, error ->
                     completeTerminalOperation(lease, completion, error)
                 }
             }
-            is TerminalLaunch.Failed -> {
-                val copied = copyFallback(lease.project, command, terminalAdapter)
-                val message = if (copied) {
-                    "The terminal could not be started. The command was copied; paste it into a terminal, run it, then refresh this view."
-                } else {
-                    "The terminal could not be started and the command could not be copied. Open a terminal and retry from this view."
-                }
-                finish(lease, CliOperationOutcome.LaunchFailed, message, NotificationType.WARNING)
-            }
-            TerminalLaunch.Unsupported -> {
-                if (copyFallback(lease.project, command, terminalAdapter)) {
-                    finish(lease, CliOperationOutcome.Copied, "The SonarQube CLI command was copied. Paste it into a terminal, run it, then refresh this view.", NotificationType.INFORMATION)
-                } else {
-                    finish(lease, CliOperationOutcome.LaunchFailed, "No compatible terminal is available and the command could not be copied. Open a terminal and retry from this view.", NotificationType.ERROR)
-                }
-            }
+            is TerminalLaunch.Failed -> finish(lease, CliOperationOutcome.LaunchFailed,
+                "The SonarQube CLI terminal could not be started. Check the terminal output and retry.", NotificationType.ERROR)
+            TerminalLaunch.Unsupported -> finish(lease, CliOperationOutcome.LaunchFailed,
+                "SonarQube CLI setup requires the Terminal plugin. Enable it in Settings > Plugins and retry.", NotificationType.ERROR)
         }
-    }
-
-    private fun copyFallback(project: Project, command: CliCommand, terminalAdapter: CliTerminalAdapter): Boolean = try {
-        val shell = terminalAdapter.shellFor(project) ?: return false
-        copyCommand(CliCommandRenderer.render(command, shell))
-        true
-    } catch (_: RuntimeException) {
-        false
     }
 
     private fun completeTerminalOperation(
@@ -222,6 +198,5 @@ enum class CliOperationOutcome {
     Cancelled,
     ExitZero,
     NonZero,
-    Unknown,
-    Copied
+    Unknown
 }
