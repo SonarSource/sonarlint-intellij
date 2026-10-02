@@ -19,12 +19,14 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.execution.CommandLineUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.terminal.ui.TerminalWidget
 import com.intellij.util.concurrency.AppExecutorUtil
+import com.pty4j.PtyProcess
 import java.util.concurrent.CompletableFuture
 import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 import org.jetbrains.plugins.terminal.ShellStartupOptions
@@ -71,6 +73,11 @@ internal class CliTerminalRunner(project: Project, command: CliCommand) : LocalT
 
     override fun createShellTerminalWidget(parent: Disposable, startupOptions: ShellStartupOptions): TerminalWidget =
         super.createShellTerminalWidget(parent, startupOptions).also { widget = it }
+
+    override fun createProcess(startupOptions: ShellStartupOptions): PtyProcess =
+        super.createProcess(startupOptions.builder()
+            .shellCommand(CommandLineUtil.toCommandLine(requireNotNull(startupOptions.shellCommand)))
+            .build())
 
     override fun enableShellIntegration(): Boolean = false
 
