@@ -31,8 +31,9 @@ jobs:
     name: Get build number
     permissions:
       id-token: write
+      contents: write
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+      - uses: SonarSource/ci-github-actions/get-build-number@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         id: build-number
 
   aws-auth:
@@ -92,11 +93,10 @@ jobs:
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
-      # config-gradle first so we can wait for Edge federation before Gradle resolve.
-      # build-gradle then skips its nested config-gradle (CONFIG_GRADLE_COMPLETED).
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           use-develocity: true
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
@@ -104,14 +104,11 @@ jobs:
             /home/runner/.gradle/caches
             /home/runner/.gradle/wrapper
 
-      - name: Point resolve at Edge
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
-
       - name: Build Plugin
-        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/build-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         id: build_plugin
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           sonar-platform: none
           deploy-pull-request: true
           use-develocity: true
@@ -141,14 +138,11 @@ jobs:
           version: 2025.9.12
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           sonar-platform: none
           artifactory-reader-role: private-reader
-
-      - name: Point resolve at Edge
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
 
       - name: Run checks
         env:
@@ -213,8 +207,9 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           use-develocity: true
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
@@ -222,13 +217,10 @@ jobs:
             /home/runner/.gradle/caches
             /home/runner/.gradle/wrapper
 
-      - name: Point resolve at Edge
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
-
       - name: Run Tests and Sonar Analysis
-        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/build-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           deploy: false
           use-develocity: true
           develocity-url: https://develocity.sonar.build
@@ -299,8 +291,9 @@ jobs:
             verifier-ides-${{ runner.os }}-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           use-develocity: true
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
@@ -309,12 +302,10 @@ jobs:
             !/home/runner/.gradle/caches/*/transforms/
             /home/runner/.gradle/wrapper
 
-      # Verifier downloads IDE tarballs through Gradle ivy from jetbrains-download.
-      # Edge returns HTTP 404 for that repo, and the config-gradle init script strips
-      # any ivy host that does not match ARTIFACTORY_URL. Keep this job on SaaS.
       - name: Verify Plugin Compatibility
-        uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/build-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           deploy: false
           sonar-platform: none
           use-develocity: true
@@ -414,17 +405,14 @@ jobs:
           version: 2025.9.12
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+        uses: SonarSource/ci-github-actions/config-gradle@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           sonar-platform: none
           use-develocity: true
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           disable-caching: 'true'
-
-      - name: Point resolve at Edge
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
 
       - name: Select Java ${{ env.JDK_VERSION }}
         run: mise use java@${{ env.JDK_VERSION }}
@@ -637,9 +625,6 @@ jobs:
           sleep 3
 
       - name: Start IDE in background
-        env:
-          ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
-          ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
         run: |
           # Start IDE in background using Gradle
           nohup ./gradlew :its:runIdeForUiTests --stacktrace -i \
@@ -669,23 +654,15 @@ jobs:
           echo "FFMPEG_PID=$!" >> $GITHUB_ENV
 
       - name: Configure Maven
-        uses: SonarSource/ci-github-actions/config-maven@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+        uses: SonarSource/ci-github-actions/config-maven@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         with:
+          repox-url: https://repox-internal.dev.sonar.build
           artifactory-reader-role: private-reader
-
-      # config-maven issues a new reader token and resets ARTIFACTORY_URL to SaaS.
-      # Wait for that token to federate to Edge before Gradle ITs resolve there;
-      # restoring URLs alone yields HTTP 401 on unfederated credentials.
-      - name: Point resolve at Edge after Maven
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
 
       - name: Run integration tests
         env:
           SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
-          ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
-          ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
         run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
 
       - name: Stop recording
@@ -760,7 +737,7 @@ jobs:
           version: 2025.9.12
 
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@657e44543f55422ffd28b91d62fe5386f07d6030 # 1.6.0
+        uses: SonarSource/ci-github-actions/promote@4402eb038c849d74631b25f8e9d58e89e983e197 # 2.1.0
         env:
           PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         with:
