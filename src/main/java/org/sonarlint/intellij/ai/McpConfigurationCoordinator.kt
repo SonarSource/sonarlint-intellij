@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ai
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
@@ -39,6 +40,7 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.BackendReadyListener
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
@@ -159,10 +161,10 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         executeSerialized(path) {
             safeUpdate(agent, path, connectionId, externalTakeover || configuration.owned)
         }.whenComplete { result, error ->
-            ApplicationManager.getApplication().invokeLater({
+            runOnUiThread(project) {
                 reportSetupResult(project, result, error)
                 refreshAll()
-            }, project.disposed)
+            }
         }
         return true
     }
@@ -402,7 +404,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
 
     private fun refreshAll() {
         refreshCallbacks.values.forEach { refresh ->
-            ApplicationManager.getApplication().invokeLater(refresh)
+            runOnUiThread(ModalityState.defaultModalityState(), refresh)
         }
     }
 
