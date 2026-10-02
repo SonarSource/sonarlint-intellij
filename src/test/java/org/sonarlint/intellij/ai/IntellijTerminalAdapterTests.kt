@@ -23,6 +23,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.terminal.ui.TerminalWidget
+import com.intellij.terminal.ui.TtyConnectorAccessor
+import com.jediterm.terminal.ProcessTtyConnector
+import com.jediterm.terminal.TtyConnector
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
@@ -30,10 +33,9 @@ import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.jetbrains.plugins.terminal.ShellStartupOptions
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -51,27 +53,84 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `holds completion until the terminal session terminates`() {
+    fun `waits for the terminal connector to become available`() {
         val widget = mock<TerminalWidget>()
+        val accessor = TtyConnectorAccessor()
+        whenever(widget.ttyConnectorAccessor).thenReturn(accessor)
+        val connector = mock<TtyConnector>()
+        whenever(connector.waitFor()).thenReturn(0)
         val completion = observeTerminalCompletion(widget)
-        val termination = argumentCaptor<Runnable>()
-        verify(widget).addTerminationCallback(termination.capture(), eq(widget))
 
         assertThat(completion).isNotDone()
-        termination.firstValue.run()
-        assertThat(completion.join()).isEqualTo(TerminalCompletion.ClosedWithoutExitStatus)
+        accessor.ttyConnector = connector
+
+        assertThat(completion.get(10, TimeUnit.SECONDS)).isEqualTo(TerminalCompletion.Exited(0))
         Disposer.dispose(widget)
     }
 
     @Test
     fun `closing the terminal completes an operation without inventing an exit status`() {
         val widget = mock<TerminalWidget>()
+        whenever(widget.ttyConnectorAccessor).thenReturn(TtyConnectorAccessor())
         val completion = observeTerminalCompletion(widget)
 
         assertThat(completion).isNotDone()
         Disposer.dispose(widget)
 
         assertThat(completion.join()).isEqualTo(TerminalCompletion.ClosedWithoutExitStatus)
+    }
+
+    @Test
+    fun `closing an exited terminal preserves its exit code before the waiter reports`() {
+        val process = mock<Process>()
+        whenever(process.exitValue()).thenReturn(17)
+        val connector = mock<ProcessTtyConnector>()
+        whenever(connector.process).thenReturn(process)
+        val widget = mock<TerminalWidget>()
+        whenever(widget.ttyConnectorAccessor).thenReturn(mock())
+        whenever(widget.ttyConnector).thenReturn(connector)
+        val completion = observeTerminalCompletion(widget)
+
+        Disposer.dispose(widget)
+
+        assertThat(completion.join()).isEqualTo(TerminalCompletion.Exited(17))
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [0, 17])
+    fun `reports the actual exit code from the direct runner`(exitCode: Int, @TempDir directory: Path) {
+        val source = directory.resolve("ExitProbe.java")
+        Files.writeString(source, """
+            class ExitProbe {
+                public static void main(String[] arguments) throws Exception {
+                    System.in.read();
+                    System.exit(Integer.parseInt(arguments[0]));
+                }
+            }
+        """.trimIndent())
+        val javaExecutable = Path.of(System.getProperty("java.home"), "bin", if (SystemInfo.isWindows) "java.exe" else "java")
+        val runner = CliTerminalRunner(project, CliCommand(javaExecutable.toString(), listOf(source.toString(), exitCode.toString()), true))
+        val options = runner.configureStartupOptions(ShellStartupOptions.Builder()
+            .shellCommand(runner.tabState.myShellCommand)
+            .workingDirectory(directory.toString())
+            .build())
+        val process = runner.createProcess(options)
+        val widget = mock<TerminalWidget>()
+        val accessor = TtyConnectorAccessor().apply { ttyConnector = runner.createTtyConnector(process) }
+        whenever(widget.ttyConnectorAccessor).thenReturn(accessor)
+        val completion = observeTerminalCompletion(widget)
+        try {
+            assertThat(completion).isNotDone()
+            process.outputStream.write("ready\n".toByteArray(Charsets.UTF_8))
+            process.outputStream.flush()
+
+            assertThat(completion.get(30, TimeUnit.SECONDS)).isEqualTo(TerminalCompletion.Exited(exitCode))
+            Disposer.dispose(widget)
+            assertThat(completion.join()).isEqualTo(TerminalCompletion.Exited(exitCode))
+        } finally {
+            process.destroy()
+            Disposer.dispose(widget)
+        }
     }
 
     @Test

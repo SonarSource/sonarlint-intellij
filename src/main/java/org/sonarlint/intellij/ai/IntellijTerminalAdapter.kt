@@ -24,9 +24,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.terminal.ui.TerminalWidget
+import com.intellij.util.concurrency.AppExecutorUtil
 import java.util.concurrent.CompletableFuture
 import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 import org.jetbrains.plugins.terminal.ShellStartupOptions
+import org.jetbrains.plugins.terminal.ShellTerminalWidget
 import org.jetbrains.plugins.terminal.TerminalTabState
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -77,7 +79,23 @@ internal class CliTerminalRunner(project: Project, command: CliCommand) : LocalT
 
 internal fun observeTerminalCompletion(widget: TerminalWidget): CompletableFuture<TerminalCompletion> {
     val completion = CompletableFuture<TerminalCompletion>()
-    widget.addTerminationCallback({ completion.complete(TerminalCompletion.ClosedWithoutExitStatus) }, widget)
-    Disposer.register(widget) { completion.complete(TerminalCompletion.ClosedWithoutExitStatus) }
+    widget.ttyConnectorAccessor.executeWithTtyConnector { connector ->
+        CompletableFuture.supplyAsync({ connector.waitFor() }, AppExecutorUtil.getAppExecutorService())
+            .whenComplete { exitCode, error ->
+                if (error != null) {
+                    completion.completeExceptionally(error)
+                } else {
+                    completion.complete(TerminalCompletion.Exited(exitCode))
+                }
+            }
+    }
+    Disposer.register(widget) {
+        val exitCode = try {
+            ShellTerminalWidget.getProcessTtyConnector(widget.ttyConnector)?.process?.exitValue()
+        } catch (_: IllegalThreadStateException) {
+            null
+        }
+        completion.complete(exitCode?.let { TerminalCompletion.Exited(it) } ?: TerminalCompletion.ClosedWithoutExitStatus)
+    }
     return completion
 }
