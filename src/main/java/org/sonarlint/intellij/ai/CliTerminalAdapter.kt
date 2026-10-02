@@ -23,7 +23,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.extensions.ExtensionPointName
 import java.util.concurrent.CompletableFuture
 
-interface CliTerminalAdapter {
+fun interface CliTerminalAdapter {
     fun launch(project: Project, command: CliCommand): TerminalLaunch
 }
 
