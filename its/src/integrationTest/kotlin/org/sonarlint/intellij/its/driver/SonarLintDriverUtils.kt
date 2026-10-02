@@ -301,9 +301,7 @@ private fun Driver.sonarLintPanel(
 
 private fun Driver.openProjectInFileBrowser(projectPath: java.nio.file.Path) {
     val dialogTitle = if (System.getProperty("its.ide.product") == "RD") "Select Path" else "Open File or Project"
-    val projectsDir = projectPath.parent.normalize().toString()
     val normalizedPath = projectPath.normalize().toString()
-    val projectDirName = projectPath.fileName.toString()
     ui.dialog(title = dialogTitle) {
         val textField = x(xQuery { or(byClass("BorderlessTextField"), byClass("JTextField")) })
         x(xQuery { and(byClass("JButton"), byVisibleText("OK")) })
@@ -311,16 +309,8 @@ private fun Driver.openProjectInFileBrowser(projectPath: java.nio.file.Path) {
         textField.click()
         keyboard {
             hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_A)
-            enterText(projectsDir)
-        }
-        x(xQuery { byAccessibleName("Refresh") }).click()
-        findFirst(projectDirName, duration = 1.minutes)
-        textField.click()
-        keyboard {
-            hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_A)
             enterText(normalizedPath)
         }
-        findFirst(projectDirName, duration = 1.minutes)
         pressButton("OK")
     }
 }

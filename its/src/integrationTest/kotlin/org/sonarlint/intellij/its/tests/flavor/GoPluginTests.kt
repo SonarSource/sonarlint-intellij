@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseStandaloneIntegrationTest
+import org.sonarlint.intellij.its.driver.analyzeCurrentFileFromToolWindow
 import org.sonarlint.intellij.its.driver.openProjectFile
 import org.sonarlint.intellij.its.driver.verifyCurrentFileTabContainsMessages
 
@@ -32,6 +33,7 @@ class GoPluginTests : BaseStandaloneIntegrationTest() {
     @Test
     fun should_analyze_go(testInfo: TestInfo) = uiTest(testInfo, "sample-go") {
         openProjectFile("file.go")
+        analyzeCurrentFileFromToolWindow()
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
             "Remove or correct this useless self-assignment.",
