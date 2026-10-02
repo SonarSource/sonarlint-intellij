@@ -20,41 +20,23 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.terminal.ui.TerminalWidget
-import java.util.concurrent.CompletableFuture
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.Base64
+import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.jetbrains.plugins.terminal.ShellStartupOptions
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 
 class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
-    @Test
-    fun classifies_only_the_shell_executable_even_when_arguments_contain_paths() {
-        assertThat(classifyTerminalShell("pwsh.exe -WorkingDirectory C:/work")).isEqualTo(CommandShell.POWERSHELL)
-        assertThat(classifyTerminalShell("\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\" -WorkingDirectory C:/work"))
-            .isEqualTo(CommandShell.POWERSHELL)
-        assertThat(classifyTerminalShell("'/opt/shell path/bash' -l")).isEqualTo(CommandShell.POSIX)
-        assertThat(classifyTerminalShell("/bin/sh -l")).isEqualTo(CommandShell.POSIX)
-        assertThat(classifyTerminalShell("cmd.exe /k C:\\tools\\bash-env.bat")).isNull()
-        assertThat(classifyTerminalShell("cmd.exe /k C:\\tools\\pwsh.exe")).isNull()
-        assertThat(classifyTerminalShell("/usr/bin/notbash")).isNull()
-    }
-
-    @Test
-    fun unsupported_shell_still_provides_a_shell_for_clipboard_copy() {
-        val session = mock<TerminalSession>()
-        val adapter = IntellijTerminalAdapter(session)
-
-        assertThat(adapter.launch(project, CliCommand("sonar", listOf("auth"), true))).isSameAs(TerminalLaunch.Unsupported)
-        assertThat(adapter.shellFor(project)).isEqualTo(osDefaultCommandShell())
-        verify(session, never()).launch(any(), any())
-    }
-
     @Test
     fun `holds completion until the terminal session terminates`() {
         val widget = mock<TerminalWidget>()
@@ -80,33 +62,69 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `classifies the configured terminal shell on every operating system`() {
-        assertThat(classifyTerminalShell("/usr/local/bin/pwsh")).isEqualTo(CommandShell.POWERSHELL)
-        assertThat(classifyTerminalShell("\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\"")).isEqualTo(CommandShell.POWERSHELL)
-        assertThat(classifyTerminalShell("/bin/zsh")).isEqualTo(CommandShell.POSIX)
-        assertThat(classifyTerminalShell("/bin/sh")).isEqualTo(CommandShell.POSIX)
-        assertThat(classifyTerminalShell("C:\\Windows\\System32\\bash.exe")).isEqualTo(CommandShell.POSIX)
-        assertThat(classifyTerminalShell("C:\\Windows\\System32\\cmd.exe")).isNull()
-        assertThat(classifyTerminalShell("/usr/bin/fish")).isNull()
+    fun `selects the terminal plugin adapter`() {
+        assertThat(CliTerminalAdapterProvider.create()).isInstanceOf(IntellijTerminalAdapter::class.java)
     }
 
     @Test
-    fun `selects the terminal plugin adapter and preserves rendered argument boundaries`() {
-        assertThat(CliTerminalAdapterProvider.create()).isInstanceOf(IntellijTerminalAdapter::class.java)
-        val command = CliCommand("sonar", listOf("auth", ""), true)
-        var launchedCommand: String? = null
-        val session = object : TerminalSession {
-            override fun commandShell(project: com.intellij.openapi.project.Project): CommandShell = CommandShell.POSIX
+    fun `CLI sessions are not restored when the project reopens`() {
+        val runner = CliTerminalRunner(project, CliCommand("sonar", listOf("auth", "login"), true))
 
-            override fun launch(project: com.intellij.openapi.project.Project, renderedCommand: String): TerminalLaunch {
-                launchedCommand = renderedCommand
-                return TerminalLaunch.Started({}, CompletableFuture.completedFuture(TerminalCompletion.ClosedWithoutExitStatus))
-            }
-        }
-
-        IntellijTerminalAdapter(session).launch(project, command)
-
-        assertThat(launchedCommand).contains("'sonar'").contains("''")
+        assertThat(runner.isTerminalSessionPersistent()).isFalse()
     }
 
+    @Test
+    fun `prepared shell commands are not rewritten by shell integration`() {
+        val command = CliCommand("powershell.exe", listOf("-NoProfile", "-Command", "Write-Output 'two words'"), false)
+        val runner = CliTerminalRunner(project, command)
+        val options = runner.configureStartupOptions(ShellStartupOptions.Builder()
+            .shellCommand(runner.tabState.myShellCommand)
+            .workingDirectory(project.basePath)
+            .build())
+
+        assertThat(options.shellCommand).containsExactly(command.executable, *command.arguments.toTypedArray())
+        assertThat(options.shellIntegration).isNull()
+    }
+
+    @Test
+    fun `direct runner preserves arguments and interactive input`(@TempDir directory: Path) {
+        val source = Files.createDirectories(directory.resolve("path with spaces")).resolve("ArgvProbe.java")
+        Files.writeString(source, """
+            class ArgvProbe {
+                public static void main(String[] arguments) throws Exception {
+                    var encoder = java.util.Base64.getEncoder();
+                    var encoded = new java.util.ArrayList<String>();
+                    for (String argument : arguments) {
+                        encoded.add(encoder.encodeToString(argument.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                    }
+                    System.out.println("arguments=" + String.join(",", encoded));
+                    var input = new java.io.BufferedReader(new java.io.InputStreamReader(
+                        System.in, java.nio.charset.StandardCharsets.UTF_8)).readLine();
+                    System.out.println("input=" + input);
+                }
+            }
+        """.trimIndent())
+        val javaExecutable = Path.of(System.getProperty("java.home"), "bin", if (SystemInfo.isWindows) "java.exe" else "java")
+        val arguments = listOf("", "two words", "a'b", "a\"b", "a\\\"b", "trailing\\", "a\u2019b", "$&|;()!", "line1\nline2")
+        val command = CliCommand(javaExecutable.toString(), listOf(source.toString()) + arguments, true)
+        val runner = CliTerminalRunner(project, command)
+        val options = runner.configureStartupOptions(ShellStartupOptions.Builder()
+            .shellCommand(runner.tabState.myShellCommand)
+            .workingDirectory(directory.toString())
+            .build())
+        val process = runner.createProcess(options)
+        try {
+            process.outputStream.write("ready\n".toByteArray(Charsets.UTF_8))
+            process.outputStream.flush()
+            assertThat(process.waitFor(30, TimeUnit.SECONDS)).isTrue()
+            val output = process.inputStream.bufferedReader().readLines()
+            assertThat(process.exitValue()).withFailMessage(output.joinToString("\n")).isZero()
+            val encodedArguments = arguments.joinToString(",") {
+                Base64.getEncoder().encodeToString(it.toByteArray(Charsets.UTF_8))
+            }
+            assertThat(output).contains("arguments=$encodedArguments", "input=ready")
+        } finally {
+            process.destroy()
+        }
+    }
 }
