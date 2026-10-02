@@ -25,7 +25,6 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
-import java.nio.file.Files
 import java.nio.file.Path
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
@@ -63,9 +62,6 @@ class IntellijMcpUiAdapter : McpUiAdapter {
     ) == Messages.YES
 
     override fun openConfiguration(project: Project, path: Path) {
-        if (!Files.exists(path)) {
-            return
-        }
         LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)?.let { file ->
             OpenFileDescriptor(project, file).navigate(true)
         }
