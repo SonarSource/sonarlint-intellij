@@ -23,7 +23,7 @@ license-plugin = "0.16.1"
 artifactory-plugin = "6.0.4"
 cyclonedx-plugin = "3.4.1"
 
-commons-lang3 = "3.20.0"
+commons-lang3 = "3.21.0"
 commons-text = "1.15.0"
 findbugs-jsr305 = "3.0.2"
 sentry = "8.58.0"
