@@ -52,6 +52,12 @@ data class AiIntegrationSnapshot(
     val recommendedConnectionId: String?
 )
 
+data class CliCommand(
+    val executable: String,
+    val arguments: List<String>,
+    val interactive: Boolean
+)
+
 sealed interface AiIntegrationsPanelState {
     data object Loading : AiIntegrationsPanelState
     data class Ready(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
