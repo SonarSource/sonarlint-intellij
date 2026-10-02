@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.terminal.ui.TerminalWidget
@@ -33,10 +34,22 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.jetbrains.plugins.terminal.ShellStartupOptions
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 
 class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
+    @Test
+    fun `a disposed project cannot launch a terminal on the EDT`() {
+        val closedProject = mock<Project>()
+        whenever(closedProject.isDisposed).thenReturn(true)
+
+        val launch = IntellijTerminalAdapter().launch(closedProject, CliCommand("sonar", listOf("auth"), true))
+
+        assertThat(launch).isInstanceOf(TerminalLaunch.Failed::class.java)
+        assertThat((launch as TerminalLaunch.Failed).error).hasMessage("The project was closed.")
+    }
+
     @Test
     fun `holds completion until the terminal session terminates`() {
         val widget = mock<TerminalWidget>()
