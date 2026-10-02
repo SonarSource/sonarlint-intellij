@@ -19,53 +19,28 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.terminal.ui.TerminalWidget
-import com.intellij.util.execution.ParametersListUtil
 import java.util.concurrent.CompletableFuture
-import org.jetbrains.plugins.terminal.TerminalProjectOptionsProvider
+import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
+import org.jetbrains.plugins.terminal.ShellStartupOptions
+import org.jetbrains.plugins.terminal.TerminalTabState
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
 
-class IntellijTerminalAdapter() : CliTerminalAdapter {
-    private var terminalSession: TerminalSession = IntellijTerminalSession()
-
-    internal constructor(terminalSession: TerminalSession) : this() {
-        this.terminalSession = terminalSession
-    }
-
+class IntellijTerminalAdapter : CliTerminalAdapter {
     override fun launch(project: Project, command: CliCommand): TerminalLaunch {
-        val shell = terminalSession.commandShell(project) ?: return TerminalLaunch.Unsupported
-        return terminalSession.launch(project, CliCommandRenderer.render(command, shell))
-    }
-
-    override fun shellFor(project: Project): CommandShell =
-        terminalSession.commandShell(project) ?: osDefaultCommandShell()
-}
-
-internal interface TerminalSession {
-    fun commandShell(project: Project): CommandShell?
-
-    fun launch(project: Project, renderedCommand: String): TerminalLaunch
-}
-
-private class IntellijTerminalSession : TerminalSession {
-    override fun commandShell(project: Project): CommandShell? {
-        val shellPath = readConfiguredShellPath(project) ?: return osDefaultCommandShell()
-        return classifyTerminalShell(shellPath)
-    }
-
-    override fun launch(project: Project, renderedCommand: String): TerminalLaunch {
         var result: TerminalLaunch? = null
         runOnUiThread {
             result = try {
                 check(!project.isDisposed) { "The project was closed." }
                 val manager = TerminalToolWindowManager.getInstance(project)
-                val widget = manager.createShellWidget(project.basePath, "SonarQube CLI", true, true)
+                val runner = CliTerminalRunner(project, command)
+                manager.createNewSession(runner, runner.tabState)
+                val widget = runner.widget
                 val completion = observeTerminalCompletion(widget)
-                widget.writePlainMessage("Close this terminal tab when the command finishes to continue SonarQube CLI setup.\r\n")
-                widget.sendCommandToExecute(renderedCommand)
                 TerminalLaunch.Started(
                     focus = {
                         runOnUiThread {
@@ -83,12 +58,6 @@ private class IntellijTerminalSession : TerminalSession {
         return result ?: TerminalLaunch.Failed(IllegalStateException("The terminal session was not created."))
     }
 
-    private fun readConfiguredShellPath(project: Project): String? = try {
-        TerminalProjectOptionsProvider.getInstance(project).shellPath.takeIf { it.isNotBlank() }
-    } catch (_: Throwable) {
-        null
-    }
-
     private fun runOnUiThread(action: () -> Unit) {
         val application = ApplicationManager.getApplication()
         if (application.isDispatchThread) {
@@ -99,19 +68,26 @@ private class IntellijTerminalSession : TerminalSession {
     }
 }
 
+internal class CliTerminalRunner(project: Project, command: CliCommand) : LocalTerminalDirectRunner(project) {
+    val tabState = TerminalTabState().apply {
+        myTabName = "SonarQube CLI"
+        myWorkingDirectory = project.basePath
+        myShellCommand = listOf(command.executable) + command.arguments
+    }
+    lateinit var widget: TerminalWidget
+        private set
+
+    override fun createShellTerminalWidget(parent: Disposable, startupOptions: ShellStartupOptions): TerminalWidget =
+        super.createShellTerminalWidget(parent, startupOptions).also { widget = it }
+
+    override fun enableShellIntegration(): Boolean = false
+
+    override fun isTerminalSessionPersistent(): Boolean = false
+}
+
 internal fun observeTerminalCompletion(widget: TerminalWidget): CompletableFuture<TerminalCompletion> {
     val completion = CompletableFuture<TerminalCompletion>()
     widget.addTerminationCallback({ completion.complete(TerminalCompletion.ClosedWithoutExitStatus) }, widget)
     Disposer.register(widget) { completion.complete(TerminalCompletion.ClosedWithoutExitStatus) }
     return completion
-}
-
-internal fun classifyTerminalShell(shellPath: String): CommandShell? {
-    val executable = ParametersListUtil.parse(shellPath, false, true).firstOrNull() ?: return null
-    val fileName = executable.lowercase().substringAfterLast('/').substringAfterLast('\\')
-    return when (fileName) {
-        "powershell", "powershell.exe", "pwsh", "pwsh.exe" -> CommandShell.POWERSHELL
-        "bash", "bash.exe", "zsh", "zsh.exe", "sh", "sh.exe" -> CommandShell.POSIX
-        else -> null
-    }
 }
