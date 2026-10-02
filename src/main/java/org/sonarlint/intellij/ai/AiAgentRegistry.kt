@@ -23,6 +23,7 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.EnvironmentUtil
 import com.intellij.util.SystemProperties
 import java.nio.file.Path
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
@@ -49,7 +50,7 @@ class AiAgentRegistry(private val pluginDetector: IdePluginDetector = IntellijId
 
     fun standaloneMcpPath(agent: AiAgent): Path? {
         val userHome = Path.of(SystemProperties.getUserHome()).toAbsolutePath().normalize()
-        val localAppData = System.getenv("LOCALAPPDATA")?.let(Path::of)
+        val localAppData = EnvironmentUtil.getValue("LOCALAPPDATA")?.let(Path::of)
         return standaloneMcpPath(agent, userHome, SystemInfo.isWindows, localAppData)
     }
 
