@@ -55,11 +55,9 @@ import java.util.logging.Logger
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintPlugin
-import org.sonarlint.intellij.ai.AgentCapability
 import org.sonarlint.intellij.ai.AiIntegrationSnapshot
 import org.sonarlint.intellij.ai.CliCommand
-import org.sonarlint.intellij.ai.CliState
-import org.sonarlint.intellij.ai.IntegrationConnection
+import org.sonarlint.intellij.ai.toAiIntegrationSnapshot
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -104,7 +102,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationHost
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationScope
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateParams
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
@@ -1253,31 +1250,6 @@ class BackendService : Disposable {
         )
         return requestFromBackend { it.aiAgentService.getIntegrationState(params) }
             .thenApply(::toAiIntegrationSnapshot)
-    }
-
-    private fun toAiIntegrationSnapshot(response: GetAiIntegrationStateResponse): AiIntegrationSnapshot {
-        val cli = response.cli
-        return AiIntegrationSnapshot(
-            CliState(
-                cli.installationStatus,
-                cli.authenticationStatus,
-                cli.version,
-                cli.serverUrl,
-                cli.organization
-            ),
-            response.agents.map { capability ->
-                AgentCapability(
-                    capability.agent,
-                    capability.detectionSources.toSet(),
-                    capability.isCliIntegrationSupported,
-                    capability.isStandaloneMcpSupported
-                )
-            },
-            response.connectionChoices.map { connection ->
-                IntegrationConnection(connection.connectionId, connection.serverUrl, connection.organization)
-            },
-            response.recommendedConnectionId
-        )
     }
 
     fun prepareInstallCliCommand(): CompletableFuture<CliCommand> =

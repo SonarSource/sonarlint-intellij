@@ -56,8 +56,11 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.Scrollable
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
@@ -86,6 +89,7 @@ private const val NOT_SUPPORTED_STATUS = "Not supported"
 private const val ZERO_SUPPORTED_STATUS = "0 supported"
 private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
 private const val MCP_GUIDE_LABEL = "MCP configuration guide"
+private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
 
 class AiIntegrationsPanel(
     private val registry: AiAgentRegistry = AiAgentRegistry(),
@@ -111,6 +115,7 @@ class AiIntegrationsPanel(
     private var wide = false
     private var cliDetailsExpanded = false
     private var mcpDetailsExpanded = false
+    private val expandedCliConfigurations = mutableSetOf<AiAgent>()
 
     val isDisposed: Boolean
         get() = disposed.get()
@@ -259,7 +264,8 @@ class AiIntegrationsPanel(
         addCapabilityOverview(
             snapshot.agents,
             { it.cliIntegrationSupported },
-            cliDetailsExpanded
+            cliDetailsExpanded,
+            snapshot.cliIntegrations
         ) { cliDetailsExpanded = it }
     }
 
@@ -271,6 +277,7 @@ class AiIntegrationsPanel(
         capabilities: List<AgentCapability>,
         supported: (AgentCapability) -> Boolean,
         expanded: Boolean,
+        cliIntegrations: List<AgentCliIntegration>? = null,
         onExpandedChange: (Boolean) -> Unit
     ) {
         addMetadata(listOf(agentCountText(capabilities.size)))
@@ -287,9 +294,16 @@ class AiIntegrationsPanel(
                     detailBuilder.addMessage(NO_AGENTS_MESSAGE)
                 }
                 capabilities.forEach { capability ->
+                    val integration = if (cliIntegrations != null && supported(capability)) {
+                        cliIntegrations.firstOrNull { it.agent == capability.agent }
+                            ?: AgentCliIntegration(capability.agent, CliIntegrationRecordingStatus.UNKNOWN, emptyList())
+                    } else {
+                        null
+                    }
                     detailBuilder.addAgentRow(
                         registry.displayName(capability.agent),
-                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS
+                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS,
+                        integration
                     )
                 }
             }
@@ -380,7 +394,7 @@ class AiIntegrationsPanel(
         }
 
         fun addDisclosure(expanded: Boolean, toggle: (Boolean) -> Unit) {
-            panel.add(createDisclosureButton(expanded, toggle))
+            panel.add(createDisclosureButton(expanded, toggle = toggle))
             panel.add(verticalSpace(8))
         }
 
@@ -388,8 +402,8 @@ class AiIntegrationsPanel(
             panel.add(createLinkButton(label, url))
         }
 
-        fun addAgentRow(name: String, status: String) {
-            val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10).apply {
+        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null) {
+            val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10, naturalHeight = integration != null).apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
                 border = JBUI.Borders.empty(9, 11)
                 alignmentX = Component.LEFT_ALIGNMENT
@@ -408,8 +422,56 @@ class AiIntegrationsPanel(
                     alignmentX = Component.LEFT_ALIGNMENT
                 })
             }, BorderLayout.CENTER)
+            if (integration != null) {
+                row.add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
+                    isOpaque = false
+                    add(StatusPill(integration.recordingStatus.toStatus()), BorderLayout.NORTH)
+                }, BorderLayout.EAST)
+                if (integration.configurations.isNotEmpty()) {
+                    addCliConfigurationDetails(row, integration)
+                }
+            }
             panel.add(row)
             panel.add(verticalSpace(6))
+        }
+
+        private fun addCliConfigurationDetails(row: JPanel, integration: AgentCliIntegration) {
+            val details = JBPanel<JBPanel<*>>().apply {
+                isOpaque = false
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                alignmentX = Component.LEFT_ALIGNMENT
+            }
+            fun updateDetails(show: Boolean) {
+                details.removeAll()
+                if (show) {
+                    val builder = CardBuilder(details)
+                    integration.configurations.forEach { configuration ->
+                        builder.addMessage(configuration.path?.takeIf { it.isNotBlank() } ?: "Configuration path not reported")
+                        configuration.mcp?.let { builder.addMetadata(listOf("MCP: ${it.displayText()}")) }
+                        configuration.hooks?.let { builder.addMetadata(listOf("Hooks: ${it.displayText()}")) }
+                    }
+                }
+                details.isVisible = show
+                cards.revalidate()
+                cards.repaint()
+            }
+            val expanded = integration.agent in expandedCliConfigurations
+            row.add(JBPanel<JBPanel<*>>().apply {
+                isOpaque = false
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                add(verticalSpace(8))
+                add(createDisclosureButton(expanded, CONFIGURATION_DETAILS_LABEL) { show ->
+                    if (show) {
+                        expandedCliConfigurations.add(integration.agent)
+                    } else {
+                        expandedCliConfigurations.remove(integration.agent)
+                    }
+                    updateDetails(show)
+                })
+                add(verticalSpace(6))
+                add(details)
+            }, BorderLayout.SOUTH)
+            updateDetails(expanded)
         }
 
         fun addPrimaryAction(label: String) {
@@ -428,8 +490,8 @@ class AiIntegrationsPanel(
         addActionListener { refreshListener() }
     }
 
-    private fun createDisclosureButton(expanded: Boolean, toggle: (Boolean) -> Unit): JToggleButton =
-        JToggleButton(disclosureLabel(expanded), expanded).apply {
+    private fun createDisclosureButton(expanded: Boolean, label: String = MANAGE_AGENTS_LABEL, toggle: (Boolean) -> Unit): JToggleButton =
+        JToggleButton(disclosureLabel(expanded, label), expanded).apply {
             isOpaque = false
             isContentAreaFilled = false
             isBorderPainted = false
@@ -439,7 +501,7 @@ class AiIntegrationsPanel(
             foreground = LINK_TEXT
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             addActionListener {
-                text = disclosureLabel(isSelected)
+                text = disclosureLabel(isSelected, label)
                 toggle(isSelected)
             }
         }
@@ -547,11 +609,15 @@ private class StatusPill(status: CardStatus) : JBPanel<StatusPill>() {
 private class RoundedSurfacePanel(
     private val fillColor: Color,
     private val strokeColor: Color,
-    private val radius: Int
+    private val radius: Int,
+    private val naturalHeight: Boolean = false
 ) : JBPanel<RoundedSurfacePanel>() {
     init {
         isOpaque = false
     }
+
+    override fun getMaximumSize(): Dimension =
+        if (naturalHeight) Dimension(Int.MAX_VALUE, preferredSize.height) else super.getMaximumSize()
 
     override fun paintComponent(graphics: Graphics) {
         val graphics2d = graphics.create() as Graphics2D
@@ -664,7 +730,20 @@ private fun CliState.toStatus(): CardStatus = when (installation) {
     CliInstallationStatus.INSTALLED -> CardStatus(INSTALLED_STATUS, StatusTone.SUCCESS)
 }
 
-private fun disclosureLabel(expanded: Boolean): String = "${if (expanded) "▾" else "▸"} $MANAGE_AGENTS_LABEL"
+private fun CliIntegrationRecordingStatus.toStatus(): CardStatus = when (this) {
+    CliIntegrationRecordingStatus.RECORDED -> CardStatus("Integration recorded", StatusTone.SUCCESS)
+    CliIntegrationRecordingStatus.NOT_RECORDED -> CardStatus("No integration recorded", StatusTone.NEUTRAL)
+    CliIntegrationRecordingStatus.UNKNOWN -> CardStatus("Unknown", StatusTone.NEUTRAL)
+}
+
+private fun CliIntegrationCheckStatus.displayText(): String = when (this) {
+    CliIntegrationCheckStatus.CONFIGURED -> "Configured"
+    CliIntegrationCheckStatus.NOT_CONFIGURED -> "Not configured"
+    CliIntegrationCheckStatus.INVALID -> "Invalid configuration"
+    CliIntegrationCheckStatus.UNKNOWN -> "Unknown"
+}
+
+private fun disclosureLabel(expanded: Boolean, label: String): String = "${if (expanded) "▾" else "▸"} $label"
 
 private fun agentCountText(count: Int): String = "$count ${if (count == 1) "agent" else "agents"} detected"
 
