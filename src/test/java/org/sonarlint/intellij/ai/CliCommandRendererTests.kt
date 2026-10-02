@@ -42,6 +42,7 @@ class CliCommandRendererTests {
     fun `quotes every token for PowerShell`() {
         assertThat(CliCommandRenderer.render(command, CommandShell.POWERSHELL))
             .contains("\$PSNativeCommandArgumentPassing = 'Standard'")
+            .contains("\$PSNativeCommandArgumentPassing = 'Legacy'")
             .contains("& '/path with spaces/sonar' 'a''b' '' '$&|;()!'")
             .contains("& '/path with spaces/sonar' '\"a''b\"' '\"\"' '\"$&|;()!\"'")
     }
@@ -84,7 +85,9 @@ class CliCommandRendererTests {
         listOf("Legacy", "Windows", "Standard").forEach { mode ->
             val script = "\$PSNativeCommandArgumentPassing = '$mode'; $rendered; " +
                 "if (\$PSNativeCommandArgumentPassing -ne '$mode') { throw 'Argument-passing preference leaked' }"
-            val process = ProcessBuilder(requireNotNull(powerShell), "-NoProfile", "-NonInteractive", "-Command", script)
+            // Preserve the script's quotes through powershell.exe's Windows command-line parsing.
+            val encodedScript = Base64.getEncoder().encodeToString(script.toByteArray(Charsets.UTF_16LE))
+            val process = ProcessBuilder(requireNotNull(powerShell), "-NoProfile", "-NonInteractive", "-EncodedCommand", encodedScript)
                 .redirectErrorStream(true).start()
             assertThat(process.waitFor(30, TimeUnit.SECONDS)).isTrue()
             val output = process.inputStream.bufferedReader().readLines()

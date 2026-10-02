@@ -49,7 +49,7 @@ object CliCommandRenderer {
         // Scope the preference to this invocation; older hosts need native command-line quoting.
         return "& { if (\$PSVersionTable.PSVersion -ge [version]'7.3') { " +
             "\$PSNativeCommandArgumentPassing = 'Standard'; & $executable $standardArguments " +
-            "} else { & $executable $legacyArguments } }"
+            "} else { \$PSNativeCommandArgumentPassing = 'Legacy'; & $executable $legacyArguments } }"
     }
 
     private fun quoteWindowsArgument(value: String): String =
