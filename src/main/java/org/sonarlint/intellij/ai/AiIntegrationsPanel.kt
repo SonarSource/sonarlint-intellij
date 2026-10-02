@@ -30,7 +30,6 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
-import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -107,6 +106,7 @@ class AiIntegrationsPanel(
     private val cards = ContentColumn()
     private val disposed = AtomicBoolean()
     private var refreshListener: () -> Unit = {}
+    private var intentListener: (AiIntegrationsIntent) -> Unit = {}
     private var currentState: AiIntegrationsPanelState = AiIntegrationsPanelState.Loading
     private var wide = false
     private var cliDetailsExpanded = false
@@ -140,6 +140,10 @@ class AiIntegrationsPanel(
 
     fun setRefreshListener(listener: () -> Unit) {
         refreshListener = listener
+    }
+
+    fun setIntentListener(listener: (AiIntegrationsIntent) -> Unit) {
+        intentListener = listener
     }
 
     fun render(state: AiIntegrationsPanelState) {
@@ -256,10 +260,18 @@ class AiIntegrationsPanel(
         if (metadata.isNotEmpty()) {
             addMetadata(metadata)
         }
+        addCliPrimaryAction(snapshot)
         addCapabilityOverview(
             snapshot.agents,
             { it.cliIntegrationSupported },
-            cliDetailsExpanded
+            cliDetailsExpanded,
+            rowActions = { capability ->
+                if (cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
+                    listOf(RowAction("Integrate", AiIntegrationsIntent.IntegrateCli(capability.agent)))
+                } else {
+                    emptyList()
+                }
+            }
         ) { cliDetailsExpanded = it }
     }
 
@@ -267,10 +279,28 @@ class AiIntegrationsPanel(
         addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) { mcpDetailsExpanded = it }
     }
 
+    private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot) {
+        when (snapshot.cli.installation) {
+            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli)
+            CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot") {
+                openLink(SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
+            }
+            CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
+                CliAuthenticationStatus.UNAUTHENTICATED,
+                CliAuthenticationStatus.INVALID,
+                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
+                CliAuthenticationStatus.UNAVAILABLE,
+                CliAuthenticationStatus.UNKNOWN -> addPrimaryAction("Check again")
+                CliAuthenticationStatus.AUTHENTICATED -> Unit
+            }
+        }
+    }
+
     private fun CardBuilder.addCapabilityOverview(
         capabilities: List<AgentCapability>,
         supported: (AgentCapability) -> Boolean,
         expanded: Boolean,
+        rowActions: (AgentCapability) -> List<RowAction> = { emptyList() },
         onExpandedChange: (Boolean) -> Unit
     ) {
         addMetadata(listOf(agentCountText(capabilities.size)))
@@ -289,7 +319,8 @@ class AiIntegrationsPanel(
                 capabilities.forEach { capability ->
                     detailBuilder.addAgentRow(
                         registry.displayName(capability.agent),
-                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS
+                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS,
+                        actions = rowActions(capability)
                     )
                 }
             }
@@ -388,12 +419,11 @@ class AiIntegrationsPanel(
             panel.add(createLinkButton(label, url))
         }
 
-        fun addAgentRow(name: String, status: String) {
+        fun addAgentRow(name: String, status: String, actions: List<RowAction> = emptyList()) {
             val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10).apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
                 border = JBUI.Borders.empty(9, 11)
                 alignmentX = Component.LEFT_ALIGNMENT
-                maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(48))
             }
             row.add(JBPanel<JBPanel<*>>().apply {
                 isOpaque = false
@@ -408,24 +438,49 @@ class AiIntegrationsPanel(
                     alignmentX = Component.LEFT_ALIGNMENT
                 })
             }, BorderLayout.CENTER)
+            if (actions.isNotEmpty()) {
+                row.add(JBPanel<JBPanel<*>>().apply {
+                    isOpaque = false
+                    layout = BoxLayout(this, BoxLayout.X_AXIS)
+                    actions.forEachIndexed { index, action ->
+                        if (index > 0) {
+                            add(horizontalSpace(4))
+                        }
+                        add(createCompactButton(action.label, action.intent))
+                    }
+                }, BorderLayout.EAST)
+            }
             panel.add(row)
             panel.add(verticalSpace(6))
         }
 
         fun addPrimaryAction(label: String) {
-            panel.add(createPrimaryButton(label).apply {
+            addPrimaryAction(label, refreshListener)
+        }
+
+        fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
+            addPrimaryAction(label) { intentListener(intent) }
+        }
+
+        fun addPrimaryAction(label: String, action: () -> Unit) {
+            panel.add(createPrimaryButton(label, action).apply {
                 alignmentX = Component.LEFT_ALIGNMENT
             })
             panel.add(verticalSpace(6))
         }
     }
 
-    private fun createPrimaryButton(label: String): JButton = FilledActionButton(label).apply {
+    private fun createPrimaryButton(label: String, action: () -> Unit): JButton = JButton(label).apply {
+        addActionListener { action() }
+    }
+
+    private fun createSecondaryButton(label: String, icon: Icon): JButton = JButton(label, icon).apply {
         addActionListener { refreshListener() }
     }
 
-    private fun createSecondaryButton(label: String, icon: Icon): JButton = OutlinedActionButton(label, icon).apply {
-        addActionListener { refreshListener() }
+    private fun createCompactButton(label: String, intent: AiIntegrationsIntent): JButton = JButton(label).apply {
+        isOpaque = false
+        addActionListener { intentListener(intent) }
     }
 
     private fun createDisclosureButton(expanded: Boolean, toggle: (Boolean) -> Unit): JToggleButton =
@@ -462,7 +517,10 @@ class AiIntegrationsPanel(
     override fun dispose() {
         disposed.set(true)
         refreshListener = {}
+        intentListener = {}
     }
+
+    internal data class RowAction(val label: String, val intent: AiIntegrationsIntent)
 
     private class ContentColumn : JBPanel<ContentColumn>() {
         var contentWidth = NARROW_CONTENT_WIDTH
@@ -565,82 +623,6 @@ private class RoundedSurfacePanel(
     }
 }
 
-private class FilledActionButton(text: String) : JButton(text) {
-    init {
-        isOpaque = false
-        isContentAreaFilled = false
-        isBorderPainted = false
-        isFocusPainted = false
-        isRolloverEnabled = true
-        border = JBUI.Borders.empty(6, 13)
-        margin = JBUI.emptyInsets()
-        foreground = Color.WHITE
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-    }
-
-    override fun paintComponent(graphics: Graphics) {
-        val graphics2d = graphics.create() as Graphics2D
-        graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        graphics2d.color = when {
-            !isEnabled -> DISABLED_BACKGROUND
-            model.isPressed -> PRESSED_BACKGROUND
-            model.isRollover -> HOVER_BACKGROUND
-            else -> BACKGROUND
-        }
-        graphics2d.fillRoundRect(0, 0, width, height, JBUI.scale(9), JBUI.scale(9))
-        if (hasFocus()) {
-            graphics2d.color = FOCUS_BORDER
-            graphics2d.stroke = BasicStroke(JBUI.scale(2).toFloat())
-            graphics2d.drawRoundRect(1, 1, width - 3, height - 3, JBUI.scale(9), JBUI.scale(9))
-        }
-        graphics2d.dispose()
-        super.paintComponent(graphics)
-    }
-
-    companion object {
-        private val BACKGROUND = JBColor(Color(0x0B6BCB), Color(0x3574C7))
-        private val HOVER_BACKGROUND = JBColor(Color(0x095CAD), Color(0x417FD2))
-        private val PRESSED_BACKGROUND = JBColor(Color(0x084D90), Color(0x2D65B2))
-        private val DISABLED_BACKGROUND = JBColor(Color(0xA8B7C8), Color(0x505A6A))
-        private val FOCUS_BORDER = JBColor(Color(0x8DC5FF), Color(0x9AC8FF))
-    }
-}
-
-private class OutlinedActionButton(text: String, icon: Icon) : JButton(text, icon) {
-    init {
-        isOpaque = false
-        isContentAreaFilled = false
-        isBorderPainted = false
-        isFocusPainted = false
-        isRolloverEnabled = true
-        border = JBUI.Borders.empty(5, 11)
-        margin = JBUI.emptyInsets()
-        iconTextGap = JBUI.scale(6)
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-    }
-
-    override fun paintComponent(graphics: Graphics) {
-        val graphics2d = graphics.create() as Graphics2D
-        graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        if (model.isPressed || model.isRollover) {
-            graphics2d.color = if (model.isPressed) PRESSED_BACKGROUND else HOVER_BACKGROUND
-            graphics2d.fillRoundRect(0, 0, width - 1, height - 1, JBUI.scale(9), JBUI.scale(9))
-        }
-        graphics2d.color = if (hasFocus()) FOCUS_BORDER else BORDER
-        graphics2d.stroke = BasicStroke(JBUI.scale(if (hasFocus()) 2 else 1).toFloat())
-        graphics2d.drawRoundRect(1, 1, width - 3, height - 3, JBUI.scale(9), JBUI.scale(9))
-        graphics2d.dispose()
-        super.paintComponent(graphics)
-    }
-
-    companion object {
-        private val BORDER = JBColor(Color(0xB7BCC5), Color(0x5A5D63))
-        private val FOCUS_BORDER = JBColor(Color(0x0B6BCB), Color(0x6CAEFF))
-        private val HOVER_BACKGROUND = JBColor(Color(0xEDF5FD), Color(0x303B49))
-        private val PRESSED_BACKGROUND = JBColor(Color(0xDDEEFF), Color(0x35465A))
-    }
-}
-
 private fun AiIntegrationsPanel.cliStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
     AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
     is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
@@ -683,6 +665,8 @@ private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBT
 }
 
 private fun verticalSpace(size: Int): Component = Box.createRigidArea(Dimension(0, JBUI.scale(size)))
+
+private fun horizontalSpace(size: Int): Component = Box.createRigidArea(Dimension(JBUI.scale(size), 0))
 
 private fun CliAuthenticationStatus.displayText() = when (this) {
     CliAuthenticationStatus.AUTHENTICATED -> "Authenticated"
