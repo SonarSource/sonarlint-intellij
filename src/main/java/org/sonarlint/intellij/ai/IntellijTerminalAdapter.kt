@@ -52,7 +52,7 @@ class IntellijTerminalAdapter : CliTerminalAdapter {
                     },
                     completion = completion
                 )
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 TerminalLaunch.Failed(error)
             }
         }
