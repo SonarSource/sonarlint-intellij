@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
@@ -28,6 +29,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.SwingHelper
 import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.Color
@@ -49,15 +51,21 @@ import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JScrollPane
+import javax.swing.JToggleButton
 import javax.swing.ScrollPaneConstants
 import javax.swing.Scrollable
+import javax.swing.SwingConstants
+import javax.swing.event.HyperlinkEvent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
 private const val PAGE_DESCRIPTION = "Find and fix issues as your agent writes code."
 private const val CLI_CARD_TITLE = "SonarQube CLI"
 private const val CLI_CARD_HEADLINE = "Catch issues as AI writes code"
-private const val CLI_CARD_DESCRIPTION = "Give your agents local code analysis to find bugs and vulnerabilities before you commit."
+private val CLI_CARD_DESCRIPTION_HTML =
+    "Give your agents local code analysis with <a href=\"${SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK}\">Sonar Vortex&nbsp;<icon src=\"ide/external_link_arrow.svg\"></a> to find bugs and vulnerabilities before you commit."
 private const val MCP_CARD_TITLE = "SonarQube MCP Server"
 private const val MCP_CARD_HEADLINE = "Bring project context to your agent"
 private const val MCP_CARD_DESCRIPTION = "Ask your agent about issues, quality gates, and coverage in your SonarQube projects."
@@ -67,8 +75,22 @@ private const val NEEDS_ATTENTION = "Needs attention"
 private const val NOT_DETECTED_STATUS = "Not detected"
 private const val UNAVAILABLE_STATUS = "Unavailable"
 private const val INSTALLED_STATUS = "Installed"
+private const val CLI_LOADING_MESSAGE = "Discovering your CLI and coding agents…"
+private const val MCP_LOADING_MESSAGE = "Checking which agents support MCP…"
+private const val MCP_ERROR_MESSAGE = "MCP capabilities could not be loaded."
+private const val NO_AGENTS_MESSAGE = "No supported AI agents detected."
+private const val RETRY_LABEL = "Try again"
+private const val MANAGE_AGENTS_LABEL = "Manage agents"
+private const val SUPPORTED_STATUS = "Supported"
+private const val NOT_SUPPORTED_STATUS = "Not supported"
+private const val ZERO_SUPPORTED_STATUS = "0 supported"
+private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
+private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 
-class AiIntegrationsPanel : JBPanel<AiIntegrationsPanel>(BorderLayout()), Disposable {
+class AiIntegrationsPanel(
+    private val registry: AiAgentRegistry = AiAgentRegistry(),
+    private val openLink: (String) -> Unit = { BrowserUtil.browse(it) }
+) : JBPanel<AiIntegrationsPanel>(BorderLayout()), Disposable {
     companion object {
         internal const val WIDE_LAYOUT_THRESHOLD = 900
         private const val NARROW_CONTENT_WIDTH = 760
@@ -76,13 +98,19 @@ class AiIntegrationsPanel : JBPanel<AiIntegrationsPanel>(BorderLayout()), Dispos
 
         private val CARD_BACKGROUND = JBColor(Color(0xFFFFFF), Color(0x2B2D30))
         private val CARD_BORDER = JBColor(Color(0xDDE0E5), Color(0x45474D))
+        private val ROW_BACKGROUND = JBColor(Color(0xF7F8FA), Color(0x323438))
+        private val ROW_BORDER = JBColor(Color(0xE9EBEF), Color(0x3D3F44))
+        private val SECONDARY_TEXT = JBColor(Color(0x5F6673), Color(0xA8ADBD))
+        private val LINK_TEXT = JBColor(Color(0x0B6BCB), Color(0x6CAEFF))
     }
 
     private val cards = ContentColumn()
     private val disposed = AtomicBoolean()
-    private var intentListener: (AiIntegrationsIntent) -> Unit = {}
+    private var refreshListener: () -> Unit = {}
     private var currentState: AiIntegrationsPanelState = AiIntegrationsPanelState.Loading
     private var wide = false
+    private var cliDetailsExpanded = false
+    private var mcpDetailsExpanded = false
 
     val isDisposed: Boolean
         get() = disposed.get()
@@ -110,8 +138,8 @@ class AiIntegrationsPanel : JBPanel<AiIntegrationsPanel>(BorderLayout()), Dispos
         render(AiIntegrationsPanelState.Loading)
     }
 
-    fun setIntentListener(listener: (AiIntegrationsIntent) -> Unit) {
-        intentListener = listener
+    fun setRefreshListener(listener: () -> Unit) {
+        refreshListener = listener
     }
 
     fun render(state: AiIntegrationsPanelState) {
@@ -171,25 +199,133 @@ class AiIntegrationsPanel : JBPanel<AiIntegrationsPanel>(BorderLayout()), Dispos
     private fun createCliCard(state: AiIntegrationsPanelState): JPanel = createCard(
         CLI_CARD_TITLE,
         CLI_CARD_HEADLINE,
-        bodyText(CLI_CARD_DESCRIPTION, secondary = true),
+        createCliDescription(),
         cliStatus(state)
-    )
+    ) {
+        when (state) {
+            AiIntegrationsPanelState.Loading -> addMessage(CLI_LOADING_MESSAGE)
+            is AiIntegrationsPanelState.Error -> {
+                addMessage(state.message)
+                addPrimaryAction(RETRY_LABEL)
+            }
+            is AiIntegrationsPanelState.Empty -> addCliOverview(state.snapshot)
+            is AiIntegrationsPanelState.Ready -> addCliOverview(state.snapshot)
+        }
+        addDocumentationLink(CLI_GUIDE_LABEL, SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
+    }
 
     private fun createMcpCard(state: AiIntegrationsPanelState): JPanel = createCard(
         MCP_CARD_TITLE,
         MCP_CARD_HEADLINE,
         bodyText(MCP_CARD_DESCRIPTION, secondary = true),
         mcpStatus(state)
-    )
+    ) {
+        when (state) {
+            AiIntegrationsPanelState.Loading -> addMessage(MCP_LOADING_MESSAGE)
+            is AiIntegrationsPanelState.Error -> addMessage(MCP_ERROR_MESSAGE)
+            is AiIntegrationsPanelState.Empty -> addMcpOverview(state.snapshot)
+            is AiIntegrationsPanelState.Ready -> addMcpOverview(state.snapshot)
+        }
+        addDocumentationLink(MCP_GUIDE_LABEL, SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK)
+    }
 
-    private fun createCard(title: String, headline: String, description: JComponent, status: CardStatus): JPanel {
+    private fun createCliDescription() = SwingHelper.createHtmlViewer(false, JBFont.label(), null, SECONDARY_TEXT).apply {
+        text = CLI_CARD_DESCRIPTION_HTML
+        border = JBUI.Borders.empty()
+        isOpaque = false
+        alignmentX = Component.LEFT_ALIGNMENT
+        addHyperlinkListener { event ->
+            if (event.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                event.description?.let(openLink)
+            }
+        }
+    }
+
+    private fun CardBuilder.addCliOverview(snapshot: AiIntegrationSnapshot) {
+        val cli = snapshot.cli
+        val metadata = buildList {
+            if (cli.installation == CliInstallationStatus.INSTALLED) {
+                add(if (cli.authentication == CliAuthenticationStatus.AUTHENTICATED && !cli.organization.isNullOrBlank()) {
+                    "Authenticated with ${cli.organization}"
+                } else {
+                    cli.authentication.displayText()
+                })
+            }
+            cli.version?.let { add("v$it") }
+        }
+        if (metadata.isNotEmpty()) {
+            addMetadata(metadata)
+        }
+        addCapabilityOverview(
+            snapshot.agents,
+            { it.cliIntegrationSupported },
+            cliDetailsExpanded
+        ) { cliDetailsExpanded = it }
+    }
+
+    private fun CardBuilder.addMcpOverview(snapshot: AiIntegrationSnapshot) {
+        addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) { mcpDetailsExpanded = it }
+    }
+
+    private fun CardBuilder.addCapabilityOverview(
+        capabilities: List<AgentCapability>,
+        supported: (AgentCapability) -> Boolean,
+        expanded: Boolean,
+        onExpandedChange: (Boolean) -> Unit
+    ) {
+        addMetadata(listOf(agentCountText(capabilities.size)))
+        val details = JBPanel<JBPanel<*>>().apply {
+            isOpaque = false
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+        fun updateDetails(show: Boolean) {
+            details.removeAll()
+            if (show) {
+                val detailBuilder = CardBuilder(details)
+                if (capabilities.isEmpty()) {
+                    detailBuilder.addMessage(NO_AGENTS_MESSAGE)
+                }
+                capabilities.forEach { capability ->
+                    detailBuilder.addAgentRow(
+                        registry.displayName(capability.agent),
+                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS
+                    )
+                }
+            }
+            details.isVisible = show
+            cards.revalidate()
+            cards.repaint()
+        }
+        addDisclosure(expanded) { show ->
+            onExpandedChange(show)
+            updateDetails(show)
+        }
+        panel.add(details)
+        updateDetails(expanded)
+    }
+
+    private fun createCard(
+        title: String,
+        headline: String,
+        description: JComponent,
+        status: CardStatus,
+        content: CardBuilder.() -> Unit
+    ): JPanel {
         val body = RoundedSurfacePanel(CARD_BACKGROUND, CARD_BORDER, 16).apply {
             layout = BorderLayout()
             border = JBUI.Borders.empty(18, 20, 12, 20)
             alignmentX = Component.LEFT_ALIGNMENT
             maximumSize = Dimension(Int.MAX_VALUE, Int.MAX_VALUE)
         }
-        body.add(createCardHeader(title, headline, description, status), BorderLayout.NORTH)
+        val content = JBPanel<JBPanel<*>>().apply {
+            isOpaque = false
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        }
+        content.add(createCardHeader(title, headline, description, status))
+        content.add(verticalSpace(16))
+        CardBuilder(content).content()
+        body.add(content, BorderLayout.NORTH)
         return body
     }
 
@@ -224,17 +360,108 @@ class AiIntegrationsPanel : JBPanel<AiIntegrationsPanel>(BorderLayout()), Dispos
         layout = BoxLayout(this, BoxLayout.X_AXIS)
         alignmentX = Component.LEFT_ALIGNMENT
         maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(36))
-        add(createSecondaryButton(REFRESH_LABEL, AllIcons.Actions.Refresh, AiIntegrationsIntent.Refresh))
+        add(createSecondaryButton(REFRESH_LABEL, AllIcons.Actions.Refresh))
         add(Box.createHorizontalGlue())
     }
 
-    private fun createSecondaryButton(label: String, icon: Icon, intent: AiIntegrationsIntent): JButton = OutlinedActionButton(label, icon).apply {
-        addActionListener { intentListener(intent) }
+    private inner class CardBuilder(val panel: JPanel) {
+        fun addMessage(text: String) {
+            panel.add(bodyText(text))
+            panel.add(verticalSpace(10))
+        }
+
+        fun addMetadata(values: List<String>) {
+            panel.add(JBLabel(values.joinToString("  •  ")).apply {
+                foreground = SECONDARY_TEXT
+                font = JBFont.small()
+                alignmentX = Component.LEFT_ALIGNMENT
+            })
+            panel.add(verticalSpace(10))
+        }
+
+        fun addDisclosure(expanded: Boolean, toggle: (Boolean) -> Unit) {
+            panel.add(createDisclosureButton(expanded, toggle))
+            panel.add(verticalSpace(8))
+        }
+
+        fun addDocumentationLink(label: String, url: String) {
+            panel.add(createLinkButton(label, url))
+        }
+
+        fun addAgentRow(name: String, status: String) {
+            val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10).apply {
+                layout = BorderLayout(JBUI.scale(12), 0)
+                border = JBUI.Borders.empty(9, 11)
+                alignmentX = Component.LEFT_ALIGNMENT
+                maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(48))
+            }
+            row.add(JBPanel<JBPanel<*>>().apply {
+                isOpaque = false
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                add(JBLabel(name).apply {
+                    font = JBFont.label().asBold()
+                    alignmentX = Component.LEFT_ALIGNMENT
+                })
+                add(JBLabel(status).apply {
+                    foreground = SECONDARY_TEXT
+                    font = JBFont.small()
+                    alignmentX = Component.LEFT_ALIGNMENT
+                })
+            }, BorderLayout.CENTER)
+            panel.add(row)
+            panel.add(verticalSpace(6))
+        }
+
+        fun addPrimaryAction(label: String) {
+            panel.add(createPrimaryButton(label).apply {
+                alignmentX = Component.LEFT_ALIGNMENT
+            })
+            panel.add(verticalSpace(6))
+        }
+    }
+
+    private fun createPrimaryButton(label: String): JButton = FilledActionButton(label).apply {
+        addActionListener { refreshListener() }
+    }
+
+    private fun createSecondaryButton(label: String, icon: Icon): JButton = OutlinedActionButton(label, icon).apply {
+        addActionListener { refreshListener() }
+    }
+
+    private fun createDisclosureButton(expanded: Boolean, toggle: (Boolean) -> Unit): JToggleButton =
+        JToggleButton(disclosureLabel(expanded), expanded).apply {
+            isOpaque = false
+            isContentAreaFilled = false
+            isBorderPainted = false
+            border = JBUI.Borders.empty()
+            margin = JBUI.emptyInsets()
+            alignmentX = Component.LEFT_ALIGNMENT
+            foreground = LINK_TEXT
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            addActionListener {
+                text = disclosureLabel(isSelected)
+                toggle(isSelected)
+            }
+        }
+
+    private fun createLinkButton(label: String, url: String): JButton = JButton(label, AllIcons.Ide.External_link_arrow).apply {
+        isOpaque = false
+        isContentAreaFilled = false
+        isBorderPainted = false
+        border = JBUI.Borders.empty()
+        margin = JBUI.emptyInsets()
+        horizontalAlignment = SwingConstants.LEFT
+        horizontalTextPosition = SwingConstants.LEFT
+        iconTextGap = JBUI.scale(4)
+        alignmentX = Component.LEFT_ALIGNMENT
+        foreground = LINK_TEXT
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        addActionListener { openLink(url) }
     }
 
     override fun dispose() {
         disposed.set(true)
-        intentListener = {}
+        refreshListener = {}
     }
 
     private class ContentColumn : JBPanel<ContentColumn>() {
@@ -338,6 +565,47 @@ private class RoundedSurfacePanel(
     }
 }
 
+private class FilledActionButton(text: String) : JButton(text) {
+    init {
+        isOpaque = false
+        isContentAreaFilled = false
+        isBorderPainted = false
+        isFocusPainted = false
+        isRolloverEnabled = true
+        border = JBUI.Borders.empty(6, 13)
+        margin = JBUI.emptyInsets()
+        foreground = Color.WHITE
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+    }
+
+    override fun paintComponent(graphics: Graphics) {
+        val graphics2d = graphics.create() as Graphics2D
+        graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        graphics2d.color = when {
+            !isEnabled -> DISABLED_BACKGROUND
+            model.isPressed -> PRESSED_BACKGROUND
+            model.isRollover -> HOVER_BACKGROUND
+            else -> BACKGROUND
+        }
+        graphics2d.fillRoundRect(0, 0, width, height, JBUI.scale(9), JBUI.scale(9))
+        if (hasFocus()) {
+            graphics2d.color = FOCUS_BORDER
+            graphics2d.stroke = BasicStroke(JBUI.scale(2).toFloat())
+            graphics2d.drawRoundRect(1, 1, width - 3, height - 3, JBUI.scale(9), JBUI.scale(9))
+        }
+        graphics2d.dispose()
+        super.paintComponent(graphics)
+    }
+
+    companion object {
+        private val BACKGROUND = JBColor(Color(0x0B6BCB), Color(0x3574C7))
+        private val HOVER_BACKGROUND = JBColor(Color(0x095CAD), Color(0x417FD2))
+        private val PRESSED_BACKGROUND = JBColor(Color(0x084D90), Color(0x2D65B2))
+        private val DISABLED_BACKGROUND = JBColor(Color(0xA8B7C8), Color(0x505A6A))
+        private val FOCUS_BORDER = JBColor(Color(0x8DC5FF), Color(0x9AC8FF))
+    }
+}
+
 private class OutlinedActionButton(text: String, icon: Icon) : JButton(text, icon) {
     init {
         isOpaque = false
@@ -383,7 +651,7 @@ private fun AiIntegrationsPanel.cliStatus(state: AiIntegrationsPanelState): Card
 private fun AiIntegrationsPanel.mcpStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
     AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
     is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
-    is AiIntegrationsPanelState.Empty -> CardStatus("0 supported", StatusTone.NEUTRAL)
+    is AiIntegrationsPanelState.Empty -> CardStatus(ZERO_SUPPORTED_STATUS, StatusTone.NEUTRAL)
     is AiIntegrationsPanelState.Ready -> {
         val count = state.snapshot.agents.count { it.standaloneMcpSupported }
         CardStatus("$count supported", StatusTone.NEUTRAL)
@@ -395,6 +663,10 @@ private fun CliState.toStatus(): CardStatus = when (installation) {
     CliInstallationStatus.UNUSABLE -> CardStatus(UNAVAILABLE_STATUS, StatusTone.WARNING)
     CliInstallationStatus.INSTALLED -> CardStatus(INSTALLED_STATUS, StatusTone.SUCCESS)
 }
+
+private fun disclosureLabel(expanded: Boolean): String = "${if (expanded) "▾" else "▸"} $MANAGE_AGENTS_LABEL"
+
+private fun agentCountText(count: Int): String = "$count ${if (count == 1) "agent" else "agents"} detected"
 
 private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBTextArea(text).apply {
     font = JBFont.label()
@@ -411,3 +683,12 @@ private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBT
 }
 
 private fun verticalSpace(size: Int): Component = Box.createRigidArea(Dimension(0, JBUI.scale(size)))
+
+private fun CliAuthenticationStatus.displayText() = when (this) {
+    CliAuthenticationStatus.AUTHENTICATED -> "Authenticated"
+    CliAuthenticationStatus.UNAUTHENTICATED -> "Not signed in"
+    CliAuthenticationStatus.INVALID -> "Credentials invalid"
+    CliAuthenticationStatus.UNVERIFIED -> "Connection not verified"
+    CliAuthenticationStatus.UNAVAILABLE -> "Unavailable"
+    CliAuthenticationStatus.UNKNOWN -> "Status unknown"
+}
