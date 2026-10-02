@@ -23,10 +23,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBList
+import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import javax.swing.JComponent
-import javax.swing.JPanel
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 
 fun interface ConnectionChoiceUi {
@@ -97,7 +98,7 @@ internal class ConnectionChoiceDialog(
 
     override fun createCenterPanel(): JComponent {
         choiceList.visibleRowCount = choiceList.model.size.coerceIn(2, 8)
-        val panel = JPanel(BorderLayout(0, 8))
+        val panel = JBPanel<JBPanel<*>>(BorderLayout(0, JBUI.scale(8)))
         panel.add(JBLabel(message), BorderLayout.NORTH)
         panel.add(JBScrollPane(choiceList), BorderLayout.CENTER)
         return panel

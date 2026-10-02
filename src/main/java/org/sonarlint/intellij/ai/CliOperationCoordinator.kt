@@ -26,6 +26,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.util.ModalityUiUtil
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicReference
@@ -33,6 +34,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
 @Service(Service.Level.APP)
 class CliOperationCoordinator @JvmOverloads constructor(
@@ -43,7 +45,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
         projectLessNotification("SonarQube CLI", message, type)
     },
     private val refreshViews: () -> Unit = {
-        ApplicationManager.getApplication().invokeLater {
+        runOnUiThread(ModalityState.defaultModalityState()) {
             ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
         }
     }
@@ -70,7 +72,9 @@ class CliOperationCoordinator @JvmOverloads constructor(
             CompletableFuture.failedFuture(error)
         }
         preparation.whenComplete { command, preparationError ->
-            runOnUiThread { handlePreparation(lease, command, preparationError) }
+            ModalityUiUtil.invokeLaterIfNeeded(ModalityState.defaultModalityState()) {
+                handlePreparation(lease, command, preparationError)
+            }
         }
         return true
     }
@@ -91,15 +95,6 @@ class CliOperationCoordinator @JvmOverloads constructor(
                 finish(lease, CliOperationOutcome.LaunchFailed,
                     "The SonarQube CLI command could not be started. Retry from this view.", NotificationType.ERROR)
             }
-        }
-    }
-
-    private fun runOnUiThread(action: () -> Unit) {
-        val application = ApplicationManager.getApplication()
-        if (application.isDispatchThread) {
-            action()
-        } else {
-            application.invokeLater(action, ModalityState.defaultModalityState())
         }
     }
 
