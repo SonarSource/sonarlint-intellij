@@ -25,7 +25,9 @@ import com.intellij.openapi.util.SystemInfo
 import com.intellij.terminal.ui.TerminalWidget
 import com.intellij.terminal.ui.TtyConnectorAccessor
 import com.jediterm.terminal.ProcessTtyConnector
+import com.jediterm.terminal.TerminalKeyEncoder
 import com.jediterm.terminal.TtyConnector
+import java.awt.event.KeyEvent
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
@@ -121,7 +123,8 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
         val completion = observeTerminalCompletion(widget)
         try {
             assertThat(completion).isNotDone()
-            process.outputStream.write("ready\n".toByteArray(Charsets.UTF_8))
+            process.outputStream.write("ready".toByteArray(Charsets.UTF_8))
+            process.outputStream.write(TerminalKeyEncoder().getCode(KeyEvent.VK_ENTER, 0))
             process.outputStream.flush()
 
             assertThat(completion.get(30, TimeUnit.SECONDS)).isEqualTo(TerminalCompletion.Exited(exitCode))
@@ -186,7 +189,8 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
             .build())
         val process = runner.createProcess(options)
         try {
-            process.outputStream.write("ready\n".toByteArray(Charsets.UTF_8))
+            process.outputStream.write("ready".toByteArray(Charsets.UTF_8))
+            process.outputStream.write(TerminalKeyEncoder().getCode(KeyEvent.VK_ENTER, 0))
             process.outputStream.flush()
             assertThat(process.waitFor(30, TimeUnit.SECONDS)).isTrue()
             val output = process.inputStream.bufferedReader().readLines()
