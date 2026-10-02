@@ -164,24 +164,26 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
     @Test
     fun `direct runner preserves arguments and interactive input`(@TempDir directory: Path) {
         val source = Files.createDirectories(directory.resolve("path with spaces")).resolve("ArgvProbe.java")
+        val result = source.parent.resolve("result.txt")
         Files.writeString(source, """
             class ArgvProbe {
                 public static void main(String[] arguments) throws Exception {
                     var encoder = java.util.Base64.getEncoder();
                     var encoded = new java.util.ArrayList<String>();
-                    for (String argument : arguments) {
-                        encoded.add(encoder.encodeToString(argument.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                    for (int index = 1; index < arguments.length; index++) {
+                        encoded.add(encoder.encodeToString(arguments[index].getBytes(java.nio.charset.StandardCharsets.UTF_8)));
                     }
-                    System.out.println("arguments=" + String.join(",", encoded));
                     var input = new java.io.BufferedReader(new java.io.InputStreamReader(
                         System.in, java.nio.charset.StandardCharsets.UTF_8)).readLine();
-                    System.out.println("input=" + input);
+                    java.nio.file.Files.write(java.nio.file.Path.of(arguments[0]),
+                        java.util.List.of("arguments=" + String.join(",", encoded), "input=" + input),
+                        java.nio.charset.StandardCharsets.UTF_8);
                 }
             }
         """.trimIndent())
         val javaExecutable = Path.of(System.getProperty("java.home"), "bin", if (SystemInfo.isWindows) "java.exe" else "java")
         val arguments = listOf("", "two words", "a'b", "a\"b", "a\\\"b", "trailing\\", "a\u2019b", "$&|;()!", "line1\nline2")
-        val command = CliCommand(javaExecutable.toString(), listOf(source.toString()) + arguments, true)
+        val command = CliCommand(javaExecutable.toString(), listOf(source.toString(), result.toString()) + arguments, true)
         val runner = CliTerminalRunner(project, command)
         val options = runner.configureStartupOptions(ShellStartupOptions.Builder()
             .shellCommand(runner.tabState.myShellCommand)
@@ -193,12 +195,12 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
             process.outputStream.write(TerminalKeyEncoder().getCode(KeyEvent.VK_ENTER, 0))
             process.outputStream.flush()
             assertThat(process.waitFor(30, TimeUnit.SECONDS)).isTrue()
-            val output = process.inputStream.bufferedReader().readLines()
-            assertThat(process.exitValue()).withFailMessage(output.joinToString("\n")).isZero()
+            process.inputStream.use { it.readAllBytes() }
+            assertThat(process.exitValue()).isZero()
             val encodedArguments = arguments.joinToString(",") {
                 Base64.getEncoder().encodeToString(it.toByteArray(Charsets.UTF_8))
             }
-            assertThat(output).contains("arguments=$encodedArguments", "input=ready")
+            assertThat(Files.readAllLines(result)).containsExactly("arguments=$encodedArguments", "input=ready")
         } finally {
             process.destroy()
         }
