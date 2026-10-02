@@ -37,7 +37,7 @@ awaitility = "4.3.0"
 its-remote = "0.11.23"
 plugin-verifier = "1.398"
 its-sonar-scala = "1.8.3.2219"
-its-sonar-ws = "8.5.1.38104"
+its-sonar-ws = "8.9.10.61524"
 its-okhttp = "5.5.0"
 
 [libraries]
