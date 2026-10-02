@@ -30,7 +30,6 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
-import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -471,11 +470,11 @@ class AiIntegrationsPanel(
         }
     }
 
-    private fun createPrimaryButton(label: String, action: () -> Unit): JButton = FilledActionButton(label).apply {
+    private fun createPrimaryButton(label: String, action: () -> Unit): JButton = JButton(label).apply {
         addActionListener { action() }
     }
 
-    private fun createSecondaryButton(label: String, icon: Icon): JButton = OutlinedActionButton(label, icon).apply {
+    private fun createSecondaryButton(label: String, icon: Icon): JButton = JButton(label, icon).apply {
         addActionListener { refreshListener() }
     }
 
@@ -621,82 +620,6 @@ private class RoundedSurfacePanel(
         graphics2d.drawRoundRect(0, 0, width - 1, height - 1, JBUI.scale(radius), JBUI.scale(radius))
         graphics2d.dispose()
         super.paintComponent(graphics)
-    }
-}
-
-private class FilledActionButton(text: String) : JButton(text) {
-    init {
-        isOpaque = false
-        isContentAreaFilled = false
-        isBorderPainted = false
-        isFocusPainted = false
-        isRolloverEnabled = true
-        border = JBUI.Borders.empty(6, 13)
-        margin = JBUI.emptyInsets()
-        foreground = Color.WHITE
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-    }
-
-    override fun paintComponent(graphics: Graphics) {
-        val graphics2d = graphics.create() as Graphics2D
-        graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        graphics2d.color = when {
-            !isEnabled -> DISABLED_BACKGROUND
-            model.isPressed -> PRESSED_BACKGROUND
-            model.isRollover -> HOVER_BACKGROUND
-            else -> BACKGROUND
-        }
-        graphics2d.fillRoundRect(0, 0, width, height, JBUI.scale(9), JBUI.scale(9))
-        if (hasFocus()) {
-            graphics2d.color = FOCUS_BORDER
-            graphics2d.stroke = BasicStroke(JBUI.scale(2).toFloat())
-            graphics2d.drawRoundRect(1, 1, width - 3, height - 3, JBUI.scale(9), JBUI.scale(9))
-        }
-        graphics2d.dispose()
-        super.paintComponent(graphics)
-    }
-
-    companion object {
-        private val BACKGROUND = JBColor(Color(0x0B6BCB), Color(0x3574C7))
-        private val HOVER_BACKGROUND = JBColor(Color(0x095CAD), Color(0x417FD2))
-        private val PRESSED_BACKGROUND = JBColor(Color(0x084D90), Color(0x2D65B2))
-        private val DISABLED_BACKGROUND = JBColor(Color(0xA8B7C8), Color(0x505A6A))
-        private val FOCUS_BORDER = JBColor(Color(0x8DC5FF), Color(0x9AC8FF))
-    }
-}
-
-private class OutlinedActionButton(text: String, icon: Icon) : JButton(text, icon) {
-    init {
-        isOpaque = false
-        isContentAreaFilled = false
-        isBorderPainted = false
-        isFocusPainted = false
-        isRolloverEnabled = true
-        border = JBUI.Borders.empty(5, 11)
-        margin = JBUI.emptyInsets()
-        iconTextGap = JBUI.scale(6)
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-    }
-
-    override fun paintComponent(graphics: Graphics) {
-        val graphics2d = graphics.create() as Graphics2D
-        graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        if (model.isPressed || model.isRollover) {
-            graphics2d.color = if (model.isPressed) PRESSED_BACKGROUND else HOVER_BACKGROUND
-            graphics2d.fillRoundRect(0, 0, width - 1, height - 1, JBUI.scale(9), JBUI.scale(9))
-        }
-        graphics2d.color = if (hasFocus()) FOCUS_BORDER else BORDER
-        graphics2d.stroke = BasicStroke(JBUI.scale(if (hasFocus()) 2 else 1).toFloat())
-        graphics2d.drawRoundRect(1, 1, width - 3, height - 3, JBUI.scale(9), JBUI.scale(9))
-        graphics2d.dispose()
-        super.paintComponent(graphics)
-    }
-
-    companion object {
-        private val BORDER = JBColor(Color(0xB7BCC5), Color(0x5A5D63))
-        private val FOCUS_BORDER = JBColor(Color(0x0B6BCB), Color(0x6CAEFF))
-        private val HOVER_BACKGROUND = JBColor(Color(0xEDF5FD), Color(0x303B49))
-        private val PRESSED_BACKGROUND = JBColor(Color(0xDDEEFF), Color(0x35465A))
     }
 }
 
