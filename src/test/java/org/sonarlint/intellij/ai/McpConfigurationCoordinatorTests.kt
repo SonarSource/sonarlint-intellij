@@ -155,9 +155,9 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `missing token requires explicit consent and sends an empty token when accepted`() {
+    fun `empty token requires explicit consent and sends an empty token when accepted`() {
         val path = tempDir.resolve("mcp.json")
-        whenever(credentials.getCredentials(connection)).thenReturn(null)
+        whenever(credentials.getCredentials(connection)).thenReturn(Either.forLeft(TokenDto("")))
         val coordinator = coordinator()
 
         assertThat(coordinator.createConfiguration(project, AiAgent.CURSOR, path, "connection")).isEqualTo(McpTransactionResult.Cancelled)

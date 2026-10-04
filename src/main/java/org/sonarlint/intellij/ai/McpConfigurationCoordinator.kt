@@ -192,7 +192,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         val connection = getGlobalSettings().serverConnections.firstOrNull { it.name == connectionId }
             ?: return McpTransactionResult.MissingConnection
         val credentials = credentialsService.getCredentials(connection)
-        val token = credentials?.takeIf { it.isLeft }?.left?.token?.takeIf { it.isNotBlank() } ?: ""
+        val token = credentials.takeIf { it.isLeft }?.left?.token?.takeIf { it.isNotBlank() } ?: ""
         if (token.isEmpty() && !ui.confirmWithoutToken(project)) {
             return McpTransactionResult.Cancelled
         }
