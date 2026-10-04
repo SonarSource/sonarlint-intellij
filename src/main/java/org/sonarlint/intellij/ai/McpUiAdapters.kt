@@ -26,7 +26,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.LocalFileSystem
 import java.nio.file.Path
-import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
 
@@ -76,31 +75,4 @@ class IntellijMcpUiAdapter : McpUiAdapter {
     override fun showMessage(project: Project, message: String, type: NotificationType) {
         projectLessNotification("SonarQube MCP Server", message, type)
     }
-}
-
-class McpConnectionSelector(private val ui: McpUiAdapter) {
-    fun select(project: Project, snapshot: AiIntegrationSnapshot): McpConnectionSelection {
-        val connections = snapshot.connectionChoices
-        val projectConnection = getSettingsFor(project).connectionName
-        connections.firstOrNull { it.connectionId == projectConnection }?.let {
-            return McpConnectionSelection.Selected(it.connectionId)
-        }
-        connections.firstOrNull { it.connectionId == snapshot.recommendedConnectionId }?.let {
-            return McpConnectionSelection.Selected(it.connectionId)
-        }
-        if (connections.size == 1) {
-            return McpConnectionSelection.Selected(connections.single().connectionId)
-        }
-        if (connections.isEmpty()) {
-            return McpConnectionSelection.Missing
-        }
-        return ui.chooseConnection(project, connections)?.let(McpConnectionSelection::Selected)
-            ?: McpConnectionSelection.Cancelled
-    }
-}
-
-sealed interface McpConnectionSelection {
-    data class Selected(val connectionId: String) : McpConnectionSelection
-    data object Missing : McpConnectionSelection
-    data object Cancelled : McpConnectionSelection
 }

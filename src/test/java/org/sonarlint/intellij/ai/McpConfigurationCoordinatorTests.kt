@@ -491,6 +491,84 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(ownership.record(AiAgent.CLAUDE_CODE)).isNull()
     }
 
+    @Test
+    fun `backend refresh preserves external changes made during inspection`() {
+        val registry = mock<AiAgentRegistry>()
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "managed")
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
+        ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("managed".toByteArray()))
+        whenever(backend.inspectMcpConfiguration(any(), any())).thenAnswer {
+            Files.writeString(path, "changed externally")
+            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.STANDALONE, emptyList()))
+        }
+        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, "refreshed", emptyList()))
+        )
+
+        coordinator(registry = registry).backendReady()
+
+        assertThat(Files.readString(path)).isEqualTo("changed externally")
+        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
+        assertThat(ownership.record(AiAgent.CURSOR)?.fingerprint)
+            .isEqualTo(managedFingerprint("managed".toByteArray()))
+    }
+
+    @Test
+    fun `backend refresh updates the managed snapshot and records its new fingerprint`() {
+        val registry = mock<AiAgentRegistry>()
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "managed")
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
+        ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("managed".toByteArray()))
+        whenever(backend.inspectMcpConfiguration(AiAgent.CURSOR, "managed")).thenReturn(
+            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.STANDALONE, emptyList()))
+        )
+        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, "refreshed", emptyList()))
+        )
+
+        coordinator(registry = registry).backendReady()
+
+        assertThat(Files.readString(path)).isEqualTo("refreshed")
+        assertThat(ownership.record(AiAgent.CURSOR))
+            .isEqualTo(ManagedMcpOwnership("connection", managedFingerprint("refreshed".toByteArray())))
+    }
+
+    @Test
+    fun `backend refresh clears a missing connection without reading its configuration`() {
+        val registry = mock<AiAgentRegistry>()
+        val path = tempDir.resolve("mcp.json")
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
+        ownership.remember(AiAgent.CURSOR, "removed", managedFingerprint("managed".toByteArray()))
+        val fileSystem = mock<McpFileSystem>()
+
+        coordinator(registry = registry, fileSystem = fileSystem).backendReady()
+
+        assertThat(ownership.record(AiAgent.CURSOR)).isNull()
+        verify(fileSystem, never()).read(any())
+        verify(backend, never()).inspectMcpConfiguration(any(), any())
+    }
+
+    @Test
+    fun `backend refresh leaves a superseding ownership record untouched`() {
+        val registry = mock<AiAgentRegistry>()
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "managed")
+        val fingerprint = managedFingerprint("managed".toByteArray())
+        ownership.remember(AiAgent.CURSOR, "connection", fingerprint)
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenAnswer {
+            ownership.remember(AiAgent.CURSOR, "replacement", fingerprint)
+            path
+        }
+
+        coordinator(registry = registry).backendReady()
+
+        assertThat(Files.readString(path)).isEqualTo("managed")
+        assertThat(ownership.record(AiAgent.CURSOR)).isEqualTo(ManagedMcpOwnership("replacement", fingerprint))
+        verify(backend, never()).inspectMcpConfiguration(any(), any())
+    }
+
     private fun coordinator(
         registry: AiAgentRegistry = mock(),
         fileSystem: McpFileSystem = NioMcpFileSystem(),
@@ -517,8 +595,8 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         )
         getSettingsFor(project).connectionName = "connection"
 
-        assertThat(McpConnectionSelector(ui).select(project, snapshot))
-            .isEqualTo(McpConnectionSelection.Selected("connection"))
+        assertThat(ConnectionSelector(ui::chooseConnection).select(project, snapshot))
+            .isEqualTo(ConnectionSelection.Selected("connection"))
     }
 
     @Test
@@ -532,14 +610,14 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         )
         getSettingsFor(project).connectionName = "missing"
         val chooser = mock<McpUiAdapter>()
-        val selector = McpConnectionSelector(chooser)
+        val selector = ConnectionSelector(chooser::chooseConnection)
 
-        assertThat(selector.select(project, snapshot)).isEqualTo(McpConnectionSelection.Selected("recommended"))
+        assertThat(selector.select(project, snapshot)).isEqualTo(ConnectionSelection.Selected("recommended"))
         verify(chooser, never()).chooseConnection(any(), any())
 
         whenever(chooser.chooseConnection(project, snapshot.connectionChoices)).thenReturn("connection")
         assertThat(selector.select(project, snapshot.copy(recommendedConnectionId = "missing")))
-            .isEqualTo(McpConnectionSelection.Selected("connection"))
+            .isEqualTo(ConnectionSelection.Selected("connection"))
     }
 
     private fun baseSnapshot(agents: List<AgentCapability>) = AiIntegrationSnapshot(

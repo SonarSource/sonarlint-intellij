@@ -49,7 +49,7 @@ class IntellijConnectionChoiceUi : ConnectionChoiceUi {
     }
 }
 
-class CliConnectionSelector(private val choiceUi: ConnectionChoiceUi = IntellijConnectionChoiceUi()) {
+class ConnectionSelector(private val choiceUi: ConnectionChoiceUi) {
     fun select(project: Project, snapshot: AiIntegrationSnapshot): ConnectionSelection {
         val eligible = snapshot.connectionChoices
         val projectConnection = getSettingsFor(project).connectionName
@@ -63,7 +63,7 @@ class CliConnectionSelector(private val choiceUi: ConnectionChoiceUi = IntellijC
             return ConnectionSelection.Selected(eligible.single().connectionId)
         }
         if (eligible.isEmpty()) {
-            return ConnectionSelection.InteractiveLogin
+            return ConnectionSelection.Missing
         }
         return choiceUi.choose(project, eligible)?.let(ConnectionSelection::Selected)
             ?: ConnectionSelection.Cancelled
@@ -72,7 +72,7 @@ class CliConnectionSelector(private val choiceUi: ConnectionChoiceUi = IntellijC
 
 sealed interface ConnectionSelection {
     data class Selected(val connectionId: String) : ConnectionSelection
-    data object InteractiveLogin : ConnectionSelection
+    data object Missing : ConnectionSelection
     data object Cancelled : ConnectionSelection
 }
 
