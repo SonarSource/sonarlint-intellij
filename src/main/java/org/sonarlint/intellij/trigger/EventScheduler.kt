@@ -104,7 +104,7 @@ private fun groupByProject(files: Set<VirtualFile>) =
             .filter { it != null && !it.isDisposed }
             .forEach { project -> acc.computeIfAbsent(project!!) { mutableSetOf() }.add(file) }
         acc
-    }.toImmutableMap()
+    }.mapValues { it.value.toImmutableSet() }.toImmutableMap()
 
 private fun notifyFileChangesForProject(project: Project, changedFiles: Set<VirtualFile>) {
     if (project.isDisposed) return
