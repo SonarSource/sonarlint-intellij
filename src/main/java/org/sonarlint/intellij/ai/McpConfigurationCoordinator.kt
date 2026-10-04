@@ -146,14 +146,14 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             ui.showMessage(project, "MCP setup was cancelled. The existing configuration was not changed.", NotificationType.INFORMATION)
             return false
         }
-        val connectionId = when (val selection = McpConnectionSelector(ui).select(project, snapshot)) {
-            is McpConnectionSelection.Selected -> selection.connectionId
-            McpConnectionSelection.Missing -> {
+        val connectionId = when (val selection = ConnectionSelector(ui::chooseConnection).select(project, snapshot)) {
+            is ConnectionSelection.Selected -> selection.connectionId
+            ConnectionSelection.Missing -> {
                 ui.showMessage(project, "No SonarQube connection is available. Add a connection, then retry MCP setup.", NotificationType.ERROR)
                 ui.openConnectionSettings(project)
                 return false
             }
-            McpConnectionSelection.Cancelled -> {
+            ConnectionSelection.Cancelled -> {
                 ui.showMessage(project, "MCP setup was cancelled. Choose Set up when you are ready to select a connection.", NotificationType.INFORMATION)
                 return false
             }
@@ -193,7 +193,9 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                         if (path == null) {
                             ownership.clearIfMatches(agent, record)
                         } else {
-                            runSerialized(path) { refreshOwned(agent, path, record) }
+                            runSerialized(path) {
+                                safeUpdate(agent, path, record.connectionId, allowExistingStandalone = true, expectedOwnership = record)
+                            }
                         }
                     } catch (error: Throwable) {
                         logRefreshFailure(agent, error)
@@ -206,27 +208,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 backendReady()
             }
         }
-    }
-
-    private fun refreshOwned(agent: AiAgent, path: Path, record: ManagedMcpOwnership): McpTransactionResult {
-        if (record.fingerprint == null || !connectionExists(record.connectionId) || fileSystem.isSymbolicLink(path)) {
-            ownership.clearIfMatches(agent, record)
-            return McpTransactionResult.Protected
-        }
-        val current = fileSystem.read(path)
-        if (current == null || managedFingerprint(current) != record.fingerprint) {
-            ownership.clearIfMatches(agent, record)
-            return McpTransactionResult.Protected
-        }
-        val inspection = backendService.inspectMcpConfiguration(agent, current.toText()).join()
-        if (inspection.state == McpConfigurationKind.NOT_CONFIGURED || inspection.state == McpConfigurationKind.CLI_MANAGED) {
-            ownership.clearIfMatches(agent, record)
-            return McpTransactionResult.Protected
-        }
-        if (inspection.state != McpConfigurationKind.STANDALONE) {
-            return McpTransactionResult.Protected
-        }
-        return safeUpdate(agent, path, record.connectionId, true)
     }
 
     private fun inspectForPresentation(agent: AiAgent, path: Path): CompletableFuture<McpAgentConfiguration> {
@@ -265,14 +246,30 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         agent: AiAgent,
         path: Path,
         connectionId: String,
-        allowExistingStandalone: Boolean
+        allowExistingStandalone: Boolean,
+        expectedOwnership: ManagedMcpOwnership? = null
     ): McpTransactionResult {
         val normalizedPath = path.toAbsolutePath().normalize()
+        if (expectedOwnership != null && (ownership.record(agent) != expectedOwnership ||
+                expectedOwnership.fingerprint == null || !connectionExists(connectionId))) {
+            ownership.clearIfMatches(agent, expectedOwnership)
+            return McpTransactionResult.Protected
+        }
         if (fileSystem.isSymbolicLink(normalizedPath)) {
+            expectedOwnership?.let { ownership.clearIfMatches(agent, it) }
             return McpTransactionResult.SymlinkRefused
         }
         val snapshot = fileSystem.read(normalizedPath)
+        if (expectedOwnership != null && (snapshot == null || managedFingerprint(snapshot) != expectedOwnership.fingerprint)) {
+            ownership.clearIfMatches(agent, expectedOwnership)
+            return McpTransactionResult.Protected
+        }
         val inspection = backendService.inspectMcpConfiguration(agent, snapshot.toText()).join()
+        if (expectedOwnership != null && (inspection.state == McpConfigurationKind.NOT_CONFIGURED ||
+                inspection.state == McpConfigurationKind.CLI_MANAGED)) {
+            ownership.clearIfMatches(agent, expectedOwnership)
+            return McpTransactionResult.Protected
+        }
         if (isProtectedMcpState(inspection.state) ||
             (inspection.state == McpConfigurationKind.STANDALONE && !allowExistingStandalone)) {
             return McpTransactionResult.Protected
