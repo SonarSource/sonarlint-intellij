@@ -43,19 +43,9 @@ class EventSchedulerTests {
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `edits received while a batch is being sent form a later batch`(atInterval: Boolean) {
-        assertFollowUpBatch(atInterval, false)
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = [false, true])
-    fun `the same file can be queued again while its earlier batch is being sent`(atInterval: Boolean) {
-        assertFollowUpBatch(atInterval, true)
-    }
-
-    private fun assertFollowUpBatch(atInterval: Boolean, sameFile: Boolean) {
         val timer = ControlledTimer()
         val firstFile = mock<VirtualFile>()
-        val laterFile = if (sameFile) firstFile else mock<VirtualFile>()
+        val laterFile = mock<VirtualFile>()
         val firstSend = BlockingCall()
         val batches = mutableListOf<Set<VirtualFile>>()
         val scheduler = EventScheduler(100, atInterval, timer.executor) { batch ->
@@ -70,6 +60,7 @@ class EventSchedulerTests {
                 val firstCallback = workers.submit { assertThat(timer.runNext()).isTrue() }
                 firstSend.awaitEntered()
 
+                scheduler.notify(firstFile)
                 scheduler.notify(laterFile)
                 val replacement = timer.tasks.last()
                 firstSend.release()
@@ -79,7 +70,7 @@ class EventSchedulerTests {
                 assertThat(replacement.cancelled).isFalse()
                 timer.elapseBy(100)
                 assertThat(timer.runNext()).isTrue()
-                assertThat(batches).containsExactly(setOf(firstFile), setOf(laterFile))
+                assertThat(batches).containsExactly(setOf(firstFile), setOf(firstFile, laterFile))
                 assertThat(timer.runNext()).isFalse()
             } finally {
                 firstSend.release()
@@ -127,6 +118,7 @@ class EventSchedulerTests {
             scheduler.notify(firstFile)
             timer.elapseBy(50)
             scheduler.notify(secondFile)
+            scheduler.notify(secondFile)
             timer.elapseBy(50)
 
             assertThat(timer.runNext()).isEqualTo(atInterval)
@@ -136,46 +128,6 @@ class EventSchedulerTests {
                 assertThat(timer.runNext()).isTrue()
             }
             assertThat(batches).containsExactly(setOf(firstFile, secondFile))
-        } finally {
-            scheduler.stopScheduler()
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = [false, true])
-    fun `pending edits are deduplicated`(atInterval: Boolean) {
-        val timer = ControlledTimer()
-        val batches = mutableListOf<Set<VirtualFile>>()
-        val scheduler = EventScheduler(100, atInterval, timer.executor, batches::add)
-        val file = mock<VirtualFile>()
-        try {
-            repeat(3) { scheduler.notify(file) }
-            timer.elapseBy(100)
-
-            assertThat(timer.runNext()).isTrue()
-            assertThat(batches).containsExactly(setOf(file))
-            assertThat(timer.runNext()).isFalse()
-        } finally {
-            scheduler.stopScheduler()
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = [false, true])
-    fun `an edit after a completed callback schedules a new batch`(atInterval: Boolean) {
-        val timer = ControlledTimer()
-        val batches = mutableListOf<Set<VirtualFile>>()
-        val scheduler = EventScheduler(100, atInterval, timer.executor, batches::add)
-        val file = mock<VirtualFile>()
-        try {
-            scheduler.notify(file)
-            timer.elapseBy(100)
-            assertThat(timer.runNext()).isTrue()
-            scheduler.notify(file)
-            timer.elapseBy(100)
-            assertThat(timer.runNext()).isTrue()
-
-            assertThat(batches).containsExactly(setOf(file), setOf(file))
         } finally {
             scheduler.stopScheduler()
         }

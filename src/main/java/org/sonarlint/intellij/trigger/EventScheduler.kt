@@ -49,7 +49,7 @@ class EventScheduler internal constructor(
         timer,
         atInterval,
         Executors.newScheduledThreadPool(1) { r -> Thread(r, "sonarlint-auto-trigger-$schedulerName") },
-        ::dispatchFileChanges
+        { dispatchFileChanges(it, ProjectLocator.getInstance()) }
     )
 
     private val lock = Any()
@@ -94,13 +94,13 @@ class EventScheduler internal constructor(
 
 }
 
-private fun dispatchFileChanges(files: Set<VirtualFile>) {
-    groupByProject(files).forEach { (project, projectFiles) -> notifyFileChangesForProject(project, projectFiles) }
+internal fun dispatchFileChanges(files: Set<VirtualFile>, projectLocator: ProjectLocator) {
+    groupByProject(files, projectLocator).forEach { (project, projectFiles) -> notifyFileChangesForProject(project, projectFiles) }
 }
 
-private fun groupByProject(files: Set<VirtualFile>) =
+private fun groupByProject(files: Set<VirtualFile>, projectLocator: ProjectLocator) =
     files.fold(mutableMapOf<Project, MutableSet<VirtualFile>>()) { acc, file ->
-        ProjectLocator.getInstance().getProjectsForFile(file)
+        projectLocator.getProjectsForFile(file)
             .filter { it != null && !it.isDisposed }
             .forEach { project -> acc.computeIfAbsent(project!!) { mutableSetOf() }.add(file) }
         acc
