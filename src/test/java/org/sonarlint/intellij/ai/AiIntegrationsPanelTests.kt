@@ -479,9 +479,11 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(status.foreground).isEqualTo(warningColor)
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
             .contains("2 configurations need attention.")
-        assertThat(labelTexts(panel)).doesNotContain("Not configured", "Malformed configuration")
+        assertThat(labelTexts(panel)).doesNotContain("Not configured", "Invalid configuration")
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text })
+            .doesNotContain("Set up an agent…", "Set up Cursor", "Set up")
         val disclosure = descendants(panel).filterIsInstance<JToggleButton>().last()
-        descendants(panel).filterIsInstance<JButton>().first { it.text == "Set up an agent…" }.doClick()
+        disclosure.doClick()
         assertThat(descendants(panel).filterIsInstance<JToggleButton>().last()).isSameAs(disclosure)
         assertThat(disclosure.isSelected).isTrue()
 
@@ -495,20 +497,23 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         }
         assertThat(buttonLabels).contains("Set up", "Replace…", "Open", "Integrate with CLI")
             .doesNotContain("CLI", "Use CLI")
-        assertThat(text).contains("Configured · Connection not verified")
-            .contains("Configured externally · Connection not verified")
-            .contains("Managed by SonarQube CLI")
-            .contains("Configure with SonarQube CLI")
-            .contains("Configuration state unknown")
-            .contains("Malformed configuration")
-            .contains("inspect manually")
-            .contains("invalid json")
+        assertThat(text).contains("Configured", "Managed by CLI", "Available through CLI", "Status unknown", "Invalid configuration")
+            .doesNotContain("Connection not verified", "Configured externally", "inspect manually", "invalid json")
+        assertThat(descendants(panel).filterIsInstance<JBLabel>().mapNotNull { it.toolTipText })
+            .contains("Connection not verified", "Configured externally · Connection not verified", "inspect manually", "invalid json")
+
+        descendants(panel).filterIsInstance<JButton>().first { it.text == "Set up" }.doClick()
+        assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.SetUpMcp(AiAgent.CURSOR))
+        descendants(panel).filterIsInstance<JButton>().first { it.text == "Replace…" }.doClick()
+        assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.SetUpMcp(AiAgent.CLAUDE_CODE, true))
+        descendants(panel).filterIsInstance<JButton>().first { it.text == "Open" }.doClick()
+        assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.OpenMcpConfiguration(AiAgent.GITHUB_COPILOT))
 
         descendants(panel).filterIsInstance<JButton>().first { it.text == "Integrate with CLI" }.doClick()
         assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.IntegrateCli(AiAgent.GITHUB_COPILOT_CLI))
         disclosure.doClick()
         assertThat(disclosure.isSelected).isFalse()
-        assertThat(labelTexts(panel)).doesNotContain("Malformed configuration")
+        assertThat(labelTexts(panel)).doesNotContain("Invalid configuration")
     }
 
     @Test
@@ -536,13 +541,13 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).doesNotContain("Set up an agent…")
         descendants(panel).filterIsInstance<JToggleButton>().last().doClick()
         val mcpCard = descendants(panel).filterIsInstance<JToggleButton>().last().parent.parent as Container
-        assertThat(labelTexts(mcpCard)).contains("Cursor").doesNotContain("Codex", "Configure with SonarQube CLI")
+        assertThat(labelTexts(mcpCard)).contains("Cursor").doesNotContain("Codex", "Available through CLI")
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(mcpConfigurations = listOf(
             configured.copy(state = McpConfigurationKind.NOT_CONFIGURED), unsupported
         ).associateBy { it.agent })))
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text })
-            .contains("Set up Cursor").doesNotContain("Set up an agent…")
+            .contains("Set up").doesNotContain("Set up Cursor", "Set up an agent…")
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(
             agents = snapshot.agents.filter { it.agent == unsupported.agent },
