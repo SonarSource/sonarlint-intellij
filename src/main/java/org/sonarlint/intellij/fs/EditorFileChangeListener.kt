@@ -28,11 +28,19 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import org.sonarlint.intellij.trigger.EventScheduler
 
 @Service(Service.Level.APP)
-class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
-    private val scheduler = EventScheduler("editor-changes", 1000, false)
+class EditorFileChangeListener private constructor(private val scheduler: EventScheduler) : BulkAwareDocumentListener.Simple, Disposable {
+    constructor() : this(EventScheduler("editor-changes", 1000, false))
+
+    private val lock = Any()
+    private var started = false
+    private var disposed = false
 
     fun startListening() {
-        EditorFactory.getInstance().eventMulticaster.addDocumentListener(this, this)
+        synchronized(lock) {
+            if (started || disposed) return
+            EditorFactory.getInstance().eventMulticaster.addDocumentListener(this, this)
+            started = true
+        }
     }
 
     override fun afterDocumentChange(document: Document) {
@@ -41,6 +49,13 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, Disposable {
     }
 
     override fun dispose() {
+        synchronized(lock) {
+            disposed = true
+        }
         scheduler.stopScheduler()
+    }
+
+    companion object {
+        internal fun createForTests(scheduler: EventScheduler) = EditorFileChangeListener(scheduler)
     }
 }
