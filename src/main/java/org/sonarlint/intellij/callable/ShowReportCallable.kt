@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.callable
 
 import com.intellij.openapi.project.Project
+import java.util.UUID
 import org.sonarlint.intellij.analysis.AnalysisCallback
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -58,7 +59,7 @@ class ShowReportCallable(private val project: Project, private val expectedModul
     
     companion object {
         private fun generateBatchId(): String {
-            return "batch-${System.currentTimeMillis()}"
+            return "batch-${UUID.randomUUID()}"
         }
     }
 

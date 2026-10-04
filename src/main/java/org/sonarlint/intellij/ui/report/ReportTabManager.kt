@@ -19,148 +19,103 @@
  */
 package org.sonarlint.intellij.ui.report
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.ui.content.Content
+import com.intellij.ui.content.ContentManagerEvent
+import com.intellij.ui.content.ContentManagerListener
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.ConcurrentHashMap
+import java.util.IdentityHashMap
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.ui.ToolWindowConstants
 
-/**
- * Service responsible for managing multiple report tabs in the SonarQube for IDE tool window.
- * 
- * <h3>Design & Architecture:</h3>
- * This service manages the lifecycle of dated report tabs, allowing multiple analysis results
- * to be displayed simultaneously. Each report tab is uniquely identified by a timestamp and
- * can be closed independently.
- * 
- * <h3>Key Features:</h3>
- * - Dynamic Tab Creation: Creates new report tabs on demand when analysis results are available
- * - Date-based Naming: Each tab includes a timestamp for easy identification
- * - Multi-tab Support: Supports multiple concurrent report tabs
- * - Tab Cleanup: Automatically manages tab lifecycle and cleanup
- */
+/** Manages dated report tabs and suppresses results for reports closed by the user. */
 @Service(Service.Level.PROJECT)
-class ReportTabManager(private val project: Project) {
-    
-    private val reportTabs = ConcurrentHashMap<String, ReportPanel>()
-    private val batchToTabTitle = ConcurrentHashMap<String, String>()
+class ReportTabManager(private val project: Project) : Disposable {
+
+    private val reportTabs = IdentityHashMap<Content, ReportPanel>()
+    private val batchToContent = mutableMapOf<String, Content>()
+    // Keep only scalar IDs until project disposal: even duplicate completions must not reopen a report.
+    private val closedBatches = mutableSetOf<String>()
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm")
-    
-    /**
-     * Creates a report tab immediately with loading state for the given batch.
-     * This provides immediate feedback to the user that analysis has started.
-     */
+    private var disposed = false
+
     @Synchronized
     fun createLoadingReportTab(batchId: String, expectedModuleCount: Int = 1): String? {
-        val existingTabTitle = batchToTabTitle[batchId]
-        if (existingTabTitle != null) {
-            // Tab already exists, just return the title
-            return existingTabTitle
-        }
-        
-        val toolWindow = getToolWindow() ?: return null
-        val contentManager = toolWindow.contentManager
-        
-        val timestamp = LocalDateTime.now()
-        val tabTitle = "Report - ${dateFormatter.format(timestamp)}"
-        
-        // Create new report panel in loading state
-        val reportPanel = ReportPanel(project)
-        reportPanel.showLoadingState(expectedModuleCount)
-        
-        // Create and add content to tool window
-        val content = contentManager.factory.createContent(reportPanel, tabTitle, false).apply {
-            isCloseable = true
-            putUserData(REPORT_TAB_KEY, tabTitle)
-        }
-        
-        contentManager.addContent(content)
-        contentManager.setSelectedContent(content)
-        
-        // Store reference to panel and batch mapping
-        reportTabs[tabTitle] = reportPanel
-        batchToTabTitle[batchId] = tabTitle
-
-        toolWindow.show()
-        
-        return tabTitle
+        if (disposed || project.isDisposed || batchId in closedBatches) return null
+        batchToContent[batchId]?.let { return it.displayName }
+        return createReportTab(batchId) { it.showLoadingState(expectedModuleCount) }
     }
 
-    /**
-     * Updates an existing report tab or creates a new one for the given batch.
-     * This allows incremental updates as analysis results become available.
-     */
     @Synchronized
     fun updateOrCreateReportTab(batchId: String, analysisResult: AnalysisResult, completedModules: Int = 1, expectedModules: Int = 1): String? {
-        val existingTabTitle = batchToTabTitle[batchId]
-        
-        return if (existingTabTitle != null) {
-            // Update existing tab
-            reportTabs[existingTabTitle]?.let { panel ->
-                // Update progress and merge new results with existing results
-                panel.updateAnalysisProgress(completedModules, expectedModules)
-                panel.mergeAnalysisResults(analysisResult)
-                existingTabTitle
-            }
-        } else {
-            // Create new tab (fallback if loading tab wasn't created)
-            createReportTab(analysisResult, batchId)
+        if (disposed || project.isDisposed || batchId in closedBatches) return null
+        val content = batchToContent[batchId]
+        if (content != null) {
+            val panel = reportTabs[content] ?: return null
+            panel.updateAnalysisProgress(completedModules, expectedModules)
+            panel.mergeAnalysisResults(analysisResult)
+            return content.displayName
         }
+        return createReportTab(batchId) { it.updateFindings(analysisResult) }
     }
-    
-    /**
-     * Creates a new report tab with the current timestamp and displays the analysis results.
-     */
-    fun createReportTab(analysisResult: AnalysisResult): String? {
-        return createReportTab(analysisResult, null)
-    }
-    
-    private fun createReportTab(analysisResult: AnalysisResult, batchId: String?): String? {
+
+    @Synchronized
+    fun createReportTab(analysisResult: AnalysisResult): String? =
+        createReportTab(null) { it.updateFindings(analysisResult) }
+
+    private fun createReportTab(batchId: String?, initialize: (ReportPanel) -> Unit): String? {
+        if (disposed || project.isDisposed || batchId in closedBatches) return null
         val toolWindow = getToolWindow() ?: return null
         val contentManager = toolWindow.contentManager
-        
-        val timestamp = LocalDateTime.now()
-        val tabTitle = "Report - ${dateFormatter.format(timestamp)}"
-        
-        // Create new report panel
-        val reportPanel = ReportPanel(project)
-        reportPanel.updateFindings(analysisResult)
-        
-        // Create and add content to tool window
-        val content = contentManager.factory.createContent(reportPanel, tabTitle, false).apply {
-            isCloseable = true
-            putUserData(REPORT_TAB_KEY, tabTitle)
-        }
-        
-        contentManager.addContent(content)
-        contentManager.setSelectedContent(content)
-        
-        // Store reference to panel
-        reportTabs[tabTitle] = reportPanel
-        
-        // Store batch mapping if provided
-        batchId?.let { batchToTabTitle[it] = tabTitle }
+        val tabTitle = "Report - ${dateFormatter.format(LocalDateTime.now())}"
+        val panel = ReportPanel(project)
+        val content = contentManager.factory.createContent(panel, tabTitle, false).apply { isCloseable = true }
 
+        // Install ownership before adding content, since add/select can notify listeners synchronously.
+        reportTabs[content] = panel
+        batchId?.let { batchToContent[it] = content }
+        val listener = object : ContentManagerListener {
+            override fun contentRemoved(event: ContentManagerEvent) {
+                if (event.content === content) closeReport(content)
+            }
+        }
+        contentManager.addContentManagerListener(listener)
+        Disposer.register(panel.lifetime, Disposable { contentManager.removeContentManagerListener(listener) })
+        Disposer.register(content, Disposable { closeReport(content) })
+        Disposer.register(panel.lifetime, Disposable { closeReport(content) })
+        initialize(panel)
+        contentManager.addContent(content)
+        if (!reportTabs.containsKey(content)) return null
+        contentManager.setSelectedContent(content)
+        if (!reportTabs.containsKey(content)) return null
         toolWindow.show()
-        
         return tabTitle
     }
 
-    fun getOpenReportTabs(): Set<String> {
-        return reportTabs.keys.toSet()
-    }
-    
-    private fun getToolWindow(): ToolWindow? {
-        return ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)
-    }
-    
-    companion object {
-        private val REPORT_TAB_KEY = Key.create<String>("SONARLINT_REPORT_TAB_KEY")
+    @Synchronized
+    private fun closeReport(content: Content) {
+        val batches = batchToContent.filterValues { it === content }.keys
+        closedBatches.addAll(batches)
+        batches.forEach(batchToContent::remove)
+        reportTabs.remove(content)?.invalidateReport()
     }
 
+    @Synchronized
+    fun getOpenReportTabs(): Set<String> = reportTabs.keys.map { it.displayName }.toSet()
+
+    private fun getToolWindow(): ToolWindow? =
+        ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)
+
+    @Synchronized
+    override fun dispose() {
+        disposed = true
+        reportTabs.keys.toList().forEach(::closeReport)
+        closedBatches.clear()
+    }
 }

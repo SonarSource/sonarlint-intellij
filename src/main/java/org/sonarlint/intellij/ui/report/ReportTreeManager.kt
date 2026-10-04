@@ -47,7 +47,8 @@ import org.sonarlint.intellij.ui.vulnerabilities.tree.TaintVulnerabilityTree
  */
 class ReportTreeManager(
     private val project: Project,
-    private val findingDetailsPanel: FindingDetailsPanel
+    private val findingDetailsPanel: FindingDetailsPanel,
+    private val isActive: () -> Boolean = { !project.isDisposed }
 ) {
     
     // Issue trees
@@ -86,6 +87,7 @@ class ReportTreeManager(
     private fun configureTreeInteraction(tree: Tree) {
         tree.addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
+                if (!isActive()) return
                 if (e.keyCode == KeyEvent.VK_ESCAPE) {
                     getService(project, EditorDecorator::class.java).removeHighlights()
                 }
@@ -119,6 +121,7 @@ class ReportTreeManager(
         allTrees.filter { it != excludeTree }
     
     private fun handleIssueSelection(tree: Tree, treesToClear: List<Tree>) {
+        if (!isActive()) return
         clearOtherTreeSelections(tree, treesToClear)
         val selectedIssueNodes = tree.getSelectedNodes(IssueNode::class.java, null)
         if (selectedIssueNodes.isNotEmpty()) {
@@ -129,6 +132,7 @@ class ReportTreeManager(
     }
     
     private fun handleHotspotSelection(event: TreeSelectionEvent, tree: Tree, treesToClear: List<Tree>) {
+        if (!isActive()) return
         if (event.source is SecurityHotspotTree) {
             clearOtherTreeSelections(tree, treesToClear)
             val selectedHotspotNodes = tree.getSelectedNodes(LiveSecurityHotspotNode::class.java, null)
@@ -141,6 +145,7 @@ class ReportTreeManager(
     }
     
     private fun handleTaintSelection(tree: Tree, treesToClear: List<Tree>) {
+        if (!isActive()) return
         clearOtherTreeSelections(tree, treesToClear)
         val selectedTaintNodes = tree.getSelectedNodes(LocalTaintVulnerability::class.java, null)
         if (selectedTaintNodes.isNotEmpty()) {
@@ -157,8 +162,10 @@ class ReportTreeManager(
     }
     
     private fun clearSelection() {
+        if (!isActive()) return
         findingDetailsPanel.clear()
         runOnUiThread(project) {
+            if (!isActive()) return@runOnUiThread
             getService(project, EditorDecorator::class.java).removeHighlights()
         }
     }
@@ -184,6 +191,7 @@ class ReportTreeManager(
      */
     fun restoreTreeState(snapshot: Map<Tree, Set<String>>) {
         runOnUiThread(project) {
+            if (!isActive()) return@runOnUiThread
             // Expand everything by default
             allTrees.forEach { tree ->
                 if (tree.isVisible && tree.model.root != null) {
@@ -200,6 +208,7 @@ class ReportTreeManager(
     
     fun expandAllTrees() {
         runOnUiThread(project) {
+            if (!isActive()) return@runOnUiThread
             allTrees.forEach { tree ->
                 if (tree.isVisible && tree.model.root != null) {
                     TreeUtil.expandAll(tree)
@@ -210,6 +219,7 @@ class ReportTreeManager(
     
     fun collapseTrees() {
         runOnUiThread(project) {
+            if (!isActive()) return@runOnUiThread
             allTrees.forEach { tree ->
                 if (tree.isVisible && tree.model.root != null) {
                     TreeUtil.collapseAll(tree, 0)
@@ -220,6 +230,7 @@ class ReportTreeManager(
     
     fun configureTreeVisibility(isFocusOnNewCode: Boolean) {
         runOnUiThread(project) {
+            if (!isActive()) return@runOnUiThread
             allTrees.forEach { it.showsRootHandles = true }
 
             issuesTree.isVisible = true
@@ -232,6 +243,7 @@ class ReportTreeManager(
     }
     
     fun clear() {
+        allTrees.forEach { it.clearSelection() }
         issuesTreeBuilder.clear()
         oldIssuesTreeBuilder.clear()
         securityHotspotsTreeBuilder.clear()
