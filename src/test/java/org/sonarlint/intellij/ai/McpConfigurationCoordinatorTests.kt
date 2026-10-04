@@ -39,6 +39,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
@@ -504,6 +505,42 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         executor,
         false
     )
+
+    @Test
+    fun `MCP connection selection prefers the project binding over the recommendation`() {
+        val snapshot = baseSnapshot(emptyList()).copy(
+            connectionChoices = listOf(
+                IntegrationConnection("connection", "https://sonar.example", null),
+                IntegrationConnection("recommended", "https://sonar.example", "organization")
+            ),
+            recommendedConnectionId = "recommended"
+        )
+        getSettingsFor(project).connectionName = "connection"
+
+        assertThat(McpConnectionSelector(ui).select(project, snapshot))
+            .isEqualTo(McpConnectionSelection.Selected("connection"))
+    }
+
+    @Test
+    fun `MCP connection selection uses an eligible recommendation and ignores a stale one`() {
+        val snapshot = baseSnapshot(emptyList()).copy(
+            connectionChoices = listOf(
+                IntegrationConnection("connection", "https://sonar.example", null),
+                IntegrationConnection("recommended", "https://sonar.example", "organization")
+            ),
+            recommendedConnectionId = "recommended"
+        )
+        getSettingsFor(project).connectionName = "missing"
+        val chooser = mock<McpUiAdapter>()
+        val selector = McpConnectionSelector(chooser)
+
+        assertThat(selector.select(project, snapshot)).isEqualTo(McpConnectionSelection.Selected("recommended"))
+        verify(chooser, never()).chooseConnection(any(), any())
+
+        whenever(chooser.chooseConnection(project, snapshot.connectionChoices)).thenReturn("connection")
+        assertThat(selector.select(project, snapshot.copy(recommendedConnectionId = "missing")))
+            .isEqualTo(McpConnectionSelection.Selected("connection"))
+    }
 
     private fun baseSnapshot(agents: List<AgentCapability>) = AiIntegrationSnapshot(
         CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),

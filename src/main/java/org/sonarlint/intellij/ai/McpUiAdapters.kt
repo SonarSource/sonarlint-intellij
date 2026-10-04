@@ -44,12 +44,14 @@ interface McpUiAdapter {
 
 class IntellijMcpUiAdapter : McpUiAdapter {
     override fun chooseConnection(project: Project, connections: List<IntegrationConnection>): String? {
-        val values = connections.map { it.connectionId }.toTypedArray()
+        val labels = connections.map { connection ->
+            connection.organization?.let { "${connection.connectionId} ($it)" } ?: connection.connectionId
+        }
         val selected = ConnectionChoiceDialog(
             project,
             "Choose a SonarQube connection for the MCP server.",
             "SonarQube MCP Server",
-            values.toList()
+            labels
         ).choose()
         return selected?.let { connections[it].connectionId }
     }
@@ -81,6 +83,9 @@ class McpConnectionSelector(private val ui: McpUiAdapter) {
         val connections = snapshot.connectionChoices
         val projectConnection = getSettingsFor(project).connectionName
         connections.firstOrNull { it.connectionId == projectConnection }?.let {
+            return McpConnectionSelection.Selected(it.connectionId)
+        }
+        connections.firstOrNull { it.connectionId == snapshot.recommendedConnectionId }?.let {
             return McpConnectionSelection.Selected(it.connectionId)
         }
         if (connections.size == 1) {
