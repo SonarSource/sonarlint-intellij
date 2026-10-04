@@ -477,8 +477,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
 
         val status = descendants(panel).filterIsInstance<JBLabel>().single { it.text == "7 supported" }
         assertThat(status.foreground).isEqualTo(warningColor)
-        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
-            .contains("2 configurations need attention.")
+        assertThat(labelTexts(panel)).contains("2 configurations need attention.")
         assertThat(labelTexts(panel)).doesNotContain("Not configured", "Invalid configuration")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text })
             .doesNotContain("Set up an agent…", "Set up Cursor", "Set up")
@@ -536,8 +535,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
         assertThat(labelTexts(panel)).contains("1 supported")
-        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
-            .contains("MCP is configured for all 1 detected agent.")
+        assertThat(labelTexts(panel)).contains("MCP is configured for all 1 detected agent.")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).doesNotContain("Set up an agent…")
         descendants(panel).filterIsInstance<JToggleButton>().last().doClick()
         val mcpCard = descendants(panel).filterIsInstance<JToggleButton>().last().parent.parent as Container

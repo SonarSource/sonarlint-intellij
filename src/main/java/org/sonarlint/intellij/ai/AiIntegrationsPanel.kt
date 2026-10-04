@@ -278,7 +278,7 @@ class AiIntegrationsPanel(
             val attentionCount = configurations.count {
                 it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
             }
-            addMessage(mcpSummary(configuredCount, configurations.size, attentionCount))
+            addMetadata(listOf(mcpSummary(configuredCount, configurations.size, attentionCount)))
         }
 
         val details = JBPanel<JBPanel<*>>().apply {
