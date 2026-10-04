@@ -125,9 +125,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllRespo
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityTrackingRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AcceptedBindingSuggestionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
-import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
-import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
-import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
 private const val CONNECTION_NAME = "id"
 
@@ -453,7 +450,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         assertThat(service.inspectMcpConfiguration(AiAgent.CLAUDE_CODE, "content").get().state.name).isEqualTo("MALFORMED")
         assertThat(service.planMcpConfigurationUpdate(AiAgent.CLAUDE_CODE, "content", "generated").get().updatedContent)
             .isEqualTo("updated")
-        assertThat(service.generateMcpConfiguration("connection", Either.forLeft(TokenDto("token-value"))).get())
+        assertThat(service.generateMcpConfiguration("connection", "token-value").get())
             .isEqualTo("generated")
 
         val inspectCaptor = argumentCaptor<McpConfigurationInspectionParams>()
@@ -467,14 +464,6 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         verify(backendConnectionService).getMCPServerConfiguration(generationCaptor.capture())
         assertThat(generationCaptor.firstValue.connectionId).isEqualTo("connection")
         assertThat(generationCaptor.firstValue.token).isEqualTo("token-value")
-
-        assertThatThrownBy {
-            service.generateMcpConfiguration(
-                "connection",
-                Either.forRight<TokenDto, UsernamePasswordDto>(UsernamePasswordDto("user", "password"))
-            ).join()
-        }.hasCauseInstanceOf(IllegalArgumentException::class.java)
-        verify(backendConnectionService, org.mockito.Mockito.times(1)).getMCPServerConfiguration(any())
     }
 
     @Test

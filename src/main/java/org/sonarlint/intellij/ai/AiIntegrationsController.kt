@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ai
 
-import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
@@ -28,7 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.CliOperationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
@@ -71,8 +69,6 @@ class AiIntegrationsController @JvmOverloads constructor(
                 .whenComplete { snapshot, error ->
                     val state = if (error != null) {
                         AiIntegrationsPanelState.Error(userFacingMessage(error))
-                    } else if (snapshot.agents.isEmpty()) {
-                        AiIntegrationsPanelState.Empty(snapshot)
                     } else {
                         AiIntegrationsPanelState.Ready(snapshot)
                     }
@@ -88,7 +84,6 @@ class AiIntegrationsController @JvmOverloads constructor(
             if (!isDisposed() && generation.get() == requestedGeneration) {
                 latestSnapshot = when (state) {
                     is AiIntegrationsPanelState.Ready -> state.snapshot
-                    is AiIntegrationsPanelState.Empty -> state.snapshot
                     else -> null
                 }
                 panel.render(state)
@@ -98,8 +93,6 @@ class AiIntegrationsController @JvmOverloads constructor(
 
     private fun handleIntent(intent: AiIntegrationsIntent) {
         when (intent) {
-            AiIntegrationsIntent.Refresh -> refresh()
-            AiIntegrationsIntent.OpenCliDocumentation -> BrowserUtil.browse(SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
             AiIntegrationsIntent.InstallCli,
             AiIntegrationsIntent.AuthenticateCli,
             is AiIntegrationsIntent.IntegrateCli -> latestSnapshot?.let { snapshot ->
@@ -111,7 +104,6 @@ class AiIntegrationsController @JvmOverloads constructor(
             is AiIntegrationsIntent.OpenMcpConfiguration -> latestSnapshot?.let { snapshot ->
                 mcpCoordinator.openConfiguration(project, intent.agent, snapshot)
             }
-            AiIntegrationsIntent.OpenConnectionSettings -> mcpCoordinator.openConnectionSettings(project)
         }
     }
 

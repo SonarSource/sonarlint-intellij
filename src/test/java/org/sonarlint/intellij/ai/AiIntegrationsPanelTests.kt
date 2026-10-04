@@ -68,7 +68,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             AiIntegrationsPanelState.Loading to listOf("Checking", "Checking"),
             AiIntegrationsPanelState.Ready(readySnapshot) to listOf("Installed", "1 supported"),
             AiIntegrationsPanelState.Error("failed") to listOf("Needs attention", "Needs attention"),
-            AiIntegrationsPanelState.Empty(emptySnapshot) to listOf("Installed", "0 supported")
+            AiIntegrationsPanelState.Ready(emptySnapshot) to listOf("Installed", "0 supported")
         )
 
         states.forEach { (state, expectedStatuses) ->
@@ -458,7 +458,6 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             McpAgentConfiguration(AiAgent.GITHUB_COPILOT, path, McpConfigurationKind.STANDALONE, emptyList()),
             McpAgentConfiguration(AiAgent.CLAUDE_CODE, path, McpConfigurationKind.STANDALONE, emptyList()),
             McpAgentConfiguration(AiAgent.KIRO, path, McpConfigurationKind.CLI_MANAGED, emptyList()),
-            McpAgentConfiguration(AiAgent.GITHUB_COPILOT_CLI, null, McpConfigurationKind.CLI_ONLY, emptyList()),
             McpAgentConfiguration(AiAgent.CODEX, path, McpConfigurationKind.UNKNOWN, listOf("inspect manually")),
             McpAgentConfiguration(AiAgent.WINDSURF, path, McpConfigurationKind.MALFORMED, listOf("invalid json"))
         ).associateBy { it.agent }
@@ -514,16 +513,16 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         val configured = McpAgentConfiguration(
             AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.STANDALONE, emptyList()
         )
-        val unsupported = McpAgentConfiguration(AiAgent.CODEX, null, McpConfigurationKind.CLI_ONLY, emptyList())
+        val unsupported = AgentCapability(AiAgent.CODEX, emptySet(), true, false)
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),
             listOf(
                 AgentCapability(AiAgent.CURSOR, emptySet(), false, true),
-                AgentCapability(AiAgent.CODEX, emptySet(), true, false)
+                unsupported
             ),
             emptyList(),
             null,
-            listOf(configured, unsupported).associateBy { it.agent }
+            mapOf(configured.agent to configured)
         )
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
@@ -534,15 +533,15 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         val mcpCard = descendants(panel).filterIsInstance<JToggleButton>().last().parent.parent as Container
         assertThat(labelTexts(mcpCard)).contains("Cursor").doesNotContain("Codex", "Available through CLI")
 
-        panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(mcpConfigurations = listOf(
-            configured.copy(state = McpConfigurationKind.NOT_CONFIGURED), unsupported
-        ).associateBy { it.agent })))
+        panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(mcpConfigurations = mapOf(
+            configured.agent to configured.copy(state = McpConfigurationKind.NOT_CONFIGURED)
+        ))))
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text })
             .contains("Set up").doesNotContain("Set up Cursor", "Set up an agent…")
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(
             agents = snapshot.agents.filter { it.agent == unsupported.agent },
-            mcpConfigurations = mapOf(unsupported.agent to unsupported)
+            mcpConfigurations = emptyMap()
         )))
         assertThat(labelTexts(panel)).contains("0 supported")
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })

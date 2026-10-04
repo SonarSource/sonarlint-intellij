@@ -73,7 +73,6 @@ enum class McpConfigurationKind {
     NOT_CONFIGURED,
     STANDALONE,
     CLI_MANAGED,
-    CLI_ONLY,
     UNKNOWN,
     MALFORMED
 }
@@ -85,13 +84,12 @@ data class McpInspection(
 
 data class McpUpdatePlan(
     val state: McpConfigurationKind,
-    val updatedContent: String?,
-    val diagnostics: List<String>
+    val updatedContent: String?
 )
 
 data class McpAgentConfiguration(
     val agent: AiAgent,
-    val path: java.nio.file.Path?,
+    val path: java.nio.file.Path,
     val state: McpConfigurationKind,
     val diagnostics: List<String>
 )
@@ -133,16 +131,12 @@ internal fun toAiIntegrationSnapshot(response: GetAiIntegrationStateResponse): A
 sealed interface AiIntegrationsPanelState {
     data object Loading : AiIntegrationsPanelState
     data class Ready(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
-    data class Empty(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
     data class Error(val message: String) : AiIntegrationsPanelState
 }
 sealed interface AiIntegrationsIntent {
-    data object Refresh : AiIntegrationsIntent
-    data object OpenCliDocumentation : AiIntegrationsIntent
     data object InstallCli : AiIntegrationsIntent
     data object AuthenticateCli : AiIntegrationsIntent
     data class IntegrateCli(val agent: AiAgent) : AiIntegrationsIntent
     data class SetUpMcp(val agent: AiAgent) : AiIntegrationsIntent
     data class OpenMcpConfiguration(val agent: AiAgent) : AiIntegrationsIntent
-    data object OpenConnectionSettings : AiIntegrationsIntent
 }
