@@ -22,12 +22,18 @@ package org.sonarlint.intellij.config.global.wizard;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardEx;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.Messages;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.credentials.CredentialsService;
+import org.sonarlint.intellij.config.global.credentials.CredentialOperationRunner;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto;
+import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto;
 
 import static org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_LINK;
 
@@ -55,6 +61,10 @@ public class ServerConnectionWizard {
 
   public static ServerConnectionWizard forConnectionEdition(ServerConnection connectionToEdit) {
     var credentials = SonarLintUtils.getService(CredentialsService.class).getCredentials(connectionToEdit);
+    return forConnectionEdition(connectionToEdit, credentials);
+  }
+
+  public static ServerConnectionWizard forConnectionEdition(ServerConnection connectionToEdit, Either<TokenDto, UsernamePasswordDto> credentials) {
     var wizard = new ServerConnectionWizard(new ConnectionWizardModel(connectionToEdit, credentials));
     var steps = createSteps(wizard.model, true, Collections.emptySet());
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
@@ -63,6 +73,10 @@ public class ServerConnectionWizard {
 
   public static ServerConnectionWizard forNotificationsEdition(ServerConnection connectionToEdit) {
     var credentials = SonarLintUtils.getService(CredentialsService.class).getCredentials(connectionToEdit);
+    return forNotificationsEdition(connectionToEdit, credentials);
+  }
+
+  public static ServerConnectionWizard forNotificationsEdition(ServerConnection connectionToEdit, Either<TokenDto, UsernamePasswordDto> credentials) {
     var wizard = new ServerConnectionWizard(new ConnectionWizardModel(connectionToEdit, credentials));
     var steps = List.of(new NotificationsStep(wizard.model, true));
     wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
@@ -83,15 +97,63 @@ public class ServerConnectionWizard {
     return wizardEx.showAndGet();
   }
 
+  public void cancel() {
+    wizardEx.close(DialogWrapper.CANCEL_EXIT_CODE);
+  }
+
   public ServerConnection getConnection() {
     return model.createConnection();
   }
 
-  private static class ServerConnectionWizardEx extends AbstractWizardEx {
+  static class ServerConnectionWizardEx extends AbstractWizardEx {
+    private boolean savingCredentials;
     public ServerConnectionWizardEx(List<? extends AbstractWizardStepEx> steps, String title) {
       super(title, null, steps);
       this.setHorizontalStretch(1.25f);
       this.setVerticalStretch(1.25f);
+    }
+
+    @Override
+    protected void doNextAction() {
+      if (savingCredentials) {
+        return;
+      }
+      if (getCurrentStepObject() instanceof AuthStep authStep) {
+        if (!authStep.isComplete()) {
+          return;
+        }
+        var credentials = authStep.snapshotCredentials();
+        savingCredentials = true;
+        authStep.setSaving(true);
+        updateButtons();
+        CredentialOperationRunner.save(getDisposable(), authStep.getComponent(), authStep.getConnectionName(), credentials,
+          () -> getCurrentStepObject() == authStep,
+          () -> ServerConnectionWizardEx.super.doNextAction(),
+          error -> Messages.showErrorDialog(authStep.getComponent(), error.getMessage(), "Unable to Save Credentials"),
+          () -> {
+            savingCredentials = false;
+            authStep.setSaving(false);
+            updateButtons();
+          });
+      } else {
+        super.doNextAction();
+      }
+    }
+
+    @Override
+    protected void doPreviousAction() {
+      if (!savingCredentials) {
+        super.doPreviousAction();
+      }
+    }
+
+    @Override
+    protected void updateButtons() {
+      super.updateButtons();
+      if (savingCredentials) {
+        getNextButton().setEnabled(false);
+        getPreviousButton().setEnabled(false);
+      }
     }
 
     @Override

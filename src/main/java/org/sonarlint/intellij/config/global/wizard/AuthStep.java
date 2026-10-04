@@ -46,7 +46,6 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -148,11 +147,19 @@ public class AuthStep extends AbstractWizardStepEx {
     openTokenCreationPageButton.setText("Create token");
   }
 
-  private void save() {
-    getService(CredentialsService.class).saveCredentials(Objects.requireNonNull(model.getName()), getCredentials());
+  String getConnectionName() {
+    return Objects.requireNonNull(model.getName());
   }
 
-  private Either<TokenDto, UsernamePasswordDto> getCredentials() {
+  void setSaving(boolean saving) {
+    tokenField.setEnabled(!saving);
+    loginField.setEnabled(!saving);
+    passwordField.setEnabled(!saving);
+    openTokenCreationPageButton.setEnabled(!saving);
+    authComboBox.setEnabled(!saving && model.getLogin() != null && !model.isSonarCloud());
+  }
+
+  Either<TokenDto, UsernamePasswordDto> snapshotCredentials() {
     if (LOGIN_ITEM.equals(authComboBox.getSelectedItem())) {
       return Either.forRight(new UsernamePasswordDto(loginField.getText(),
         String.valueOf(passwordField.getPassword())));
@@ -208,7 +215,6 @@ public class AuthStep extends AbstractWizardStepEx {
   @Override
   public void commit(CommitType commitType) throws CommitStepException {
     if (commitType == CommitType.Finish || commitType == CommitType.Next) {
-      save();
       checkConnection();
       tryQueryOrganizations();
     }

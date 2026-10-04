@@ -23,6 +23,8 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.impl.ProgressRunner
@@ -55,7 +57,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.credentials.CredentialsService
+import org.sonarlint.intellij.config.global.credentials.CredentialOperationRunner
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
@@ -104,6 +106,8 @@ class AutomaticSharedConfigCreator(
     private val connectionNameLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val tokenLabel = SwingHelper.createHtmlViewer(false, null, null, null)
     private val tokenGenerationButton = JButton("Generate Token")
+    private var savingCredentials = false
+    private var credentialRequest: CredentialOperationRunner.Request? = null
 
     init {
         title = if (isSQ) "Connect to This SonarQube Server Instance?" else "Connect to SonarQube Cloud?"
@@ -118,9 +122,7 @@ class AutomaticSharedConfigCreator(
             }
 
             override fun doAction(e: ActionEvent) {
-                if (handleConnectionCreation()) {
-                    close(OK_EXIT_CODE)
-                }
+                handleConnectionCreation()
             }
         }
 
@@ -146,43 +148,63 @@ class AutomaticSharedConfigCreator(
         isResizable = false
 
         init()
+        val projectLifetime = Disposer.newDisposable()
+        Disposer.register(project, projectLifetime)
+        Disposer.register(projectLifetime, Disposable { credentialRequest?.let { Disposer.dispose(it) } })
+        Disposer.register(disposable, Disposable { Disposer.dispose(projectLifetime) })
     }
 
-    private fun handleConnectionCreation(): Boolean {
+    private fun setSavingCredentials(saving: Boolean) {
+        savingCredentials = saving
+        createConnectionAction.isEnabled = !saving && tokenField.password.isNotEmpty()
+        tokenField.isEnabled = !saving
+        connectionNameField.isEnabled = !saving
+        tokenGenerationButton.isEnabled = !saving
+    }
+
+    private fun handleConnectionCreation() {
+        if (savingCredentials) return
+        val builder = ServerConnection.newBuilder().setDisableNotifications(false).setName(connectionNameField.text)
+        if (isSQ) {
+            builder.setHostUrl(orgOrServerUrl)
+        } else {
+            builder.setOrganizationKey(orgOrServerUrl).setHostUrl(RegionUtils.getUrlByRegion(region))
+                .setRegion(region?.name ?: SonarCloudRegion.EU.name)
+        }
+        val connection = builder.build()
+        val credentials = Either.forLeft<TokenDto, org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto>(TokenDto(String(tokenField.password)))
+        setSavingCredentials(true)
+        credentialRequest = CredentialOperationRunner.save(disposable, centerPanel, connection.name, credentials,
+            { !isDisposed && !project.isDisposed },
+            {
+                serverConnection = connection
+                if (finishConnectionCreation(connection)) close(OK_EXIT_CODE)
+            },
+            { error -> Messages.showErrorDialog(centerPanel, error.message, "Unable to Save Credentials") },
+            { setSavingCredentials(false) })
+    }
+
+    private fun finishConnectionCreation(savedConnection: ServerConnection): Boolean {
         val currBindingSuggestion = getSettingsFor(project).isBindingSuggestionsEnabled
         try {
             getSettingsFor(project).isBindingSuggestionsEnabled = false
-            val serverConnectionBuilder = ServerConnection.newBuilder().setDisableNotifications(false)
-                .setName(connectionNameField.text)
-            if (isSQ) {
-                serverConnectionBuilder.setHostUrl(orgOrServerUrl)
-            } else {
-                serverConnectionBuilder.setOrganizationKey(orgOrServerUrl).setHostUrl(
-                    RegionUtils.getUrlByRegion(region)
-                )
-                serverConnectionBuilder.setRegion(region?.name ?: SonarCloudRegion.EU.name)
-            }
-            serverConnection = serverConnectionBuilder.build()
-            getService(CredentialsService::class.java).saveCredentials(
-                connectionNameField.text,
-                Either.forLeft(TokenDto(String(tokenField.password)))
-            )
-
             if (!validateConnection()) {
                 return false
             }
 
-            serverConnection.apply {
+            if (isDisposed || project.isDisposed) return false
+
+            savedConnection.apply {
                 val globalSettings = getGlobalSettings()
-                getGlobalSettings().addServerConnection(this!!)
+                getGlobalSettings().addServerConnection(this)
                 val serverChangeListener =
                     ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
                 // Notify in case the connection settings dialog is open to reflect the change
                 serverChangeListener.changed(globalSettings.serverConnections)
             }
 
-            val connection = getGlobalSettings().getServerConnectionByName(connectionNameField.text)
-                .orElseThrow { IllegalStateException("Unable to find connection '${connectionNameField.text}'") }
+            val connection = getGlobalSettings().getServerConnectionByName(savedConnection.name)
+                .orElseThrow { IllegalStateException("Unable to find connection '${savedConnection.name}'") }
 
             getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, overridesPerModule,
                 origin)
@@ -315,7 +337,7 @@ class AutomaticSharedConfigCreator(
 
         val listener: DocumentListener = object : DocumentAdapter() {
             override fun textChanged(e: DocumentEvent) {
-                createConnectionAction.isEnabled = tokenField.textProperty().value.isNotEmpty()
+                createConnectionAction.isEnabled = !savingCredentials && tokenField.textProperty().value.isNotEmpty()
             }
         }
         tokenField.document.addDocumentListener(listener)

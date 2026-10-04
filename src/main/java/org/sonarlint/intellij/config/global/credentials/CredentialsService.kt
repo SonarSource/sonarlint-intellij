@@ -23,104 +23,104 @@ import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import java.util.Objects
-import org.apache.commons.lang3.BooleanUtils
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.messages.CredentialsChangeListener
-import org.sonarlint.intellij.util.computeOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
 @Service(Service.Level.APP)
-class CredentialsService {
+class CredentialsService @JvmOverloads constructor(private val passwordSafe: () -> PasswordSafe = { PasswordSafe.instance }) {
 
     @Throws(CredentialsException::class)
-    fun getCredentials(connection: ServerConnection): Either<TokenDto, UsernamePasswordDto> {
-        val result = computeOnPooledThread("Getting credentials from store...") {
-            readCredentials(connection)
-        }
-        if (result == null) {
-            throw CredentialsException(
-                """
-                    Failed to get saved credentials for connection '${connection.name}'.
-                    This may be caused by an issue with your system's credential storage.
-                    Check your IDE's password storage settings in Settings > Appearance & Behavior > System Settings > Passwords."""
-            )
-        }
-        return result
-    }
-
-    @Throws(CredentialsException::class)
-    private fun readCredentials(connection: ServerConnection): Either<TokenDto, UsernamePasswordDto> {
-        val token = PasswordSafe.instance.getToken(connection.name)
-        if (token != null) {
-            return Either.forLeft(TokenDto(token))
-        }
-
-        val credentials = PasswordSafe.instance.getUsernamePassword(connection.name)
-        val password = credentials?.getPasswordAsString()
-        if (credentials?.userName != null && password != null) {
-            return Either.forRight(UsernamePasswordDto(credentials.userName!!, password))
-        }
-
-        throw CredentialsException(
-            """
-                    Could not load token or login/password credentials for connection '${connection.name}'.
-                    As a workaround, try removing and re-adding the connection.
-                    This may also be caused by an issue with your system's credential storage.
-                    Check your IDE's password storage settings in Settings > Appearance & Behavior > System Settings > Passwords."""
-        )
-    }
+    fun getCredentials(connection: ServerConnection): Either<TokenDto, UsernamePasswordDto> =
+        await(connection.name) { cancellation -> getCredentials(connection, cancellation) }
 
     @Throws(CredentialsException::class)
     fun saveCredentials(connectionName: String, credentials: Either<TokenDto, UsernamePasswordDto>) {
-        val success = computeOnPooledThread("Saving credentials...") {
-            writeCredentials(credentials, connectionName)
-        }
-
-        if (BooleanUtils.isNotTrue(success)) {
-            throw CredentialsException(
-                """
-                    Could not save token credentials for connection '$connectionName'.
-                    This may be caused by an issue with your system's credential storage.
-                    Check your IDE's password storage settings in Settings > Appearance & Behavior > System Settings > Passwords."""
-            )
-        }
-    }
-
-    private fun writeCredentials(
-        credentials: Either<TokenDto, UsernamePasswordDto>,
-        connectionName: String,
-    ): Boolean {
-        val passwordSafe = PasswordSafe.instance
-        var isEdit: Boolean
-        if (credentials.isLeft) {
-            val token = passwordSafe.getToken(connectionName)
-            isEdit = token != null && token != credentials.left.token
-            passwordSafe.setToken(connectionName, credentials.left.token)
-        } else if (credentials.isRight) {
-            val old = passwordSafe.getUsernamePassword(connectionName)
-            val new = credentials.right
-            isEdit = old != null
-                && (!Objects.equals(old.userName, new.username)
-                || !Objects.equals(old.password, new.password))
-            passwordSafe.setUsernamePassword(
-                connectionName,
-                new.username, new.password)
-        } else {
-            return false
-        }
-
-        if (isEdit) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(CredentialsChangeListener.TOPIC)
-                .onCredentialsChanged(connectionName)
-        }
-        return true
+        await(connectionName) { cancellation -> saveCredentials(connectionName, credentials, cancellation) }
     }
 
     fun eraseCredentials(connection: ServerConnection) {
-        val passwordSafe = PasswordSafe.instance
-        passwordSafe.eraseToken(connection.name)
-        passwordSafe.eraseUsernamePassword(connection.name)
+        await(connection.name) { cancellation -> eraseCredentials(connection, cancellation) }
+    }
+
+    internal fun getCredentials(connection: ServerConnection, cancellation: CredentialCancellation) =
+        operations.submit(connection.name, cancellation) {
+            val safe = passwordSafe()
+            cancellation.checkCancelled()
+            val token = safe.getToken(connection.name)
+            cancellation.checkCancelled()
+            if (token != null) {
+                Either.forLeft<TokenDto, UsernamePasswordDto>(TokenDto(token))
+            } else {
+                val credentials = safe.getUsernamePassword(connection.name)
+                cancellation.checkCancelled()
+                val password = credentials?.getPasswordAsString()
+                if (credentials?.userName != null && password != null) {
+                    Either.forRight<TokenDto, UsernamePasswordDto>(UsernamePasswordDto(credentials.userName!!, password))
+                } else {
+                    throw CredentialsException("Could not load token or login/password credentials for connection '${connection.name}'. " +
+                        "As a workaround, try removing and re-adding the connection. " + storageAdvice)
+                }
+            }
+        }
+
+    internal fun saveCredentials(name: String, credentials: Either<TokenDto, UsernamePasswordDto>, cancellation: CredentialCancellation) =
+        operations.submit(name, cancellation) {
+            val safe = passwordSafe()
+            cancellation.checkCancelled()
+            val changed: Boolean
+            if (credentials.isLeft) {
+                val token = safe.getToken(name)
+                cancellation.checkCancelled()
+                changed = token != null && token != credentials.left.token
+                cancellation.checkCancelled()
+                safe.setToken(name, credentials.left.token)
+            } else if (credentials.isRight) {
+                val old = safe.getUsernamePassword(name)
+                cancellation.checkCancelled()
+                val new = credentials.right
+                changed = old != null && (!Objects.equals(old.userName, new.username) || !Objects.equals(old.getPasswordAsString(), new.password))
+                cancellation.checkCancelled()
+                safe.setUsernamePassword(name, new.username, new.password)
+            } else {
+                throw CredentialsException("Could not save credentials for connection '$name'. " + storageAdvice)
+            }
+            // A provider may ignore interruption after entering set. Publish actual changes even if its caller has cancelled.
+            if (changed) {
+                ApplicationManager.getApplication().messageBus.syncPublisher(CredentialsChangeListener.TOPIC).onCredentialsChanged(name)
+            }
+        }
+
+    internal fun eraseCredentials(connection: ServerConnection, cancellation: CredentialCancellation) =
+        operations.submit(connection.name, cancellation) {
+            val safe = passwordSafe()
+            cancellation.checkCancelled()
+            safe.eraseToken(connection.name)
+            cancellation.checkCancelled()
+            safe.eraseUsernamePassword(connection.name)
+        }
+
+    private fun <T> await(name: String, submit: (CredentialCancellation) -> CompletableFuture<T>): T {
+        val cancellation = CredentialCancellation()
+        try {
+            return submit(cancellation).get(30, TimeUnit.SECONDS)
+        } catch (e: ExecutionException) {
+            throw CredentialsException("Credential operation failed for connection '$name'. ${e.cause?.message ?: storageAdvice}")
+        } catch (e: Exception) {
+            cancellation.cancel()
+            if (e is InterruptedException) Thread.currentThread().interrupt()
+            throw CredentialsException("Credential operation failed for connection '$name'. ${e.message ?: storageAdvice}")
+        }
+    }
+
+    companion object {
+        private val operations = CredentialOperationQueue()
+        private const val storageAdvice = "This may be caused by an issue with your system's credential storage. " +
+            "Check your IDE's password storage settings in Settings > Appearance & Behavior > System Settings > Passwords."
     }
 }

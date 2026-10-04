@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.global
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.HyperlinkAdapter
 import com.intellij.ui.components.JBLabel
@@ -39,9 +40,8 @@ import java.awt.event.ActionEvent
 import javax.swing.JButton
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
-import org.sonarlint.intellij.config.global.credentials.CredentialsService
+import org.sonarlint.intellij.config.global.credentials.CredentialOperationRunner
 import org.sonarlint.intellij.documentation.SonarLintDocumentation.Intellij.CONNECTED_MODE_BENEFITS_LINK
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.util.RegionUtils
@@ -73,6 +73,7 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
     private val tokenLabel = SwingHelper.createHtmlViewer(false, null, null, JBUI.CurrentTheme.ContextHelp.FOREGROUND)
     private var serverConnection: ServerConnection? = null
     private val proxyButton = JButton("Proxy")
+    private var savingCredentials = false
 
     init {
         title = if (isSQ) "Trust This SonarQube Server Instance?" else "Trust This SonarQube Cloud Organization?"
@@ -87,8 +88,9 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
             }
 
             override fun doAction(e: ActionEvent) {
+                if (savingCredentials) return
                 val globalSettings = Settings.getGlobalSettings()
-                serverConnection = if (isSQ) {
+                val connection = if (isSQ) {
                     ServerConnection.newBuilder().setHostUrl(serverOrOrg).setDisableNotifications(false)
                         .setName(connectionNameField.text).build()
                 } else {
@@ -97,18 +99,19 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
                         .setRegion(region?.name ?: SonarCloudRegion.EU.name)
                         .build()
                 }
-                getService(CredentialsService::class.java).saveCredentials(
-                    connectionNameField.text,
-                    Either.forLeft(TokenDto(tokenValue))
-                )
-                serverConnection?.apply {
-                    Settings.getGlobalSettings().addServerConnection(this)
-                    val serverChangeListener =
-                        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-                    // notify in case the connections settings dialog is open to reflect the change
-                    serverChangeListener.changed(globalSettings.serverConnections)
-                }
-                close(OK_EXIT_CODE)
+                setSavingCredentials(true)
+                CredentialOperationRunner.save(disposable, centerPanel, connection.name, Either.forLeft(TokenDto(tokenValue)),
+                    { !isDisposed },
+                    {
+                        serverConnection = connection
+                        globalSettings.addServerConnection(connection)
+                        val serverChangeListener =
+                            ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+                        serverChangeListener.changed(globalSettings.serverConnections)
+                        close(OK_EXIT_CODE)
+                    },
+                    { error -> Messages.showErrorDialog(centerPanel, error.message, "Unable to Save Credentials") },
+                    { setSavingCredentials(false) })
             }
         }
 
@@ -226,6 +229,13 @@ class AutomaticServerConnectionCreator(private val serverOrOrg: String, private 
         isResizable = false
 
         init()
+    }
+
+    private fun setSavingCredentials(saving: Boolean) {
+        savingCredentials = saving
+        createConnectionAction.isEnabled = !saving
+        connectionNameField.isEnabled = !saving
+        proxyButton.isEnabled = !saving
     }
 
     fun chooseResolution(): ServerConnection? {
