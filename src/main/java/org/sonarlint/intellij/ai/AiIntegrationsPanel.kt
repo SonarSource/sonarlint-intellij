@@ -85,7 +85,6 @@ private const val RETRY_LABEL = "Try again"
 private const val MANAGE_AGENTS_LABEL = "Manage agents"
 private const val SUPPORTED_STATUS = "Supported"
 private const val NOT_SUPPORTED_STATUS = "Not supported"
-private const val ZERO_SUPPORTED_STATUS = "0 supported"
 private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
 private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
@@ -250,8 +249,27 @@ class AiIntegrationsPanel(
         }
     }
 
+    private fun mcpStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
+        AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
+        is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
+        is AiIntegrationsPanelState.Empty -> mcpStatus(state.snapshot)
+        is AiIntegrationsPanelState.Ready -> mcpStatus(state.snapshot)
+    }
+
+    private fun mcpStatus(snapshot: AiIntegrationSnapshot): CardStatus {
+        val configurations = mcpConfigurations(snapshot)
+        val needsAttention = configurations.any {
+            it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
+        }
+        return CardStatus("${configurations.size} supported", if (needsAttention) StatusTone.WARNING else StatusTone.NEUTRAL)
+    }
+
+    private fun mcpConfigurations(snapshot: AiIntegrationSnapshot) = snapshot.mcpConfigurations.values.filter {
+        it.state != McpConfigurationKind.CLI_ONLY || cliAction(snapshot, it.agent) != null
+    }
+
     private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
-        val configurations = snapshot.mcpConfigurations.values.toList()
+        val configurations = mcpConfigurations(snapshot)
         addMetadata(listOf(agentCountText(snapshot.agents.size)))
         if (configurations.isNotEmpty()) {
             val configuredCount = configurations.count {
@@ -820,16 +838,6 @@ private fun AiIntegrationsPanel.cliStatus(state: AiIntegrationsPanelState): Card
     is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
     is AiIntegrationsPanelState.Empty -> state.snapshot.cli.toStatus()
     is AiIntegrationsPanelState.Ready -> state.snapshot.cli.toStatus()
-}
-
-private fun AiIntegrationsPanel.mcpStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
-    AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
-    is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
-    is AiIntegrationsPanelState.Empty -> CardStatus(ZERO_SUPPORTED_STATUS, StatusTone.NEUTRAL)
-    is AiIntegrationsPanelState.Ready -> {
-        val count = state.snapshot.agents.count { it.standaloneMcpSupported }
-        CardStatus("$count supported", StatusTone.NEUTRAL)
-    }
 }
 
 private fun CliState.toStatus(): CardStatus = when (installation) {

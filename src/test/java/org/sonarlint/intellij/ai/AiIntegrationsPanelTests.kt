@@ -55,10 +55,15 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             emptyList(),
             null
         )
-        val readySnapshot = emptySnapshot.copy(agents = listOf(
-            AgentCapability(AiAgent.CURSOR, setOf(AiAgentDetectionSource.IDE), false, true),
-            AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, false)
-        ))
+        val readySnapshot = emptySnapshot.copy(
+            agents = listOf(
+                AgentCapability(AiAgent.CURSOR, setOf(AiAgentDetectionSource.IDE), false, true),
+                AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, false)
+            ),
+            mcpConfigurations = mapOf(AiAgent.CURSOR to McpAgentConfiguration(
+                AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.NOT_CONFIGURED, false, emptyList()
+            ))
+        )
         val states = listOf(
             AiIntegrationsPanelState.Loading to listOf("Checking", "Checking"),
             AiIntegrationsPanelState.Ready(readySnapshot) to listOf("Installed", "1 supported"),
@@ -446,6 +451,8 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     @Test
     fun `reveals compact MCP actions while preserving ownership and protected states`() {
         val panel = AiIntegrationsPanel()
+        panel.render(AiIntegrationsPanelState.Error("failed"))
+        val warningColor = descendants(panel).filterIsInstance<JBLabel>().first { it.text == "Needs attention" }.foreground
         val path = java.nio.file.Path.of("/tmp/mcp.json")
         val configurations = listOf(
             McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.NOT_CONFIGURED, false, emptyList()),
@@ -468,6 +475,10 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         panel.setIntentListener { lastIntent = it }
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
 
+        val status = descendants(panel).filterIsInstance<JBLabel>().single { it.text == "7 supported" }
+        assertThat(status.foreground).isEqualTo(warningColor)
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
+            .contains("2 configurations need attention.")
         assertThat(labelTexts(panel)).doesNotContain("Not configured", "Malformed configuration")
         val disclosure = descendants(panel).filterIsInstance<JToggleButton>().last()
         descendants(panel).filterIsInstance<JButton>().first { it.text == "Set up an agent…" }.doClick()
@@ -498,6 +509,48 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         disclosure.doClick()
         assertThat(disclosure.isSelected).isFalse()
         assertThat(labelTexts(panel)).doesNotContain("Malformed configuration")
+    }
+
+    @Test
+    fun `MCP totals and setup rows exclude agents without an available action`() {
+        val panel = AiIntegrationsPanel()
+        val configured = McpAgentConfiguration(
+            AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.STANDALONE, true, emptyList()
+        )
+        val unsupported = McpAgentConfiguration(AiAgent.CODEX, null, McpConfigurationKind.CLI_ONLY, false, emptyList())
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),
+            listOf(
+                AgentCapability(AiAgent.CURSOR, emptySet(), false, true),
+                AgentCapability(AiAgent.CODEX, emptySet(), false, false)
+            ),
+            emptyList(),
+            null,
+            listOf(configured, unsupported).associateBy { it.agent }
+        )
+
+        panel.render(AiIntegrationsPanelState.Ready(snapshot))
+        assertThat(labelTexts(panel)).contains("1 supported")
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
+            .contains("MCP is configured for all 1 detected agent.")
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).doesNotContain("Set up an agent…")
+        descendants(panel).filterIsInstance<JToggleButton>().last().doClick()
+        val mcpCard = descendants(panel).filterIsInstance<JToggleButton>().last().parent.parent as Container
+        assertThat(labelTexts(mcpCard)).contains("Cursor").doesNotContain("Codex", "Configure with SonarQube CLI")
+
+        panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(mcpConfigurations = listOf(
+            configured.copy(state = McpConfigurationKind.NOT_CONFIGURED), unsupported
+        ).associateBy { it.agent })))
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text })
+            .contains("Set up Cursor").doesNotContain("Set up an agent…")
+
+        panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(
+            agents = snapshot.agents.filter { it.agent == unsupported.agent },
+            mcpConfigurations = mapOf(unsupported.agent to unsupported)
+        )))
+        assertThat(labelTexts(panel)).contains("0 supported")
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
+            .contains("No standalone MCP setup is available for the detected agents.")
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }
