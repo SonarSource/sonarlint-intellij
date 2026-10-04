@@ -265,7 +265,7 @@ class AiIntegrationsPanel(
     }
 
     private fun mcpConfigurations(snapshot: AiIntegrationSnapshot) = snapshot.mcpConfigurations.values.filter {
-        it.state != McpConfigurationKind.CLI_ONLY || cliAction(snapshot, it.agent) != null
+        it.state != McpConfigurationKind.CLI_ONLY
     }
 
     private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
@@ -294,7 +294,7 @@ class AiIntegrationsPanel(
                 if (configurations.isEmpty()) {
                     detailBuilder.addMessage("No standalone MCP setup is available for the detected agents.")
                 } else {
-                    configurations.forEach { detailBuilder.addMcpConfigurationRow(it, snapshot) }
+                    configurations.forEach { detailBuilder.addMcpConfigurationRow(it) }
                 }
             }
             details.isVisible = show
@@ -306,54 +306,25 @@ class AiIntegrationsPanel(
         updateDetails(mcpDetailsExpanded)
     }
 
-    private fun CardBuilder.addMcpConfigurationRow(configuration: McpAgentConfiguration, snapshot: AiIntegrationSnapshot) {
+    private fun CardBuilder.addMcpConfigurationRow(configuration: McpAgentConfiguration) {
         val actions = when (configuration.state) {
             McpConfigurationKind.NOT_CONFIGURED -> listOf(
                 RowAction("Set up", AiIntegrationsIntent.SetUpMcp(configuration.agent))
             )
-            McpConfigurationKind.STANDALONE -> buildList {
-                if (!configuration.owned) {
-                    add(RowAction("Replace…", AiIntegrationsIntent.SetUpMcp(configuration.agent, true)))
-                }
-                add(RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent)))
-            }
+            McpConfigurationKind.STANDALONE,
             McpConfigurationKind.CLI_MANAGED,
             McpConfigurationKind.UNKNOWN,
             McpConfigurationKind.MALFORMED -> listOf(
                 RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
             )
-            McpConfigurationKind.CLI_ONLY -> listOfNotNull(cliAction(snapshot, configuration.agent))
+            McpConfigurationKind.CLI_ONLY -> emptyList()
         }
         addAgentRow(
             registry.displayName(configuration.agent),
             configuration.displayText(),
-            statusTooltip = buildList {
-                if (configuration.state == McpConfigurationKind.STANDALONE) {
-                    add(if (configuration.owned) "Connection not verified" else "Configured externally · Connection not verified")
-                }
-                addAll(configuration.diagnostics)
-            }.takeIf { it.isNotEmpty() }?.joinToString(" • "),
+            diagnostic = configuration.diagnostics.takeIf { configuration.state != McpConfigurationKind.CLI_MANAGED && it.isNotEmpty() }?.joinToString(" • "),
             actions = actions
         )
-    }
-
-    private fun cliAction(snapshot: AiIntegrationSnapshot, agent: AiAgent): RowAction? {
-        val capability = snapshot.agents.firstOrNull { it.agent == agent }
-        if (capability?.cliIntegrationSupported != true) {
-            return null
-        }
-        return when (snapshot.cli.installation) {
-            CliInstallationStatus.NOT_INSTALLED -> RowAction("Install CLI", AiIntegrationsIntent.InstallCli)
-            CliInstallationStatus.UNUSABLE -> RowAction("Troubleshoot", AiIntegrationsIntent.OpenCliDocumentation)
-            CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
-                CliAuthenticationStatus.UNAUTHENTICATED,
-                CliAuthenticationStatus.INVALID,
-                CliAuthenticationStatus.UNVERIFIED -> RowAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
-                CliAuthenticationStatus.UNAVAILABLE,
-                CliAuthenticationStatus.UNKNOWN -> RowAction("Check CLI", AiIntegrationsIntent.Refresh)
-                CliAuthenticationStatus.AUTHENTICATED -> RowAction("Integrate with CLI", AiIntegrationsIntent.IntegrateCli(agent))
-            }
-        }
     }
 
     private fun CardBuilder.addCliOverview(snapshot: AiIntegrationSnapshot) {
@@ -535,7 +506,7 @@ class AiIntegrationsPanel(
             panel.add(createLinkButton(label, url))
         }
 
-        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null, statusTooltip: String? = null, actions: List<RowAction> = emptyList()) {
+        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null, diagnostic: String? = null, actions: List<RowAction> = emptyList()) {
             val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10, naturalHeight = integration != null).apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
                 border = JBUI.Borders.empty(9, 11)
@@ -552,8 +523,8 @@ class AiIntegrationsPanel(
                     foreground = SECONDARY_TEXT
                     font = JBFont.small()
                     alignmentX = Component.LEFT_ALIGNMENT
-                    toolTipText = statusTooltip
                 })
+                diagnostic?.let { add(bodyText(it)) }
             }, BorderLayout.CENTER)
             if (integration != null || actions.isNotEmpty()) {
                 row.add(JBPanel<JBPanel<*>>().apply {

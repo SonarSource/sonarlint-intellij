@@ -61,7 +61,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
                 AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, false)
             ),
             mcpConfigurations = mapOf(AiAgent.CURSOR to McpAgentConfiguration(
-                AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.NOT_CONFIGURED, false, emptyList()
+                AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.NOT_CONFIGURED, emptyList()
             ))
         )
         val states = listOf(
@@ -293,7 +293,6 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
                 AiAgent.GITHUB_COPILOT,
                 java.nio.file.Path.of("/tmp/mcp.json"),
                 McpConfigurationKind.NOT_CONFIGURED,
-                false,
                 emptyList()
             ))
         )
@@ -449,19 +448,19 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `reveals compact MCP actions while preserving ownership and protected states`() {
+    fun `reveals compact MCP actions and inline diagnostics for standalone agents`() {
         val panel = AiIntegrationsPanel()
         panel.render(AiIntegrationsPanelState.Error("failed"))
         val warningColor = descendants(panel).filterIsInstance<JBLabel>().first { it.text == "Needs attention" }.foreground
         val path = java.nio.file.Path.of("/tmp/mcp.json")
         val configurations = listOf(
-            McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.NOT_CONFIGURED, false, emptyList()),
-            McpAgentConfiguration(AiAgent.GITHUB_COPILOT, path, McpConfigurationKind.STANDALONE, true, emptyList()),
-            McpAgentConfiguration(AiAgent.CLAUDE_CODE, path, McpConfigurationKind.STANDALONE, false, emptyList()),
-            McpAgentConfiguration(AiAgent.KIRO, path, McpConfigurationKind.CLI_MANAGED, false, emptyList()),
-            McpAgentConfiguration(AiAgent.GITHUB_COPILOT_CLI, null, McpConfigurationKind.CLI_ONLY, false, emptyList()),
-            McpAgentConfiguration(AiAgent.CODEX, path, McpConfigurationKind.UNKNOWN, false, listOf("inspect manually")),
-            McpAgentConfiguration(AiAgent.WINDSURF, path, McpConfigurationKind.MALFORMED, false, listOf("invalid json"))
+            McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.NOT_CONFIGURED, emptyList()),
+            McpAgentConfiguration(AiAgent.GITHUB_COPILOT, path, McpConfigurationKind.STANDALONE, emptyList()),
+            McpAgentConfiguration(AiAgent.CLAUDE_CODE, path, McpConfigurationKind.STANDALONE, emptyList()),
+            McpAgentConfiguration(AiAgent.KIRO, path, McpConfigurationKind.CLI_MANAGED, emptyList()),
+            McpAgentConfiguration(AiAgent.GITHUB_COPILOT_CLI, null, McpConfigurationKind.CLI_ONLY, emptyList()),
+            McpAgentConfiguration(AiAgent.CODEX, path, McpConfigurationKind.UNKNOWN, listOf("inspect manually")),
+            McpAgentConfiguration(AiAgent.WINDSURF, path, McpConfigurationKind.MALFORMED, listOf("invalid json"))
         ).associateBy { it.agent }
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),
@@ -475,7 +474,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         panel.setIntentListener { lastIntent = it }
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
 
-        val status = descendants(panel).filterIsInstance<JBLabel>().single { it.text == "7 supported" }
+        val status = descendants(panel).filterIsInstance<JBLabel>().single { it.text == "6 supported" }
         assertThat(status.foreground).isEqualTo(warningColor)
         assertThat(labelTexts(panel)).contains("2 configurations need attention.")
         assertThat(labelTexts(panel)).doesNotContain("Not configured", "Invalid configuration")
@@ -494,39 +493,33 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
                 else -> ""
             }
         }
-        assertThat(buttonLabels).contains("Set up", "Replace…", "Open", "Integrate with CLI")
-            .doesNotContain("CLI", "Use CLI")
-        assertThat(text).contains("Configured", "Managed by CLI", "Available through CLI", "Status unknown", "Invalid configuration")
-            .doesNotContain("Connection not verified", "Configured externally", "inspect manually", "invalid json")
-        assertThat(descendants(panel).filterIsInstance<JBLabel>().mapNotNull { it.toolTipText })
-            .contains("Connection not verified", "Configured externally · Connection not verified", "inspect manually", "invalid json")
+        assertThat(buttonLabels).contains("Set up", "Open")
+            .doesNotContain("Replace…", "Integrate with CLI", "CLI", "Use CLI")
+        assertThat(text).contains("Configured", "Managed by CLI", "Status unknown", "Invalid configuration", "inspect manually", "invalid json")
+            .doesNotContain("Connection not verified", "Configured externally", "Available through CLI")
 
         descendants(panel).filterIsInstance<JButton>().first { it.text == "Set up" }.doClick()
         assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.SetUpMcp(AiAgent.CURSOR))
-        descendants(panel).filterIsInstance<JButton>().first { it.text == "Replace…" }.doClick()
-        assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.SetUpMcp(AiAgent.CLAUDE_CODE, true))
         descendants(panel).filterIsInstance<JButton>().first { it.text == "Open" }.doClick()
         assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.OpenMcpConfiguration(AiAgent.GITHUB_COPILOT))
 
-        descendants(panel).filterIsInstance<JButton>().first { it.text == "Integrate with CLI" }.doClick()
-        assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.IntegrateCli(AiAgent.GITHUB_COPILOT_CLI))
         disclosure.doClick()
         assertThat(disclosure.isSelected).isFalse()
         assertThat(labelTexts(panel)).doesNotContain("Invalid configuration")
     }
 
     @Test
-    fun `MCP totals and setup rows exclude agents without an available action`() {
+    fun `MCP totals and setup rows exclude CLI-only agents even when CLI integration is supported`() {
         val panel = AiIntegrationsPanel()
         val configured = McpAgentConfiguration(
-            AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.STANDALONE, true, emptyList()
+            AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.STANDALONE, emptyList()
         )
-        val unsupported = McpAgentConfiguration(AiAgent.CODEX, null, McpConfigurationKind.CLI_ONLY, false, emptyList())
+        val unsupported = McpAgentConfiguration(AiAgent.CODEX, null, McpConfigurationKind.CLI_ONLY, emptyList())
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),
             listOf(
                 AgentCapability(AiAgent.CURSOR, emptySet(), false, true),
-                AgentCapability(AiAgent.CODEX, emptySet(), false, false)
+                AgentCapability(AiAgent.CODEX, emptySet(), true, false)
             ),
             emptyList(),
             null,

@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
+import com.fasterxml.jackson.databind.json.JsonMapper
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
@@ -33,7 +34,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -43,11 +46,14 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarsource.sonarlint.core.ai.ide.McpConfigurationService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationUpdateParams
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
+import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
 class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     @TempDir
@@ -55,7 +61,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
 
     private lateinit var backend: BackendService
     private lateinit var credentials: CredentialsService
-    private lateinit var ownership: McpConfigurationOwnership
+    private lateinit var registry: AiAgentRegistry
     private lateinit var ui: RecordingMcpUi
     private val connection = ServerConnection.newBuilder()
         .setName("connection")
@@ -66,123 +72,288 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     fun prepare() {
         backend = mock()
         credentials = mock()
-        ownership = McpConfigurationOwnership()
+        registry = mock()
         ui = RecordingMcpUi()
         globalSettings.serverConnections = listOf(connection)
-        whenever(credentials.getCredentials(connection)).thenReturn(Either.forLeft(TokenDto("secret-token")))
-        whenever(backend.generateMcpConfiguration(eq("connection"), any())).thenReturn(CompletableFuture.completedFuture("{\"sonar\":true}"))
+        whenever(registry.detectedIdeAgents()).thenReturn(emptyList())
+        whenever(credentials.getCredentials(connection)).thenReturn(Either.forLeft(TokenDto("test-token")))
+        whenever(backend.generateMcpConfiguration(eq("connection"), any())).thenReturn(CompletableFuture.completedFuture("generated"))
+        whenever(backend.getAiIntegrationState(isNull(), any())).thenReturn(CompletableFuture.completedFuture(baseSnapshot()))
+        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
+            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
+        )
     }
 
     @Test
     fun `capability and known path must both be present and all core states are retained`() {
-        val registry = mock<AiAgentRegistry>()
-        val cursorPath = tempDir.resolve("cursor.json")
-        val claudePath = tempDir.resolve("claude.json")
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(cursorPath)
-        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(claudePath)
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(tempDir.resolve("cursor.json"))
+        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(tempDir.resolve("claude.json"))
         whenever(backend.inspectMcpConfiguration(any(), any())).thenAnswer { invocation ->
             val agent = invocation.getArgument<AiAgent>(0)
             CompletableFuture.completedFuture(
-                McpInspection(
-                    if (agent == AiAgent.CURSOR) McpConfigurationKind.MALFORMED else McpConfigurationKind.CLI_MANAGED,
-                    listOf("diagnostic")
-                )
+                McpInspection(if (agent == AiAgent.CURSOR) McpConfigurationKind.MALFORMED else McpConfigurationKind.CLI_MANAGED, listOf("diagnostic"))
             )
         }
-        val snapshot = baseSnapshot(
-            listOf(
-                capability(AiAgent.CURSOR, standalone = true),
-                capability(AiAgent.CLAUDE_CODE, standalone = true),
-                capability(AiAgent.GITHUB_COPILOT, standalone = true),
-                capability(AiAgent.KIRO, standalone = false)
-            )
-        )
+        val snapshot = baseSnapshot(listOf(
+            capability(AiAgent.CURSOR), capability(AiAgent.CLAUDE_CODE), capability(AiAgent.GITHUB_COPILOT), capability(AiAgent.KIRO, false)
+        ))
 
-        val inspected = coordinator(registry = registry).inspectSnapshot(snapshot).get()
+        val inspected = coordinator().inspectSnapshot(snapshot).get()
 
-        assertThat(inspected.mcpConfigurations.keys).containsExactlyInAnyOrder(
-            AiAgent.CURSOR,
-            AiAgent.CLAUDE_CODE,
-            AiAgent.GITHUB_COPILOT,
-            AiAgent.KIRO
-        )
-        assertThat(inspected.mcpConfigurations[AiAgent.CURSOR]?.state).isEqualTo(McpConfigurationKind.MALFORMED)
-        assertThat(inspected.mcpConfigurations[AiAgent.CLAUDE_CODE]?.state).isEqualTo(McpConfigurationKind.CLI_MANAGED)
-        assertThat(inspected.mcpConfigurations[AiAgent.GITHUB_COPILOT]?.state).isEqualTo(McpConfigurationKind.CLI_ONLY)
-        assertThat(inspected.mcpConfigurations[AiAgent.KIRO]?.state).isEqualTo(McpConfigurationKind.CLI_ONLY)
+        assertThat(inspected.mcpConfigurations.keys).containsExactlyInAnyOrder(AiAgent.CURSOR, AiAgent.CLAUDE_CODE, AiAgent.GITHUB_COPILOT, AiAgent.KIRO)
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).state).isEqualTo(McpConfigurationKind.MALFORMED)
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state).isEqualTo(McpConfigurationKind.CLI_MANAGED)
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.GITHUB_COPILOT).state).isEqualTo(McpConfigurationKind.CLI_ONLY)
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.KIRO).state).isEqualTo(McpConfigurationKind.CLI_ONLY)
     }
 
     @Test
     fun `one failed inspection leaves the other agents in the snapshot`() {
-        val registry = mock<AiAgentRegistry>()
-        val cursorPath = tempDir.resolve("cursor.json")
-        val claudePath = tempDir.resolve("claude.json")
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(cursorPath)
-        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(claudePath)
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(tempDir.resolve("cursor.json"))
+        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(tempDir.resolve("claude.json"))
         whenever(backend.inspectMcpConfiguration(eq(AiAgent.CURSOR), any())).thenReturn(
             CompletableFuture.failedFuture(IllegalStateException("access denied"))
         )
-        whenever(backend.inspectMcpConfiguration(eq(AiAgent.CLAUDE_CODE), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
-        )
 
-        val inspected = coordinator(registry = registry).inspectSnapshot(
-            baseSnapshot(
-                listOf(
-                    capability(AiAgent.CURSOR, standalone = true),
-                    capability(AiAgent.CLAUDE_CODE, standalone = true)
-                )
-            )
-        ).get()
+        val inspected = coordinator().inspectSnapshot(baseSnapshot(listOf(capability(AiAgent.CURSOR), capability(AiAgent.CLAUDE_CODE)))).get()
 
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).state).isEqualTo(McpConfigurationKind.UNKNOWN)
-        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).owned).isFalse()
-        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).diagnostics)
-            .anyMatch { it.contains("access denied") }
-        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state)
-            .isEqualTo(McpConfigurationKind.NOT_CONFIGURED)
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).diagnostics).anyMatch { it.contains("access denied") }
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state).isEqualTo(McpConfigurationKind.NOT_CONFIGURED)
     }
 
     @Test
-    fun `transaction preserves unrelated content creates backup and records ownership after success`() {
+    fun `creation preserves unrelated content and creates a backup`() {
         val path = tempDir.resolve("mcp.json")
         Files.writeString(path, "{\"unrelated\":true}")
-        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
-        )
-        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
-            CompletableFuture.completedFuture(
-                McpUpdatePlan(McpConfigurationKind.STANDALONE, "{\"unrelated\":true,\"sonar\":true}", emptyList())
-            )
-        )
+        plan(McpConfigurationKind.NOT_CONFIGURED, "{\"unrelated\":true,\"sonar\":true}")
 
-        val result = coordinator().safeUpdate(AiAgent.CURSOR, path, "connection", false)
+        val result = coordinator().createConfiguration(project, AiAgent.CURSOR, path, "connection")
 
         assertThat(result).isEqualTo(McpTransactionResult.Updated)
         assertThat(Files.readString(path)).contains("\"unrelated\":true").contains("\"sonar\":true")
         assertThat(Files.readString(tempDir.resolve("mcp.json.bak"))).isEqualTo("{\"unrelated\":true}")
-        assertThat(ownership.connectionId(AiAgent.CURSOR)).isEqualTo("connection")
-        assertThat(ownership.record(AiAgent.CURSOR)?.fingerprint)
-            .isEqualTo(managedFingerprint(Files.readAllBytes(path)))
+        verify(backend).generateMcpConfiguration(eq("connection"), any())
+        assertThat(ui.tokenWarningRequests).isZero()
+    }
+
+    @Test
+    fun `creation rereads after token confirmation and never replaces a new standalone entry`() {
+        val path = tempDir.resolve("mcp.json")
+        whenever(backend.generateMcpConfiguration(any(), any())).thenAnswer {
+            Files.writeString(path, "configured by another agent")
+            CompletableFuture.completedFuture("generated")
+        }
+        plan(McpConfigurationKind.STANDALONE, "replacement")
+
+        val result = coordinator().createConfiguration(project, AiAgent.CURSOR, path, "connection")
+
+        assertThat(result).isEqualTo(McpTransactionResult.Protected)
+        assertThat(Files.readString(path)).isEqualTo("configured by another agent")
+        verify(backend).planMcpConfigurationUpdate(AiAgent.CURSOR, "configured by another agent", "generated")
+        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
+    }
+
+    @Test
+    fun `missing token requires explicit consent and sends an empty token when accepted`() {
+        val path = tempDir.resolve("mcp.json")
+        whenever(credentials.getCredentials(connection)).thenReturn(null)
+        val coordinator = coordinator()
+
+        assertThat(coordinator.createConfiguration(project, AiAgent.CURSOR, path, "connection")).isEqualTo(McpTransactionResult.Cancelled)
+        verify(backend, never()).generateMcpConfiguration(any(), any())
+        assertThat(Files.exists(path)).isFalse()
+
+        ui.proceedWithoutToken = true
+        plan(McpConfigurationKind.NOT_CONFIGURED, "created")
+        assertThat(coordinator.createConfiguration(project, AiAgent.CURSOR, path, "connection")).isEqualTo(McpTransactionResult.Updated)
+        val sentCredentials = argumentCaptor<Either<TokenDto, UsernamePasswordDto>>()
+        verify(backend).generateMcpConfiguration(eq("connection"), sentCredentials.capture())
+        assertThat(sentCredentials.firstValue.left.token).isEmpty()
+        assertThat(ui.tokenWarningRequests).isEqualTo(2)
+    }
+
+    @Test
+    fun `username password credentials use the same missing token warning`() {
+        whenever(credentials.getCredentials(connection)).thenReturn(Either.forRight(UsernamePasswordDto("user", "test-password")))
+
+        assertThat(coordinator().createConfiguration(project, AiAgent.CURSOR, tempDir.resolve("mcp.json"), "connection"))
+            .isEqualTo(McpTransactionResult.Cancelled)
+        assertThat(ui.tokenWarningRequests).isEqualTo(1)
+        verify(backend, never()).generateMcpConfiguration(any(), any())
+    }
+
+    @Test
+    fun `existing configuration setup updates only the port without selecting a connection or looking up credentials`() {
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "external")
+        plan(McpConfigurationKind.STANDALONE, "port refreshed")
+        globalSettings.serverConnections = emptyList()
+        val coordinator = coordinator()
+        coordinator.embeddedServerStarted(64121)
+        val snapshot = baseSnapshot().copy(connectionChoices = emptyList(), mcpConfigurations = mapOf(
+            AiAgent.CURSOR to McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.STANDALONE, emptyList())
+        ))
+
+        assertThat(coordinator.setUp(project, snapshot, AiAgent.CURSOR)).isTrue()
+
+        assertThat(Files.readString(path)).isEqualTo("port refreshed")
+        verify(backend).planMcpConfigurationUpdate(AiAgent.CURSOR, "external", portConfiguration(64121))
+        verify(credentials, never()).getCredentials(any())
+        verify(backend, never()).generateMcpConfiguration(any(), any())
+        assertThat(ui.connectionChoices).isZero()
+        assertThat(ui.tokenWarningRequests).isZero()
+    }
+
+    @Test
+    fun `startup refresh discovers IDE and local agents and updates every supported existing config`() {
+        val cursor = tempDir.resolve("cursor.json")
+        val claude = tempDir.resolve("claude.json")
+        val absent = tempDir.resolve("copilot.json")
+        val unsupported = tempDir.resolve("kiro.json")
+        Files.writeString(cursor, "external cursor")
+        Files.writeString(claude, "external claude")
+        Files.writeString(unsupported, "unsupported")
+        whenever(registry.detectedIdeAgents()).thenReturn(listOf(AiAgent.GITHUB_COPILOT))
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(cursor)
+        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(claude)
+        whenever(registry.standaloneMcpPath(AiAgent.GITHUB_COPILOT)).thenReturn(absent)
+        whenever(registry.standaloneMcpPath(AiAgent.KIRO)).thenReturn(unsupported)
+        detected(capability(AiAgent.CURSOR), capability(AiAgent.CLAUDE_CODE), capability(AiAgent.GITHUB_COPILOT), capability(AiAgent.KIRO, false))
+        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer { invocation ->
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, invocation.getArgument<String>(1) + " refreshed", emptyList()))
+        }
+
+        coordinator().embeddedServerStarted(64121)
+
+        assertThat(Files.readString(cursor)).isEqualTo("external cursor refreshed")
+        assertThat(Files.readString(claude)).isEqualTo("external claude refreshed")
+        assertThat(Files.readString(unsupported)).isEqualTo("unsupported")
+        assertThat(Files.exists(absent)).isFalse()
+        verify(backend).getAiIntegrationState(null, listOf(AiAgent.GITHUB_COPILOT))
+        verify(backend, never()).planMcpConfigurationUpdate(eq(AiAgent.GITHUB_COPILOT), any(), any())
+        verify(registry, never()).standaloneMcpPath(AiAgent.KIRO)
+        verify(backend, never()).generateMcpConfiguration(any(), any())
+        verify(credentials, never()).getCredentials(any())
+    }
+
+    @Test
+    fun `startup leaves a config without the IDE port field unchanged`() {
+        val path = detectedFile()
+        val content = """{"mcpServers":{"sonarqube":{"command":"docker","args":["sonarsource/sonarqube-mcp"],"env":{"SONARQUBE_TOKEN":"user-token"}}}}"""
+        Files.writeString(path, content)
+        useCorePlanner()
+
+        coordinator().embeddedServerStarted(64121)
+
+        assertThat(Files.readString(path)).isEqualTo(content)
+        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
+        verify(backend).planMcpConfigurationUpdate(AiAgent.CURSOR, content, portConfiguration(64121))
+        verify(backend, never()).generateMcpConfiguration(any(), any())
+    }
+
+    @Test
+    fun `core planner refresh preserves custom launch options credentials and unrelated entries`() {
+        val path = detectedFile()
+        val content = """
+            {
+              "custom": "keep",
+              "mcpServers": {
+                "other": {"command": "custom"},
+                "sonarqube": {
+                  "command": "custom-docker",
+                  "args": ["run", "--network=host", "sonarsource/sonarqube-mcp:custom"],
+                  "env": {"SONARQUBE_IDE_PORT": "64120", "SONARQUBE_URL": "https://custom.example", "SONARQUBE_TOKEN": "user-token", "CUSTOM": "keep"}
+                }
+              }
+            }
+        """.trimIndent()
+        Files.writeString(path, content)
+        useCorePlanner()
+
+        coordinator().embeddedServerStarted(64121)
+
+        val mapper = JsonMapper()
+        assertThat(mapper.readTree(Files.readString(path))).isEqualTo(mapper.readTree(content.replace("64120", "64121")))
+        verify(credentials, never()).getCredentials(any())
+        verify(backend, never()).generateMcpConfiguration(any(), any())
+    }
+
+    @Test
+    fun `startup leaves all protected or unconfigured states unchanged`() {
+        val path = detectedFile()
+        val coordinator = coordinator()
+        McpConfigurationKind.entries.filter { it != McpConfigurationKind.STANDALONE }.forEach { state ->
+            plan(state, "unsafe replacement")
+            coordinator.embeddedServerStarted(64121)
+            assertThat(Files.readString(path)).isEqualTo("existing")
+        }
+        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
+    }
+
+    @Test
+    fun `startup skips undetected agents and invalid announced ports`() {
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "undetected")
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
+        val coordinator = coordinator()
+        coordinator.embeddedServerStarted(0)
+        coordinator.embeddedServerStarted(65536)
+        verify(backend, never()).getAiIntegrationState(isNull(), any())
+
+        coordinator.embeddedServerStarted(64121)
+        assertThat(Files.readString(path)).isEqualTo("undetected")
+        verify(backend, never()).planMcpConfigurationUpdate(any(), any(), any())
+    }
+
+    @Test
+    fun `one failing agent does not prevent refreshing the others`() {
+        val path = detectedFile()
+        detected(capability(AiAgent.CLAUDE_CODE), capability(AiAgent.CURSOR))
+        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenThrow(IllegalStateException("unreadable"))
+        plan(McpConfigurationKind.STANDALONE, "refreshed")
+
+        coordinator().embeddedServerStarted(64121)
+
+        assertThat(Files.readString(path)).isEqualTo("refreshed")
+    }
+
+    @Test
+    fun `newest announced port supersedes a refresh still being planned`() {
+        val path = detectedFile()
+        val writtenPorts = mutableListOf<Int>()
+        val fileSystem = object : McpFileSystem by NioMcpFileSystem() {
+            override fun replace(temp: Path, target: Path) {
+                writtenPorts += if (Files.readString(temp) == portConfiguration(64122)) 64122 else 64121
+                NioMcpFileSystem().replace(temp, target)
+            }
+        }
+        val updatingCoordinator = coordinator(fileSystem = fileSystem)
+        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer { invocation ->
+            val desired = invocation.getArgument<String>(2)
+            if (desired == portConfiguration(64121)) updatingCoordinator.embeddedServerStarted(64122)
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, desired, emptyList()))
+        }
+
+        updatingCoordinator.embeddedServerStarted(64121)
+
+        assertThat(Files.readString(path)).isEqualTo(portConfiguration(64122))
+        assertThat(writtenPorts).containsExactly(64122)
     }
 
     @Test
     fun `compare and swap aborts when the file changes after planning`() {
         val path = tempDir.resolve("mcp.json")
         Files.writeString(path, "before")
-        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
-        )
         whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer {
             Files.writeString(path, "concurrent edit")
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, "planned", emptyList()))
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.NOT_CONFIGURED, "planned", emptyList()))
         }
 
-        val result = coordinator().safeUpdate(AiAgent.CURSOR, path, "connection", false)
+        val result = coordinator().safeUpdate(AiAgent.CURSOR, path, "generated")
 
         assertThat(result).isEqualTo(McpTransactionResult.ConcurrentEdit)
         assertThat(Files.readString(path)).isEqualTo("concurrent edit")
-        assertThat(ownership.connectionId(AiAgent.CURSOR)).isNull()
         assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
     }
 
@@ -190,165 +361,52 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     fun `compare and swap rechecks after backup and temp creation and cleans both`() {
         val path = tempDir.resolve("mcp.json")
         Files.writeString(path, "before")
-        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
-        )
-        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, "planned", emptyList()))
-        )
+        plan(McpConfigurationKind.NOT_CONFIGURED, "planned")
         val fileSystem = MutatingAfterTempFileSystem(path)
 
-        val result = coordinator(fileSystem = fileSystem).safeUpdate(AiAgent.CURSOR, path, "connection", false)
+        val result = coordinator(fileSystem = fileSystem).safeUpdate(AiAgent.CURSOR, path, "generated")
 
         assertThat(result).isEqualTo(McpTransactionResult.ConcurrentEdit)
         assertThat(Files.readString(path)).isEqualTo("changed after temp creation")
-        assertThat(fileSystem.temp).isNotNull()
         assertThat(Files.exists(fileSystem.temp!!)).isFalse()
         assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
-        assertThat(ownership.record(AiAgent.CURSOR)).isNull()
     }
 
     @Test
-    fun `external standalone requires takeover while protected states remain immutable`() {
-        val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "external")
-        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.STANDALONE, emptyList()))
-        )
-        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, "updated", emptyList()))
-        )
-        val coordinator = coordinator()
-
-        assertThat(coordinator.safeUpdate(AiAgent.CURSOR, path, "connection", false))
-            .isEqualTo(McpTransactionResult.Protected)
-        assertThat(coordinator.safeUpdate(AiAgent.CURSOR, path, "connection", true))
-            .isEqualTo(McpTransactionResult.Updated)
-
-        McpConfigurationKind.entries.filter { it == McpConfigurationKind.CLI_MANAGED || it == McpConfigurationKind.UNKNOWN || it == McpConfigurationKind.MALFORMED }
-            .forEach { state ->
-                whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-                    CompletableFuture.completedFuture(McpInspection(state, emptyList()))
-                )
-                assertThat(coordinator.safeUpdate(AiAgent.CURSOR, path, "connection", true))
-                    .isEqualTo(McpTransactionResult.Protected)
-            }
-    }
-
-    @Test
-    fun `username password credentials are rejected without generating or disclosing configuration`() {
-        whenever(credentials.getCredentials(connection)).thenReturn(
-            Either.forRight(org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto("user", "password"))
-        )
-        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
-        )
-
-        val result = coordinator().safeUpdate(AiAgent.CURSOR, tempDir.resolve("mcp.json"), "connection", false)
-
-        assertThat(result).isEqualTo(McpTransactionResult.InvalidCredentials)
-        verify(backend, never()).generateMcpConfiguration(any(), any())
-    }
-
-    @Test
-    fun `symbolic link is refused before configuration content is inspected`() {
+    fun `symbolic link is refused before content is read or planned`() {
         val target = tempDir.resolve("target.json")
         val link = tempDir.resolve("mcp.json")
         Files.writeString(target, "external")
         Files.createSymbolicLink(link, target)
 
-        val result = coordinator().safeUpdate(AiAgent.CURSOR, link, "connection", true)
-
-        assertThat(result).isEqualTo(McpTransactionResult.SymlinkRefused)
+        assertThat(coordinator().safeUpdate(AiAgent.CURSOR, link, "generated")).isEqualTo(McpTransactionResult.SymlinkRefused)
         assertThat(Files.readString(target)).isEqualTo("external")
-        verify(backend, never()).inspectMcpConfiguration(any(), any())
-    }
-
-    @Test
-    fun `unchanged explicit takeover records verifiable ownership`() {
-        val path = tempDir.resolve("mcp.json")
-        val content = "{\"sonar\":true}"
-        Files.writeString(path, content)
-        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.STANDALONE, emptyList()))
-        )
-        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, content, emptyList()))
-        )
-
-        val result = coordinator().safeUpdate(AiAgent.CURSOR, path, "connection", true)
-
-        assertThat(result).isEqualTo(McpTransactionResult.Unchanged)
-        assertThat(ownership.record(AiAgent.CURSOR)).isEqualTo(
-            ManagedMcpOwnership("connection", managedFingerprint(content.toByteArray()))
-        )
-    }
-
-    @Test
-    fun `fingerprint mismatch prevents automatic refresh and clears stale ownership`() {
-        val registry = mock<AiAgentRegistry>()
-        val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "changed externally")
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
-        ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("previous".toByteArray()))
-
-        coordinator(registry = registry).backendReady()
-
-        assertThat(ownership.record(AiAgent.CURSOR)).isNull()
-        verify(backend, never()).inspectMcpConfiguration(any(), any())
         verify(backend, never()).planMcpConfigurationUpdate(any(), any(), any())
     }
 
     @Test
-    fun `missing persisted connection becomes setup-again state instead of owned`() {
-        val registry = mock<AiAgentRegistry>()
-        val path = tempDir.resolve("mcp.json")
-        val content = "managed"
-        Files.writeString(path, content)
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
-        whenever(backend.inspectMcpConfiguration(AiAgent.CURSOR, content)).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.STANDALONE, emptyList()))
-        )
-        ownership.remember(AiAgent.CURSOR, "removed", managedFingerprint(content.toByteArray()))
-        val snapshot = baseSnapshot(listOf(capability(AiAgent.CURSOR, standalone = true)))
+    fun `unchanged port refresh creates no backup`() {
+        val path = detectedFile()
+        plan(McpConfigurationKind.STANDALONE, "existing")
 
-        val inspected = coordinator(registry = registry).inspectSnapshot(snapshot).get()
+        coordinator().embeddedServerStarted(64121)
 
-        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).owned).isFalse()
-        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).diagnostics)
-            .anyMatch { it.contains("no longer exists") }
-        assertThat(ownership.record(AiAgent.CURSOR)).isNull()
+        assertThat(Files.readString(path)).isEqualTo("existing")
+        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
     }
 
     @Test
-    fun `serialized inspection cannot clear ownership established after it started`() {
-        val registry = mock<AiAgentRegistry>()
+    fun `failed final move cleans the sibling temp and preserves the original`() {
         val path = tempDir.resolve("mcp.json")
-        val content = "managed"
-        Files.writeString(path, content)
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
-        ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("stale".toByteArray()))
-        val inspectionStarted = CountDownLatch(1)
-        val inspectionResult = CompletableFuture<McpInspection>()
-        whenever(backend.inspectMcpConfiguration(AiAgent.CURSOR, content)).thenAnswer {
-            inspectionStarted.countDown()
-            inspectionResult
-        }
-        val pool = Executors.newFixedThreadPool(2)
-        val coordinator = coordinator(registry = registry, executor = pool)
+        Files.writeString(path, "before")
+        plan(McpConfigurationKind.NOT_CONFIGURED, "after")
+        val fileSystem = FailingReplaceFileSystem()
 
-        val inspection = coordinator.inspectSnapshot(baseSnapshot(listOf(capability(AiAgent.CURSOR, standalone = true))))
-        assertThat(inspectionStarted.await(5, TimeUnit.SECONDS)).isTrue()
-        val setup = coordinator.executeSerialized(path) {
-            ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("fresh".toByteArray()))
-            McpTransactionResult.Unchanged
-        }
-        inspectionResult.complete(McpInspection(McpConfigurationKind.STANDALONE, emptyList()))
-        CompletableFuture.allOf(inspection, setup).get(5, TimeUnit.SECONDS)
-        pool.shutdownNow()
-
-        assertThat(ownership.record(AiAgent.CURSOR))
-            .isEqualTo(ManagedMcpOwnership("connection", managedFingerprint("fresh".toByteArray())))
+        assertThatThrownBy { coordinator(fileSystem = fileSystem).safeUpdate(AiAgent.CURSOR, path, "generated") }
+            .isInstanceOf(IllegalStateException::class.java)
+        assertThat(Files.exists(fileSystem.temp!!)).isFalse()
+        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
+        assertThat(Files.readString(path)).isEqualTo("before")
     }
 
     @Test
@@ -359,289 +417,122 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         val release = CountDownLatch(1)
         val active = AtomicInteger()
         val maxActive = AtomicInteger()
-        val first = coordinator.executeSerialized(tempDir.resolve("a/../mcp.json")) {
-            maxActive.updateAndGet { maxOf(it, active.incrementAndGet()) }
-            entered.countDown()
-            release.await(5, TimeUnit.SECONDS)
-            active.decrementAndGet()
-            McpTransactionResult.Unchanged
+        try {
+            val first = coordinator.executeSerialized(tempDir.resolve("a/../mcp.json")) {
+                maxActive.updateAndGet { maxOf(it, active.incrementAndGet()) }
+                entered.countDown()
+                release.await(5, TimeUnit.SECONDS)
+                active.decrementAndGet()
+                McpTransactionResult.Unchanged
+            }
+            assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue()
+            val second = coordinator.executeSerialized(tempDir.resolve("mcp.json")) {
+                maxActive.updateAndGet { maxOf(it, active.incrementAndGet()) }
+                active.decrementAndGet()
+                McpTransactionResult.Unchanged
+            }
+            release.countDown()
+            CompletableFuture.allOf(first, second).get(5, TimeUnit.SECONDS)
+            assertThat(maxActive.get()).isEqualTo(1)
+        } finally {
+            release.countDown()
+            pool.shutdownNow()
         }
-        assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue()
-        val second = coordinator.executeSerialized(tempDir.resolve("mcp.json")) {
-            maxActive.updateAndGet { maxOf(it, active.incrementAndGet()) }
-            active.decrementAndGet()
-            McpTransactionResult.Unchanged
-        }
-        release.countDown()
-        CompletableFuture.allOf(first, second).get(5, TimeUnit.SECONDS)
-        pool.shutdownNow()
-
-        assertThat(maxActive.get()).isEqualTo(1)
     }
 
     @Test
-    fun `failed final move cleans the sibling temp and does not claim ownership`() {
+    fun `missing MCP connection opens settings and project binding takes priority for creation`() {
         val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "before")
-        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
-        )
-        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, "after", emptyList()))
-        )
-        val fileSystem = FailingReplaceFileSystem()
-
-        assertThatThrownBy {
-            coordinator(fileSystem = fileSystem).safeUpdate(AiAgent.CURSOR, path, "connection", false)
-        }.isInstanceOf(IllegalStateException::class.java)
-        assertThat(fileSystem.temp).isNotNull()
-        assertThat(Files.exists(fileSystem.temp!!)).isFalse()
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
-        assertThat(ownership.connectionId(AiAgent.CURSOR)).isNull()
-        assertThat(Files.readString(path)).isEqualTo("before")
-    }
-
-    @Test
-    fun `missing MCP connection opens settings and external takeover is explicit`() {
-        val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "external")
-        val missingSnapshot = baseSnapshot(emptyList()).copy(
-            connectionChoices = emptyList(),
-            mcpConfigurations = mapOf(
-                AiAgent.CURSOR to McpAgentConfiguration(
-                    AiAgent.CURSOR,
-                    path,
-                    McpConfigurationKind.NOT_CONFIGURED,
-                    false,
-                    emptyList()
-                )
-            )
-        )
+        val snapshot = baseSnapshot().copy(mcpConfigurations = mapOf(
+            AiAgent.CURSOR to McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.NOT_CONFIGURED, emptyList())
+        ))
         val coordinator = coordinator()
-
-        assertThat(coordinator.setUp(project, missingSnapshot, AiAgent.CURSOR)).isFalse()
+        assertThat(coordinator.setUp(project, snapshot.copy(connectionChoices = emptyList()), AiAgent.CURSOR)).isFalse()
         assertThat(ui.settingsOpened).isTrue()
-        assertThat(ui.messages.last().message).contains("No SonarQube connection")
 
-        val externalSnapshot = baseSnapshot(emptyList()).copy(
-            mcpConfigurations = mapOf(
-                AiAgent.CURSOR to McpAgentConfiguration(
-                    AiAgent.CURSOR,
-                    path,
-                    McpConfigurationKind.STANDALONE,
-                    false,
-                    emptyList()
-                )
-            )
+        getSettingsFor(project).connectionName = "connection"
+        plan(McpConfigurationKind.NOT_CONFIGURED, "created")
+        val choices = snapshot.copy(
+            connectionChoices = snapshot.connectionChoices + IntegrationConnection("recommended", "https://sonar.example", null),
+            recommendedConnectionId = "recommended"
         )
-        assertThat(coordinator.setUp(project, externalSnapshot, AiAgent.CURSOR)).isFalse()
-        assertThat(ui.takeoverRequests).isEqualTo(1)
-        assertThat(ui.messages.last().message).contains("cancelled")
+        assertThat(coordinator.setUp(project, choices, AiAgent.CURSOR)).isTrue()
+        verify(backend).generateMcpConfiguration(eq("connection"), any())
+        assertThat(ui.connectionChoices).isZero()
+        assertThat(Files.readString(path)).isEqualTo("created")
     }
 
     @Test
     fun `every setup result and unexpected failure has actionable feedback`() {
         val coordinator = coordinator()
-
-        McpTransactionResult.entries.forEach { result ->
-            coordinator.reportSetupResult(project, result, null)
-        }
+        McpTransactionResult.entries.forEach { coordinator.reportSetupResult(project, it, null) }
         coordinator.reportSetupResult(project, null, IllegalStateException("planning failed"))
 
         assertThat(ui.messages).hasSize(McpTransactionResult.entries.size + 1)
-        assertThat(ui.messages.map { it.message }).allSatisfy { message ->
-            assertThat(message).isNotBlank()
-            assertThat(message).matches("(?is).*(retry|restart|reload|managed|refresh|review|update|open|replace).*")
-        }
+        assertThat(ui.messages.map { it.message }).allSatisfy { assertThat(it).isNotBlank() }
         assertThat(ui.messages.map { it.type }).contains(NotificationType.ERROR, NotificationType.WARNING)
         assertThat(ui.settingsOpened).isTrue()
     }
 
-    @Test
-    fun `backend refresh includes undetected owned agents and clears ownership when removed or CLI managed`() {
-        val registry = mock<AiAgentRegistry>()
-        val path = tempDir.resolve("claude.json")
-        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(path)
-        ownership.remember(AiAgent.CLAUDE_CODE, "connection", managedFingerprint("missing".toByteArray()))
-        val coordinator = coordinator(registry = registry)
-
-        coordinator.backendReady()
-        assertThat(ownership.connectionId(AiAgent.CLAUDE_CODE)).isNull()
-
-        Files.writeString(path, "managed")
-        ownership.remember(AiAgent.CLAUDE_CODE, "connection", managedFingerprint("managed".toByteArray()))
-        whenever(backend.inspectMcpConfiguration(AiAgent.CLAUDE_CODE, "managed")).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.CLI_MANAGED, emptyList()))
-        )
-        coordinator.backendReady()
-        assertThat(ownership.connectionId(AiAgent.CLAUDE_CODE)).isNull()
-    }
-
-    @Test
-    fun `one failing owned agent does not stop refresh of the others`() {
-        val registry = mock<AiAgentRegistry>()
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenThrow(IllegalStateException("unreadable"))
-        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(null)
-        ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("cursor".toByteArray()))
-        ownership.remember(AiAgent.CLAUDE_CODE, "connection", managedFingerprint("claude".toByteArray()))
-
-        coordinator(registry = registry).backendReady()
-
-        assertThat(ownership.record(AiAgent.CURSOR)?.connectionId).isEqualTo("connection")
-        assertThat(ownership.record(AiAgent.CLAUDE_CODE)).isNull()
-    }
-
-    @Test
-    fun `backend refresh preserves external changes made during inspection`() {
-        val registry = mock<AiAgentRegistry>()
-        val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "managed")
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
-        ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("managed".toByteArray()))
-        whenever(backend.inspectMcpConfiguration(any(), any())).thenAnswer {
-            Files.writeString(path, "changed externally")
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.STANDALONE, emptyList()))
-        }
-        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, "refreshed", emptyList()))
-        )
-
-        coordinator(registry = registry).backendReady()
-
-        assertThat(Files.readString(path)).isEqualTo("changed externally")
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
-        assertThat(ownership.record(AiAgent.CURSOR)?.fingerprint)
-            .isEqualTo(managedFingerprint("managed".toByteArray()))
-    }
-
-    @Test
-    fun `backend refresh updates the managed snapshot and records its new fingerprint`() {
-        val registry = mock<AiAgentRegistry>()
-        val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "managed")
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
-        ownership.remember(AiAgent.CURSOR, "connection", managedFingerprint("managed".toByteArray()))
-        whenever(backend.inspectMcpConfiguration(AiAgent.CURSOR, "managed")).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.STANDALONE, emptyList()))
-        )
-        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, "refreshed", emptyList()))
-        )
-
-        coordinator(registry = registry).backendReady()
-
-        assertThat(Files.readString(path)).isEqualTo("refreshed")
-        assertThat(ownership.record(AiAgent.CURSOR))
-            .isEqualTo(ManagedMcpOwnership("connection", managedFingerprint("refreshed".toByteArray())))
-    }
-
-    @Test
-    fun `backend refresh clears a missing connection without reading its configuration`() {
-        val registry = mock<AiAgentRegistry>()
-        val path = tempDir.resolve("mcp.json")
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
-        ownership.remember(AiAgent.CURSOR, "removed", managedFingerprint("managed".toByteArray()))
-        val fileSystem = mock<McpFileSystem>()
-
-        coordinator(registry = registry, fileSystem = fileSystem).backendReady()
-
-        assertThat(ownership.record(AiAgent.CURSOR)).isNull()
-        verify(fileSystem, never()).read(any())
-        verify(backend, never()).inspectMcpConfiguration(any(), any())
-    }
-
-    @Test
-    fun `backend refresh leaves a superseding ownership record untouched`() {
-        val registry = mock<AiAgentRegistry>()
-        val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "managed")
-        val fingerprint = managedFingerprint("managed".toByteArray())
-        ownership.remember(AiAgent.CURSOR, "connection", fingerprint)
-        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenAnswer {
-            ownership.remember(AiAgent.CURSOR, "replacement", fingerprint)
-            path
-        }
-
-        coordinator(registry = registry).backendReady()
-
-        assertThat(Files.readString(path)).isEqualTo("managed")
-        assertThat(ownership.record(AiAgent.CURSOR)).isEqualTo(ManagedMcpOwnership("replacement", fingerprint))
-        verify(backend, never()).inspectMcpConfiguration(any(), any())
-    }
-
     private fun coordinator(
-        registry: AiAgentRegistry = mock(),
         fileSystem: McpFileSystem = NioMcpFileSystem(),
         executor: java.util.concurrent.Executor = java.util.concurrent.Executor { it.run() }
-    ) = McpConfigurationCoordinator(
-        backend,
-        registry,
-        ownership,
-        credentials,
-        fileSystem,
-        ui,
-        executor,
-        false
-    )
+    ) = McpConfigurationCoordinator(backend, registry, credentials, fileSystem, ui, executor)
 
-    @Test
-    fun `MCP connection selection prefers the project binding over the recommendation`() {
-        val snapshot = baseSnapshot(emptyList()).copy(
-            connectionChoices = listOf(
-                IntegrationConnection("connection", "https://sonar.example", null),
-                IntegrationConnection("recommended", "https://sonar.example", "organization")
-            ),
-            recommendedConnectionId = "recommended"
+    private fun plan(state: McpConfigurationKind, content: String?) {
+        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
+            CompletableFuture.completedFuture(McpUpdatePlan(state, content, emptyList()))
         )
-        getSettingsFor(project).connectionName = "connection"
-
-        assertThat(ConnectionSelector(ui::chooseConnection).select(project, snapshot))
-            .isEqualTo(ConnectionSelection.Selected("connection"))
     }
 
-    @Test
-    fun `MCP connection selection uses an eligible recommendation and ignores a stale one`() {
-        val snapshot = baseSnapshot(emptyList()).copy(
-            connectionChoices = listOf(
-                IntegrationConnection("connection", "https://sonar.example", null),
-                IntegrationConnection("recommended", "https://sonar.example", "organization")
-            ),
-            recommendedConnectionId = "recommended"
-        )
-        getSettingsFor(project).connectionName = "missing"
-        val chooser = mock<McpUiAdapter>()
-        val selector = ConnectionSelector(chooser::chooseConnection)
-
-        assertThat(selector.select(project, snapshot)).isEqualTo(ConnectionSelection.Selected("recommended"))
-        verify(chooser, never()).chooseConnection(any(), any())
-
-        whenever(chooser.chooseConnection(project, snapshot.connectionChoices)).thenReturn("connection")
-        assertThat(selector.select(project, snapshot.copy(recommendedConnectionId = "missing")))
-            .isEqualTo(ConnectionSelection.Selected("connection"))
+    private fun useCorePlanner() {
+        val planner = McpConfigurationService()
+        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer { invocation ->
+            val response = planner.planUpdate(McpConfigurationUpdateParams(
+                invocation.getArgument(0), invocation.getArgument(1), invocation.getArgument(2)
+            ))
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.valueOf(response.state.name), response.updatedContent, response.diagnostics))
+        }
     }
 
-    private fun baseSnapshot(agents: List<AgentCapability>) = AiIntegrationSnapshot(
+    private fun detected(vararg agents: AgentCapability) {
+        whenever(backend.getAiIntegrationState(isNull(), any())).thenReturn(CompletableFuture.completedFuture(baseSnapshot(agents.toList())))
+    }
+
+    private fun detectedFile(): Path = tempDir.resolve("mcp.json").also {
+        Files.writeString(it, "existing")
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(it)
+        detected(capability(AiAgent.CURSOR))
+    }
+
+    private fun baseSnapshot(agents: List<AgentCapability> = emptyList()) = AiIntegrationSnapshot(
         CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),
         agents,
         listOf(IntegrationConnection("connection", "https://sonar.example", null)),
         null
     )
 
-    private fun capability(agent: AiAgent, standalone: Boolean) =
+    private fun capability(agent: AiAgent, standalone: Boolean = true) =
         AgentCapability(agent, emptySet(), cliIntegrationSupported = false, standaloneMcpSupported = standalone)
+
+    private fun portConfiguration(port: Int) = """{"env":{"SONARQUBE_IDE_PORT":"$port"}}"""
 }
 
 private class RecordingMcpUi : McpUiAdapter {
     var settingsOpened = false
-    var takeoverConfirmed = false
-    var takeoverRequests = 0
+    var proceedWithoutToken = false
+    var tokenWarningRequests = 0
+    var connectionChoices = 0
     val messages = mutableListOf<UiMessage>()
 
-    override fun chooseConnection(project: com.intellij.openapi.project.Project, connections: List<IntegrationConnection>): String? = null
+    override fun chooseConnection(project: com.intellij.openapi.project.Project, connections: List<IntegrationConnection>): String? {
+        connectionChoices++
+        return null
+    }
 
-    override fun confirmExternalTakeover(project: com.intellij.openapi.project.Project): Boolean {
-        takeoverRequests++
-        return takeoverConfirmed
+    override fun confirmWithoutToken(project: com.intellij.openapi.project.Project): Boolean {
+        tokenWarningRequests++
+        return proceedWithoutToken
     }
 
     override fun openConfiguration(project: com.intellij.openapi.project.Project, path: Path) = Unit
@@ -650,11 +541,7 @@ private class RecordingMcpUi : McpUiAdapter {
         settingsOpened = true
     }
 
-    override fun showMessage(
-        project: com.intellij.openapi.project.Project,
-        message: String,
-        type: NotificationType
-    ) {
+    override fun showMessage(project: com.intellij.openapi.project.Project, message: String, type: NotificationType) {
         messages += UiMessage(message, type)
     }
 

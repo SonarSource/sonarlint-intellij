@@ -59,7 +59,6 @@ import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.ai.AiIntegrationSnapshot
 import org.sonarlint.intellij.ai.CliCommand
 import org.sonarlint.intellij.ai.toAiIntegrationSnapshot
-import org.sonarlint.intellij.ai.McpConfigurationCoordinator
 import org.sonarlint.intellij.ai.McpConfigurationKind
 import org.sonarlint.intellij.ai.McpInspection
 import org.sonarlint.intellij.ai.McpUpdatePlan
@@ -82,7 +81,6 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilities
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.messages.CredentialsChangeListener
-import org.sonarlint.intellij.messages.BackendReadyListener
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.monitoring.MonitoringService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
@@ -340,8 +338,6 @@ class BackendService : Disposable {
                     initRpcServer(sloop.rpcServer)[1, TimeUnit.MINUTES]
                     getService(GlobalLogOutput::class.java).log("SonarQube for IDE service initialized...", ClientLogOutput.Level.INFO)
                     backendFuture.complete(sloop.rpcServer)
-                    getService(McpConfigurationCoordinator::class.java)
-                    ApplicationManager.getApplication().messageBus.syncPublisher(BackendReadyListener.TOPIC).backendReady()
                 } catch (_: TimeoutException) {
                     GlobalLogOutput.get().log(
                         "The 'Starting SonarQube for IDE service...' task timed out, please capture thread dumps of the 'SonarLintServerCli' process and report the problem to the SonarQube for IDE maintainers",
@@ -1253,12 +1249,12 @@ class BackendService : Disposable {
         return requestFromBackend { it.pluginService.getPluginStatuses(GetPluginStatusesParams(projectId)) }
     }
 
-    fun getAiIntegrationState(project: Project, detectedAgents: List<AiAgent>): CompletableFuture<AiIntegrationSnapshot> {
+    fun getAiIntegrationState(project: Project?, detectedAgents: List<AiAgent>): CompletableFuture<AiIntegrationSnapshot> {
         val params = GetAiIntegrationStateParams(
             AiIntegrationHost.INTELLIJ,
             detectedAgents,
             AiIntegrationScope.GLOBAL,
-            projectId(project),
+            project?.let(::projectId),
             true
         )
         return requestFromBackend { it.aiAgentService.getIntegrationState(params) }

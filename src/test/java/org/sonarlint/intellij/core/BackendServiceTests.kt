@@ -397,6 +397,27 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     }
 
     @Test
+    fun test_discover_ai_agents_at_startup_without_an_open_project() {
+        `when`(backendAiAgentService.getIntegrationState(any())).thenReturn(
+            CompletableFuture.completedFuture(
+                GetAiIntegrationStateResponse(
+                    SonarQubeCliState(CliInstallationStatus.NOT_INSTALLED, CliAuthenticationStatus.UNKNOWN, null, null, null, null),
+                    emptyList(), emptyList(), null
+                )
+            )
+        )
+
+        service.getAiIntegrationState(null, listOf(AiAgent.GITHUB_COPILOT)).get(2, TimeUnit.SECONDS)
+
+        val captor = argumentCaptor<GetAiIntegrationStateParams>()
+        verify(backendAiAgentService).getIntegrationState(captor.capture())
+        assertThat(captor.firstValue.configurationScopeId).isNull()
+        assertThat(captor.firstValue.scope).isEqualTo(AiIntegrationScope.GLOBAL)
+        assertThat(captor.firstValue.detectedAgents).containsExactly(AiAgent.GITHUB_COPILOT)
+        assertThat(captor.firstValue.isDiscoverLocalAgentClis).isTrue()
+    }
+
+    @Test
     fun test_prepare_cli_commands_keep_arguments_structured_and_authentication_uses_connection_id_only() {
         val response = PrepareCliCommandResponse("sonar", listOf("auth", "--connection", "connection"))
         `when`(backendAiAgentService.prepareInstallCommand()).thenReturn(CompletableFuture.completedFuture(response))

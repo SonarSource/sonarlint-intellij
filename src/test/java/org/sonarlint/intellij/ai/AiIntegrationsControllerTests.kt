@@ -107,11 +107,11 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         controller.refresh()
         second.complete(snapshot(listOf(AgentCapability(AiAgent.CODEX, emptySet(), true, false))))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 supported")
+        assertThat(labels(panel)).contains("1 agent detected")
 
         first.complete(snapshot(emptyList()))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 supported")
+        assertThat(labels(panel)).contains("1 agent detected")
     }
 
     @Test
