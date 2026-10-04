@@ -34,7 +34,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
@@ -85,7 +84,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `capability and known path must both be present and all core states are retained`() {
+    fun `inspects only standalone-capable agents with known paths and preserves other capabilities`() {
         whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(tempDir.resolve("cursor.json"))
         whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(tempDir.resolve("claude.json"))
         whenever(backend.inspectMcpConfiguration(any(), any())).thenAnswer { invocation ->
@@ -100,11 +99,12 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
 
         val inspected = coordinator().inspectSnapshot(snapshot).get()
 
-        assertThat(inspected.mcpConfigurations.keys).containsExactlyInAnyOrder(AiAgent.CURSOR, AiAgent.CLAUDE_CODE, AiAgent.GITHUB_COPILOT, AiAgent.KIRO)
+        assertThat(inspected.mcpConfigurations.keys).containsExactlyInAnyOrder(AiAgent.CURSOR, AiAgent.CLAUDE_CODE)
+        assertThat(inspected.agents).isEqualTo(snapshot.agents)
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).state).isEqualTo(McpConfigurationKind.MALFORMED)
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state).isEqualTo(McpConfigurationKind.CLI_MANAGED)
-        assertThat(inspected.mcpConfigurations.getValue(AiAgent.GITHUB_COPILOT).state).isEqualTo(McpConfigurationKind.CLI_ONLY)
-        assertThat(inspected.mcpConfigurations.getValue(AiAgent.KIRO).state).isEqualTo(McpConfigurationKind.CLI_ONLY)
+        verify(backend, never()).inspectMcpConfiguration(eq(AiAgent.GITHUB_COPILOT), any())
+        verify(registry, never()).standaloneMcpPath(AiAgent.KIRO)
     }
 
     @Test
@@ -167,9 +167,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         ui.proceedWithoutToken = true
         plan(McpConfigurationKind.NOT_CONFIGURED, "created")
         assertThat(coordinator.createConfiguration(project, AiAgent.CURSOR, path, "connection")).isEqualTo(McpTransactionResult.Updated)
-        val sentCredentials = argumentCaptor<Either<TokenDto, UsernamePasswordDto>>()
-        verify(backend).generateMcpConfiguration(eq("connection"), sentCredentials.capture())
-        assertThat(sentCredentials.firstValue.left.token).isEmpty()
+        verify(backend).generateMcpConfiguration("connection", "")
         assertThat(ui.tokenWarningRequests).isEqualTo(2)
     }
 
@@ -221,7 +219,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         whenever(registry.standaloneMcpPath(AiAgent.KIRO)).thenReturn(unsupported)
         detected(capability(AiAgent.CURSOR), capability(AiAgent.CLAUDE_CODE), capability(AiAgent.GITHUB_COPILOT), capability(AiAgent.KIRO, false))
         whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer { invocation ->
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, invocation.getArgument<String>(1) + " refreshed", emptyList()))
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, invocation.getArgument<String>(1) + " refreshed"))
         }
 
         coordinator().embeddedServerStarted(64121)
@@ -332,7 +330,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer { invocation ->
             val desired = invocation.getArgument<String>(2)
             if (desired == portConfiguration(64121)) updatingCoordinator.embeddedServerStarted(64122)
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, desired, emptyList()))
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.STANDALONE, desired))
         }
 
         updatingCoordinator.embeddedServerStarted(64121)
@@ -347,7 +345,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         Files.writeString(path, "before")
         whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer {
             Files.writeString(path, "concurrent edit")
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.NOT_CONFIGURED, "planned", emptyList()))
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.NOT_CONFIGURED, "planned"))
         }
 
         val result = coordinator().safeUpdate(AiAgent.CURSOR, path, "generated")
@@ -481,7 +479,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
 
     private fun plan(state: McpConfigurationKind, content: String?) {
         whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpUpdatePlan(state, content, emptyList()))
+            CompletableFuture.completedFuture(McpUpdatePlan(state, content))
         )
     }
 
@@ -491,7 +489,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
             val response = planner.planUpdate(McpConfigurationUpdateParams(
                 invocation.getArgument(0), invocation.getArgument(1), invocation.getArgument(2)
             ))
-            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.valueOf(response.state.name), response.updatedContent, response.diagnostics))
+            CompletableFuture.completedFuture(McpUpdatePlan(McpConfigurationKind.valueOf(response.state.name), response.updatedContent))
         }
     }
 

@@ -35,18 +35,13 @@ fun interface ConnectionChoiceUi {
 }
 
 class IntellijConnectionChoiceUi : ConnectionChoiceUi {
-    override fun choose(project: Project, connections: List<IntegrationConnection>): String? {
-        val labels = connections.map { connection ->
-            connection.organization?.let { "${connection.connectionId} ($it)" } ?: connection.connectionId
-        }.toTypedArray()
-        val selected = ConnectionChoiceDialog(
+    override fun choose(project: Project, connections: List<IntegrationConnection>): String? =
+        ConnectionChoiceDialog(
             project,
             "Choose a SonarQube connection for CLI authentication.",
             "SonarQube CLI",
-            labels.toList()
+            connections
         ).choose()
-        return selected?.let { connections[it].connectionId }
-    }
 }
 
 class ConnectionSelector(private val choiceUi: ConnectionChoiceUi) {
@@ -80,21 +75,23 @@ internal class ConnectionChoiceDialog(
     project: Project,
     private val message: String,
     dialogTitle: String,
-    choices: List<String>
+    private val connections: List<IntegrationConnection>
 ) : DialogWrapper(project) {
-    private val choiceList = JBList(choices)
+    private val choiceList = JBList(connections.map { connection ->
+        connection.organization?.let { "${connection.connectionId} ($it)" } ?: connection.connectionId
+    })
 
     init {
         title = dialogTitle
         init()
-        if (choices.isEmpty()) {
+        if (connections.isEmpty()) {
             okAction.isEnabled = false
         } else {
             choiceList.selectedIndex = 0
         }
     }
 
-    fun choose(): Int? = if (showAndGet()) choiceList.selectedIndex.takeIf { it >= 0 } else null
+    fun choose(): String? = if (showAndGet()) connections.getOrNull(choiceList.selectedIndex)?.connectionId else null
 
     override fun createCenterPanel(): JComponent {
         choiceList.visibleRowCount = choiceList.model.size.coerceIn(2, 8)

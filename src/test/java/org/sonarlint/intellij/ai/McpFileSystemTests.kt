@@ -86,6 +86,12 @@ class McpFileSystemTests {
 
         assertThat(fallbackUsed).isTrue()
         assertThat(Files.readString(target)).isEqualTo("updated")
+        if (Files.getFileStore(target).supportsFileAttributeView("posix")) {
+            assertThat(Files.getPosixFilePermissions(target)).containsExactlyInAnyOrder(
+                PosixFilePermission.OWNER_READ,
+                PosixFilePermission.OWNER_WRITE
+            )
+        }
     }
 
     @Test

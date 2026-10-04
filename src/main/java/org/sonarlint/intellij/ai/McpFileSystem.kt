@@ -80,7 +80,6 @@ class NioMcpFileSystem(
         } catch (_: AtomicMoveNotSupportedException) {
             fallbackMove(temp, target)
         }
-        setOwnerOnlyPermissions(target)
     }
 
     override fun deleteIfExists(path: Path) {
@@ -97,14 +96,6 @@ class NioMcpFileSystem(
         } catch (error: Throwable) {
             Files.deleteIfExists(path)
             throw error
-        }
-    }
-
-    private fun setOwnerOnlyPermissions(path: Path) {
-        try {
-            Files.setPosixFilePermissions(path, OWNER_ONLY_PERMISSIONS)
-        } catch (_: UnsupportedOperationException) {
-            // Non-POSIX file systems do not expose these permissions.
         }
     }
 

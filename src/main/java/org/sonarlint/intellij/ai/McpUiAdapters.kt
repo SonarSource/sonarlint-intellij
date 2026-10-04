@@ -44,18 +44,13 @@ interface McpUiAdapter {
 }
 
 class IntellijMcpUiAdapter : McpUiAdapter {
-    override fun chooseConnection(project: Project, connections: List<IntegrationConnection>): String? {
-        val labels = connections.map { connection ->
-            connection.organization?.let { "${connection.connectionId} ($it)" } ?: connection.connectionId
-        }
-        val selected = ConnectionChoiceDialog(
+    override fun chooseConnection(project: Project, connections: List<IntegrationConnection>): String? =
+        ConnectionChoiceDialog(
             project,
             "Choose a SonarQube connection for the MCP server.",
             "SonarQube MCP Server",
-            labels
+            connections
         ).choose()
-        return selected?.let { connections[it].connectionId }
-    }
 
     override fun confirmWithoutToken(project: Project): Boolean = ApplicationManager.getApplication().computeInEDT {
         Messages.showYesNoDialog(

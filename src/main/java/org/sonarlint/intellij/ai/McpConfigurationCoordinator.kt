@@ -41,8 +41,6 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
-import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
-import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
 @Service(Service.Level.APP)
 class McpConfigurationCoordinator @JvmOverloads constructor(
@@ -68,25 +66,24 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     fun inspectSnapshot(snapshot: AiIntegrationSnapshot): CompletableFuture<AiIntegrationSnapshot> {
-        val inspections = snapshot.agents.map { capability ->
-            val path = registry.standaloneMcpPath(capability.agent)
-            if (path != null && capability.standaloneMcpSupported) {
-                CompletableFuture.supplyAsync({
-                    runSerialized(path) {
-                        val inspection = backendService.inspectMcpConfiguration(capability.agent, fileSystem.read(path).toText()).join()
-                        McpAgentConfiguration(capability.agent, path, inspection.state, inspection.diagnostics)
-                    }
-                }, executor).exceptionally { error ->
-                    val detail = error.cause?.message ?: error.message
-                    McpAgentConfiguration(
-                        capability.agent,
-                        path,
-                        McpConfigurationKind.UNKNOWN,
-                        listOf(if (detail.isNullOrBlank()) "Unable to inspect the MCP configuration." else "Unable to inspect the MCP configuration: $detail")
-                    )
+        val inspections = snapshot.agents.mapNotNull { capability ->
+            if (!capability.standaloneMcpSupported) {
+                return@mapNotNull null
+            }
+            val path = registry.standaloneMcpPath(capability.agent) ?: return@mapNotNull null
+            CompletableFuture.supplyAsync({
+                runSerialized(path) {
+                    val inspection = backendService.inspectMcpConfiguration(capability.agent, fileSystem.read(path).toText()).join()
+                    McpAgentConfiguration(capability.agent, path, inspection.state, inspection.diagnostics)
                 }
-            } else {
-                CompletableFuture.completedFuture(McpAgentConfiguration(capability.agent, null, McpConfigurationKind.CLI_ONLY, emptyList()))
+            }, executor).exceptionally { error ->
+                val detail = error.cause?.message ?: error.message
+                McpAgentConfiguration(
+                    capability.agent,
+                    path,
+                    McpConfigurationKind.UNKNOWN,
+                    listOf(if (detail.isNullOrBlank()) "Unable to inspect the MCP configuration." else "Unable to inspect the MCP configuration: $detail")
+                )
             }
         }
         return CompletableFuture.allOf(*inspections.toTypedArray()).thenApply {
@@ -104,10 +101,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             return false
         }
         val path = configuration.path
-        if (path == null || configuration.state == McpConfigurationKind.CLI_ONLY) {
-            ui.showMessage(project, "This agent is configured through SonarQube CLI. Use the CLI card to continue.", NotificationType.INFORMATION)
-            return false
-        }
         if (configuration.state != McpConfigurationKind.NOT_CONFIGURED && configuration.state != McpConfigurationKind.STANDALONE) {
             reportSetupResult(project, McpTransactionResult.Protected, null)
             return false
@@ -141,10 +134,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
 
     fun openConfiguration(project: Project, agent: AiAgent, snapshot: AiIntegrationSnapshot) {
         snapshot.mcpConfigurations[agent]?.path?.let { ui.openConfiguration(project, it) }
-    }
-
-    fun openConnectionSettings(project: Project) {
-        ui.openConnectionSettings(project)
     }
 
     fun embeddedServerStarted(port: Int) {
@@ -203,11 +192,11 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         val connection = getGlobalSettings().serverConnections.firstOrNull { it.name == connectionId }
             ?: return McpTransactionResult.MissingConnection
         val credentials = credentialsService.getCredentials(connection)
-        val token = credentials?.takeIf { it.isLeft }?.left?.token
-        if (token.isNullOrBlank() && !ui.confirmWithoutToken(project)) {
+        val token = credentials?.takeIf { it.isLeft }?.left?.token?.takeIf { it.isNotBlank() } ?: ""
+        if (token.isEmpty() && !ui.confirmWithoutToken(project)) {
             return McpTransactionResult.Cancelled
         }
-        val generated = backendService.generateMcpConfiguration(connectionId, Either.forLeft(TokenDto(token?.takeIf { it.isNotBlank() } ?: ""))).join()
+        val generated = backendService.generateMcpConfiguration(connectionId, token).join()
         val result = safeUpdate(agent, path, generated)
         if (result == McpTransactionResult.Updated || result == McpTransactionResult.Unchanged) {
             requestRefresh()
@@ -236,14 +225,14 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         var completed = false
         var primaryError: Throwable? = null
         try {
-            if (!sameBytes(snapshot, updatedBytes)) {
+            if (!snapshot.contentEquals(updatedBytes)) {
                 backup = snapshot?.let { fileSystem.createBackup(normalizedPath, it) }
                 temp = fileSystem.writeSiblingTemp(normalizedPath, updatedBytes)
             }
             if (fileSystem.isSymbolicLink(normalizedPath)) {
                 return McpTransactionResult.SymlinkRefused
             }
-            if (!sameBytes(snapshot, fileSystem.read(normalizedPath))) {
+            if (!snapshot.contentEquals(fileSystem.read(normalizedPath))) {
                 return McpTransactionResult.ConcurrentEdit
             }
             if (configuration == null && idePort.get() != port) {
@@ -345,9 +334,3 @@ enum class McpTransactionResult {
 }
 
 private fun ByteArray?.toText(): String = this?.toString(StandardCharsets.UTF_8) ?: ""
-
-private fun sameBytes(first: ByteArray?, second: ByteArray?): Boolean = when {
-    first == null && second == null -> true
-    first == null || second == null -> false
-    else -> first.contentEquals(second)
-}

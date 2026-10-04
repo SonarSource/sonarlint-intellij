@@ -60,7 +60,6 @@ import javax.swing.JToggleButton
 import javax.swing.ScrollPaneConstants
 import javax.swing.Scrollable
 import javax.swing.event.HyperlinkEvent
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
@@ -238,7 +237,6 @@ class AiIntegrationsPanel(
                 addCliUninstallFeedback()
                 addPrimaryAction(RETRY_LABEL)
             }
-            is AiIntegrationsPanelState.Empty -> addCliOverview(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addCliOverview(state.snapshot)
         }
         addDocumentationLink(CLI_GUIDE_LABEL, SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
@@ -253,7 +251,6 @@ class AiIntegrationsPanel(
         when (state) {
             AiIntegrationsPanelState.Loading -> addMessage(MCP_LOADING_MESSAGE)
             is AiIntegrationsPanelState.Error -> addMessage(MCP_ERROR_MESSAGE)
-            is AiIntegrationsPanelState.Empty -> addMcpConfigurations(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addMcpConfigurations(state.snapshot)
         }
         addDocumentationLink(MCP_GUIDE_LABEL, SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK)
@@ -274,7 +271,6 @@ class AiIntegrationsPanel(
     private fun createUninstallAction(state: AiIntegrationsPanelState): ActionButton? {
         val snapshot = when (state) {
             is AiIntegrationsPanelState.Ready -> state.snapshot
-            is AiIntegrationsPanelState.Empty -> state.snapshot
             else -> return null
         }
         if (!snapshot.cli.uninstallAvailable) return null
@@ -292,24 +288,19 @@ class AiIntegrationsPanel(
     private fun mcpStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
         AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
         is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
-        is AiIntegrationsPanelState.Empty -> mcpStatus(state.snapshot)
         is AiIntegrationsPanelState.Ready -> mcpStatus(state.snapshot)
     }
 
     private fun mcpStatus(snapshot: AiIntegrationSnapshot): CardStatus {
-        val configurations = mcpConfigurations(snapshot)
+        val configurations = snapshot.mcpConfigurations.values
         val needsAttention = configurations.any {
             it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
         }
         return CardStatus("${configurations.size} supported", if (needsAttention) StatusTone.WARNING else StatusTone.NEUTRAL)
     }
 
-    private fun mcpConfigurations(snapshot: AiIntegrationSnapshot) = snapshot.mcpConfigurations.values.filter {
-        it.state != McpConfigurationKind.CLI_ONLY
-    }
-
     private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
-        val configurations = mcpConfigurations(snapshot)
+        val configurations = snapshot.mcpConfigurations.values
         addMetadata(listOf(agentCountText(snapshot.agents.size)))
         if (configurations.isNotEmpty()) {
             val configuredCount = configurations.count {
@@ -357,7 +348,6 @@ class AiIntegrationsPanel(
             McpConfigurationKind.MALFORMED -> listOf(
                 RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
             )
-            McpConfigurationKind.CLI_ONLY -> emptyList()
         }
         addAgentRow(
             registry.displayName(configuration.agent),
@@ -813,7 +803,6 @@ private class RoundedSurfacePanel(
 private fun AiIntegrationsPanel.cliStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
     AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
     is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
-    is AiIntegrationsPanelState.Empty -> state.snapshot.cli.toStatus()
     is AiIntegrationsPanelState.Ready -> state.snapshot.cli.toStatus()
 }
 
@@ -851,7 +840,6 @@ private fun McpAgentConfiguration.displayText(): String = when (state) {
     McpConfigurationKind.NOT_CONFIGURED -> "Not configured"
     McpConfigurationKind.STANDALONE -> "Configured"
     McpConfigurationKind.CLI_MANAGED -> "Managed by CLI"
-    McpConfigurationKind.CLI_ONLY -> "Available through CLI"
     McpConfigurationKind.UNKNOWN -> "Status unknown"
     McpConfigurationKind.MALFORMED -> "Invalid configuration"
 }

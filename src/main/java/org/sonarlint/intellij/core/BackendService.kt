@@ -1325,23 +1325,15 @@ class BackendService : Disposable {
     }.thenApply { response ->
         McpUpdatePlan(
             McpConfigurationKind.valueOf(response.state.name),
-            response.updatedContent,
-            response.diagnostics.toList()
+            response.updatedContent
         )
     }
 
-    fun generateMcpConfiguration(
-        connectionId: String,
-        credentials: Either<TokenDto, UsernamePasswordDto>
-    ): CompletableFuture<String> {
-        if (!credentials.isLeft) {
-            return CompletableFuture.failedFuture(IllegalArgumentException("MCP configuration requires token credentials"))
-        }
-        return requestFromBackend {
+    fun generateMcpConfiguration(connectionId: String, token: String): CompletableFuture<String> =
+        requestFromBackend {
             it.connectionService.getMCPServerConfiguration(
-                GetMCPServerConfigurationParams(connectionId, credentials.left.token)
+                GetMCPServerConfigurationParams(connectionId, token)
             )
         }.thenApply { it.jsonConfiguration }
-    }
 
 }
