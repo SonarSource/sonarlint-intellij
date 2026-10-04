@@ -45,7 +45,7 @@ class IntellijTerminalAdapter : CliTerminalAdapter {
                 val runner = CliTerminalRunner(project, command)
                 manager.createNewSession(runner, runner.tabState)
                 val widget = runner.widget
-                val completion = observeTerminalCompletion(widget)
+                val completion = observeTerminalCompletion(widget, runner.completion)
                 TerminalLaunch.Started(
                     focus = {
                         runOnUiThread(project) {
@@ -63,6 +63,7 @@ class IntellijTerminalAdapter : CliTerminalAdapter {
 }
 
 internal class CliTerminalRunner(project: Project, command: CliCommand) : LocalTerminalDirectRunner(project) {
+    val completion = CompletableFuture<TerminalCompletion>()
     val tabState = TerminalTabState().apply {
         myTabName = "SonarQube CLI"
         myWorkingDirectory = project.basePath
@@ -74,18 +75,24 @@ internal class CliTerminalRunner(project: Project, command: CliCommand) : LocalT
     override fun createShellTerminalWidget(parent: Disposable, startupOptions: ShellStartupOptions): TerminalWidget =
         super.createShellTerminalWidget(parent, startupOptions).also { widget = it }
 
-    override fun createProcess(startupOptions: ShellStartupOptions): PtyProcess =
+    override fun createProcess(startupOptions: ShellStartupOptions): PtyProcess = try {
         super.createProcess(startupOptions.builder()
             .shellCommand(CommandLineUtil.toCommandLine(requireNotNull(startupOptions.shellCommand)))
             .build())
+    } catch (error: Exception) {
+        completion.completeExceptionally(error)
+        throw error
+    }
 
     override fun enableShellIntegration(): Boolean = false
 
     override fun isTerminalSessionPersistent(): Boolean = false
 }
 
-internal fun observeTerminalCompletion(widget: TerminalWidget): CompletableFuture<TerminalCompletion> {
-    val completion = CompletableFuture<TerminalCompletion>()
+internal fun observeTerminalCompletion(
+    widget: TerminalWidget,
+    completion: CompletableFuture<TerminalCompletion> = CompletableFuture()
+): CompletableFuture<TerminalCompletion> {
     widget.ttyConnectorAccessor.executeWithTtyConnector { connector ->
         CompletableFuture.supplyAsync({ connector.waitFor() }, AppExecutorUtil.getAppExecutorService())
             .whenComplete { exitCode, error ->

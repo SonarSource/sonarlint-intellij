@@ -31,8 +31,10 @@ import java.awt.event.KeyEvent
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
@@ -96,6 +98,25 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
         Disposer.dispose(widget)
 
         assertThat(completion.join()).isEqualTo(TerminalCompletion.Exited(17))
+    }
+
+    @Test
+    fun `process startup failure completes the operation without a terminal connector`(@TempDir directory: Path) {
+        val runner = CliTerminalRunner(project, CliCommand(directory.resolve("missing-executable").toString(), emptyList(), true))
+        val widget = mock<TerminalWidget>()
+        whenever(widget.ttyConnectorAccessor).thenReturn(TtyConnectorAccessor())
+        val completion = observeTerminalCompletion(widget, runner.completion)
+        val options = runner.configureStartupOptions(ShellStartupOptions.Builder()
+            .shellCommand(runner.tabState.myShellCommand)
+            .workingDirectory(directory.toString())
+            .build())
+        try {
+            assertThatThrownBy { runner.createProcess(options) }.isInstanceOf(ExecutionException::class.java)
+
+            assertThat(completion).isCompletedExceptionally()
+        } finally {
+            Disposer.dispose(widget)
+        }
     }
 
     @ParameterizedTest
