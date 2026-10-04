@@ -53,6 +53,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode
 import org.sonarlint.intellij.actions.OpenInBrowserAction
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.ai.McpConfigurationCoordinator
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.analysis.AnalysisSubmitter.Companion.collectContributedLanguages
@@ -138,6 +139,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.binding.NoBindingSugge
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.connection.ConnectionSuggestionDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.embeddedserver.EmbeddedServerStartedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.fix.FixSuggestionDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.HotspotDetailsDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
@@ -193,6 +195,10 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     private const val AUTOSCAN_CONFIG_FILENAME = ".sonarcloud.properties"
     private const val SONARLINT_CONFIGURATION_FOLDER = ".sonarlint"
     private val backendTaskProgressReporter = BackendTaskProgressReporter()
+
+    override fun embeddedServerStarted(params: EmbeddedServerStartedParams) {
+        getService(McpConfigurationCoordinator::class.java).embeddedServerStarted(params.port)
+    }
 
     override fun suggestBinding(suggestionsByConfigScopeId: Map<String, List<BindingSuggestionDto>>) {
         suggestionsByConfigScopeId.forEach { (configScopeId, suggestions) -> suggestAutoBind(findProject(configScopeId), suggestions) }

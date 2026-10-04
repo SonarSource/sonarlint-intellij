@@ -21,53 +21,43 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.security.MessageDigest
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.messages.BackendReadyListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
 @Service(Service.Level.APP)
 class McpConfigurationCoordinator @JvmOverloads constructor(
     private val backendService: BackendService = getService(BackendService::class.java),
     private val registry: AiAgentRegistry = AiAgentRegistry(),
-    private val ownership: McpConfigurationOwnership = getService(McpConfigurationOwnership::class.java),
     private val credentialsService: CredentialsService = getService(CredentialsService::class.java),
     private val fileSystem: McpFileSystem = NioMcpFileSystem(),
     private val ui: McpUiAdapter = IntellijMcpUiAdapter(),
-    private val executor: Executor = AppExecutorUtil.getAppExecutorService(),
-    subscribeToBackendReady: Boolean = true
+    private val executor: Executor = AppExecutorUtil.getAppExecutorService()
 ) : Disposable {
     private val pathLocks = ConcurrentHashMap<Path, ReentrantLock>()
     private val refreshCallbacks = ConcurrentHashMap<Any, () -> Unit>()
+    private val idePort = AtomicInteger()
     private val refreshRequested = AtomicBoolean()
     private val refreshWorkerRunning = AtomicBoolean()
-    private val busConnection = if (subscribeToBackendReady) {
-        ApplicationManager.getApplication().messageBus.connect()
-    } else {
-        null
-    }
-
-    init {
-        busConnection?.subscribe(BackendReadyListener.TOPIC, BackendReadyListener(::backendReady))
-    }
 
     fun register(owner: Any, refresh: () -> Unit) {
         refreshCallbacks[owner] = refresh
@@ -81,36 +71,23 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         val inspections = snapshot.agents.map { capability ->
             val path = registry.standaloneMcpPath(capability.agent)
             if (path != null && capability.standaloneMcpSupported) {
-                inspectForPresentation(capability.agent, path).exceptionally { error ->
+                CompletableFuture.supplyAsync({
+                    runSerialized(path) {
+                        val inspection = backendService.inspectMcpConfiguration(capability.agent, fileSystem.read(path).toText()).join()
+                        McpAgentConfiguration(capability.agent, path, inspection.state, inspection.diagnostics)
+                    }
+                }, executor).exceptionally { error ->
                     val detail = error.cause?.message ?: error.message
                     McpAgentConfiguration(
                         capability.agent,
                         path,
                         McpConfigurationKind.UNKNOWN,
-                        false,
-                        listOf(
-                            if (detail.isNullOrBlank()) {
-                                "Unable to inspect the MCP configuration."
-                            } else {
-                                "Unable to inspect the MCP configuration: $detail"
-                            }
-                        )
+                        listOf(if (detail.isNullOrBlank()) "Unable to inspect the MCP configuration." else "Unable to inspect the MCP configuration: $detail")
                     )
                 }
             } else {
-                CompletableFuture.completedFuture(
-                    McpAgentConfiguration(
-                        capability.agent,
-                        null,
-                        McpConfigurationKind.CLI_ONLY,
-                        false,
-                        emptyList()
-                    )
-                )
+                CompletableFuture.completedFuture(McpAgentConfiguration(capability.agent, null, McpConfigurationKind.CLI_ONLY, emptyList()))
             }
-        }
-        if (inspections.isEmpty()) {
-            return CompletableFuture.completedFuture(snapshot)
         }
         return CompletableFuture.allOf(*inspections.toTypedArray()).thenApply {
             snapshot.copy(mcpConfigurations = inspections.associate { future ->
@@ -128,38 +105,31 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         }
         val path = configuration.path
         if (path == null || configuration.state == McpConfigurationKind.CLI_ONLY) {
-            ui.showMessage(project, "This agent is configured through SonarQube CLI. Use Go to CLI to continue.", NotificationType.INFORMATION)
+            ui.showMessage(project, "This agent is configured through SonarQube CLI. Use the CLI card to continue.", NotificationType.INFORMATION)
             return false
         }
-        if (configuration.state == McpConfigurationKind.CLI_MANAGED ||
-            configuration.state == McpConfigurationKind.UNKNOWN ||
-            configuration.state == McpConfigurationKind.MALFORMED) {
-            ui.showMessage(
-                project,
-                "This MCP configuration cannot be changed safely. Open the configuration, resolve the reported state, and retry.",
-                NotificationType.WARNING
-            )
+        if (configuration.state != McpConfigurationKind.NOT_CONFIGURED && configuration.state != McpConfigurationKind.STANDALONE) {
+            reportSetupResult(project, McpTransactionResult.Protected, null)
             return false
         }
-        val externalTakeover = configuration.state == McpConfigurationKind.STANDALONE && !configuration.owned
-        if (externalTakeover && !ui.confirmExternalTakeover(project)) {
-            ui.showMessage(project, "MCP setup was cancelled. The existing configuration was not changed.", NotificationType.INFORMATION)
-            return false
-        }
-        val connectionId = when (val selection = ConnectionSelector(ui::chooseConnection).select(project, snapshot)) {
-            is ConnectionSelection.Selected -> selection.connectionId
-            ConnectionSelection.Missing -> {
-                ui.showMessage(project, "No SonarQube connection is available. Add a connection, then retry MCP setup.", NotificationType.ERROR)
-                ui.openConnectionSettings(project)
-                return false
+        val connectionId = if (configuration.state == McpConfigurationKind.NOT_CONFIGURED) {
+            when (val selection = ConnectionSelector(ui::chooseConnection).select(project, snapshot)) {
+                is ConnectionSelection.Selected -> selection.connectionId
+                ConnectionSelection.Missing -> {
+                    ui.showMessage(project, "No SonarQube connection is available. Add a connection, then retry MCP setup.", NotificationType.ERROR)
+                    ui.openConnectionSettings(project)
+                    return false
+                }
+                ConnectionSelection.Cancelled -> {
+                    reportSetupResult(project, McpTransactionResult.Cancelled, null)
+                    return false
+                }
             }
-            ConnectionSelection.Cancelled -> {
-                ui.showMessage(project, "MCP setup was cancelled. Choose Set up when you are ready to select a connection.", NotificationType.INFORMATION)
-                return false
-            }
+        } else {
+            null
         }
         executeSerialized(path) {
-            safeUpdate(agent, path, connectionId, externalTakeover || configuration.owned)
+            if (connectionId == null) safeUpdate(agent, path) else createConfiguration(project, agent, path, connectionId)
         }.whenComplete { result, error ->
             runOnUiThread(project) {
                 reportSetupResult(project, result, error)
@@ -177,143 +147,111 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         ui.openConnectionSettings(project)
     }
 
-    fun backendReady() {
+    fun embeddedServerStarted(port: Int) {
+        if (port !in 1..65535) {
+            idePort.set(0)
+            return
+        }
+        idePort.set(port)
+        requestRefresh()
+    }
+
+    private fun requestRefresh() {
+        if (idePort.get() == 0) {
+            return
+        }
         refreshRequested.set(true)
         if (refreshWorkerRunning.compareAndSet(false, true)) {
-            CompletableFuture.runAsync(::drainBackendRefreshes, executor)
+            CompletableFuture.runAsync(::drainPortRefreshes, executor)
         }
     }
 
-    private fun drainBackendRefreshes() {
+    private fun drainPortRefreshes() {
         try {
             while (refreshRequested.getAndSet(false)) {
-                ownership.all().forEach { (agent, record) ->
+                val port = idePort.get()
+                val snapshot = backendService.getAiIntegrationState(null, registry.detectedIdeAgents()).join()
+                snapshot.agents.filter { it.standaloneMcpSupported }.forEach { capability ->
                     try {
-                        val path = registry.standaloneMcpPath(agent)
-                        if (path == null) {
-                            ownership.clearIfMatches(agent, record)
-                        } else {
-                            runSerialized(path) {
-                                safeUpdate(agent, path, record.connectionId, allowExistingStandalone = true, expectedOwnership = record)
-                            }
+                        registry.standaloneMcpPath(capability.agent)?.let { path ->
+                            runSerialized(path) { safeUpdate(capability.agent, path, port = port) }
                         }
                     } catch (error: Throwable) {
-                        logRefreshFailure(agent, error)
+                        GlobalLogOutput.get().logError("Unable to refresh the MCP configuration for ${capability.agent}", error)
                     }
                 }
             }
+        } catch (error: Throwable) {
+            GlobalLogOutput.get().logError("Unable to discover AI agents for MCP port refresh", error)
         } finally {
             refreshWorkerRunning.set(false)
+            refreshAll()
             if (refreshRequested.get()) {
-                backendReady()
+                requestRefresh()
             }
         }
     }
 
-    private fun inspectForPresentation(agent: AiAgent, path: Path): CompletableFuture<McpAgentConfiguration> {
-        return CompletableFuture.supplyAsync({
-            runSerialized(path) { inspectForPresentationSerialized(agent, path) }
-        }, executor)
-    }
-
-    private fun inspectForPresentationSerialized(agent: AiAgent, path: Path): McpAgentConfiguration {
-        val bytes = fileSystem.read(path)
-        val inspection = backendService.inspectMcpConfiguration(agent, bytes.toText()).join()
-        val diagnostics = inspection.diagnostics.toMutableList()
-        var owned = false
-        ownership.record(agent)?.let { record ->
-            val staleReason = when {
-                record.fingerprint == null -> "Previous ownership cannot be verified. Set up this agent again."
-                !connectionExists(record.connectionId) -> "The saved SonarQube connection no longer exists. Set up this agent again."
-                bytes == null || managedFingerprint(bytes) != record.fingerprint ->
-                    "The configuration changed since SonarQube for IDE last managed it. Set up again to take ownership."
-                inspection.state == McpConfigurationKind.NOT_CONFIGURED || inspection.state == McpConfigurationKind.CLI_MANAGED ->
-                    "The managed SonarQube MCP entry is no longer present. Set up this agent again."
-                inspection.state == McpConfigurationKind.STANDALONE -> null
-                else -> null
-            }
-            if (staleReason == null && inspection.state == McpConfigurationKind.STANDALONE) {
-                owned = true
-            } else if (staleReason != null) {
-                ownership.clearIfMatches(agent, record)
-                diagnostics += staleReason
-            }
-        }
-        return McpAgentConfiguration(agent, path, inspection.state, owned, diagnostics)
-    }
-
-    internal fun safeUpdate(
-        agent: AiAgent,
-        path: Path,
-        connectionId: String,
-        allowExistingStandalone: Boolean,
-        expectedOwnership: ManagedMcpOwnership? = null
-    ): McpTransactionResult {
-        val normalizedPath = path.toAbsolutePath().normalize()
-        if (expectedOwnership != null && (ownership.record(agent) != expectedOwnership ||
-                expectedOwnership.fingerprint == null || !connectionExists(connectionId))) {
-            ownership.clearIfMatches(agent, expectedOwnership)
-            return McpTransactionResult.Protected
-        }
-        if (fileSystem.isSymbolicLink(normalizedPath)) {
-            expectedOwnership?.let { ownership.clearIfMatches(agent, it) }
+    internal fun createConfiguration(project: Project, agent: AiAgent, path: Path, connectionId: String): McpTransactionResult {
+        if (fileSystem.isSymbolicLink(path)) {
             return McpTransactionResult.SymlinkRefused
         }
-        val snapshot = fileSystem.read(normalizedPath)
-        if (expectedOwnership != null && (snapshot == null || managedFingerprint(snapshot) != expectedOwnership.fingerprint)) {
-            ownership.clearIfMatches(agent, expectedOwnership)
-            return McpTransactionResult.Protected
-        }
-        val inspection = backendService.inspectMcpConfiguration(agent, snapshot.toText()).join()
-        if (expectedOwnership != null && (inspection.state == McpConfigurationKind.NOT_CONFIGURED ||
-                inspection.state == McpConfigurationKind.CLI_MANAGED)) {
-            ownership.clearIfMatches(agent, expectedOwnership)
-            return McpTransactionResult.Protected
-        }
-        if (isProtectedMcpState(inspection.state) ||
-            (inspection.state == McpConfigurationKind.STANDALONE && !allowExistingStandalone)) {
-            return McpTransactionResult.Protected
+        val inspection = backendService.inspectMcpConfiguration(agent, fileSystem.read(path).toText()).join()
+        if (inspection.state != McpConfigurationKind.NOT_CONFIGURED) {
+            return safeUpdate(agent, path)
         }
         val connection = getGlobalSettings().serverConnections.firstOrNull { it.name == connectionId }
             ?: return McpTransactionResult.MissingConnection
-        val credentials = runCatching { credentialsService.getCredentials(connection) }.getOrNull()
-            ?: return McpTransactionResult.InvalidCredentials
-        if (!credentials.isLeft) {
-            return McpTransactionResult.InvalidCredentials
+        val credentials = credentialsService.getCredentials(connection)
+        val token = credentials?.takeIf { it.isLeft }?.left?.token
+        if (token.isNullOrBlank() && !ui.confirmWithoutToken(project)) {
+            return McpTransactionResult.Cancelled
         }
-        val generated = backendService.generateMcpConfiguration(connectionId, credentials).join()
-        val plan = backendService.planMcpConfigurationUpdate(agent, snapshot.toText(), generated).join()
-        if (isProtectedMcpState(plan.state)) {
+        val generated = backendService.generateMcpConfiguration(connectionId, Either.forLeft(TokenDto(token?.takeIf { it.isNotBlank() } ?: ""))).join()
+        val result = safeUpdate(agent, path, generated)
+        if (result == McpTransactionResult.Updated || result == McpTransactionResult.Unchanged) {
+            requestRefresh()
+        }
+        return result
+    }
+
+    internal fun safeUpdate(agent: AiAgent, path: Path, configuration: String? = null, port: Int = idePort.get()): McpTransactionResult {
+        val normalizedPath = path.toAbsolutePath().normalize()
+        if (fileSystem.isSymbolicLink(normalizedPath)) {
+            return McpTransactionResult.SymlinkRefused
+        }
+        val snapshot = fileSystem.read(normalizedPath)
+        if (configuration == null && (snapshot == null || port !in 1..65535)) {
             return McpTransactionResult.Protected
         }
-        val updatedBytes = plan.updatedContent?.toByteArray(StandardCharsets.UTF_8)
-            ?: return McpTransactionResult.Protected
-        if (sameBytes(snapshot, updatedBytes)) {
-            if (fileSystem.isSymbolicLink(normalizedPath)) {
-                return McpTransactionResult.SymlinkRefused
-            }
-            if (!sameBytes(snapshot, fileSystem.read(normalizedPath))) {
-                return McpTransactionResult.ConcurrentEdit
-            }
-            ownership.remember(agent, connectionId, managedFingerprint(updatedBytes))
-            return McpTransactionResult.Unchanged
+        val desired = configuration ?: """{"env":{"SONARQUBE_IDE_PORT":"$port"}}"""
+        val plan = backendService.planMcpConfigurationUpdate(agent, snapshot.toText(), desired).join()
+        val expectedState = if (configuration == null) McpConfigurationKind.STANDALONE else McpConfigurationKind.NOT_CONFIGURED
+        if (plan.state != expectedState) {
+            return McpTransactionResult.Protected
         }
+        val updatedBytes = plan.updatedContent?.toByteArray(StandardCharsets.UTF_8) ?: return McpTransactionResult.Protected
         var temp: Path? = null
         var backup: Path? = null
         var completed = false
         var primaryError: Throwable? = null
         try {
-            backup = snapshot?.let { fileSystem.createBackup(normalizedPath, it) }
-            temp = fileSystem.writeSiblingTemp(normalizedPath, updatedBytes)
+            if (!sameBytes(snapshot, updatedBytes)) {
+                backup = snapshot?.let { fileSystem.createBackup(normalizedPath, it) }
+                temp = fileSystem.writeSiblingTemp(normalizedPath, updatedBytes)
+            }
             if (fileSystem.isSymbolicLink(normalizedPath)) {
                 return McpTransactionResult.SymlinkRefused
             }
             if (!sameBytes(snapshot, fileSystem.read(normalizedPath))) {
                 return McpTransactionResult.ConcurrentEdit
             }
-            fileSystem.replace(temp, normalizedPath)
+            if (configuration == null && idePort.get() != port) {
+                return McpTransactionResult.Protected
+            }
+            val pending = temp ?: return McpTransactionResult.Unchanged
+            fileSystem.replace(pending, normalizedPath)
             temp = null
-            ownership.remember(agent, connectionId, managedFingerprint(updatedBytes))
             completed = true
             return McpTransactionResult.Updated
         } catch (error: Throwable) {
@@ -322,15 +260,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         } finally {
             discardPartialUpdate(temp, backup, completed, primaryError)
         }
-    }
-
-    private fun isProtectedMcpState(state: McpConfigurationKind): Boolean = when (state) {
-        McpConfigurationKind.CLI_MANAGED,
-        McpConfigurationKind.CLI_ONLY,
-        McpConfigurationKind.UNKNOWN,
-        McpConfigurationKind.MALFORMED -> true
-        McpConfigurationKind.STANDALONE,
-        McpConfigurationKind.NOT_CONFIGURED -> false
     }
 
     private fun discardPartialUpdate(temp: Path?, backup: Path?, completed: Boolean, primaryError: Throwable?) {
@@ -363,9 +292,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     private fun <T> runSerialized(path: Path, action: () -> T): T =
         pathLocks.computeIfAbsent(path.toAbsolutePath().normalize()) { ReentrantLock() }.withLock(action)
 
-    private fun connectionExists(connectionId: String): Boolean =
-        getGlobalSettings().serverConnections.any { it.name == connectionId }
-
     internal fun reportSetupResult(project: Project, result: McpTransactionResult?, error: Throwable?) {
         if (error != null) {
             ui.showMessage(
@@ -377,43 +303,34 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         }
         val (message, type) = when (result) {
             McpTransactionResult.Updated ->
-                "MCP configuration updated. Restart or reload the AI agent to use the new connection." to NotificationType.INFORMATION
+                "MCP configuration updated. Restart or reload the AI agent to use the updated settings." to NotificationType.INFORMATION
             McpTransactionResult.Unchanged ->
-                "MCP configuration is already up to date and is now managed by SonarQube for IDE." to NotificationType.INFORMATION
+                "MCP configuration is already up to date." to NotificationType.INFORMATION
             McpTransactionResult.ConcurrentEdit ->
                 "The MCP configuration changed during setup. Review the file and retry so no edits are lost." to NotificationType.WARNING
             McpTransactionResult.Protected ->
                 "The MCP configuration was not changed because its current state cannot be updated safely. Open the file, resolve the issue, and retry." to NotificationType.WARNING
             McpTransactionResult.MissingConnection ->
                 "The selected SonarQube connection no longer exists. Add or select a connection, then retry." to NotificationType.ERROR
-            McpTransactionResult.InvalidCredentials ->
-                "The selected connection needs valid token credentials. Update its credentials, then retry MCP setup." to NotificationType.ERROR
+            McpTransactionResult.Cancelled ->
+                "MCP setup was cancelled. Choose Set up when you are ready to continue." to NotificationType.INFORMATION
             McpTransactionResult.SymlinkRefused ->
                 "The MCP configuration is a symbolic link and was not changed. Update the linked file manually or replace the link, then retry." to NotificationType.WARNING
             null ->
                 "MCP setup did not return a result. Refresh this view and retry." to NotificationType.WARNING
         }
         ui.showMessage(project, message, type)
-        if (result == McpTransactionResult.MissingConnection || result == McpTransactionResult.InvalidCredentials) {
+        if (result == McpTransactionResult.MissingConnection) {
             ui.openConnectionSettings(project)
         }
     }
 
     private fun refreshAll() {
-        refreshCallbacks.values.forEach { refresh ->
-            runOnUiThread(ModalityState.defaultModalityState(), refresh)
-        }
+        refreshCallbacks.values.forEach { refresh -> runOnUiThread(ModalityState.defaultModalityState(), refresh) }
     }
 
     override fun dispose() {
-        busConnection?.disconnect()
         refreshCallbacks.clear()
-    }
-
-    private fun logRefreshFailure(agent: AiAgent, error: Throwable) {
-        runCatching {
-            GlobalLogOutput.get().logError("Unable to refresh the managed MCP configuration for $agent", error)
-        }
     }
 }
 
@@ -423,7 +340,7 @@ enum class McpTransactionResult {
     ConcurrentEdit,
     Protected,
     MissingConnection,
-    InvalidCredentials,
+    Cancelled,
     SymlinkRefused
 }
 
@@ -434,7 +351,3 @@ private fun sameBytes(first: ByteArray?, second: ByteArray?): Boolean = when {
     first == null || second == null -> false
     else -> first.contentEquals(second)
 }
-
-internal fun managedFingerprint(content: ByteArray): String =
-    MessageDigest.getInstance("SHA-256").digest(content)
-        .joinToString("") { byte -> (byte.toInt() and 0xff).toString(16).padStart(2, '0') }

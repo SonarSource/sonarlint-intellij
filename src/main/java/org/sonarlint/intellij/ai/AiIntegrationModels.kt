@@ -97,7 +97,6 @@ data class McpAgentConfiguration(
     val agent: AiAgent,
     val path: java.nio.file.Path?,
     val state: McpConfigurationKind,
-    val owned: Boolean,
     val diagnostics: List<String>
 )
 
@@ -154,7 +153,7 @@ sealed interface AiIntegrationsIntent {
     data object InstallCli : AiIntegrationsIntent
     data object AuthenticateCli : AiIntegrationsIntent
     data class IntegrateCli(val agent: AiAgent) : AiIntegrationsIntent
-    data class SetUpMcp(val agent: AiAgent, val replaceExternal: Boolean = false) : AiIntegrationsIntent
+    data class SetUpMcp(val agent: AiAgent) : AiIntegrationsIntent
     data class OpenMcpConfiguration(val agent: AiAgent) : AiIntegrationsIntent
     data object OpenConnectionSettings : AiIntegrationsIntent
     data object UninstallCli : AiIntegrationsIntent

@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -28,11 +29,12 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import java.nio.file.Path
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
+import org.sonarlint.intellij.util.computeInEDT
 
 interface McpUiAdapter {
     fun chooseConnection(project: Project, connections: List<IntegrationConnection>): String?
 
-    fun confirmExternalTakeover(project: Project): Boolean
+    fun confirmWithoutToken(project: Project): Boolean
 
     fun openConfiguration(project: Project, path: Path)
 
@@ -55,12 +57,16 @@ class IntellijMcpUiAdapter : McpUiAdapter {
         return selected?.let { connections[it].connectionId }
     }
 
-    override fun confirmExternalTakeover(project: Project): Boolean = Messages.showYesNoDialog(
-        project,
-        "Only the SonarQube entry will be replaced. Unrelated entries in this configuration file will be preserved.",
-        "Set Up SonarQube MCP Server Again",
-        Messages.getWarningIcon()
-    ) == Messages.YES
+    override fun confirmWithoutToken(project: Project): Boolean = ApplicationManager.getApplication().computeInEDT {
+        Messages.showYesNoDialog(
+            project,
+            "No token is saved for this connection. The MCP server may not work until you add a valid token to its configuration.",
+            "Set Up SonarQube MCP Server",
+            "Proceed Anyway",
+            "Cancel",
+            Messages.getWarningIcon()
+        ) == Messages.YES
+    }
 
     override fun openConfiguration(project: Project, path: Path) {
         LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)?.let { file ->
