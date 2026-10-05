@@ -18,7 +18,7 @@ sonar-iac = "2.20.0.24052"
 sonarqube = "7.3.0.8198"
 orchestrator = "6.4.3.4676"
 
-kotlin-plugin = "2.2.21"
+kotlin-plugin = "2.4.20"
 license-plugin = "0.16.1"
 artifactory-plugin = "6.0.4"
 cyclonedx-plugin = "3.4.1"
