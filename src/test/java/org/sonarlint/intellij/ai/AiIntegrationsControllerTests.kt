@@ -39,6 +39,7 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.CliOperationListener
@@ -54,6 +55,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private lateinit var panel: AiIntegrationsPanel
     private lateinit var controller: AiIntegrationsController
     private lateinit var coordinator: CliOperationCoordinator
+    private lateinit var mcpCoordinator: McpConfigurationCoordinator
     private var extraController: AiIntegrationsController? = null
     private var enabledPluginIds = emptySet<String>()
     private val registry = AiAgentRegistry(IdePluginDetector { it in enabledPluginIds })
@@ -68,6 +70,15 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         coordinator = createCoordinator()
         replaceApplicationService(SonarLintTelemetry::class.java, mock(SonarLintTelemetry::class.java))
         panel = AiIntegrationsPanel(registry)
+        `when`(backend.inspectMcpConfiguration(any(), any())).thenReturn(
+            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
+        )
+        mcpCoordinator = McpConfigurationCoordinator(
+            backendService = backend,
+            registry = registry,
+            fileSystem = mock(McpFileSystem::class.java),
+            executor = Runnable::run
+        )
         controller = createController()
     }
 
@@ -156,7 +167,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         first.complete(snapshot(bothJetBrainsAgents.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
         descendants(panel).filterIsInstance<JToggleButton>().forEach { it.doClick() }
-        assertThat(labels(panel)).contains("3 agents detected", "3 supported")
+        assertThat(labels(panel)).contains("3 agents detected", "IDE setup: 1")
             .containsSubsequence("GitHub Copilot", "Junie", "JetBrains AI Assistant")
 
         enabledPluginIds = setOf("com.intellij.ml.llm")
@@ -164,7 +175,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, onlyAiAssistant)
         second.complete(snapshot(onlyAiAssistant.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 agent detected", "1 supported", "JetBrains AI Assistant")
+        assertThat(labels(panel)).contains("1 agent detected", "IDE setup: 0", "JetBrains AI Assistant")
             .doesNotContain("GitHub Copilot", "Junie")
 
         enabledPluginIds = emptySet()
@@ -172,7 +183,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, emptyList())
         third.complete(snapshot(emptyList()))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("0 agents detected", "0 supported")
+        assertThat(labels(panel)).contains("0 agents detected", "IDE setup: 0")
             .doesNotContain("GitHub Copilot", "Junie", "JetBrains AI Assistant")
     }
 
@@ -503,11 +514,11 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         panel: AiIntegrationsPanel = this.panel,
         coordinator: CliOperationCoordinator = this.coordinator,
         notifyUninstallResult: (CliUninstallFeedback.Finished) -> Unit = { results += it }
-    ) = AiIntegrationsController(project, panel, backend, registry, coordinator, notifyUninstallResult) {
+    ) = AiIntegrationsController(project, panel, backend, registry, coordinator, notifyUninstallResult, confirmUninstall = {
         confirmationCount++
         duringConfirmation()
         acceptUninstall
-    }
+    }, mcpCoordinator = mcpCoordinator)
 
     private fun useQueuedRefresh() {
         Disposer.dispose(controller)
