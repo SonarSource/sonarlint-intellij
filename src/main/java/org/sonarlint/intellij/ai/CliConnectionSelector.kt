@@ -41,7 +41,7 @@ class IntellijConnectionChoiceUi : ConnectionChoiceUi {
         }.toTypedArray()
         val selected = ConnectionChoiceDialog(
             project,
-            "Choose a SonarQube connection for the CLI sign-in.",
+            "Choose a SonarQube connection for CLI authentication.",
             "SonarQube CLI",
             labels.toList()
         ).choose()

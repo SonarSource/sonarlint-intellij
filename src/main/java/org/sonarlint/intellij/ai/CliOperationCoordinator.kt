@@ -56,17 +56,17 @@ class CliOperationCoordinator @JvmOverloads constructor(
         if (project.isDisposed) {
             return false
         }
-        val lease = OperationLease(project) { complete(it, CliOperationOutcome.Cancelled) }
+        val lease = OperationLease(project) { releaseOperation(it, CliOperationOutcome.Cancelled) }
         if (!active.compareAndSet(null, lease)) {
-            active.get()?.terminal?.focus?.invoke()
+            active.get()?.terminalSession?.focus?.invoke()
             return false
         }
         val preparation = try {
             Disposer.register(project, lease)
             prepare(project, snapshot, intent)
         } catch (_: CancellationException) {
-            finish(lease, CliOperationOutcome.Cancelled,
-                "SonarQube CLI sign-in was cancelled. No command was run; choose Sign in to try again.", NotificationType.INFORMATION)
+            releaseAndNotify(lease, CliOperationOutcome.Cancelled,
+                "SonarQube CLI login was cancelled. No command was run; choose Log in to try again.", NotificationType.INFORMATION)
             return false
         } catch (error: Exception) {
             CompletableFuture.failedFuture(error)
@@ -84,15 +84,15 @@ class CliOperationCoordinator @JvmOverloads constructor(
             return
         }
         if (lease.project.isDisposed) {
-            complete(lease, CliOperationOutcome.Cancelled)
+            releaseOperation(lease, CliOperationOutcome.Cancelled)
         } else if (preparationError != null || command == null) {
-            finish(lease, CliOperationOutcome.PreparationFailed,
+            releaseAndNotify(lease, CliOperationOutcome.PreparationFailed,
                 "Unable to prepare the SonarQube CLI command. Check the selected connection and retry.", NotificationType.ERROR)
         } else {
             try {
                 launch(lease, command)
             } catch (_: Exception) {
-                finish(lease, CliOperationOutcome.LaunchFailed,
+                releaseAndNotify(lease, CliOperationOutcome.LaunchFailed,
                     "The SonarQube CLI command could not be started. Retry from this view.", NotificationType.ERROR)
             }
         }
@@ -106,7 +106,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
         when (intent) {
             AiIntegrationsIntent.InstallCli -> backendService.prepareInstallCliCommand()
             AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot)) {
-                ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
+                ConnectionSelection.Cancelled -> throw CancellationException("CLI login cancelled")
                 ConnectionSelection.InteractiveLogin -> backendService.prepareAuthenticateCliCommand(null)
                 is ConnectionSelection.Selected -> backendService.prepareAuthenticateCliCommand(selection.connectionId)
             }
@@ -116,19 +116,19 @@ class CliOperationCoordinator @JvmOverloads constructor(
     private fun launch(lease: OperationLease, command: CliCommand) {
         when (val launch = terminalAdapterProvider().launch(lease.project, command)) {
             is TerminalLaunch.Started -> {
-                lease.terminal = launch
+                lease.terminalSession = launch
                 launch.completion.whenComplete { completion, error ->
-                    completeTerminalOperation(lease, completion, error)
+                    handleTerminalCompletion(lease, completion, error)
                 }
             }
-            is TerminalLaunch.Failed -> finish(lease, CliOperationOutcome.LaunchFailed,
+            is TerminalLaunch.Failed -> releaseAndNotify(lease, CliOperationOutcome.LaunchFailed,
                 "The SonarQube CLI terminal could not be started. Check the terminal output and retry.", NotificationType.ERROR)
-            TerminalLaunch.Unsupported -> finish(lease, CliOperationOutcome.LaunchFailed,
+            TerminalLaunch.Unsupported -> releaseAndNotify(lease, CliOperationOutcome.LaunchFailed,
                 "SonarQube CLI setup requires the Terminal plugin. Enable it in Settings > Plugins and retry.", NotificationType.ERROR)
         }
     }
 
-    private fun completeTerminalOperation(
+    private fun handleTerminalCompletion(
         lease: OperationLease,
         completion: TerminalCompletion?,
         error: Throwable?
@@ -160,21 +160,21 @@ class CliOperationCoordinator @JvmOverloads constructor(
                 NotificationType.WARNING
             )
         }
-        finish(lease, outcome, message, type)
+        releaseAndNotify(lease, outcome, message, type)
     }
 
-    private fun complete(lease: OperationLease, outcome: CliOperationOutcome): Boolean {
+    private fun releaseOperation(lease: OperationLease, outcome: CliOperationOutcome): Boolean {
         if (!active.compareAndSet(lease, null)) {
             return false
         }
         lastOutcome.set(outcome)
-        Disposer.dispose(lease)
         refreshViews()
         return true
     }
 
-    private fun finish(lease: OperationLease, outcome: CliOperationOutcome, message: String, type: NotificationType) {
-        if (complete(lease, outcome)) {
+    private fun releaseAndNotify(lease: OperationLease, outcome: CliOperationOutcome, message: String, type: NotificationType) {
+        if (releaseOperation(lease, outcome)) {
+            Disposer.dispose(lease)
             notifyUser(lease.project, message, type)
         }
     }
@@ -182,7 +182,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
 private class OperationLease(val project: Project, private val onDispose: (OperationLease) -> Unit) : Disposable {
     @Volatile
-    var terminal: TerminalLaunch.Started? = null
+    var terminalSession: TerminalLaunch.Started? = null
 
     override fun dispose() = onDispose(this)
 }

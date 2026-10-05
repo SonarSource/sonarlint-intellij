@@ -145,6 +145,28 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun `successful completion releases the operation once before project disposal`() {
+        val closingProject = mock<Project>()
+        val backend = mock<BackendService>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        val terminal = mock<CliTerminalAdapter>()
+        whenever(terminal.launch(any(), any())).thenReturn(
+            TerminalLaunch.Started({}, CompletableFuture.completedFuture(TerminalCompletion.Exited(0)))
+        )
+        val notifications = mutableListOf<Notification>()
+        val refreshes = AtomicInteger()
+        val coordinator = coordinator(backend, terminal, notifications = notifications, refresh = { refreshes.incrementAndGet() })
+
+        coordinator.execute(closingProject, snapshot, AiIntegrationsIntent.InstallCli)
+        Disposer.dispose(closingProject)
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.ExitZero)
+        assertThat(refreshes.get()).isEqualTo(1)
+        assertThat(notifications).hasSize(1)
+    }
+
+    @Test
     fun `maps terminal completion outcomes without treating unknown close as cancellation`() {
         val cases = listOf(
             TerminalCompletion.Cancelled to CliOperationOutcome.Cancelled,

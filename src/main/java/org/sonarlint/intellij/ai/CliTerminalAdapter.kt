@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.extensions.ExtensionPointName
 import java.util.concurrent.CompletableFuture
 
 fun interface CliTerminalAdapter {
@@ -44,10 +44,6 @@ class SafeOptionalTerminalAdapter : CliTerminalAdapter {
 }
 
 object CliTerminalAdapterProvider {
-    private val extensionPoint = ExtensionPointName.create<CliTerminalAdapter>("org.sonarlint.idea.cliTerminalAdapter")
-
-    fun create(): CliTerminalAdapter = select(extensionPoint.extensionList)
-
-    internal fun select(adapters: List<CliTerminalAdapter>): CliTerminalAdapter =
-        adapters.firstOrNull() ?: SafeOptionalTerminalAdapter()
+    fun create(): CliTerminalAdapter =
+        ApplicationManager.getApplication().getService(CliTerminalAdapter::class.java) ?: SafeOptionalTerminalAdapter()
 }
