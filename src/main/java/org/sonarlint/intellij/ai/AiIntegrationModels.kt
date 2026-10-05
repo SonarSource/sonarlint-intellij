@@ -64,3 +64,8 @@ sealed interface AiIntegrationsPanelState {
     data class Empty(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
     data class Error(val message: String) : AiIntegrationsPanelState
 }
+sealed interface AiIntegrationsIntent {
+    data object InstallCli : AiIntegrationsIntent
+    data object AuthenticateCli : AiIntegrationsIntent
+    data class IntegrateCli(val agent: AiAgent) : AiIntegrationsIntent
+}
