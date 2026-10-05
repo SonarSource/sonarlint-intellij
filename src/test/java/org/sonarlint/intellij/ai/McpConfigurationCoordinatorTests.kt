@@ -123,7 +123,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `creation preserves unrelated content and creates a backup`() {
+    fun `creation preserves unrelated content without leaving a backup or temporary file`() {
         val path = tempDir.resolve("mcp.json")
         Files.writeString(path, "{\"unrelated\":true}")
         plan(McpConfigurationKind.NOT_CONFIGURED, "{\"unrelated\":true,\"sonar\":true}")
@@ -132,7 +132,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
 
         assertThat(result).isEqualTo(McpTransactionResult.Updated)
         assertThat(Files.readString(path)).contains("\"unrelated\":true").contains("\"sonar\":true")
-        assertThat(Files.readString(tempDir.resolve("mcp.json.bak"))).isEqualTo("{\"unrelated\":true}")
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
         verify(backend).generateMcpConfiguration(eq("connection"), any())
         assertThat(ui.tokenWarningRequests).isZero()
     }
@@ -151,7 +151,6 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(result).isEqualTo(McpTransactionResult.Protected)
         assertThat(Files.readString(path)).isEqualTo("configured by another agent")
         verify(backend).planMcpConfigurationUpdate(AiAgent.CURSOR, "configured by another agent", "generated")
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
     }
 
     @Test
@@ -245,7 +244,6 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         coordinator().embeddedServerStarted(64121)
 
         assertThat(Files.readString(path)).isEqualTo(content)
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
         verify(backend).planMcpConfigurationUpdate(AiAgent.CURSOR, content, portConfiguration(64121))
         verify(backend, never()).generateMcpConfiguration(any(), any())
     }
@@ -273,6 +271,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
 
         val mapper = JsonMapper()
         assertThat(mapper.readTree(Files.readString(path))).isEqualTo(mapper.readTree(content.replace("64120", "64121")))
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
         verify(credentials, never()).getCredentials(any())
         verify(backend, never()).generateMcpConfiguration(any(), any())
     }
@@ -286,7 +285,6 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
             coordinator.embeddedServerStarted(64121)
             assertThat(Files.readString(path)).isEqualTo("existing")
         }
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
     }
 
     @Test
@@ -352,11 +350,10 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
 
         assertThat(result).isEqualTo(McpTransactionResult.ConcurrentEdit)
         assertThat(Files.readString(path)).isEqualTo("concurrent edit")
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
     }
 
     @Test
-    fun `compare and swap rechecks after backup and temp creation and cleans both`() {
+    fun `compare and swap rechecks after temp creation and removes the temporary file`() {
         val path = tempDir.resolve("mcp.json")
         Files.writeString(path, "before")
         plan(McpConfigurationKind.NOT_CONFIGURED, "planned")
@@ -367,7 +364,6 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(result).isEqualTo(McpTransactionResult.ConcurrentEdit)
         assertThat(Files.readString(path)).isEqualTo("changed after temp creation")
         assertThat(Files.exists(fileSystem.temp!!)).isFalse()
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
     }
 
     @Test
@@ -383,14 +379,17 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `unchanged port refresh creates no backup`() {
+    fun `unchanged port refresh does not write a temporary file or replace the configuration`() {
         val path = detectedFile()
         plan(McpConfigurationKind.STANDALONE, "existing")
+        val fileSystem = mock<McpFileSystem>()
+        whenever(fileSystem.read(path)).thenReturn("existing".toByteArray())
 
-        coordinator().embeddedServerStarted(64121)
+        coordinator(fileSystem = fileSystem).embeddedServerStarted(64121)
 
         assertThat(Files.readString(path)).isEqualTo("existing")
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
+        verify(fileSystem, never()).writeSiblingTemp(any(), any())
+        verify(fileSystem, never()).replace(any(), any())
     }
 
     @Test
@@ -403,7 +402,6 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThatThrownBy { coordinator(fileSystem = fileSystem).safeUpdate(AiAgent.CURSOR, path, "generated") }
             .isInstanceOf(IllegalStateException::class.java)
         assertThat(Files.exists(fileSystem.temp!!)).isFalse()
-        assertThat(Files.exists(tempDir.resolve("mcp.json.bak"))).isFalse()
         assertThat(Files.readString(path)).isEqualTo("before")
     }
 
@@ -546,13 +544,8 @@ private class RecordingMcpUi : McpUiAdapter {
     data class UiMessage(val message: String, val type: NotificationType)
 }
 
-private class FailingReplaceFileSystem : McpFileSystem {
-    private val delegate = NioMcpFileSystem()
+private class FailingReplaceFileSystem(private val delegate: McpFileSystem = NioMcpFileSystem()) : McpFileSystem by delegate {
     var temp: Path? = null
-
-    override fun read(path: Path): ByteArray? = delegate.read(path)
-
-    override fun createBackup(path: Path, content: ByteArray): Path? = delegate.createBackup(path, content)
 
     override fun writeSiblingTemp(path: Path, content: ByteArray): Path =
         delegate.writeSiblingTemp(path, content).also { temp = it }
@@ -560,29 +553,14 @@ private class FailingReplaceFileSystem : McpFileSystem {
     override fun replace(temp: Path, target: Path) {
         throw IllegalStateException("move failed")
     }
-
-    override fun deleteIfExists(path: Path) = delegate.deleteIfExists(path)
-
-    override fun isSymbolicLink(path: Path): Boolean = delegate.isSymbolicLink(path)
 }
 
-private class MutatingAfterTempFileSystem(private val target: Path) : McpFileSystem {
-    private val delegate = NioMcpFileSystem()
+private class MutatingAfterTempFileSystem(private val target: Path, private val delegate: McpFileSystem = NioMcpFileSystem()) : McpFileSystem by delegate {
     var temp: Path? = null
-
-    override fun read(path: Path): ByteArray? = delegate.read(path)
-
-    override fun createBackup(path: Path, content: ByteArray): Path? = delegate.createBackup(path, content)
 
     override fun writeSiblingTemp(path: Path, content: ByteArray): Path =
         delegate.writeSiblingTemp(path, content).also {
             temp = it
             Files.writeString(target, "changed after temp creation")
         }
-
-    override fun replace(temp: Path, target: Path) = delegate.replace(temp, target)
-
-    override fun deleteIfExists(path: Path) = delegate.deleteIfExists(path)
-
-    override fun isSymbolicLink(path: Path): Boolean = delegate.isSymbolicLink(path)
 }
