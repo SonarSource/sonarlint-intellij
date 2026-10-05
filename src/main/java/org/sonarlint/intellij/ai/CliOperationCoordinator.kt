@@ -105,6 +105,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
         }
         if (lease.project.isDisposed || lease.indicator?.isCanceled == true) {
             releaseOperation(lease, CliOperationOutcome.Cancelled)
+            Disposer.dispose(lease)
         } else if (preparationError != null || command == null) {
             releaseAndNotify(lease, CliOperationOutcome.PreparationFailed,
                 "Unable to prepare the SonarQube CLI command. Check the selected connection and retry.", NotificationType.ERROR)
@@ -143,20 +144,13 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
             override fun onSuccess() {
                 if (active.get() != lease || lease.project.isDisposed || lease.indicator?.isCanceled == true) {
-                    releaseOperation(lease, CliOperationOutcome.Cancelled)
+                    onCancel()
                     return
                 }
                 when (response.status) {
                     Status.AUTHENTICATED -> releaseAndNotify(lease, CliOperationOutcome.Authenticated,
                         "Signed in to SonarQube CLI.", NotificationType.INFORMATION)
-                    Status.INTERACTIVE_LOGIN_REQUIRED -> {
-                        lease.savedTokenAuthentication = false
-                        try {
-                            prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(connectionId))
-                        } catch (error: Exception) {
-                            onThrowable(error)
-                        }
-                    }
+                    Status.INTERACTIVE_LOGIN_REQUIRED -> prepareInteractiveAuthentication(lease, connectionId)
                     Status.UPGRADE_REQUIRED -> releaseAndNotify(lease, CliOperationOutcome.AuthenticationFailed,
                         "Update SonarQube CLI to the latest version to reuse a saved connection token.", NotificationType.WARNING)
                     Status.FAILED -> releaseAndNotify(lease, CliOperationOutcome.AuthenticationFailed,
@@ -166,16 +160,27 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
             override fun onCancel() {
                 releaseOperation(lease, CliOperationOutcome.Cancelled)
+                Disposer.dispose(lease)
             }
 
             override fun onThrowable(error: Throwable) {
                 if (active.get() == lease && !lease.project.isDisposed && lease.indicator?.isCanceled != true) {
                     releaseAndNotify(lease, CliOperationOutcome.AuthenticationFailed, "Unable to sign in to SonarQube CLI. Retry from this view.", NotificationType.ERROR)
                 } else {
-                    releaseOperation(lease, CliOperationOutcome.Cancelled)
+                    onCancel()
                 }
             }
         })
+    }
+
+    private fun prepareInteractiveAuthentication(lease: OperationLease, connectionId: String) {
+        lease.savedTokenAuthentication = false
+        val preparation: CompletableFuture<CliCommand> = try {
+            backendService.prepareAuthenticateCliCommand(connectionId)
+        } catch (error: Exception) {
+            CompletableFuture.failedFuture(error)
+        }
+        prepareAndLaunch(lease, preparation)
     }
 
     private fun launch(lease: OperationLease, command: CliCommand) {
@@ -233,8 +238,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
             return false
         }
         lastOutcome.set(outcome)
-        if ((!lease.savedTokenAuthentication || outcome == CliOperationOutcome.Authenticated) &&
-            (outcome != CliOperationOutcome.Cancelled || lease.indicator == null)) refreshViews()
+        if (outcome != CliOperationOutcome.Cancelled || !lease.savedTokenAuthentication) refreshViews()
         return true
     }
 
