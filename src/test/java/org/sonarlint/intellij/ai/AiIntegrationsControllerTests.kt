@@ -26,6 +26,8 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.UIUtil
 import java.awt.Container
 import java.util.concurrent.CompletableFuture
+import javax.swing.JButton
+import javax.swing.JToggleButton
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -39,6 +41,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.CliOperationListener
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 
@@ -46,11 +49,12 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private lateinit var backend: BackendService
     private lateinit var panel: AiIntegrationsPanel
     private lateinit var controller: AiIntegrationsController
+    private var enabledPluginIds = emptySet<String>()
 
     @BeforeEach
     fun setUpController() {
         backend = mock(BackendService::class.java)
-        val registry = AiAgentRegistry(IdePluginDetector { false })
+        val registry = AiAgentRegistry(IdePluginDetector { it in enabledPluginIds })
         panel = AiIntegrationsPanel(registry)
         controller = AiIntegrationsController(project, panel, backend, registry)
     }
@@ -121,6 +125,49 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         assertThat(texts(panel)).contains("Backend unavailable")
     }
+
+    @Test
+    fun `refresh detects current plugins and updates the panel from backend capabilities`() {
+        val bothJetBrainsAgents = listOf(AiAgent.GITHUB_COPILOT, AiAgent.JUNIE, AiAgent.JETBRAINS_AI_ASSISTANT)
+        val onlyAiAssistant = listOf(AiAgent.JETBRAINS_AI_ASSISTANT)
+        val first = CompletableFuture<AiIntegrationSnapshot>()
+        val second = CompletableFuture<AiIntegrationSnapshot>()
+        val third = CompletableFuture<AiIntegrationSnapshot>()
+        `when`(backend.getAiIntegrationState(project, bothJetBrainsAgents)).thenReturn(first)
+        `when`(backend.getAiIntegrationState(project, onlyAiAssistant)).thenReturn(second)
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(third)
+        enabledPluginIds = setOf("com.github.copilot", "org.jetbrains.junie", "com.intellij.ml.llm")
+
+        controller.loadInitially()
+        verify(backend).getAiIntegrationState(project, bothJetBrainsAgents)
+        first.complete(snapshot(bothJetBrainsAgents.map(::hostedCapability)))
+        UIUtil.dispatchAllInvocationEvents()
+        descendants(panel).filterIsInstance<JToggleButton>().forEach { it.doClick() }
+        assertThat(labels(panel)).contains("3 agents detected", "3 supported")
+            .containsSubsequence("GitHub Copilot", "Junie", "JetBrains AI Assistant")
+
+        enabledPluginIds = setOf("com.intellij.ml.llm")
+        refreshFromPanel()
+        verify(backend).getAiIntegrationState(project, onlyAiAssistant)
+        second.complete(snapshot(onlyAiAssistant.map(::hostedCapability)))
+        UIUtil.dispatchAllInvocationEvents()
+        assertThat(labels(panel)).contains("1 agent detected", "1 supported", "JetBrains AI Assistant")
+            .doesNotContain("GitHub Copilot", "Junie")
+
+        enabledPluginIds = emptySet()
+        refreshFromPanel()
+        verify(backend).getAiIntegrationState(project, emptyList())
+        third.complete(snapshot(emptyList()))
+        UIUtil.dispatchAllInvocationEvents()
+        assertThat(labels(panel)).contains("0 agents detected", "0 supported")
+            .doesNotContain("GitHub Copilot", "Junie", "JetBrains AI Assistant")
+    }
+
+    private fun refreshFromPanel() {
+        descendants(panel).filterIsInstance<JButton>().single { it.text == "Refresh" }.doClick()
+    }
+
+    private fun hostedCapability(agent: AiAgent) = AgentCapability(agent, setOf(AiAgentDetectionSource.IDE), false, true)
 
     private fun snapshot(agents: List<AgentCapability>) = AiIntegrationSnapshot(
         CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),

@@ -28,29 +28,80 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
 class AiAgentRegistryTests {
     @Test
-    fun `detects enabled GitHub Copilot plugin`() {
-        val descriptor = pluginDescriptor(enabled = true)
-        val registry = AiAgentRegistry(IntellijIdePluginDetector { pluginId ->
-            assertThat(pluginId.idString).isEqualTo(AiAgentRegistry.GITHUB_COPILOT_PLUGIN_ID)
-            descriptor
+    fun `detects each enabled plugin independently`() {
+        supportedPlugins.forEach { (pluginId, agent) ->
+            val registry = registry(mapOf(pluginId to pluginDescriptor(enabled = true)))
+
+            assertThat(registry.detectedIdeAgents()).containsExactly(agent)
+        }
+    }
+
+    @Test
+    fun `does not detect disabled plugins`() {
+        val registry = registry(supportedPlugins.mapValues { pluginDescriptor(enabled = false) })
+
+        assertThat(registry.detectedIdeAgents()).isEmpty()
+    }
+
+    @Test
+    fun `does not detect absent plugins`() {
+        val registry = registry(emptyMap())
+
+        assertThat(registry.detectedIdeAgents()).isEmpty()
+    }
+
+    @Test
+    fun `detects enabled plugins in stable order`() {
+        val registry = registry(supportedPlugins.entries.reversed().associate { (pluginId, _) ->
+            pluginId to pluginDescriptor(enabled = true)
         })
 
-        assertThat(registry.detectedIdeAgents()).containsExactly(AiAgent.GITHUB_COPILOT)
+        assertThat(registry.detectedIdeAgents()).containsExactly(
+            AiAgent.GITHUB_COPILOT, AiAgent.JUNIE, AiAgent.JETBRAINS_AI_ASSISTANT
+        )
     }
 
     @Test
-    fun `does not detect a disabled GitHub Copilot plugin`() {
-        val registry = AiAgentRegistry(IntellijIdePluginDetector { pluginDescriptor(enabled = false) })
+    fun `detects AI Assistant when Junie and Copilot are disabled`() {
+        val registry = registry(mapOf(
+            "com.github.copilot" to pluginDescriptor(enabled = false),
+            "org.jetbrains.junie" to pluginDescriptor(enabled = false),
+            "com.intellij.ml.llm" to pluginDescriptor(enabled = true)
+        ))
 
-        assertThat(registry.detectedIdeAgents()).isEmpty()
+        assertThat(registry.detectedIdeAgents()).containsExactly(AiAgent.JETBRAINS_AI_ASSISTANT)
     }
 
     @Test
-    fun `does not detect an absent GitHub Copilot plugin`() {
-        val registry = AiAgentRegistry(IntellijIdePluginDetector { null })
+    fun `provides display names for every supported agent`() {
+        val registry = AiAgentRegistry()
+        val expectedNames = mapOf(
+            AiAgent.CURSOR to "Cursor",
+            AiAgent.GITHUB_COPILOT to "GitHub Copilot",
+            AiAgent.JUNIE to "Junie",
+            AiAgent.JETBRAINS_AI_ASSISTANT to "JetBrains AI Assistant",
+            AiAgent.KIRO to "Kiro",
+            AiAgent.WINDSURF to "Windsurf",
+            AiAgent.CLAUDE_CODE to "Claude Code",
+            AiAgent.CODEX to "Codex",
+            AiAgent.GITHUB_COPILOT_CLI to "GitHub Copilot CLI",
+            AiAgent.ANTIGRAVITY to "Antigravity"
+        )
 
-        assertThat(registry.detectedIdeAgents()).isEmpty()
+        assertThat(expectedNames.keys).containsExactlyInAnyOrderElementsOf(AiAgent.entries)
+        expectedNames.forEach { (agent, name) ->
+            assertThat(registry.displayName(agent)).isEqualTo(name)
+        }
     }
+
+    private val supportedPlugins = mapOf(
+        "com.github.copilot" to AiAgent.GITHUB_COPILOT,
+        "org.jetbrains.junie" to AiAgent.JUNIE,
+        "com.intellij.ml.llm" to AiAgent.JETBRAINS_AI_ASSISTANT
+    )
+
+    private fun registry(plugins: Map<String, IdeaPluginDescriptor>) =
+        AiAgentRegistry(IntellijIdePluginDetector { plugins[it.idString] })
 
     private fun pluginDescriptor(enabled: Boolean): IdeaPluginDescriptor =
         mock(IdeaPluginDescriptor::class.java).also { `when`(it.isEnabled).thenReturn(enabled) }
