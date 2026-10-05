@@ -24,9 +24,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.toImmutableSet
 import org.sonarlint.intellij.common.util.FileUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
@@ -34,70 +36,88 @@ import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-class EventScheduler(
-    private val schedulerName: String,
+class EventScheduler internal constructor(
     private val timer: Long,
     // True -> Schedule tasks at specific intervals
     // False -> Cancel the scheduled task and reschedule a new one
-    private val atInterval: Boolean
+    private val atInterval: Boolean,
+    private val scheduler: ScheduledExecutorService,
+    private val batchConsumer: (Set<VirtualFile>) -> Unit
 ) {
 
+    constructor(schedulerName: String, timer: Long, atInterval: Boolean) : this(
+        timer,
+        atInterval,
+        Executors.newScheduledThreadPool(1) { r -> Thread(r, "sonarlint-auto-trigger-$schedulerName") },
+        { dispatchFileChanges(it, ProjectLocator.getInstance()) }
+    )
+
+    private val lock = Any()
     private val changedFiles = mutableSetOf<VirtualFile>()
-    private val scheduler = Executors.newScheduledThreadPool(1) { r -> Thread(r, "sonarlint-auto-trigger-$schedulerName") }
     private var scheduledTask: ScheduledFuture<*>? = null
+    private var scheduledTaskIdentity: Any? = null
+    private var stopped = false
 
     fun stopScheduler() {
-        scheduledTask?.cancel(true)
-        changedFiles.clear()
+        synchronized(lock) {
+            if (stopped) return
+            stopped = true
+            scheduledTaskIdentity = null
+            scheduledTask?.cancel(true)
+            scheduledTask = null
+            changedFiles.clear()
+        }
         scheduler.shutdownNow()
     }
 
-    private fun trigger() {
-        groupByProject(changedFiles).forEach { (project, files) -> notifyFileChangesForProject(project, files) }
-        changedFiles.clear()
+    private fun trigger(identity: Any) {
+        val batch = synchronized(lock) {
+            if (stopped || scheduledTaskIdentity !== identity) return
+            scheduledTask = null
+            scheduledTaskIdentity = null
+            changedFiles.toImmutableSet().also { changedFiles.clear() }
+        }
+        batchConsumer(batch)
     }
 
     fun notify(file: VirtualFile) {
-        changedFiles.add(file)
-
-        // Remove the previously finished task
-        if (scheduledTask?.isDone == true) {
-            scheduledTask = null
-        }
-
-        if (atInterval) {
-            scheduledTask ?: let {
-                // Schedule a new task only if no task currently scheduled
-                scheduledTask = scheduler.schedule({ trigger() }, timer, TimeUnit.MILLISECONDS)
-            }
-        } else {
-            // Cancelling the scheduled task and postponing it later
+        synchronized(lock) {
+            if (stopped) return
+            changedFiles.add(file)
+            if (atInterval && scheduledTaskIdentity != null) return
             scheduledTask?.cancel(false)
-            scheduledTask = scheduler.schedule({ trigger() }, timer, TimeUnit.MILLISECONDS)
+            val identity = Any()
+            scheduledTaskIdentity = identity
+            scheduledTask = scheduler.schedule({ trigger(identity) }, timer, TimeUnit.MILLISECONDS)
         }
     }
 
-    private fun groupByProject(files: Set<VirtualFile>) =
-        files.fold(mutableMapOf<Project, MutableSet<VirtualFile>>()) { acc, file ->
-            ProjectLocator.getInstance().getProjectsForFile(file)
-                .filter { it != null && !it.isDisposed }
-                .forEach { project -> acc.computeIfAbsent(project!!) { mutableSetOf() }.add(file) }
-            acc
-        }.toImmutableMap()
+}
 
-    private fun notifyFileChangesForProject(project: Project, changedFiles: Set<VirtualFile>) {
-        val filesToSendPerModule = HashMap<Module, MutableList<VirtualFileEvent>>()
+internal fun dispatchFileChanges(files: Set<VirtualFile>, projectLocator: ProjectLocator) {
+    groupByProject(files, projectLocator).forEach { (project, projectFiles) -> notifyFileChangesForProject(project, projectFiles) }
+}
 
-        changedFiles
-            .filter { FileUtils.isFileValidForSonarLintWithExtensiveChecks(it, project) }
-            .forEach { file ->
-                val module = findModuleForFile(file, project) ?: return@forEach
-                filesToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file))
-            }
+private fun groupByProject(files: Set<VirtualFile>, projectLocator: ProjectLocator) =
+    files.fold(mutableMapOf<Project, MutableSet<VirtualFile>>()) { acc, file ->
+        projectLocator.getProjectsForFile(file)
+            .filter { it != null && !it.isDisposed }
+            .forEach { project -> acc.computeIfAbsent(project!!) { mutableSetOf() }.add(file) }
+        acc
+    }.mapValues { it.value.toImmutableSet() }.toImmutableMap()
 
-        if (filesToSendPerModule.isNotEmpty()) {
-            getService(BackendService::class.java).updateFileSystem(filesToSendPerModule, true)
+private fun notifyFileChangesForProject(project: Project, changedFiles: Set<VirtualFile>) {
+    if (project.isDisposed) return
+    val filesToSendPerModule = HashMap<Module, MutableList<VirtualFileEvent>>()
+
+    changedFiles
+        .filter { FileUtils.isFileValidForSonarLintWithExtensiveChecks(it, project) }
+        .forEach { file ->
+            val module = findModuleForFile(file, project) ?: return@forEach
+            filesToSendPerModule.computeIfAbsent(module) { mutableListOf() }.add(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file))
         }
-    }
 
+    if (filesToSendPerModule.isNotEmpty() && !project.isDisposed) {
+        getService(BackendService::class.java).updateFileSystem(filesToSendPerModule, true)
+    }
 }

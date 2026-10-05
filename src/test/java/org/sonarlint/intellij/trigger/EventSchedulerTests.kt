@@ -19,96 +19,313 @@
  */
 package org.sonarlint.intellij.trigger
 
+import com.intellij.openapi.vfs.VirtualFile
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import org.assertj.core.api.Assertions
-import org.awaitility.Awaitility
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
-import org.mockito.kotlin.timeout
-import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.analysis.AnalysisReadinessCache
-import org.sonarlint.intellij.any
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.fs.VirtualFileEvent
-import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
-@Disabled("Disabled as ProjectLocator returns an empty list of projects")
-class EventSchedulerTests : AbstractSonarLintLightTests() {
+class EventSchedulerTests {
 
-    private val backend = mock(BackendService::class.java)
-
-    @BeforeEach
-    fun prepare() {
-        replaceProjectService(BackendService::class.java, backend)
-        globalSettings.isAutoTrigger = true
-        Awaitility.await().atMost(20, TimeUnit.SECONDS).untilAsserted {
-            Assertions.assertThat(SonarLintUtils.getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)).isTrue()
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `edits received while a batch is being sent form a later batch`(atInterval: Boolean) {
+        val timer = ControlledTimer()
+        val firstFile = mock<VirtualFile>()
+        val laterFile = mock<VirtualFile>()
+        val firstSend = BlockingCall()
+        val batches = mutableListOf<Set<VirtualFile>>()
+        val scheduler = EventScheduler(100, atInterval, timer.executor) { batch ->
+            batches.add(batch)
+            if (batches.size == 1) firstSend.block()
         }
-        Mockito.clearInvocations(backend)
-    }
 
-    @Test
-    fun should_trigger_single_file_analysis() {
-        val eventScheduler = EventScheduler("testScheduler", 200, false)
-        val file = createAndOpenTestVirtualFile("MyClass1.java", "")
-        eventScheduler.notify(file)
+        withWorkers { workers ->
+            try {
+                scheduler.notify(firstFile)
+                timer.elapseBy(100)
+                val firstCallback = workers.submit { assertThat(timer.runNext()).isTrue() }
+                firstSend.awaitEntered()
 
-        verify(backend, timeout(2000))
-            .updateFileSystem(mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file))), true)
-    }
+                scheduler.notify(firstFile)
+                scheduler.notify(laterFile)
+                val replacement = timer.tasks.last()
+                firstSend.release()
+                firstCallback.get(5, TimeUnit.SECONDS)
 
-    @Test
-    fun should_trigger_multiple_file_analysis() {
-        val eventScheduler = EventScheduler("testScheduler",  200, false)
-        val file1 = createAndOpenTestVirtualFile("MyClass1.java", "")
-        val file2 = createAndOpenTestVirtualFile("MyClass2.java", "")
-        eventScheduler.notify(file1)
-        eventScheduler.notify(file2)
-
-        verify(backend, timeout(2000))
-            .updateFileSystem(mapOf(
-                module to listOf(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file1)),
-                module to listOf(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file2))
-            ), true)
-    }
-
-    @Test
-    fun should_trigger_different_analysis_at_interval() {
-        val eventScheduler = EventScheduler("testScheduler",  200, true)
-        val file1 = createAndOpenTestVirtualFile("MyClass1.java", "")
-        val file2 = createAndOpenTestVirtualFile("MyClass2.java", "")
-        eventScheduler.notify(file1)
-        Thread.sleep(250)
-        eventScheduler.notify(file2)
-
-        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted {
-            verify(backend, times(2)).updateFileSystem(any(), any())
+                assertThat(batches).containsExactly(setOf(firstFile))
+                assertThat(replacement.cancelled).isFalse()
+                timer.elapseBy(100)
+                assertThat(timer.runNext()).isTrue()
+                assertThat(batches).containsExactly(setOf(firstFile), setOf(firstFile, laterFile))
+                assertThat(timer.runNext()).isFalse()
+            } finally {
+                firstSend.release()
+                scheduler.stopScheduler()
+            }
         }
     }
 
     @Test
-    fun should_trigger_single_analysis_without_interval() {
-        val eventScheduler = EventScheduler("testScheduler", 200, false)
-        val file1 = createAndOpenTestVirtualFile("MyClass1.java", "")
-        val file2 = createAndOpenTestVirtualFile("MyClass2.java", "")
-        eventScheduler.notify(file1)
-        Thread.sleep(150)
-        eventScheduler.notify(file2)
-        Thread.sleep(150)
-        eventScheduler.notify(file2)
+    fun `a cancelled debounce callback cannot drain files or clear its replacement`() {
+        val timer = ControlledTimer()
+        val batches = mutableListOf<Set<VirtualFile>>()
+        val scheduler = EventScheduler(100, false, timer.executor, batches::add)
+        val firstFile = mock<VirtualFile>()
+        val secondFile = mock<VirtualFile>()
+        try {
+            scheduler.notify(firstFile)
+            val staleCallback = timer.tasks.single()
+            timer.elapseBy(50)
+            scheduler.notify(secondFile)
 
-        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted {
-            verify(backend, times(1)).updateFileSystem(mapOf(
-                module to listOf(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file1)),
-                module to listOf(VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, file2))
-            ), true)
+            assertThat(staleCallback.cancelled).isTrue()
+            assertThat(staleCallback.cancelledWithInterrupt).isFalse()
+            staleCallback.callback.run()
+            assertThat(batches).isEmpty()
+
+            timer.elapseBy(100)
+            assertThat(timer.runNext()).isTrue()
+            staleCallback.callback.run()
+            assertThat(batches).containsExactly(setOf(firstFile, secondFile))
+        } finally {
+            scheduler.stopScheduler()
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `interval keeps the first deadline and debounce postpones it`(atInterval: Boolean) {
+        val timer = ControlledTimer()
+        val batches = mutableListOf<Set<VirtualFile>>()
+        val scheduler = EventScheduler(100, atInterval, timer.executor, batches::add)
+        val firstFile = mock<VirtualFile>()
+        val secondFile = mock<VirtualFile>()
+        try {
+            scheduler.notify(firstFile)
+            timer.elapseBy(50)
+            scheduler.notify(secondFile)
+            scheduler.notify(secondFile)
+            timer.elapseBy(50)
+
+            assertThat(timer.runNext()).isEqualTo(atInterval)
+            if (!atInterval) {
+                assertThat(batches).isEmpty()
+                timer.elapseBy(50)
+                assertThat(timer.runNext()).isTrue()
+            }
+            assertThat(batches).containsExactly(setOf(firstFile, secondFile))
+        } finally {
+            scheduler.stopScheduler()
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `stop cancels pending work and ignores repeated stops and late edits`(atInterval: Boolean) {
+        val timer = ControlledTimer()
+        val batches = mutableListOf<Set<VirtualFile>>()
+        val scheduler = EventScheduler(100, atInterval, timer.executor, batches::add)
+        scheduler.notify(mock())
+        val cancelledTask = timer.tasks.single()
+
+        scheduler.stopScheduler()
+        scheduler.stopScheduler()
+        scheduler.notify(mock())
+        cancelledTask.callback.run()
+
+        assertThat(cancelledTask.cancelled).isTrue()
+        assertThat(cancelledTask.cancelledWithInterrupt).isTrue()
+        assertThat(timer.tasks).hasSize(1)
+        assertThat(timer.shutdownCalls.get()).isEqualTo(1)
+        assertThat(batches).isEmpty()
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `stop waits for a concurrent notification to finish scheduling before cancelling it`(atInterval: Boolean) {
+        val timer = ControlledTimer()
+        val scheduling = BlockingCall()
+        timer.beforeSchedule = scheduling::block
+        val batches = mutableListOf<Set<VirtualFile>>()
+        val scheduler = EventScheduler(100, atInterval, timer.executor, batches::add)
+
+        withWorkers { workers ->
+            try {
+                val notification = workers.submit { scheduler.notify(mock()) }
+                scheduling.awaitEntered()
+                val stopStarted = CountDownLatch(1)
+                val stopping = workers.submit {
+                    stopStarted.countDown()
+                    scheduler.stopScheduler()
+                }
+                assertThat(stopStarted.await(5, TimeUnit.SECONDS)).isTrue()
+                scheduling.release()
+                notification.get(5, TimeUnit.SECONDS)
+                stopping.get(5, TimeUnit.SECONDS)
+                scheduler.notify(mock())
+                timer.tasks.single().callback.run()
+
+                assertThat(timer.tasks.single().cancelled).isTrue()
+                assertThat(timer.tasks).hasSize(1)
+                assertThat(timer.shutdownCalls.get()).isEqualTo(1)
+                assertThat(batches).isEmpty()
+            } finally {
+                scheduling.release()
+                scheduler.stopScheduler()
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `notification concurrent with shutdown is ignored without rejected execution`(atInterval: Boolean) {
+        val timer = ControlledTimer()
+        val shuttingDown = BlockingCall()
+        timer.beforeShutdown = shuttingDown::block
+        val batches = mutableListOf<Set<VirtualFile>>()
+        val scheduler = EventScheduler(100, atInterval, timer.executor, batches::add)
+
+        withWorkers { workers ->
+            try {
+                val stopping = workers.submit { scheduler.stopScheduler() }
+                shuttingDown.awaitEntered()
+                val notification = workers.submit { scheduler.notify(mock()) }
+                notification.get(5, TimeUnit.SECONDS)
+                shuttingDown.release()
+                stopping.get(5, TimeUnit.SECONDS)
+                scheduler.stopScheduler()
+
+                assertThat(timer.tasks).isEmpty()
+                assertThat(timer.shutdownCalls.get()).isEqualTo(1)
+                assertThat(batches).isEmpty()
+            } finally {
+                shuttingDown.release()
+                scheduler.stopScheduler()
+            }
+        }
+    }
+
+    @Test
+    fun `stop interrupts an in flight batch without waiting for it to complete`() {
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        val sending = CountDownLatch(1)
+        val interrupted = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val scheduler = EventScheduler(0, false, executor) {
+            sending.countDown()
+            try {
+                assertThat(release.await(5, TimeUnit.SECONDS)).isTrue()
+            } catch (_: InterruptedException) {
+                interrupted.countDown()
+            }
+        }
+        try {
+            scheduler.notify(mock())
+            assertThat(sending.await(5, TimeUnit.SECONDS)).isTrue()
+            scheduler.stopScheduler()
+            assertThat(interrupted.await(5, TimeUnit.SECONDS)).isTrue()
+        } finally {
+            release.countDown()
+            scheduler.stopScheduler()
+            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue()
+        }
+    }
+
+    private fun withWorkers(action: (ExecutorService) -> Unit) {
+        val workers = Executors.newFixedThreadPool(2)
+        try {
+            action(workers)
+        } finally {
+            workers.shutdownNow()
+            assertThat(workers.awaitTermination(5, TimeUnit.SECONDS)).isTrue()
+        }
+    }
+
+    private class BlockingCall {
+        private val entered = CountDownLatch(1)
+        private val released = CountDownLatch(1)
+
+        fun block() {
+            entered.countDown()
+            assertThat(released.await(5, TimeUnit.SECONDS)).isTrue()
+        }
+
+        fun awaitEntered() {
+            assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue()
+        }
+
+        fun release() {
+            released.countDown()
+        }
+    }
+
+    private class ControlledTimer {
+        val executor = mock<ScheduledExecutorService>()
+        val shutdownCalls = AtomicInteger()
+        var beforeSchedule: () -> Unit = {}
+        var beforeShutdown: () -> Unit = {}
+        private val shutdown = AtomicBoolean()
+        private var now = 0L
+        private val scheduledTasks = mutableListOf<Task>()
+        val tasks: List<Task>
+            get() = synchronized(this) { scheduledTasks.toList() }
+
+        init {
+            whenever(executor.schedule(any<Runnable>(), any<Long>(), eq(TimeUnit.MILLISECONDS))).thenAnswer { invocation ->
+                if (shutdown.get()) throw RejectedExecutionException()
+                beforeSchedule()
+                val task = synchronized(this) {
+                    Task(invocation.getArgument(0), now + invocation.getArgument<Long>(1)).also { scheduledTasks.add(it) }
+                }
+                task.future
+            }
+            whenever(executor.shutdownNow()).thenAnswer {
+                shutdownCalls.incrementAndGet()
+                shutdown.set(true)
+                beforeShutdown()
+                emptyList<Runnable>()
+            }
+        }
+
+        fun elapseBy(milliseconds: Long) {
+            synchronized(this) { now += milliseconds }
+        }
+
+        fun runNext(): Boolean {
+            val task = synchronized(this) {
+                scheduledTasks.firstOrNull { !it.cancelled && !it.started && it.deadline <= now }?.also { it.started = true }
+            } ?: return false
+            task.callback.run()
+            return true
+        }
+    }
+
+    private class Task(val callback: Runnable, val deadline: Long) {
+        val future = mock<ScheduledFuture<Any>>()
+        @Volatile var cancelled = false
+        @Volatile var started = false
+        var cancelledWithInterrupt = false
+
+        init {
+            whenever(future.cancel(any())).thenAnswer {
+                cancelled = true
+                cancelledWithInterrupt = it.getArgument(0)
+                true
+            }
+        }
+    }
 }
