@@ -20,7 +20,8 @@
 
 -->
 <idea-plugin>
-    <extensions defaultExtensionNs="org.sonarlint.idea">
-        <cliTerminalAdapter implementation="org.sonarlint.intellij.ai.IntellijTerminalAdapter"/>
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceInterface="org.sonarlint.intellij.ai.CliTerminalAdapter"
+                            serviceImplementation="org.sonarlint.intellij.ai.IntellijTerminalAdapter"/>
     </extensions>
 </idea-plugin>
