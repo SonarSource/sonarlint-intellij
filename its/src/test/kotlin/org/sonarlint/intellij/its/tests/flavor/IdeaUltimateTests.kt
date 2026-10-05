@@ -96,7 +96,7 @@ class IdeaUltimateTests : BaseUiTest() {
         openFile("file2.ts")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
-            "Unexpected var, use let or const instead."
+            "Replace \"var\" with \"let\" or \"const\", which are scoped to the block that declares them."
         )
 
         openFile("file3.css")
