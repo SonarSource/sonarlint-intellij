@@ -23,7 +23,6 @@ import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.nio.file.StandardOpenOption
 import java.nio.file.attribute.PosixFilePermission
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -34,35 +33,25 @@ class McpFileSystemTests {
     lateinit var tempDir: Path
 
     @Test
-    fun `backup never overwrites and temp replacement uses owner-only permissions`() {
+    fun `temp replacement preserves the original until moved and uses owner-only permissions`() {
         val fileSystem = NioMcpFileSystem()
         val target = tempDir.resolve("mcp.json")
         Files.writeString(target, "original")
 
-        fileSystem.createBackup(target, "original".toByteArray())
-        fileSystem.createBackup(target, "new snapshot".toByteArray())
         val temp = fileSystem.writeSiblingTemp(target, "updated".toByteArray())
+        assertThat(Files.readString(target)).isEqualTo("original")
         if (Files.getFileStore(temp).supportsFileAttributeView("posix")) {
             assertThat(Files.getPosixFilePermissions(temp)).containsExactlyInAnyOrder(
-                PosixFilePermission.OWNER_READ,
-                PosixFilePermission.OWNER_WRITE
-            )
-            assertThat(Files.getPosixFilePermissions(tempDir.resolve("mcp.json.bak"))).containsExactlyInAnyOrder(
                 PosixFilePermission.OWNER_READ,
                 PosixFilePermission.OWNER_WRITE
             )
         }
         fileSystem.replace(temp, target)
 
-        assertThat(Files.readString(tempDir.resolve("mcp.json.bak"))).isEqualTo("original")
         assertThat(Files.readString(target)).isEqualTo("updated")
         assertThat(Files.exists(temp)).isFalse()
         if (Files.getFileStore(target).supportsFileAttributeView("posix")) {
             assertThat(Files.getPosixFilePermissions(target)).containsExactlyInAnyOrder(
-                PosixFilePermission.OWNER_READ,
-                PosixFilePermission.OWNER_WRITE
-            )
-            assertThat(Files.getPosixFilePermissions(tempDir.resolve("mcp.json.bak"))).containsExactlyInAnyOrder(
                 PosixFilePermission.OWNER_READ,
                 PosixFilePermission.OWNER_WRITE
             )
@@ -95,17 +84,17 @@ class McpFileSystemTests {
     }
 
     @Test
-    fun `removes a partially created secret file when owner-only creation fails`() {
+    fun `removes a partially written temporary file when writing fails`() {
         var partial: Path? = null
-        val fileSystem = NioMcpFileSystem(ownerOnlyWriter = { path, _ ->
+        val fileSystem = NioMcpFileSystem(writer = { path, _ ->
             partial = path
-            Files.writeString(path, "partial", StandardOpenOption.CREATE_NEW)
-            throw IllegalStateException("permission failure")
+            Files.writeString(path, "partial")
+            throw IllegalStateException("write failed")
         })
 
         org.assertj.core.api.Assertions.assertThatThrownBy {
             fileSystem.writeSiblingTemp(tempDir.resolve("mcp.json"), "secret".toByteArray())
-        }.isInstanceOf(IllegalStateException::class.java)
+        }.isInstanceOf(IllegalStateException::class.java).hasMessage("write failed")
 
         assertThat(partial).isNotNull()
         assertThat(Files.exists(partial!!)).isFalse()
