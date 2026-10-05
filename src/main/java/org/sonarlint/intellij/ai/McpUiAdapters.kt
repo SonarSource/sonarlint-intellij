@@ -19,8 +19,12 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.fasterxml.jackson.core.JsonToken
+import com.fasterxml.jackson.core.json.JsonReadFeature
+import com.fasterxml.jackson.databind.json.JsonMapper
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -44,6 +48,11 @@ interface McpUiAdapter {
 }
 
 class IntellijMcpUiAdapter : McpUiAdapter {
+    private val jsonFactory = JsonMapper.builder()
+        .enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
+        .enable(JsonReadFeature.ALLOW_TRAILING_COMMA)
+        .build().factory
+
     override fun chooseConnection(project: Project, connections: List<IntegrationConnection>): String? =
         ConnectionChoiceDialog(
             project,
@@ -65,9 +74,23 @@ class IntellijMcpUiAdapter : McpUiAdapter {
 
     override fun openConfiguration(project: Project, path: Path) {
         LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)?.let { file ->
-            OpenFileDescriptor(project, file).navigate(true)
+            val offset = FileDocumentManager.getInstance().getDocument(file)?.text?.let(::sonarQubeOffset) ?: 0
+            OpenFileDescriptor(project, file, offset).navigate(true)
         }
     }
+
+    private fun sonarQubeOffset(content: String): Int = runCatching {
+        jsonFactory.createParser(content).use { parser ->
+            while (parser.nextToken() != null) {
+                val section = parser.parsingContext.parent
+                if (parser.currentToken == JsonToken.FIELD_NAME && parser.currentName == "sonarqube" &&
+                    section?.currentName in listOf("mcpServers", "servers") && section?.parent?.inRoot() == true) {
+                    return@use parser.currentTokenLocation().charOffset.toInt()
+                }
+            }
+            0
+        }
+    }.getOrDefault(0)
 
     override fun openConnectionSettings(project: Project) {
         ShowSettingsUtil.getInstance().showSettingsDialog(project, SonarLintGlobalConfigurable::class.java)

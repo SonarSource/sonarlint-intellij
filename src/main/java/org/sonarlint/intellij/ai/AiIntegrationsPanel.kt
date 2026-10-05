@@ -55,6 +55,7 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.Scrollable
 import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
@@ -257,7 +258,7 @@ class AiIntegrationsPanel(
         val needsAttention = configurations.any {
             it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
         }
-        return CardStatus("${configurations.size} supported", if (needsAttention) StatusTone.WARNING else StatusTone.NEUTRAL)
+        return CardStatus("IDE setup: ${configurations.size}", if (needsAttention) StatusTone.WARNING else StatusTone.NEUTRAL)
     }
 
     private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
@@ -283,10 +284,24 @@ class AiIntegrationsPanel(
             details.removeAll()
             if (show) {
                 val detailBuilder = CardBuilder(details)
-                if (configurations.isEmpty()) {
-                    detailBuilder.addMessage("No standalone MCP setup is available for the detected agents.")
-                } else {
-                    configurations.forEach { detailBuilder.addMcpConfigurationRow(it) }
+                if (snapshot.agents.isEmpty()) {
+                    detailBuilder.addMessage(NO_AGENTS_MESSAGE)
+                }
+                snapshot.agents.forEach { capability ->
+                    val configuration = snapshot.mcpConfigurations[capability.agent]
+                    if (configuration != null) {
+                        detailBuilder.addMcpConfigurationRow(configuration)
+                    } else {
+                        detailBuilder.addAgentRow(
+                            registry.displayName(capability.agent),
+                            if (capability.cliIntegrationSupported) "Available through SonarQube CLI" else "IDE setup unavailable",
+                            actions = if (capability.cliIntegrationSupported && snapshot.cli.authentication == CliAuthenticationStatus.AUTHENTICATED) {
+                                listOf(RowAction("Set up via CLI", AiIntegrationsIntent.IntegrateCli(capability.agent)))
+                            } else {
+                                emptyList()
+                            }
+                        )
+                    }
                 }
             }
             details.isVisible = show
@@ -790,9 +805,8 @@ private fun agentCountText(count: Int): String = "$count ${if (count == 1) "agen
 
 private fun mcpSummary(configuredCount: Int, totalCount: Int, attentionCount: Int): String = when {
     attentionCount > 0 -> "$attentionCount ${if (attentionCount == 1) "configuration needs" else "configurations need"} attention."
-    configuredCount == totalCount -> "MCP is configured for all $totalCount detected ${if (totalCount == 1) "agent" else "agents"}."
-    configuredCount > 0 -> "$configuredCount of $totalCount detected agents are configured."
-    else -> "MCP is ready to set up for $totalCount detected ${if (totalCount == 1) "agent" else "agents"}."
+    configuredCount > 0 -> "MCP configured for $configuredCount of $totalCount ${if (totalCount == 1) "agent" else "agents"} with IDE setup."
+    else -> "MCP setup is available for $totalCount ${if (totalCount == 1) "agent" else "agents"} in this IDE."
 }
 
 private fun McpAgentConfiguration.displayText(): String = when (state) {

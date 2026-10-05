@@ -37,6 +37,7 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.CliOperationListener
@@ -56,7 +57,16 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         backend = mock(BackendService::class.java)
         val registry = AiAgentRegistry(IdePluginDetector { it in enabledPluginIds })
         panel = AiIntegrationsPanel(registry)
-        controller = AiIntegrationsController(project, panel, backend, registry)
+        `when`(backend.inspectMcpConfiguration(any(), any())).thenReturn(
+            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
+        )
+        val mcpCoordinator = McpConfigurationCoordinator(
+            backendService = backend,
+            registry = registry,
+            fileSystem = mock(McpFileSystem::class.java),
+            executor = Runnable::run
+        )
+        controller = AiIntegrationsController(project, panel, backend, registry, mcpCoordinator = mcpCoordinator)
     }
 
     @AfterEach
@@ -143,7 +153,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         first.complete(snapshot(bothJetBrainsAgents.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
         descendants(panel).filterIsInstance<JToggleButton>().forEach { it.doClick() }
-        assertThat(labels(panel)).contains("3 agents detected", "3 supported")
+        assertThat(labels(panel)).contains("3 agents detected", "IDE setup: 1")
             .containsSubsequence("GitHub Copilot", "Junie", "JetBrains AI Assistant")
 
         enabledPluginIds = setOf("com.intellij.ml.llm")
@@ -151,7 +161,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, onlyAiAssistant)
         second.complete(snapshot(onlyAiAssistant.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 agent detected", "1 supported", "JetBrains AI Assistant")
+        assertThat(labels(panel)).contains("1 agent detected", "IDE setup: 0", "JetBrains AI Assistant")
             .doesNotContain("GitHub Copilot", "Junie")
 
         enabledPluginIds = emptySet()
@@ -159,7 +169,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, emptyList())
         third.complete(snapshot(emptyList()))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("0 agents detected", "0 supported")
+        assertThat(labels(panel)).contains("0 agents detected", "IDE setup: 0")
             .doesNotContain("GitHub Copilot", "Junie", "JetBrains AI Assistant")
     }
 
