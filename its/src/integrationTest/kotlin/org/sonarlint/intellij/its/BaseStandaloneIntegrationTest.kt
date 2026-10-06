@@ -99,36 +99,29 @@ open class BaseStandaloneIntegrationTest {
     companion object {
         const val PLUGIN_ID = "org.sonarlint.idea"
 
-        /** Driver IT helpers target the 242 SDK API; 253+ IDEs require a separate migration. */
         @JvmStatic
-        fun isDriverSdkSupported(): Boolean {
-            val buildNumber = System.getProperty("its.ide.buildNumber") ?: return true
-            return !buildNumber.startsWith("253.")
-        }
+        fun isIdeaCommunity(): Boolean = ideProduct() == "IC"
 
         @JvmStatic
-        fun isIdeaCommunity(): Boolean = isDriverSdkSupported() && ideProduct() == "IC"
+        fun isIdeaUltimate(): Boolean = ideProduct() == "IU"
 
         @JvmStatic
-        fun isIdeaUltimate(): Boolean = isDriverSdkSupported() && ideProduct() == "IU"
+        fun isCLion(): Boolean = ideProduct() == "CL"
 
         @JvmStatic
-        fun isCLion(): Boolean = isDriverSdkSupported() && ideProduct() == "CL"
+        fun isRider(): Boolean = ideProduct() == "RD"
 
         @JvmStatic
-        fun isRider(): Boolean = isDriverSdkSupported() && ideProduct() == "RD"
+        fun isPhpStorm(): Boolean = ideProduct() == "PS"
 
         @JvmStatic
-        fun isPhpStorm(): Boolean = isDriverSdkSupported() && ideProduct() == "PS"
+        fun isPyCharm(): Boolean = ideProduct() == "PY" || ideProduct() == "PC"
 
         @JvmStatic
-        fun isPyCharm(): Boolean = isDriverSdkSupported() && (ideProduct() == "PY" || ideProduct() == "PC")
+        fun isGoPlugin(): Boolean = ideProduct() == "GO" || ideProduct() == "IU"
 
         @JvmStatic
-        fun isGoPlugin(): Boolean = isDriverSdkSupported() && (ideProduct() == "GO" || ideProduct() == "IU")
-
-        @JvmStatic
-        fun isWebStorm(): Boolean = isDriverSdkSupported() && ideProduct() == "IU"
+        fun isWebStorm(): Boolean = ideProduct() == "IU"
 
         private fun ideProduct(): String = System.getProperty("its.ide.product", "IC")
 

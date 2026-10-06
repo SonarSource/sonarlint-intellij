@@ -13,6 +13,13 @@ apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 sourceSets {
     create("integrationTest") {
         kotlin.srcDir("src/integrationTest/kotlin")
+        kotlin.srcDir(
+            if (itsDriverSdkVersion().startsWith("253.")) {
+                "src/integrationTest253/kotlin"
+            } else {
+                "src/integrationTest242/kotlin"
+            }
+        )
         resources.srcDir("src/integrationTest/resources")
         compileClasspath += sourceSets["test"].output + sourceSets["test"].compileClasspath
         runtimeClasspath += sourceSets["test"].output + sourceSets["test"].runtimeClasspath
@@ -32,12 +39,14 @@ configurations.matching { it.name.startsWith("integrationTest") }.configureEach 
     exclude(group = "com.github.stephenc.monte", module = "monte-screen-recorder")
 }
 
-// Pin driver SDK to 242: our test helpers compile against that API surface.
+// Pin driver SDK to the target IDE build (compile + runtime must match the IDE under test).
 configurations.matching { it.name.startsWith("integrationTest") }.configureEach {
+    val driverVersion = itsDriverSdkVersion()
+    println("ITs: Using driver SDK $driverVersion (ijVersion=${project.findProperty("ijVersion") ?: "default"})")
     resolutionStrategy.force(
-        "com.jetbrains.intellij.driver:driver-sdk:${itsDriverSdkVersion()}",
-        "com.jetbrains.intellij.driver:driver-client:${itsDriverSdkVersion()}",
-        "com.jetbrains.intellij.driver:driver-model:${itsDriverSdkVersion()}",
+        "com.jetbrains.intellij.driver:driver-sdk:$driverVersion",
+        "com.jetbrains.intellij.driver:driver-client:$driverVersion",
+        "com.jetbrains.intellij.driver:driver-model:$driverVersion",
     )
 }
 
@@ -273,17 +282,39 @@ fun itsIdeVersion(): String =
     if (project.hasProperty("ijVersion")) project.property("ijVersion").toString().substringAfter('-')
     else intellijBuildVersion
 
-fun itsIdeBuildNumber(): String? {
-    val ideHome = itsIdeHome()?.let { File(it) } ?: return null
-    val productInfo = ideHome.resolve("product-info.json")
+fun itsIdeBuildNumber(): String? = itsIdeBuildNumberFromHome(itsIdeHome())
+
+fun itsTargetIdeHomeFromEnv(): String? {
+    val type = if (project.hasProperty("ijVersion")) {
+        project.property("ijVersion").toString().substringBefore('-')
+    } else {
+        "IC"
+    }
+    val envVar = when (type) {
+        "IC", "IU" -> "IDEA_HOME"
+        "CL" -> "CLION_HOME"
+        "RD" -> "RIDER_HOME"
+        "PY", "PC" -> "PYCHARM_HOME"
+        "PS" -> "PHPSTORM_HOME"
+        "GO" -> "GOLAND_HOME"
+        else -> "IDEA_HOME"
+    }
+    return System.getenv(envVar)?.takeIf { path -> File(path).exists() }
+}
+
+fun itsDriverSdkVersion(): String {
+    val buildNumber = itsIdeBuildNumberFromHome(itsTargetIdeHomeFromEnv() ?: itsIdeHome())
+    return buildNumber ?: "242.20224.300"
+}
+
+fun itsIdeBuildNumberFromHome(ideHome: String?): String? {
+    val productInfo = ideHome?.let { File(it, "product-info.json") } ?: return null
     if (!productInfo.isFile) return null
     return Regex(""""buildNumber"\s*:\s*"([^"]+)"""")
         .find(productInfo.readText())
         ?.groupValues
         ?.get(1)
 }
-
-fun itsDriverSdkVersion(): String = "242.20224.300"
 
 fun cleanupStaleXvfbLock(displayNumber: Int) {
     val lockFile = File("/tmp/.X${displayNumber}-lock")
