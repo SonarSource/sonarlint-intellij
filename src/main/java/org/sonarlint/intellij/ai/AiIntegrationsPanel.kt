@@ -89,6 +89,10 @@ private const val ZERO_SUPPORTED_STATUS = "0 supported"
 private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
 private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
+private const val UNINSTALL_CLI_LABEL = "Uninstall CLI…"
+private const val UNINSTALLING_CLI_MESSAGE = "Uninstalling SonarQube CLI…"
+private const val RESET_OUTPUT_LABEL = "Reset output"
+private const val CLEANUP_WARNINGS_LABEL = "Cleanup warnings"
 
 class AiIntegrationsPanel(
     private val registry: AiAgentRegistry = AiAgentRegistry(),
@@ -116,6 +120,7 @@ class AiIntegrationsPanel(
     private var cliDetailsExpanded = false
     private var mcpDetailsExpanded = false
     private val expandedCliConfigurations = mutableSetOf<AiAgent>()
+    private var cliUninstallFeedback: CliUninstallFeedback? = null
 
     val isDisposed: Boolean
         get() = disposed.get()
@@ -149,6 +154,13 @@ class AiIntegrationsPanel(
 
     fun setIntentListener(listener: (AiIntegrationsIntent) -> Unit) {
         intentListener = listener
+    }
+
+    fun setCliUninstallFeedback(feedback: CliUninstallFeedback?) {
+        cliUninstallFeedback = feedback
+        if (!isDisposed) {
+            rebuild()
+        }
     }
 
     fun render(state: AiIntegrationsPanelState) {
@@ -215,6 +227,7 @@ class AiIntegrationsPanel(
             AiIntegrationsPanelState.Loading -> addMessage(CLI_LOADING_MESSAGE)
             is AiIntegrationsPanelState.Error -> {
                 addMessage(state.message)
+                addCliUninstallFeedback()
                 addPrimaryAction(RETRY_LABEL)
             }
             is AiIntegrationsPanelState.Empty -> addCliOverview(state.snapshot)
@@ -265,14 +278,19 @@ class AiIntegrationsPanel(
         if (metadata.isNotEmpty()) {
             addMetadata(metadata)
         }
-        addCliPrimaryAction(snapshot)
+        val uninstalling = cliUninstallFeedback is CliUninstallFeedback.InProgress
+        addCliUninstallFeedback()
+        addCliPrimaryAction(snapshot, enabled = !uninstalling)
+        if (snapshot.cli.uninstallAvailable) {
+            addIntentAction(UNINSTALL_CLI_LABEL, AiIntegrationsIntent.UninstallCli, enabled = !uninstalling)
+        }
         addCapabilityOverview(
             snapshot.agents,
             { it.cliIntegrationSupported },
             cliDetailsExpanded,
             snapshot.cliIntegrations,
             rowActions = { capability ->
-                if (cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
+                if (!uninstalling && cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
                     listOf(RowAction("Integrate", AiIntegrationsIntent.IntegrateCli(capability.agent)))
                 } else {
                     emptyList()
@@ -285,18 +303,34 @@ class AiIntegrationsPanel(
         addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) { mcpDetailsExpanded = it }
     }
 
-    private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot) {
+    private fun CardBuilder.addCliUninstallFeedback() {
+        when (val feedback = cliUninstallFeedback) {
+            null -> Unit
+            CliUninstallFeedback.InProgress -> addMessage(UNINSTALLING_CLI_MESSAGE)
+            is CliUninstallFeedback.Finished -> {
+                addMessage(feedback.summary)
+                if (feedback.resetOutput.isNotBlank()) {
+                    addLabeledOutput(RESET_OUTPUT_LABEL, feedback.resetOutput)
+                }
+                if (feedback.cleanupWarnings.isNotBlank()) {
+                    addLabeledOutput(CLEANUP_WARNINGS_LABEL, feedback.cleanupWarnings)
+                }
+            }
+        }
+    }
+
+    private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot, enabled: Boolean) {
         when (snapshot.cli.installation) {
-            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli)
-            CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot") {
+            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli, enabled)
+            CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot", enabled) {
                 openLink(SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
             }
             CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
                 CliAuthenticationStatus.UNAUTHENTICATED,
                 CliAuthenticationStatus.INVALID,
-                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
+                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli, enabled)
                 CliAuthenticationStatus.UNAVAILABLE,
-                CliAuthenticationStatus.UNKNOWN -> addPrimaryAction("Check again")
+                CliAuthenticationStatus.UNKNOWN -> addPrimaryAction("Check again", enabled) { refreshListener() }
                 CliAuthenticationStatus.AUTHENTICATED -> Unit
             }
         }
@@ -521,15 +555,36 @@ class AiIntegrationsPanel(
             addPrimaryAction(label) { refreshListener() }
         }
 
-        fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
-            addPrimaryAction(label) { intentListener(intent) }
+        fun addPrimaryAction(label: String, intent: AiIntegrationsIntent, enabled: Boolean = true) {
+            addPrimaryAction(label, enabled) { intentListener(intent) }
         }
 
-        fun addPrimaryAction(label: String, action: () -> Unit) {
+        fun addPrimaryAction(label: String, enabled: Boolean = true, action: () -> Unit) {
             panel.add(createPrimaryButton(label, action).apply {
+                isEnabled = enabled
                 alignmentX = Component.LEFT_ALIGNMENT
             })
             panel.add(verticalSpace(6))
+        }
+
+        fun addIntentAction(label: String, intent: AiIntegrationsIntent, enabled: Boolean) {
+            panel.add(createPrimaryButton(label) { intentListener(intent) }.apply {
+                isEnabled = enabled
+                alignmentX = Component.LEFT_ALIGNMENT
+            })
+            panel.add(verticalSpace(6))
+        }
+
+        fun addLabeledOutput(label: String, text: String) {
+            panel.add(JBLabel(label).apply {
+                font = JBFont.small().asBold()
+                alignmentX = Component.LEFT_ALIGNMENT
+            })
+            panel.add(verticalSpace(4))
+            panel.add(bodyText(text).apply {
+                accessibleContext.accessibleName = label
+            })
+            panel.add(verticalSpace(10))
         }
     }
 

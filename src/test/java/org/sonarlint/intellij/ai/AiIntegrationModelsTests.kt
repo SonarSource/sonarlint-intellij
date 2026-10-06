@@ -35,6 +35,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationReco
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationState
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.SonarQubeCliState
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 class AiIntegrationModelsTests {
     @Test
@@ -60,6 +61,7 @@ class AiIntegrationModelsTests {
         val snapshot = toAiIntegrationSnapshot(response)
 
         assertThat(snapshot.cli.authentication).isEqualTo(CliAuthenticationStatus.UNAUTHENTICATED)
+        assertThat(snapshot.cli.uninstallAvailable).isFalse()
         assertThat(snapshot.agents.single().agent).isEqualTo(AiAgent.CLAUDE_CODE)
         assertThat(snapshot.connectionChoices).containsExactly(IntegrationConnection("connection", "https://sonar.example", "organization"))
         assertThat(snapshot.recommendedConnectionId).isEqualTo("connection")
@@ -94,6 +96,34 @@ class AiIntegrationModelsTests {
         assertThat(toAiIntegrationSnapshot(response).cliIntegrations).containsExactly(
             AgentCliIntegration(AiAgent.CODEX, CliIntegrationRecordingStatus.UNKNOWN, emptyList())
         )
+    }
+
+    @Test
+    fun `maps uninstall availability and distinguishes removal from cleanup warnings`() {
+        val response = GetAiIntegrationStateResponse(
+            SonarQubeCliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, "1.2.3", null, null, true),
+            emptyList(),
+            emptyList(),
+            null
+        )
+
+        assertThat(toAiIntegrationSnapshot(response).cli.uninstallAvailable).isTrue()
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary)
+            .isEqualTo("SonarQube CLI was uninstalled.")
+
+        val warnings = uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "reset warning", "cleanup warning", null))
+        assertThat(warnings.summary).isEqualTo("SonarQube CLI was removed, but cleanup reported warnings.")
+        assertThat(warnings.resetOutput).isEqualTo("reset warning")
+        assertThat(warnings.cleanupWarnings).isEqualTo("cleanup warning")
+
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "reset failed", "SonarQube CLI reset failed.")).summary)
+            .isEqualTo("SonarQube CLI reset failed.")
+        assertThat(uninstallFeedback(UninstallCliResponse(
+            UninstallCliResponse.Status.FAILED, "", "", "Could not delete the SonarQube CLI installation folder."
+        )).summary).isEqualTo("The SonarQube CLI executable is still installed. Could not delete the SonarQube CLI installation folder.")
+        assertThat(uninstallFeedback(UninstallCliResponse(
+            UninstallCliResponse.Status.NOT_AVAILABLE, "", "", "Only an official per-user CLI installation can be uninstalled."
+        )).summary).contains("official per-user")
     }
 
     private fun cli() = SonarQubeCliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNAUTHENTICATED, null, "1.2.3", null, null)

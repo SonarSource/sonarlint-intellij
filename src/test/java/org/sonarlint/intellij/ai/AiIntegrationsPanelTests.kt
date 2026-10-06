@@ -436,6 +436,67 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         ).doesNotContain("Supported")
     }
 
+    @Test
+    fun `offers uninstall for a supported local installation and keeps other installations unchanged`() {
+        val panel = AiIntegrationsPanel()
+        val official = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null, uninstallAvailable = true),
+            emptyList(),
+            emptyList(),
+            null
+        )
+        val intents = mutableListOf<AiIntegrationsIntent>()
+        panel.setIntentListener { intents += it }
+        panel.render(AiIntegrationsPanelState.Ready(official))
+
+        descendants(panel).filterIsInstance<JButton>().single { it.text == "Uninstall CLI…" }.doClick()
+        assertThat(intents).containsExactly(AiIntegrationsIntent.UninstallCli)
+
+        panel.render(AiIntegrationsPanelState.Ready(official.copy(cli = official.cli.copy(uninstallAvailable = false))))
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).doesNotContain("Uninstall CLI…")
+
+        panel.render(AiIntegrationsPanelState.Empty(official.copy(
+            cli = official.cli.copy(authentication = CliAuthenticationStatus.UNAUTHENTICATED)
+        )))
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).contains("Uninstall CLI…", "Sign in")
+    }
+
+    @Test
+    fun `shows uninstall progress and keeps reset output accessible`() {
+        val panel = AiIntegrationsPanel()
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null, uninstallAvailable = true),
+            listOf(AgentCapability(AiAgent.CLAUDE_CODE, setOf(AiAgentDetectionSource.IDE), true, false)),
+            emptyList(),
+            null
+        )
+        panel.render(AiIntegrationsPanelState.Ready(snapshot))
+        descendants(panel).filterIsInstance<JToggleButton>().first().doClick()
+        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
+
+        val uninstall = descendants(panel).filterIsInstance<JButton>().single { it.text == "Uninstall CLI…" }
+        assertThat(uninstall.isEnabled).isFalse()
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains("Uninstalling SonarQube CLI…")
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).doesNotContain("Integrate")
+
+        panel.setCliUninstallFeedback(CliUninstallFeedback.Finished(
+            "SonarQube CLI was removed, but cleanup reported warnings.",
+            "reset warning",
+            "cleanup warning"
+        ))
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains(
+            "SonarQube CLI was removed, but cleanup reported warnings.",
+            "reset warning",
+            "cleanup warning"
+        )
+        assertThat(labelTexts(panel)).contains("Reset output", "Cleanup warnings")
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).contains("Integrate")
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().single { it.text == "reset warning" }.accessibleContext.accessibleName)
+            .isEqualTo("Reset output")
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().single { it.text == "cleanup warning" }.accessibleContext.accessibleName)
+            .isEqualTo("Cleanup warnings")
+    }
+
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }
 
     private fun layoutRecursively(container: Container) {

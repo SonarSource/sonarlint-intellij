@@ -283,6 +283,26 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun `a released uninstall lease does not notify, refresh, or record an outcome`() {
+        val backend = mock<BackendService>()
+        val notifications = mutableListOf<Notification>()
+        var refreshes = 0
+        val coordinator = coordinator(backend, mock(), notifications = notifications, refresh = { refreshes++ })
+
+        assertThat(coordinator.tryAcquire(project)).isTrue()
+        assertThat(coordinator.tryAcquire(project)).isFalse()
+        coordinator.releaseWithoutSideEffects()
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isNull()
+        assertThat(notifications).isEmpty()
+        assertThat(refreshes).isZero()
+        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.UninstallCli)).isFalse()
+        verifyNoInteractions(backend)
+        assertThat(coordinator.tryAcquire(project)).isTrue()
+    }
+
+    @Test
     fun `leases one application operation and focuses its terminal on repeat`() {
         val backend = mock<BackendService>()
         whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import java.util.concurrent.CompletionException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
@@ -26,13 +27,15 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationSta
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 data class CliState(
     val installation: CliInstallationStatus,
     val authentication: CliAuthenticationStatus,
     val version: String?,
     val serverUrl: String?,
-    val organization: String?
+    val organization: String?,
+    val uninstallAvailable: Boolean = false
 )
 
 data class AgentCapability(
@@ -77,7 +80,14 @@ data class CliCommand(
 internal fun toAiIntegrationSnapshot(response: GetAiIntegrationStateResponse): AiIntegrationSnapshot {
     val cli = response.cli
     return AiIntegrationSnapshot(
-        CliState(cli.installationStatus, cli.authenticationStatus, cli.version, cli.serverUrl, cli.organization),
+        CliState(
+            cli.installationStatus,
+            cli.authenticationStatus,
+            cli.version,
+            cli.serverUrl,
+            cli.organization,
+            cli.isUninstallAvailable
+        ),
         response.agents.map { capability ->
             AgentCapability(
                 capability.agent,
@@ -112,4 +122,37 @@ sealed interface AiIntegrationsIntent {
     data object InstallCli : AiIntegrationsIntent
     data object AuthenticateCli : AiIntegrationsIntent
     data class IntegrateCli(val agent: AiAgent) : AiIntegrationsIntent
+    data object UninstallCli : AiIntegrationsIntent
+}
+
+sealed interface CliUninstallFeedback {
+    data object InProgress : CliUninstallFeedback
+    data class Finished(val summary: String, val resetOutput: String, val cleanupWarnings: String) : CliUninstallFeedback
+}
+
+internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeedback.Finished {
+    val summary = when (response.status) {
+        UninstallCliResponse.Status.UNINSTALLED -> if (response.stdout.isBlank() && response.stderr.isBlank()) {
+            "SonarQube CLI was uninstalled."
+        } else {
+            "SonarQube CLI was removed, but cleanup reported warnings."
+        }
+        UninstallCliResponse.Status.FAILED -> if (response.message?.contains("delete", ignoreCase = true) == true) {
+            "The SonarQube CLI executable is still installed. ${response.message}"
+        } else {
+            response.message?.takeIf { it.isNotBlank() } ?: "SonarQube CLI could not be uninstalled."
+        }
+        UninstallCliResponse.Status.NOT_AVAILABLE -> response.message?.takeIf { it.isNotBlank() }
+            ?: "Only an official per-user CLI installation can be uninstalled."
+    }
+    return CliUninstallFeedback.Finished(summary, response.stdout, response.stderr)
+}
+
+internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {
+    val cause = if (error is CompletionException && error.cause != null) error.cause!! else error
+    return CliUninstallFeedback.Finished(
+        cause.message?.takeIf { it.isNotBlank() } ?: "SonarQube CLI could not be uninstalled.",
+        "",
+        ""
+    )
 }

@@ -70,15 +70,29 @@ class CliOperationCoordinator @JvmOverloads constructor(
             return false
         }
         try {
-            Disposer.register(project, lease)
             when (intent) {
-                AiIntegrationsIntent.InstallCli -> prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
-                AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot)) {
-                    ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
-                    ConnectionSelection.InteractiveLogin -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
-                    is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)
+                AiIntegrationsIntent.UninstallCli -> {
+                    if (active.compareAndSet(lease, null)) {
+                        Disposer.dispose(lease)
+                    }
+                    return false
                 }
-                is AiIntegrationsIntent.IntegrateCli -> prepareAndLaunch(lease, backendService.prepareIntegrateCliCommand(intent.agent))
+                AiIntegrationsIntent.InstallCli -> {
+                    Disposer.register(project, lease)
+                    prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
+                }
+                AiIntegrationsIntent.AuthenticateCli -> {
+                    Disposer.register(project, lease)
+                    when (val selection = connectionSelector.select(project, snapshot)) {
+                        ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
+                        ConnectionSelection.InteractiveLogin -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
+                        is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)
+                    }
+                }
+                is AiIntegrationsIntent.IntegrateCli -> {
+                    Disposer.register(project, lease)
+                    prepareAndLaunch(lease, backendService.prepareIntegrateCliCommand(intent.agent))
+                }
             }
         } catch (_: CancellationException) {
             releaseAndNotify(lease, CliOperationOutcome.Cancelled,
@@ -181,6 +195,32 @@ class CliOperationCoordinator @JvmOverloads constructor(
             CompletableFuture.failedFuture(error)
         }
         prepareAndLaunch(lease, preparation)
+    }
+
+    internal fun tryAcquire(project: Project): Boolean {
+        if (project.isDisposed) {
+            return false
+        }
+        val lease = OperationLease(project) { releaseOperation(it, CliOperationOutcome.Cancelled) }
+        if (!active.compareAndSet(null, lease)) {
+            active.get()?.terminalSession?.focus?.invoke()
+            return false
+        }
+        return true
+    }
+
+    internal fun releaseWithoutSideEffects() {
+        val lease = active.get() ?: return
+        if (active.compareAndSet(lease, null)) {
+            Disposer.dispose(lease)
+        }
+    }
+
+    internal fun releaseUninstall() {
+        val lease = active.get() ?: return
+        if (active.compareAndSet(lease, null)) {
+            refreshViews()
+        }
     }
 
     private fun launch(lease: OperationLease, command: CliCommand) {

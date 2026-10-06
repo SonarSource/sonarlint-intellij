@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ai
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.MessageDialogBuilder
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -35,7 +36,8 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val panel: AiIntegrationsPanel,
     private val backendService: BackendService = getService(BackendService::class.java),
     private val registry: AiAgentRegistry = AiAgentRegistry(),
-    private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java)
+    private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java),
+    private val confirmUninstall: (Project) -> Boolean = ::confirmCliUninstall
 ) : Disposable {
     private val generation = AtomicLong()
     private val started = AtomicBoolean()
@@ -56,11 +58,20 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     fun refresh() {
+        reload(showLoading = true, clearFeedback = true)
+    }
+
+    private fun reload(showLoading: Boolean, clearFeedback: Boolean) {
         if (isDisposed()) {
             return
         }
+        if (clearFeedback) {
+            panel.setCliUninstallFeedback(null)
+        }
         val requestedGeneration = generation.incrementAndGet()
-        publish(requestedGeneration, AiIntegrationsPanelState.Loading)
+        if (showLoading) {
+            publish(requestedGeneration, AiIntegrationsPanelState.Loading)
+        }
         try {
             backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
                 val state = if (error != null) {
@@ -91,9 +102,49 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     private fun handleIntent(intent: AiIntegrationsIntent) {
-        latestSnapshot?.let { snapshot ->
-            cliCoordinator.execute(project, snapshot, intent)
+        val snapshot = latestSnapshot ?: return
+        when (intent) {
+            AiIntegrationsIntent.UninstallCli -> uninstallCli()
+            AiIntegrationsIntent.InstallCli,
+            AiIntegrationsIntent.AuthenticateCli,
+            is AiIntegrationsIntent.IntegrateCli -> cliCoordinator.execute(project, snapshot, intent)
         }
+    }
+
+    private fun uninstallCli() {
+        if (isDisposed() || !cliCoordinator.tryAcquire(project)) {
+            return
+        }
+        val confirmed = try {
+            confirmUninstall(project)
+        } catch (error: Exception) {
+            cliCoordinator.releaseWithoutSideEffects()
+            throw error
+        }
+        if (!confirmed) {
+            cliCoordinator.releaseWithoutSideEffects()
+            return
+        }
+        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
+        try {
+            backendService.uninstallCli().whenComplete { response, error ->
+                runOnUiThread(project) {
+                    finishUninstall(if (error != null) uninstallFailure(error) else uninstallFeedback(response))
+                }
+            }
+        } catch (error: Exception) {
+            finishUninstall(uninstallFailure(error))
+        }
+    }
+
+    private fun finishUninstall(feedback: CliUninstallFeedback.Finished) {
+        if (isDisposed()) {
+            cliCoordinator.releaseWithoutSideEffects()
+            return
+        }
+        panel.setCliUninstallFeedback(feedback)
+        cliCoordinator.releaseWithoutSideEffects()
+        reload(showLoading = false, clearFeedback = false)
     }
 
     private fun isDisposed() = disposed.get() || project.isDisposed || panel.isDisposed
@@ -109,3 +160,14 @@ class AiIntegrationsController @JvmOverloads constructor(
         panel.dispose()
     }
 }
+
+internal const val CLI_UNINSTALL_TITLE = "Uninstall SonarQube CLI"
+internal const val CLI_UNINSTALL_MESSAGE =
+    "This removes the shared SonarQube CLI used by terminals, IDEs, and agents.\n\n" +
+        "Reset removes credentials and registered integrations and may revoke recorded server tokens."
+
+internal fun confirmCliUninstall(project: Project): Boolean =
+    MessageDialogBuilder.okCancel(CLI_UNINSTALL_TITLE, CLI_UNINSTALL_MESSAGE)
+        .yesText("Uninstall")
+        .noText("Cancel")
+        .ask(project)
