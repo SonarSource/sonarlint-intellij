@@ -120,6 +120,38 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun `retry and check again buttons use the current refresh listener and detach on disposal`() {
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNKNOWN, "1.0", null, null),
+            emptyList(),
+            emptyList(),
+            null
+        )
+        val states = listOf(
+            AiIntegrationsPanelState.Error("failed") to "Try again",
+            AiIntegrationsPanelState.Ready(snapshot) to "Check again"
+        )
+        states.forEach { (state, label) ->
+            val panel = AiIntegrationsPanel()
+            var originalCalls = 0
+            var replacementCalls = 0
+            panel.setRefreshListener { originalCalls++ }
+            panel.render(state)
+            val button = descendants(panel).filterIsInstance<JButton>().single { it.text == label }
+
+            panel.setRefreshListener { replacementCalls++ }
+            button.doClick()
+            assertThat(originalCalls).isZero()
+            assertThat(replacementCalls).isEqualTo(1)
+
+            panel.dispose()
+            button.doClick()
+            assertThat(originalCalls).isZero()
+            assertThat(replacementCalls).isEqualTo(1)
+        }
+    }
+
+    @Test
     fun `keeps status pills visible in a narrow tool window`() {
         val panel = AiIntegrationsPanel()
         panel.setSize(420, 600)

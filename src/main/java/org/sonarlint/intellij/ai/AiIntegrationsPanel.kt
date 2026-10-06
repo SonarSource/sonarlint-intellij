@@ -518,7 +518,7 @@ class AiIntegrationsPanel(
         }
 
         fun addPrimaryAction(label: String) {
-            addPrimaryAction(label, refreshListener)
+            addPrimaryAction(label) { refreshListener() }
         }
 
         fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
