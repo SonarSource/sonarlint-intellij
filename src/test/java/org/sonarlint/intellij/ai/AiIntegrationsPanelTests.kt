@@ -397,6 +397,45 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain("/config.json")
     }
 
+    @Test
+    fun `renders hosted agents before CLI discoveries with backend capabilities`() {
+        val panel = AiIntegrationsPanel()
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),
+            listOf(
+                AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, true),
+                AgentCapability(AiAgent.JUNIE, setOf(AiAgentDetectionSource.IDE), false, true),
+                AgentCapability(AiAgent.JETBRAINS_AI_ASSISTANT, setOf(AiAgentDetectionSource.IDE), false, true),
+                AgentCapability(AiAgent.CLAUDE_CODE, setOf(AiAgentDetectionSource.CLI), true, true),
+                AgentCapability(AiAgent.CODEX, setOf(AiAgentDetectionSource.CLI), true, false)
+            ),
+            emptyList(),
+            null
+        )
+        panel.render(AiIntegrationsPanelState.Ready(snapshot))
+        val disclosures = descendants(panel).filterIsInstance<JToggleButton>()
+        disclosures.forEach { it.doClick() }
+        val cliCard = disclosures[0].parent.parent as Container
+        val mcpCard = disclosures[1].parent.parent as Container
+
+        assertThat(labelTexts(cliCard)).containsSubsequence(
+            "GitHub Copilot", "Not supported", "Junie", "Not supported", "JetBrains AI Assistant", "Not supported",
+            "Claude Code", "Supported", "Codex", "Supported"
+        )
+        assertThat(labelTexts(mcpCard)).containsSubsequence(
+            "GitHub Copilot", "Supported", "Junie", "Supported", "JetBrains AI Assistant", "Supported",
+            "Claude Code", "Supported", "Codex", "Not supported"
+        )
+
+        panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(agents = snapshot.agents.take(3).map {
+            it.copy(standaloneMcpSupported = false)
+        })))
+        val updatedMcpCard = descendants(panel).filterIsInstance<JToggleButton>()[1].parent.parent as Container
+        assertThat(labelTexts(updatedMcpCard)).contains("0 supported").containsSubsequence(
+            "GitHub Copilot", "Not supported", "Junie", "Not supported", "JetBrains AI Assistant", "Not supported"
+        ).doesNotContain("Supported")
+    }
+
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }
 
     private fun layoutRecursively(container: Container) {

@@ -299,28 +299,40 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             CompletableFuture.completedFuture(
                 GetAiIntegrationStateResponse(
                     SonarQubeCliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNVERIFIED, null, "1.2.3", null, null),
-                    listOf(AiIntegrationAgentCapability(AiAgent.GITHUB_COPILOT, listOf(AiAgentDetectionSource.IDE), true, false)),
+                    listOf(
+                        AiIntegrationAgentCapability(AiAgent.GITHUB_COPILOT, listOf(AiAgentDetectionSource.IDE), true, false),
+                        AiIntegrationAgentCapability(AiAgent.JUNIE, listOf(AiAgentDetectionSource.IDE), false, true),
+                        AiIntegrationAgentCapability(AiAgent.JETBRAINS_AI_ASSISTANT, listOf(AiAgentDetectionSource.IDE), false, true)
+                    ),
                     listOf(AiIntegrationConnection("connection", "https://sonar.example", null)),
                     "connection"
                 )
             )
         )
 
-        val snapshot = service.getAiIntegrationState(project, listOf(AiAgent.GITHUB_COPILOT)).get(2, TimeUnit.SECONDS)
+        val detectedAgents = listOf(AiAgent.GITHUB_COPILOT, AiAgent.JUNIE, AiAgent.JETBRAINS_AI_ASSISTANT)
+        val snapshot = service.getAiIntegrationState(project, detectedAgents).get(2, TimeUnit.SECONDS)
 
         val captor = argumentCaptor<GetAiIntegrationStateParams>()
         verify(backendAiAgentService).getIntegrationState(captor.capture())
         assertThat(captor.firstValue.ideHost).isEqualTo(AiIntegrationHost.INTELLIJ)
         assertThat(captor.firstValue.scope).isEqualTo(AiIntegrationScope.GLOBAL)
         assertThat(captor.firstValue.configurationScopeId).isEqualTo(BackendService.projectId(project))
-        assertThat(captor.firstValue.detectedAgents).containsExactly(AiAgent.GITHUB_COPILOT)
+        assertThat(captor.firstValue.detectedAgents).containsExactlyElementsOf(detectedAgents)
         assertThat(captor.firstValue.isDiscoverLocalAgentClis).isTrue()
         assertThat(snapshot.cli.installation).isEqualTo(CliInstallationStatus.INSTALLED)
         assertThat(snapshot.cli.authentication).isEqualTo(CliAuthenticationStatus.UNVERIFIED)
         assertThat(snapshot.cli.version).isEqualTo("1.2.3")
-        assertThat(snapshot.agents.single().detectionSources).containsExactly(AiAgentDetectionSource.IDE)
-        assertThat(snapshot.agents.single().cliIntegrationSupported).isTrue()
-        assertThat(snapshot.agents.single().standaloneMcpSupported).isFalse()
+        assertThat(snapshot.agents.map { it.agent }).containsExactlyElementsOf(detectedAgents)
+        assertThat(snapshot.agents).allSatisfy {
+            assertThat(it.detectionSources).containsExactly(AiAgentDetectionSource.IDE)
+        }
+        assertThat(snapshot.agents.first().cliIntegrationSupported).isTrue()
+        assertThat(snapshot.agents.first().standaloneMcpSupported).isFalse()
+        assertThat(snapshot.agents.drop(1)).allSatisfy {
+            assertThat(it.cliIntegrationSupported).isFalse()
+            assertThat(it.standaloneMcpSupported).isTrue()
+        }
         assertThat(snapshot.connectionChoices.single().connectionId).isEqualTo("connection")
         assertThat(snapshot.connectionChoices.single().serverUrl).isEqualTo("https://sonar.example")
         assertThat(snapshot.connectionChoices.single().organization).isNull()

@@ -40,16 +40,26 @@ class AiAgentRegistry(private val pluginDetector: IdePluginDetector = IntellijId
         if (pluginDetector.isInstalledAndEnabled(GITHUB_COPILOT_PLUGIN_ID)) {
             add(AiAgent.GITHUB_COPILOT)
         }
+        if (pluginDetector.isInstalledAndEnabled(JUNIE_PLUGIN_ID)) {
+            add(AiAgent.JUNIE)
+        }
+        if (pluginDetector.isInstalledAndEnabled(JETBRAINS_AI_ASSISTANT_PLUGIN_ID)) {
+            add(AiAgent.JETBRAINS_AI_ASSISTANT)
+        }
     }
 
     fun displayName(agent: AiAgent): String = DISPLAY_NAMES.getValue(agent)
 
     companion object {
         const val GITHUB_COPILOT_PLUGIN_ID = "com.github.copilot"
+        const val JUNIE_PLUGIN_ID = "org.jetbrains.junie"
+        const val JETBRAINS_AI_ASSISTANT_PLUGIN_ID = "com.intellij.ml.llm"
 
         private val DISPLAY_NAMES = mapOf(
             AiAgent.CURSOR to "Cursor",
             AiAgent.GITHUB_COPILOT to "GitHub Copilot",
+            AiAgent.JUNIE to "Junie",
+            AiAgent.JETBRAINS_AI_ASSISTANT to "JetBrains AI Assistant",
             AiAgent.KIRO to "Kiro",
             AiAgent.WINDSURF to "Windsurf",
             AiAgent.CLAUDE_CODE to "Claude Code",
