@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.UIUtil
@@ -29,11 +31,13 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.messages.CliOperationListener
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
@@ -53,7 +57,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
     @AfterEach
     fun disposeController() {
-        controller.dispose()
+        Disposer.dispose(controller)
     }
 
     @Test
@@ -64,9 +68,29 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         controller.loadInitially()
         verify(backend, times(1)).getAiIntegrationState(project, emptyList())
 
-        controller.dispose()
+        Disposer.dispose(controller)
         controller.refresh()
         verify(backend, times(1)).getAiIntegrationState(project, emptyList())
+    }
+
+    @Test
+    fun `refreshes on CLI operation events only after first selection and until disposed`() {
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture())
+        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC)
+
+        publisher.operationFinished()
+        verify(backend, never()).getAiIntegrationState(project, emptyList())
+
+        controller.loadInitially()
+        publisher.operationFinished()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+
+        controller.loadInitially()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+
+        Disposer.dispose(controller)
+        publisher.operationFinished()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
     }
 
     @Test

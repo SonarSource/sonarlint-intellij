@@ -120,6 +120,38 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun `retry and check again buttons use the current refresh listener and detach on disposal`() {
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNKNOWN, "1.0", null, null),
+            emptyList(),
+            emptyList(),
+            null
+        )
+        val states = listOf(
+            AiIntegrationsPanelState.Error("failed") to "Try again",
+            AiIntegrationsPanelState.Ready(snapshot) to "Check again"
+        )
+        states.forEach { (state, label) ->
+            val panel = AiIntegrationsPanel()
+            var originalCalls = 0
+            var replacementCalls = 0
+            panel.setRefreshListener { originalCalls++ }
+            panel.render(state)
+            val button = descendants(panel).filterIsInstance<JButton>().single { it.text == label }
+
+            panel.setRefreshListener { replacementCalls++ }
+            button.doClick()
+            assertThat(originalCalls).isZero()
+            assertThat(replacementCalls).isEqualTo(1)
+
+            panel.dispose()
+            button.doClick()
+            assertThat(originalCalls).isZero()
+            assertThat(replacementCalls).isEqualTo(1)
+        }
+    }
+
+    @Test
     fun `keeps status pills visible in a narrow tool window`() {
         val panel = AiIntegrationsPanel()
         panel.setSize(420, 600)
@@ -334,6 +366,11 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         descendants(panel).filterIsInstance<JToggleButton>().first().doClick()
         val configurationDisclosure = descendants(panel).filterIsInstance<JToggleButton>()
             .single { it.text.endsWith("Configuration details") }
+        val intents = mutableListOf<AiIntegrationsIntent>()
+        panel.setIntentListener { intents += it }
+        descendants(panel).filterIsInstance<JButton>().single { it.text == "Integrate" }.doClick()
+        assertThat(intents).containsExactly(AiIntegrationsIntent.IntegrateCli(AiAgent.CLAUDE_CODE))
+        assertThat(labelTexts(panel)).contains("Integration recorded")
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain("/config.json")
 
         configurationDisclosure.doClick()
@@ -354,6 +391,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(cli = snapshot.cli.copy(authentication = CliAuthenticationStatus.INVALID))))
         assertThat(descendants(panel).filterIsInstance<JToggleButton>().single { it.text.endsWith("Configuration details") }.isSelected).isTrue()
         assertThat(labelTexts(panel)).contains("Integration recorded", "MCP: Configured")
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).doesNotContain("Integrate")
 
         descendants(panel).filterIsInstance<JToggleButton>().single { it.text.endsWith("Configuration details") }.doClick()
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain("/config.json")
