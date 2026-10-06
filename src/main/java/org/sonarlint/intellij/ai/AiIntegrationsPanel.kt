@@ -156,6 +156,8 @@ class AiIntegrationsPanel(
         intentListener = listener
     }
 
+    fun isCliUninstallInProgress(): Boolean = cliUninstallFeedback is CliUninstallFeedback.InProgress
+
     fun setCliUninstallFeedback(feedback: CliUninstallFeedback?) {
         cliUninstallFeedback = feedback
         if (!isDisposed) {

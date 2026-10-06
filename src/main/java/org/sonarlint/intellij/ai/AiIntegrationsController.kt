@@ -58,7 +58,8 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     fun refresh() {
-        reload(showLoading = true, clearFeedback = true)
+        val uninstalling = panel.isCliUninstallInProgress()
+        reload(showLoading = !uninstalling, clearFeedback = !uninstalling)
     }
 
     private fun reload(showLoading: Boolean, clearFeedback: Boolean) {
@@ -128,22 +129,26 @@ class AiIntegrationsController @JvmOverloads constructor(
         panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
         try {
             backendService.uninstallCli().whenComplete { response, error ->
-                runOnUiThread(project) {
-                    finishUninstall(if (error != null) uninstallFailure(error) else uninstallFeedback(response))
+                val feedback = if (error != null) uninstallFailure(error) else uninstallFeedback(response)
+                cliCoordinator.releaseUninstall()
+                if (!isDisposed()) {
+                    runOnUiThread(project) {
+                        if (!isDisposed()) {
+                            showUninstallResult(feedback)
+                        }
+                    }
                 }
             }
         } catch (error: Exception) {
-            finishUninstall(uninstallFailure(error))
+            cliCoordinator.releaseUninstall()
+            if (!isDisposed()) {
+                showUninstallResult(uninstallFailure(error))
+            }
         }
     }
 
-    private fun finishUninstall(feedback: CliUninstallFeedback.Finished) {
-        if (isDisposed()) {
-            cliCoordinator.releaseWithoutSideEffects()
-            return
-        }
+    private fun showUninstallResult(feedback: CliUninstallFeedback.Finished) {
         panel.setCliUninstallFeedback(feedback)
-        cliCoordinator.releaseWithoutSideEffects()
         reload(showLoading = false, clearFeedback = false)
     }
 
