@@ -23,6 +23,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 
 data class CliState(
     val installation: CliInstallationStatus,
@@ -45,11 +48,24 @@ data class IntegrationConnection(
     val organization: String?
 )
 
+data class AgentCliIntegration(
+    val agent: AiAgent,
+    val recordingStatus: CliIntegrationRecordingStatus,
+    val configurations: List<CliIntegrationConfig>
+)
+
+data class CliIntegrationConfig(
+    val path: String?,
+    val mcp: CliIntegrationCheckStatus?,
+    val hooks: CliIntegrationCheckStatus?
+)
+
 data class AiIntegrationSnapshot(
     val cli: CliState,
     val agents: List<AgentCapability>,
     val connectionChoices: List<IntegrationConnection>,
-    val recommendedConnectionId: String?
+    val recommendedConnectionId: String?,
+    val cliIntegrations: List<AgentCliIntegration> = emptyList()
 )
 
 data class CliCommand(
@@ -57,6 +73,34 @@ data class CliCommand(
     val arguments: List<String>,
     val interactive: Boolean
 )
+
+internal fun toAiIntegrationSnapshot(response: GetAiIntegrationStateResponse): AiIntegrationSnapshot {
+    val cli = response.cli
+    return AiIntegrationSnapshot(
+        CliState(cli.installationStatus, cli.authenticationStatus, cli.version, cli.serverUrl, cli.organization),
+        response.agents.map { capability ->
+            AgentCapability(
+                capability.agent,
+                capability.detectionSources.toSet(),
+                capability.isCliIntegrationSupported,
+                capability.isStandaloneMcpSupported
+            )
+        },
+        response.connectionChoices.map { connection ->
+            IntegrationConnection(connection.connectionId, connection.serverUrl, connection.organization)
+        },
+        response.recommendedConnectionId,
+        response.cliIntegrations.orEmpty().map { integration ->
+            AgentCliIntegration(
+                integration.agent,
+                integration.recordingStatus ?: CliIntegrationRecordingStatus.UNKNOWN,
+                integration.configurations.orEmpty().map { configuration ->
+                    CliIntegrationConfig(configuration.path, configuration.mcp, configuration.hooks)
+                }
+            )
+        }
+    )
+}
 
 sealed interface AiIntegrationsPanelState {
     data object Loading : AiIntegrationsPanelState

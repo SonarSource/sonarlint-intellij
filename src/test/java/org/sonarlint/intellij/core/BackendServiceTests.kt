@@ -299,7 +299,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             CompletableFuture.completedFuture(
                 GetAiIntegrationStateResponse(
                     SonarQubeCliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNVERIFIED, null, "1.2.3", null, null),
-                    listOf(AiIntegrationAgentCapability(AiAgent.GITHUB_COPILOT, listOf(AiAgentDetectionSource.IDE), true, false, false, false)),
+                    listOf(AiIntegrationAgentCapability(AiAgent.GITHUB_COPILOT, listOf(AiAgentDetectionSource.IDE), true, false)),
                     listOf(AiIntegrationConnection("connection", "https://sonar.example", null)),
                     "connection"
                 )
