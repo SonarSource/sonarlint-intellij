@@ -130,19 +130,20 @@ class AiIntegrationsController @JvmOverloads constructor(
         try {
             backendService.uninstallCli().whenComplete { response, error ->
                 val feedback = if (error != null) uninstallFailure(error) else uninstallFeedback(response)
-                cliCoordinator.releaseUninstall()
-                if (!isDisposed()) {
-                    runOnUiThread(project) {
-                        if (!isDisposed()) {
-                            showUninstallResult(feedback)
-                        }
-                    }
-                }
+                completeUninstall(feedback)
             }
         } catch (error: Exception) {
-            cliCoordinator.releaseUninstall()
-            if (!isDisposed()) {
-                showUninstallResult(uninstallFailure(error))
+            completeUninstall(uninstallFailure(error))
+        }
+    }
+
+    private fun completeUninstall(feedback: CliUninstallFeedback.Finished) {
+        cliCoordinator.releaseUninstall()
+        if (!isDisposed()) {
+            runOnUiThread(project) {
+                if (!isDisposed()) {
+                    showUninstallResult(feedback)
+                }
             }
         }
     }

@@ -395,6 +395,39 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         assertThat(texts(panelA)).contains("SonarQube CLI was removed, but cleanup reported warnings.", "reset warning")
     }
 
+    @Test
+    fun `a synchronous uninstall failure stays visible after the queued refresh`() {
+        Disposer.dispose(controller)
+        val failurePanel = AiIntegrationsPanel()
+        val publishing = CliOperationCoordinator(backend, { error("terminal unused") }, CliConnectionSelector(), { _, _, _ -> }) {
+            ApplicationManager.getApplication().invokeLater {
+                ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
+            }
+        }
+        controller = AiIntegrationsController(project, failurePanel, backend, AiAgentRegistry { false }, publishing) { true }
+        val installed = installedCli()
+        val afterFailure = CompletableFuture<AiIntegrationSnapshot>()
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(
+            CompletableFuture.completedFuture(installed),
+            afterFailure,
+            afterFailure
+        )
+        `when`(backend.uninstallCli()).thenThrow(IllegalStateException("backend unavailable"))
+
+        controller.loadInitially()
+        UIUtil.dispatchAllInvocationEvents()
+        descendants(failurePanel).filterIsInstance<JButton>().single { it.text == "Uninstall CLI…" }.doClick()
+        repeat(4) { UIUtil.dispatchAllInvocationEvents() }
+
+        assertThat(texts(failurePanel)).contains("backend unavailable")
+
+        afterFailure.complete(installed)
+        repeat(4) { UIUtil.dispatchAllInvocationEvents() }
+
+        assertThat(texts(failurePanel)).contains("backend unavailable")
+        assertThat(descendants(failurePanel).filterIsInstance<JButton>().map { it.text }).contains("Uninstall CLI…")
+    }
+
     private fun load(snapshot: AiIntegrationSnapshot) {
         val loaded = CompletableFuture<AiIntegrationSnapshot>()
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(loaded)
