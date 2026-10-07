@@ -76,7 +76,6 @@ open class BaseStandaloneIntegrationTest {
                 }
             }
             .allowSkippingFullScanning(true)
-            .setSharedIndexesDownload(true)
             .skipGitLogIndexing(true)
             .disablePackageSearchBuildFiles()
             .disableAIAssistantToolwindowActivationOnStart()
