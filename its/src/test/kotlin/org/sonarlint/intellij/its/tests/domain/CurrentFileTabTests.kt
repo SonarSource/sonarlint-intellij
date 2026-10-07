@@ -145,6 +145,25 @@ class CurrentFileTabTests {
             }
         }
 
+        fun copyFixPromptFromCurrentFilePanel(issueMessage: String) {
+            with(remoteRobot) {
+                idea {
+                    toolWindow {
+                        tabTitleContains("Findings") { select() }
+                        content("CurrentFilePanel") {
+                            val issueElement = findText(issueMessage)
+                            issueElement.click()
+                            issueElement.rightClick()
+                        }
+                    }
+                    actionMenuItem("Copy Fix Prompt") {
+                        click()
+                    }
+                    notification("Fix prompt copied to clipboard")
+                }
+            }
+        }
+
         fun clickCurrentFileIssue(issueMessage: String) {
             with(remoteRobot) {
                 idea {
