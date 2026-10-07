@@ -21,7 +21,10 @@ package org.sonarlint.intellij.its.driver
 
 import com.intellij.driver.client.Driver
 import com.intellij.driver.client.Remote
+import com.intellij.driver.client.service
+import com.intellij.driver.sdk.DumbService
 import com.intellij.driver.sdk.invokeAction
+import com.intellij.driver.sdk.singleProject
 import com.intellij.driver.sdk.openFile
 import com.intellij.driver.sdk.ui.enabled
 import com.intellij.driver.sdk.ui.present
@@ -79,7 +82,14 @@ fun Driver.closeProject() {
 
 fun Driver.openProjectFile(relativePath: String) {
     openFile(relativePath, waitForCodeAnalysis = true)
+    waitForBackgroundTasksFinished()
     waitForIndicators(5.minutes)
+}
+
+fun Driver.waitForBackgroundTasksFinished() {
+    waitFor("background tasks to finish", timeout = 5.minutes, interval = 1.seconds) {
+        !service(DumbService::class, singleProject()).isDumb()
+    }
 }
 
 fun Driver.openFileViaMenu(fileName: String) {
@@ -205,7 +215,7 @@ fun Driver.removeFileExclusion(filePath: String) {
     }
     ui.dialog(title = "Project Settings") {
         x(xQuery { byVisibleText("File Exclusions") }).click()
-        x(xQuery { byVisibleText(filePath) }).click()
+        getAllTexts { it.text.contains(filePath) }.first().click()
         xx(xQuery { byClass("ActionButton") }).list()[1].click()
         pressButton("OK")
     }

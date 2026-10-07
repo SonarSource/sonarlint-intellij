@@ -305,7 +305,13 @@ fun itsTargetIdeHomeFromEnv(): String? {
 
 fun itsDriverSdkVersion(): String {
     val buildNumber = itsIdeBuildNumberFromHome(itsTargetIdeHomeFromEnv() ?: itsIdeHome())
-    return buildNumber ?: "242.20224.300"
+        ?: return "242.20224.300"
+    // Driver SDK artifacts are published at platform baseline builds, not per-product patch numbers.
+    return when {
+        buildNumber.startsWith("242.20224.") -> "242.20224.300"
+        buildNumber.startsWith("253.30387.") -> "253.30387.90"
+        else -> buildNumber
+    }
 }
 
 fun itsIdeBuildNumberFromHome(ideHome: String?): String? {
