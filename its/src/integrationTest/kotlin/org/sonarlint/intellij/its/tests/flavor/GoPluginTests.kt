@@ -23,10 +23,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseStandaloneIntegrationTest
-import org.sonarlint.intellij.its.driver.analyzeCurrentFileFromToolWindow
 import org.sonarlint.intellij.its.driver.openProjectFile
 import org.sonarlint.intellij.its.driver.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.driver.waitForBackgroundTasksFinished
 
 @EnabledIf("isGoPlugin")
 class GoPluginTests : BaseStandaloneIntegrationTest() {
@@ -34,9 +32,6 @@ class GoPluginTests : BaseStandaloneIntegrationTest() {
     @Test
     fun should_analyze_go(testInfo: TestInfo) = uiTest(testInfo, "sample-go") {
         openProjectFile("file.go")
-        // On IU the Go SDK download/indexing can finish after the file is opened; re-analyze explicitly.
-        waitForBackgroundTasksFinished()
-        analyzeCurrentFileFromToolWindow()
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
             "Remove or correct this useless self-assignment.",

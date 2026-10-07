@@ -120,7 +120,7 @@ open class BaseStandaloneIntegrationTest {
         fun isPyCharm(): Boolean = ideProduct() == "PY" || ideProduct() == "PC"
 
         @JvmStatic
-        fun isGoPlugin(): Boolean = ideProduct() == "GO" || ideProduct() == "IU"
+        fun isGoPlugin(): Boolean = ideProduct() == "GO"
 
         @JvmStatic
         fun isWebStorm(): Boolean = ideProduct() == "IU"
