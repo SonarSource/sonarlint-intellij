@@ -20,8 +20,9 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
@@ -46,7 +47,7 @@ import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
  * Factory of SonarQube for IDE tool window.
  * Nothing can be injected as it runs in the root pico container.
  */
-public class SonarLintToolWindowFactory implements ToolWindowFactory {
+public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware {
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {

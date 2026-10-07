@@ -20,10 +20,10 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiDocumentManager;
 import com.intellij.util.ui.UIUtil;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -114,9 +114,9 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
     }
 
     runReadActionSafely(project, () -> {
-      var psiFile = PsiDocumentManager.getInstance(project).getPsiFile(rangeMarker.getDocument());
-      if (psiFile != null && psiFile.isValid()) {
-        new OpenFileDescriptor(project, psiFile.getVirtualFile(), rangeMarker.getStartOffset()).navigate(false);
+      var file = FileDocumentManager.getInstance().getFile(rangeMarker.getDocument());
+      if (file != null && file.isValid()) {
+        new OpenFileDescriptor(project, file, rangeMarker.getStartOffset()).navigate(false);
       }
     });
   }

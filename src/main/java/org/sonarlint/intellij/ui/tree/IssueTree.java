@@ -53,7 +53,7 @@ public class IssueTree extends FindingTree implements DataProvider {
   private final Project project;
 
   public IssueTree(Project project, TreeModel model) {
-    super(project, model);
+    super(model);
     this.project = project;
     init();
   }
