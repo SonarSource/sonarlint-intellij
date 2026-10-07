@@ -29,9 +29,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.util.function.Supplier;
 import javax.swing.JTree;
-import org.jdesktop.swingx.renderer.DefaultTreeRenderer;
+import javax.swing.tree.TreeCellRenderer;
 
-public class RulesTreeTableRenderer extends DefaultTreeRenderer {
+public class RulesTreeTableRenderer implements TreeCellRenderer {
   private final Supplier<String> filterSupplier;
 
   public RulesTreeTableRenderer(Supplier<String> filterSupplier) {

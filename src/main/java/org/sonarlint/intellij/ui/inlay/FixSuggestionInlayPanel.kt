@@ -37,6 +37,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.ui.ClientProperty
 import com.intellij.ui.components.JBPanel
+import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
@@ -46,7 +47,6 @@ import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.ComponentEvent
 import javax.swing.JButton
-import org.jdesktop.swingx.HorizontalLayout
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fix.FixSuggestionSnippet
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
