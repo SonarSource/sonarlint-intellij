@@ -23,6 +23,7 @@ import com.intellij.driver.client.Driver
 import com.intellij.driver.client.Remote
 import com.intellij.driver.client.service
 import com.intellij.driver.sdk.DumbService
+import com.intellij.driver.sdk.getIdeFrame
 import com.intellij.driver.sdk.invokeAction
 import com.intellij.driver.sdk.singleProject
 import com.intellij.driver.sdk.openFile
@@ -88,8 +89,23 @@ fun Driver.openProjectFile(relativePath: String) {
 
 fun Driver.waitForBackgroundTasksFinished() {
     waitFor("background tasks to finish", timeout = 5.minutes, interval = 1.seconds) {
-        !service(DumbService::class, singleProject()).isDumb()
+        !service(DumbService::class, singleProject()).isDumb() && !isBackgroundTaskRunning()
     }
+}
+
+private fun Driver.isBackgroundTaskRunning(): Boolean {
+    repeat(3) {
+        if (isBackgroundTaskRunningOnce()) {
+            return true
+        }
+        Thread.sleep(1000)
+    }
+    return false
+}
+
+private fun Driver.isBackgroundTaskRunningOnce(): Boolean {
+    val statusBar = getIdeFrame(singleProject())?.getStatusBar() ?: return false
+    return statusBar.isProcessWindowOpen() || statusBar.getBackgroundProcesses().isNotEmpty()
 }
 
 fun Driver.openFileViaMenu(fileName: String) {
@@ -104,6 +120,7 @@ fun Driver.openFileViaMenu(fileName: String) {
 }
 
 fun Driver.verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
+    waitForBackgroundTasksFinished()
     waitForIndicators(5.minutes)
     expectedMessages.forEach { message ->
         sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
@@ -116,6 +133,7 @@ fun Driver.analyzeCurrentFileFromToolWindow() {
     sonarLintPanel("CurrentFilePanel", tabTitle = FINDINGS_TAB) {
         x(xQuery { byAccessibleName("Analyze Current File") }).click()
     }
+    waitForBackgroundTasksFinished()
     waitForIndicators(5.minutes)
 }
 

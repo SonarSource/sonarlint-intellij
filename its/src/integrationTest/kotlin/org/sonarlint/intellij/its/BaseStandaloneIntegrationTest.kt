@@ -37,6 +37,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.time.Duration.Companion.minutes
 import org.junit.jupiter.api.TestInfo
+import org.sonarlint.intellij.its.driver.waitForBackgroundTasksFinished
 import org.sonarlint.intellij.its.utils.ProjectCopier
 
 open class BaseStandaloneIntegrationTest {
@@ -44,6 +45,7 @@ open class BaseStandaloneIntegrationTest {
     protected fun uiTest(testInfo: TestInfo, projectName: String, testBody: Driver.() -> Unit) {
         createContext(testInfo, projectName).runIdeWithDriver().useDriverAndCloseIde {
             waitForIndicators(5.minutes)
+            waitForBackgroundTasksFinished()
             testBody()
         }
     }
