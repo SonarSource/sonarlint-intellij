@@ -75,6 +75,11 @@ open class BaseStandaloneIntegrationTest {
                     addProjectToTrustedLocations(ProjectCopier.prepareProject(projectName), true)
                 }
             }
+            .allowSkippingFullScanning(true)
+            .setSharedIndexesDownload(true)
+            .skipGitLogIndexing(true)
+            .disablePackageSearchBuildFiles()
+            .disableAIAssistantToolwindowActivationOnStart()
             .setMemorySize(4096)
             .applyVMOptionsPatch {
                 addSystemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
