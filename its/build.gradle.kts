@@ -10,6 +10,10 @@ plugins {
 
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 
+val intellijBuildVersion: String by project
+val ijVersion: String by project
+val runIdeDirectory: String by project
+
 sourceSets {
     create("integrationTest") {
         kotlin.srcDir("src/integrationTest/kotlin")
@@ -55,9 +59,6 @@ dependencyLocking {
     lockMode.set(LockMode.LENIENT)
 }
 
-val intellijBuildVersion: String by project
-val ijVersion: String by project
-val runIdeDirectory: String by project
 description = "ITs for SonarLint IntelliJ"
 
 java {
