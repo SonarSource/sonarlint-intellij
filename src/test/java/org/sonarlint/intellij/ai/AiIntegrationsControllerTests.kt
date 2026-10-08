@@ -41,6 +41,7 @@ import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
@@ -60,6 +61,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     @BeforeEach
     fun setUpController() {
         backend = mock(BackendService::class.java)
+        replaceApplicationService(SonarLintTelemetry::class.java, mock(SonarLintTelemetry::class.java))
         coordinator = CliOperationCoordinator(backend, { error("terminal unused") }, CliConnectionSelector(), { _, _, _ -> }, {})
         val registry = AiAgentRegistry(IdePluginDetector { it in enabledPluginIds })
         panel = AiIntegrationsPanel(registry)

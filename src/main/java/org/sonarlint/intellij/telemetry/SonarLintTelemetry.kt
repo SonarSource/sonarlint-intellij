@@ -25,8 +25,12 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.monitoring.MonitoringService
 import org.sonarlint.intellij.util.runOnPooledThread
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationHost
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingTriggeredParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams
@@ -85,6 +89,10 @@ class SonarLintTelemetry {
 
     fun supportedLanguagesPanelCtaClicked() {
         notifyTelemetry { it.supportedLanguagesPanelCtaClicked() }
+    }
+
+    fun aiIntegrationAction(action: AiIntegrationAction, status: AiIntegrationActionStatus) {
+        notifyTelemetry { it.aiIntegrationAction(AiIntegrationActionParams(action, status, null, AiIntegrationHost.INTELLIJ)) }
     }
 
     companion object {

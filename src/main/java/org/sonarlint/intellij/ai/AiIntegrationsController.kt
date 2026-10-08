@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
 import java.util.concurrent.CompletionException
@@ -29,7 +30,11 @@ import java.util.concurrent.atomic.AtomicLong
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 
 class AiIntegrationsController @JvmOverloads constructor(
     private val project: Project,
@@ -37,6 +42,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val backendService: BackendService = getService(BackendService::class.java),
     private val registry: AiAgentRegistry = AiAgentRegistry(),
     private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java),
+    private val telemetry: SonarLintTelemetry = getService(SonarLintTelemetry::class.java),
     private val confirmUninstall: (Project) -> Boolean = ::confirmCliUninstall
 ) : Disposable {
     private val generation = AtomicLong()
@@ -116,35 +122,60 @@ class AiIntegrationsController @JvmOverloads constructor(
         if (isDisposed() || !cliCoordinator.tryAcquire(project)) {
             return
         }
+        reportUninstall(AiIntegrationActionStatus.STARTED)
         val confirmed = try {
             confirmUninstall(project)
         } catch (error: Exception) {
+            reportUninstall(if (isDisposed()) AiIntegrationActionStatus.CANCELLED else AiIntegrationActionStatus.FAILED)
             cliCoordinator.releaseWithoutSideEffects()
             throw error
         }
-        if (!confirmed) {
+        if (!confirmed || isDisposed()) {
+            reportUninstall(AiIntegrationActionStatus.CANCELLED)
             cliCoordinator.releaseWithoutSideEffects()
             return
         }
-        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
         try {
+            panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
             backendService.uninstallCli().whenComplete { response, error ->
-                val feedback = if (error != null) uninstallFailure(error) else uninstallFeedback(response)
-                completeUninstall(feedback)
+                completeUninstall(response, error)
             }
         } catch (error: Exception) {
-            completeUninstall(uninstallFailure(error))
+            completeUninstall(null, error)
         }
     }
 
-    private fun completeUninstall(feedback: CliUninstallFeedback.Finished) {
+    private fun completeUninstall(response: UninstallCliResponse?, error: Throwable?) {
+        val status = when {
+            error != null -> AiIntegrationActionStatus.FAILED
+            response?.status == UninstallCliResponse.Status.UNINSTALLED -> AiIntegrationActionStatus.SUCCEEDED
+            response?.status == UninstallCliResponse.Status.FAILED ||
+                response?.status == UninstallCliResponse.Status.NOT_AVAILABLE -> AiIntegrationActionStatus.FAILED
+            else -> AiIntegrationActionStatus.UNKNOWN
+        }
+        reportUninstall(status)
         cliCoordinator.releaseUninstall()
         if (!isDisposed()) {
+            val feedback = when {
+                error != null -> uninstallFailure(error)
+                status == AiIntegrationActionStatus.UNKNOWN || response == null -> CliUninstallFeedback.Finished(
+                    "The SonarQube CLI uninstall result could not be determined.", "", ""
+                )
+                else -> uninstallFeedback(response)
+            }
             runOnUiThread(project) {
                 if (!isDisposed()) {
                     showUninstallResult(feedback)
                 }
             }
+        }
+    }
+
+    private fun reportUninstall(status: AiIntegrationActionStatus) {
+        try {
+            telemetry.aiIntegrationAction(AiIntegrationAction.UNINSTALL_CLI, status)
+        } catch (error: Exception) {
+            Logger.getInstance(AiIntegrationsController::class.java).debug("Unable to report CLI uninstall telemetry", error)
         }
     }
 
