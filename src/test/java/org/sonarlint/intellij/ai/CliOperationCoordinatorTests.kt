@@ -21,6 +21,9 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.util.ui.UIUtil
@@ -28,14 +31,19 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore
 import org.sonarlint.intellij.core.BackendService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 
@@ -47,6 +55,232 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         emptyList(),
         null
     )
+    private val connectedSnapshot = snapshot.copy(connectionChoices = listOf(IntegrationConnection("saved", "https://sonar.example", null)))
+
+    @Test
+    fun `saved token authentication forwards the selected connection and refreshes once without a terminal`() {
+        val backend = mock<BackendService>()
+        whenever(backend.authenticateCliWithConnection("saved")).thenReturn(CompletableFuture.completedFuture(AuthenticateCliWithConnectionResponse(Status.AUTHENTICATED, null)))
+        val terminal = mock<CliTerminalAdapter>()
+        val refreshes = AtomicInteger()
+        val notifications = mutableListOf<Notification>()
+        val coordinator = coordinator(backend, terminal, notifications = notifications, refresh = { refreshes.incrementAndGet() })
+
+        coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)
+
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Authenticated)
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(refreshes.get()).isEqualTo(1)
+        assertThat(notifications.single().message).contains("authenticated")
+        verify(backend).authenticateCliWithConnection("saved")
+        verify(backend, never()).prepareAuthenticateCliCommand(any())
+        verifyNoInteractions(terminal)
+    }
+
+    @Test
+    fun `interactive fallback terminal outcomes including cancellation refresh once`() {
+        val outcomes = listOf(
+            TerminalCompletion.Cancelled to CliOperationOutcome.Cancelled,
+            TerminalCompletion.Exited(0) to CliOperationOutcome.ExitZero,
+            TerminalCompletion.Exited(17) to CliOperationOutcome.NonZero,
+            TerminalCompletion.ClosedWithoutExitStatus to CliOperationOutcome.Unknown
+        )
+        outcomes.forEach { (result, outcome) ->
+            val backend = mock<BackendService>()
+            whenever(backend.authenticateCliWithConnection("saved")).thenReturn(CompletableFuture.completedFuture(AuthenticateCliWithConnectionResponse(Status.INTERACTIVE_LOGIN_REQUIRED, null)))
+            whenever(backend.prepareAuthenticateCliCommand("saved")).thenReturn(CompletableFuture.completedFuture(command))
+            val terminal = mock<CliTerminalAdapter>()
+            val completion = CompletableFuture<TerminalCompletion>()
+            whenever(terminal.launch(project, command)).thenReturn(TerminalLaunch.Started({}, completion))
+            val refreshes = AtomicInteger()
+            val coordinator = coordinator(backend, terminal, refresh = { refreshes.incrementAndGet() })
+
+            coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)
+
+            verify(backend).prepareAuthenticateCliCommand("saved")
+            verify(terminal).launch(project, command)
+            assertThat(refreshes.get()).isZero()
+            completion.complete(result)
+            assertThat(coordinator.lastOutcome()).isEqualTo(outcome)
+            assertThat(coordinator.activeOperation()).isFalse()
+            assertThat(refreshes.get()).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun `upgrade and failure show actionable diagnostics without interactive fallback`() {
+        listOf(
+            Status.UPGRADE_REQUIRED to "latest version",
+            Status.FAILED to "Token was rejected."
+        ).forEach { (status, expected) ->
+            val backend = mock<BackendService>()
+            whenever(backend.authenticateCliWithConnection("saved")).thenReturn(CompletableFuture.completedFuture(AuthenticateCliWithConnectionResponse(status, "Token was rejected.")))
+            val terminal = mock<CliTerminalAdapter>()
+            val notifications = mutableListOf<Notification>()
+            val refreshes = AtomicInteger()
+            val coordinator = coordinator(backend, terminal, notifications = notifications, refresh = { refreshes.incrementAndGet() })
+
+            coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)
+
+            assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.AuthenticationFailed)
+            assertThat(coordinator.activeOperation()).isFalse()
+            assertThat(notifications.single().message).contains(expected)
+            assertThat(refreshes.get()).isEqualTo(1)
+            verify(backend, never()).prepareAuthenticateCliCommand(any())
+            verifyNoInteractions(terminal)
+        }
+    }
+
+    @Test
+    fun `without a saved connection sign in remains interactive`() {
+        val backend = mock<BackendService>()
+        whenever(backend.prepareAuthenticateCliCommand(null)).thenReturn(CompletableFuture.completedFuture(command))
+        val terminal = mock<CliTerminalAdapter>()
+        whenever(terminal.launch(project, command)).thenReturn(TerminalLaunch.Started({}, CompletableFuture()))
+        val coordinator = coordinator(backend, terminal)
+
+        coordinator.execute(project, snapshot, AiIntegrationsIntent.AuthenticateCli)
+
+        verify(backend).prepareAuthenticateCliCommand(null)
+        verify(backend, never()).authenticateCliWithConnection(any())
+        verify(terminal).launch(project, command)
+    }
+
+    @Test
+    fun `progress cancellation cancels the authentication request and stays silent`() {
+        val backend = mock<BackendService>()
+        val request = CompletableFuture<AuthenticateCliWithConnectionResponse>()
+        val indicator = EmptyProgressIndicator()
+        whenever(backend.authenticateCliWithConnection("saved")).thenAnswer { indicator.cancel(); request }
+        val terminal = mock<CliTerminalAdapter>()
+        val notifications = mutableListOf<Notification>()
+        val refreshes = AtomicInteger()
+        val coordinator = coordinator(backend, terminal, notifications = notifications, refresh = { refreshes.incrementAndGet() },
+            authentication = { task ->
+                assertThatThrownBy { task.run(indicator) }.isInstanceOf(ProcessCanceledException::class.java)
+                task.onCancel()
+            })
+
+        coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)
+
+        assertThat(request).isCancelled()
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Cancelled)
+        assertThat(refreshes.get()).isZero()
+        assertThat(notifications).isEmpty()
+        verifyNoInteractions(terminal)
+    }
+
+    @Test
+    fun `cancellation after authentication completes prevents late interactive fallback`() {
+        val backend = mock<BackendService>()
+        whenever(backend.authenticateCliWithConnection("saved")).thenReturn(CompletableFuture.completedFuture(AuthenticateCliWithConnectionResponse(Status.INTERACTIVE_LOGIN_REQUIRED, null)))
+        val terminal = mock<CliTerminalAdapter>()
+        val notifications = mutableListOf<Notification>()
+        val refreshes = AtomicInteger()
+        val coordinator = coordinator(backend, terminal, notifications = notifications, refresh = { refreshes.incrementAndGet() },
+            authentication = { task ->
+                val indicator = EmptyProgressIndicator()
+                task.run(indicator)
+                indicator.cancel()
+                task.onSuccess()
+            })
+
+        coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(refreshes.get()).isZero()
+        assertThat(notifications).isEmpty()
+        verify(backend, never()).prepareAuthenticateCliCommand(any())
+        verifyNoInteractions(terminal)
+    }
+
+    @Test
+    fun `cancellation while preparing interactive fallback refreshes without a late terminal launch`() {
+        val backend = mock<BackendService>()
+        whenever(backend.authenticateCliWithConnection("saved")).thenReturn(CompletableFuture.completedFuture(AuthenticateCliWithConnectionResponse(Status.INTERACTIVE_LOGIN_REQUIRED, null)))
+        val preparation = CompletableFuture<CliCommand>()
+        whenever(backend.prepareAuthenticateCliCommand("saved")).thenReturn(preparation)
+        val terminal = mock<CliTerminalAdapter>()
+        val notifications = mutableListOf<Notification>()
+        val refreshes = AtomicInteger()
+        val indicator = EmptyProgressIndicator()
+        val coordinator = coordinator(backend, terminal, notifications = notifications, refresh = { refreshes.incrementAndGet() },
+            authentication = { task -> task.run(indicator); task.onSuccess() })
+
+        coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)
+        indicator.cancel()
+        preparation.complete(command)
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Cancelled)
+        assertThat(refreshes.get()).isEqualTo(1)
+        assertThat(notifications).isEmpty()
+        verifyNoInteractions(terminal)
+    }
+
+    @Test
+    fun `project disposal cancels pending authentication and ignores late callbacks`() {
+        val closingProject = mock<Project>()
+        whenever(closingProject.getService(SonarLintProjectSettingsStore::class.java)).thenReturn(project.getService(SonarLintProjectSettingsStore::class.java))
+        val connected = connectedSnapshot.copy(recommendedConnectionId = "saved")
+        val backend = mock<BackendService>()
+        val request = CompletableFuture<AuthenticateCliWithConnectionResponse>()
+        whenever(backend.authenticateCliWithConnection("saved")).thenAnswer { Disposer.dispose(closingProject); request }
+        val terminal = mock<CliTerminalAdapter>()
+        val notifications = mutableListOf<Notification>()
+        val refreshes = AtomicInteger()
+        val coordinator = coordinator(backend, terminal, notifications = notifications, refresh = { refreshes.incrementAndGet() },
+            authentication = { task ->
+                assertThatThrownBy { task.run(EmptyProgressIndicator()) }.isInstanceOf(ProcessCanceledException::class.java)
+                task.onCancel()
+                task.onSuccess()
+            })
+
+        coordinator.execute(closingProject, connected, AiIntegrationsIntent.AuthenticateCli)
+
+        assertThat(request).isCancelled()
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(refreshes.get()).isZero()
+        assertThat(notifications).isEmpty()
+        verifyNoInteractions(terminal)
+    }
+
+    @Test
+    fun `saved token authentication holds one lease and releases it after cancellation`() {
+        val backend = mock<BackendService>()
+        val tasks = mutableListOf<Task.Backgroundable>()
+        val coordinator = coordinator(backend, mock(), authentication = tasks::add)
+
+        assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isTrue()
+        assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isFalse()
+        assertThat(tasks).hasSize(1)
+        tasks.single().onCancel()
+        assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isTrue()
+        verifyNoInteractions(backend)
+    }
+
+    @Test
+    fun `authentication errors release the lease without showing exception details`() {
+        val backend = mock<BackendService>()
+        whenever(backend.authenticateCliWithConnection("saved")).thenThrow(IllegalStateException("unsafe exception details"))
+        val terminal = mock<CliTerminalAdapter>()
+        val notifications = mutableListOf<Notification>()
+        val coordinator = coordinator(backend, terminal, notifications = notifications, authentication = { task ->
+            try {
+                task.run(EmptyProgressIndicator())
+            } catch (error: Exception) {
+                task.onThrowable(error)
+            }
+        })
+
+        coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.AuthenticationFailed)
+        assertThat(notifications.single().message).contains("Retry").doesNotContain("unsafe exception details")
+        verifyNoInteractions(terminal)
+    }
 
     @Test
     fun `leases one application operation and focuses its terminal on repeat`() {
@@ -354,13 +588,15 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         selector: CliConnectionSelector = CliConnectionSelector(),
         notifications: MutableList<Notification> = mutableListOf(),
         refresh: () -> Unit = {},
-        provider: () -> CliTerminalAdapter = { terminal }
+        provider: () -> CliTerminalAdapter = { terminal },
+        authentication: (Task.Backgroundable) -> Unit = { task -> task.run(EmptyProgressIndicator()); task.onSuccess() }
     ) = CliOperationCoordinator(
         backend,
         provider,
         selector,
         { _, message, type -> notifications += Notification(message, type) },
-        refresh
+        refresh,
+        authentication
     )
 
     private data class Notification(val message: String, val type: NotificationType)
