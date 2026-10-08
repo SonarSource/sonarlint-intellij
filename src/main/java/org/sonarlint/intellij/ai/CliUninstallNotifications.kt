@@ -26,13 +26,12 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBTextArea
 import javax.swing.JComponent
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 internal fun notifyCliUninstallResult(feedback: CliUninstallFeedback.Finished) {
     val type = when (feedback.status) {
-        UninstallCliResponse.Status.UNINSTALLED -> NotificationType.INFORMATION
-        UninstallCliResponse.Status.NOT_AVAILABLE -> NotificationType.WARNING
-        UninstallCliResponse.Status.FAILED -> NotificationType.ERROR
+        CliUninstallStatus.UNINSTALLED -> NotificationType.INFORMATION
+        CliUninstallStatus.NOT_AVAILABLE, CliUninstallStatus.UNKNOWN -> NotificationType.WARNING
+        CliUninstallStatus.FAILED -> NotificationType.ERROR
     }
     val message = feedback.summary.substringBefore("\n\n")
     projectLessNotification(CLI_UNINSTALL_TITLE, message, type, NotificationAction.createSimple("Show details") {
