@@ -92,7 +92,7 @@ private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
 private const val UNINSTALL_CLI_LABEL = "Uninstall CLI…"
 private const val UNINSTALLING_CLI_MESSAGE = "Uninstalling SonarQube CLI…"
 private const val RESET_OUTPUT_LABEL = "Reset output"
-private const val CLEANUP_WARNINGS_LABEL = "Cleanup warnings"
+private const val CLEANUP_WARNINGS_LABEL = "Reset errors and warnings"
 
 class AiIntegrationsPanel(
     private val registry: AiAgentRegistry = AiAgentRegistry(),
@@ -223,7 +223,8 @@ class AiIntegrationsPanel(
         CLI_CARD_TITLE,
         CLI_CARD_HEADLINE,
         createCliDescription(),
-        cliStatus(state)
+        cliStatus(state),
+        createUninstallAction(state)
     ) {
         when (state) {
             AiIntegrationsPanelState.Loading -> addMessage(CLI_LOADING_MESSAGE)
@@ -265,6 +266,23 @@ class AiIntegrationsPanel(
         }
     }
 
+    private fun createUninstallAction(state: AiIntegrationsPanelState): JButton? {
+        val snapshot = when (state) {
+            is AiIntegrationsPanelState.Ready -> state.snapshot
+            is AiIntegrationsPanelState.Empty -> state.snapshot
+            else -> return null
+        }
+        if (!snapshot.cli.uninstallAvailable) return null
+        return JButton(AllIcons.Actions.GC).apply {
+            toolTipText = UNINSTALL_CLI_LABEL
+            accessibleContext.accessibleName = UNINSTALL_CLI_LABEL
+            isContentAreaFilled = false
+            isBorderPainted = false
+            isEnabled = !isCliUninstallInProgress()
+            addActionListener { intentListener(AiIntegrationsIntent.UninstallCli) }
+        }
+    }
+
     private fun CardBuilder.addCliOverview(snapshot: AiIntegrationSnapshot) {
         val cli = snapshot.cli
         val metadata = buildList {
@@ -283,9 +301,6 @@ class AiIntegrationsPanel(
         val uninstalling = cliUninstallFeedback is CliUninstallFeedback.InProgress
         addCliUninstallFeedback()
         addCliPrimaryAction(snapshot, enabled = !uninstalling)
-        if (snapshot.cli.uninstallAvailable) {
-            addIntentAction(UNINSTALL_CLI_LABEL, AiIntegrationsIntent.UninstallCli, enabled = !uninstalling)
-        }
         addCapabilityOverview(
             snapshot.agents,
             { it.cliIntegrationSupported },
@@ -391,6 +406,7 @@ class AiIntegrationsPanel(
         headline: String,
         description: JComponent,
         status: CardStatus,
+        headerAction: JButton? = null,
         content: CardBuilder.() -> Unit
     ): JPanel {
         val body = RoundedSurfacePanel(CARD_BACKGROUND, CARD_BORDER, 16).apply {
@@ -403,7 +419,7 @@ class AiIntegrationsPanel(
             isOpaque = false
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
         }
-        content.add(createCardHeader(title, headline, description, status))
+        content.add(createCardHeader(title, headline, description, status, headerAction))
         content.add(verticalSpace(16))
         CardBuilder(content).content()
         body.add(content, BorderLayout.NORTH)
@@ -414,7 +430,8 @@ class AiIntegrationsPanel(
         title: String,
         headline: String,
         description: JComponent,
-        status: CardStatus
+        status: CardStatus,
+        headerAction: JButton?
     ): JPanel = JBPanel<JBPanel<*>>(BorderLayout(JBUI.scale(12), 0)).apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
@@ -432,7 +449,15 @@ class AiIntegrationsPanel(
         }, BorderLayout.CENTER)
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
             isOpaque = false
-            add(StatusPill(status), BorderLayout.NORTH)
+            val badge = StatusPill(status)
+            val corner = if (headerAction == null) badge else JBPanel<JBPanel<*>>().apply {
+                isOpaque = false
+                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                add(badge)
+                add(horizontalSpace(4))
+                add(headerAction)
+            }
+            add(corner, BorderLayout.NORTH)
         }, BorderLayout.EAST)
     }
 
@@ -563,14 +588,6 @@ class AiIntegrationsPanel(
 
         fun addPrimaryAction(label: String, enabled: Boolean = true, action: () -> Unit) {
             panel.add(createPrimaryButton(label, action).apply {
-                isEnabled = enabled
-                alignmentX = Component.LEFT_ALIGNMENT
-            })
-            panel.add(verticalSpace(6))
-        }
-
-        fun addIntentAction(label: String, intent: AiIntegrationsIntent, enabled: Boolean) {
-            panel.add(createPrimaryButton(label) { intentListener(intent) }.apply {
                 isEnabled = enabled
                 alignmentX = Component.LEFT_ALIGNMENT
             })

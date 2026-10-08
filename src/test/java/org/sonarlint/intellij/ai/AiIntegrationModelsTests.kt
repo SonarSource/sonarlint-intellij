@@ -99,7 +99,7 @@ class AiIntegrationModelsTests {
     }
 
     @Test
-    fun `maps uninstall availability and distinguishes removal from cleanup warnings`() {
+    fun `maps uninstall availability and preserves output without inferring cleanup success`() {
         val response = GetAiIntegrationStateResponse(
             SonarQubeCliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, "1.2.3", null, null, true),
             emptyList(),
@@ -109,21 +109,30 @@ class AiIntegrationModelsTests {
 
         assertThat(toAiIntegrationSnapshot(response).cli.uninstallAvailable).isTrue()
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary)
-            .isEqualTo("SonarQube CLI was uninstalled.")
+            .contains("installation was removed", "remaining cleanup", "Reopen terminals")
 
-        val warnings = uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "reset warning", "cleanup warning", null))
-        assertThat(warnings.summary).isEqualTo("SonarQube CLI was removed, but cleanup reported warnings.")
-        assertThat(warnings.resetOutput).isEqualTo("reset warning")
+        val warnings = uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", "cleanup warning", "Manual cleanup required"))
+        assertThat(warnings.summary).contains("installation was removed", "remaining cleanup", "Manual cleanup required")
+            .doesNotContain("reported warnings")
+        assertThat(warnings.resetOutput).isEqualTo("Reset complete")
         assertThat(warnings.cleanupWarnings).isEqualTo("cleanup warning")
 
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "reset failed", "SonarQube CLI reset failed.")).summary)
             .isEqualTo("SonarQube CLI reset failed.")
         assertThat(uninstallFeedback(UninstallCliResponse(
             UninstallCliResponse.Status.FAILED, "", "", "Could not delete the SonarQube CLI installation folder."
-        )).summary).isEqualTo("The SonarQube CLI executable is still installed. Could not delete the SonarQube CLI installation folder.")
+        )).summary).isEqualTo("Could not delete the SonarQube CLI installation folder.")
         assertThat(uninstallFeedback(UninstallCliResponse(
             UninstallCliResponse.Status.NOT_AVAILABLE, "", "", "Only an official per-user CLI installation can be uninstalled."
         )).summary).contains("official per-user")
+    }
+
+    @Test
+    fun `provides manual PATH cleanup instructions for both installers`() {
+        assertThat(cliPathCleanupHint(windows = true)).contains("user Path", "%LOCALAPPDATA%\\sonarqube-cli\\bin", "Reopen terminals")
+        assertThat(cliPathCleanupHint(windows = false)).contains(
+            "export PATH=\"\$HOME/.local/share/sonarqube-cli/bin:\$PATH\"", "~/.bashrc", "~/.zshrc", "Reopen terminals"
+        )
     }
 
     private fun cli() = SonarQubeCliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNAUTHENTICATED, null, "1.2.3", null, null)

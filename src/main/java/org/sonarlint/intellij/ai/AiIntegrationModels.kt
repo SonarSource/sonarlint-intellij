@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.openapi.util.SystemInfo
 import java.util.concurrent.CompletionException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
@@ -127,25 +128,33 @@ sealed interface AiIntegrationsIntent {
 
 sealed interface CliUninstallFeedback {
     data object InProgress : CliUninstallFeedback
-    data class Finished(val summary: String, val resetOutput: String, val cleanupWarnings: String) : CliUninstallFeedback
+    data class Finished(
+        val summary: String,
+        val resetOutput: String,
+        val cleanupWarnings: String,
+        val status: UninstallCliResponse.Status = UninstallCliResponse.Status.FAILED
+    ) : CliUninstallFeedback
 }
 
 internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeedback.Finished {
     val summary = when (response.status) {
-        UninstallCliResponse.Status.UNINSTALLED -> if (response.stdout.isBlank() && response.stderr.isBlank()) {
-            "SonarQube CLI was uninstalled."
-        } else {
-            "SonarQube CLI was removed, but cleanup reported warnings."
-        }
-        UninstallCliResponse.Status.FAILED -> if (response.message?.contains("delete", ignoreCase = true) == true) {
-            "The SonarQube CLI executable is still installed. ${response.message}"
-        } else {
-            response.message?.takeIf { it.isNotBlank() } ?: "SonarQube CLI could not be uninstalled."
-        }
+        UninstallCliResponse.Status.UNINSTALLED -> listOfNotNull(
+            "SonarQube CLI installation was removed. Review the reset output for any remaining cleanup.",
+            response.message?.takeIf { it.isNotBlank() },
+            cliPathCleanupHint()
+        ).joinToString("\n\n")
+        UninstallCliResponse.Status.FAILED -> response.message?.takeIf { it.isNotBlank() }
+            ?: "SonarQube CLI could not be uninstalled."
         UninstallCliResponse.Status.NOT_AVAILABLE -> response.message?.takeIf { it.isNotBlank() }
             ?: "Only an official per-user CLI installation can be uninstalled."
     }
-    return CliUninstallFeedback.Finished(summary, response.stdout, response.stderr)
+    return CliUninstallFeedback.Finished(summary, response.stdout, response.stderr, response.status)
+}
+
+internal fun cliPathCleanupHint(windows: Boolean = SystemInfo.isWindows): String = if (windows) {
+    "Open ‘Edit environment variables for your account’, edit the user Path, and remove %LOCALAPPDATA%\\sonarqube-cli\\bin. Reopen terminals afterward."
+} else {
+    "Remove export PATH=\"\$HOME/.local/share/sonarqube-cli/bin:\$PATH\" from your shell profile (usually ~/.bashrc or ~/.zshrc). Reopen terminals afterward."
 }
 
 internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {

@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
 import java.util.concurrent.CompletionException
@@ -37,6 +38,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val backendService: BackendService = getService(BackendService::class.java),
     private val registry: AiAgentRegistry = AiAgentRegistry(),
     private val cliCoordinator: CliOperationCoordinator = getService(CliOperationCoordinator::class.java),
+    private val notifyUninstallResult: (CliUninstallFeedback.Finished) -> Unit = ::notifyCliUninstallResult,
     private val confirmUninstall: (Project) -> Boolean = ::confirmCliUninstall
 ) : Disposable {
     private val generation = AtomicLong()
@@ -58,8 +60,10 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     fun refresh() {
-        val uninstalling = panel.isCliUninstallInProgress()
-        reload(showLoading = !uninstalling, clearFeedback = !uninstalling)
+        if (panel.isCliUninstallInProgress()) {
+            return
+        }
+        reload(showLoading = true, clearFeedback = true)
     }
 
     private fun reload(showLoading: Boolean, clearFeedback: Boolean) {
@@ -139,11 +143,11 @@ class AiIntegrationsController @JvmOverloads constructor(
 
     private fun completeUninstall(feedback: CliUninstallFeedback.Finished) {
         cliCoordinator.releaseUninstall()
-        if (!isDisposed()) {
-            runOnUiThread(project) {
-                if (!isDisposed()) {
-                    showUninstallResult(feedback)
-                }
+        runOnUiThread(ModalityState.defaultModalityState()) {
+            try {
+                notifyUninstallResult(feedback)
+            } finally {
+                if (!isDisposed()) showUninstallResult(feedback)
             }
         }
     }
