@@ -71,7 +71,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Authenticated)
         assertThat(coordinator.activeOperation()).isFalse()
         assertThat(refreshes.get()).isEqualTo(1)
-        assertThat(notifications.single().message).contains("Signed in")
+        assertThat(notifications.single().message).contains("authenticated")
         verify(backend).authenticateCliWithConnection("saved")
         verify(backend, never()).prepareAuthenticateCliCommand(any())
         verifyNoInteractions(terminal)

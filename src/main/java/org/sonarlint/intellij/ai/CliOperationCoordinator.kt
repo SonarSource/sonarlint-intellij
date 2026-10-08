@@ -125,7 +125,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
     private fun authenticateWithConnection(lease: OperationLease, connectionId: String) {
         lease.savedTokenAuthentication = true
-        runAuthentication(object : Task.Backgroundable(lease.project, "Signing in to SonarQube CLI", true) {
+        runAuthentication(object : Task.Backgroundable(lease.project, "Authenticating SonarQube CLI", true) {
             private lateinit var response: AuthenticateCliWithConnectionResponse
 
             override fun run(indicator: ProgressIndicator) {
@@ -149,12 +149,12 @@ class CliOperationCoordinator @JvmOverloads constructor(
                 }
                 when (response.status) {
                     Status.AUTHENTICATED -> releaseAndNotify(lease, CliOperationOutcome.Authenticated,
-                        "Signed in to SonarQube CLI.", NotificationType.INFORMATION)
+                        "SonarQube CLI authenticated.", NotificationType.INFORMATION)
                     Status.INTERACTIVE_LOGIN_REQUIRED -> prepareInteractiveAuthentication(lease, connectionId)
                     Status.UPGRADE_REQUIRED -> releaseAndNotify(lease, CliOperationOutcome.AuthenticationFailed,
                         "Update SonarQube CLI to the latest version to reuse a saved connection token.", NotificationType.WARNING)
                     Status.FAILED -> releaseAndNotify(lease, CliOperationOutcome.AuthenticationFailed,
-                        response.message?.takeIf { it.isNotBlank() } ?: "Unable to sign in to SonarQube CLI.", NotificationType.ERROR)
+                        response.message?.takeIf { it.isNotBlank() } ?: "Unable to authenticate SonarQube CLI.", NotificationType.ERROR)
                 }
             }
 
@@ -165,7 +165,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
             override fun onThrowable(error: Throwable) {
                 if (active.get() == lease && !lease.project.isDisposed && lease.indicator?.isCanceled != true) {
-                    releaseAndNotify(lease, CliOperationOutcome.AuthenticationFailed, "Unable to sign in to SonarQube CLI. Retry from this view.", NotificationType.ERROR)
+                    releaseAndNotify(lease, CliOperationOutcome.AuthenticationFailed, "Unable to authenticate SonarQube CLI. Retry from this view.", NotificationType.ERROR)
                 } else {
                     onCancel()
                 }
