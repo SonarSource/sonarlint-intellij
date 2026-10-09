@@ -53,11 +53,6 @@ dependencyResolutionManagement {
 
     @Suppress("UnstableApiUsage")
     repositories {
-        mavenLocal {
-            content {
-                includeVersionByRegex("org.sonarsource.sonarlint.core", ".*", ".*-SNAPSHOT")
-            }
-        }
         if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
             maven("$artifactoryUrl/sonarsource") {
                 credentials {
