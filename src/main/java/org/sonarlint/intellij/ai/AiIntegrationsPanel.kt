@@ -262,6 +262,28 @@ class AiIntegrationsPanel(
     }
 
     private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
+        addMcpSummary(snapshot)
+        val details = JBPanel<JBPanel<*>>().apply {
+            isOpaque = false
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+        fun updateDetails(show: Boolean) {
+            mcpDetailsExpanded = show
+            details.removeAll()
+            if (show) {
+                CardBuilder(details).addMcpAgentRows(snapshot)
+            }
+            details.isVisible = show
+            cards.revalidate()
+            cards.repaint()
+        }
+        addDisclosure(mcpDetailsExpanded, ::updateDetails)
+        panel.add(details)
+        updateDetails(mcpDetailsExpanded)
+    }
+
+    private fun CardBuilder.addMcpSummary(snapshot: AiIntegrationSnapshot) {
         val configurations = snapshot.mcpConfigurations.values
         addMetadata(listOf(agentCountText(snapshot.agents.size)))
         if (configurations.isNotEmpty()) {
@@ -273,44 +295,28 @@ class AiIntegrationsPanel(
             }
             addMetadata(listOf(mcpSummary(configuredCount, configurations.size, attentionCount)))
         }
+    }
 
-        val details = JBPanel<JBPanel<*>>().apply {
-            isOpaque = false
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            alignmentX = Component.LEFT_ALIGNMENT
+    private fun CardBuilder.addMcpAgentRows(snapshot: AiIntegrationSnapshot) {
+        if (snapshot.agents.isEmpty()) {
+            addMessage(NO_AGENTS_MESSAGE)
         }
-        fun updateDetails(show: Boolean) {
-            mcpDetailsExpanded = show
-            details.removeAll()
-            if (show) {
-                val detailBuilder = CardBuilder(details)
-                if (snapshot.agents.isEmpty()) {
-                    detailBuilder.addMessage(NO_AGENTS_MESSAGE)
-                }
-                snapshot.agents.forEach { capability ->
-                    val configuration = snapshot.mcpConfigurations[capability.agent]
-                    if (configuration != null) {
-                        detailBuilder.addMcpConfigurationRow(configuration)
-                    } else {
-                        detailBuilder.addAgentRow(
-                            registry.displayName(capability.agent),
-                            if (capability.cliIntegrationSupported) "Available through SonarQube CLI" else "IDE setup unavailable",
-                            actions = if (capability.cliIntegrationSupported && snapshot.cli.authentication == CliAuthenticationStatus.AUTHENTICATED) {
-                                listOf(RowAction("Set up via CLI", AiIntegrationsIntent.IntegrateCli(capability.agent)))
-                            } else {
-                                emptyList()
-                            }
-                        )
-                    }
-                }
-            }
-            details.isVisible = show
-            cards.revalidate()
-            cards.repaint()
+        snapshot.agents.forEach { capability -> addMcpAgentRow(capability, snapshot) }
+    }
+
+    private fun CardBuilder.addMcpAgentRow(capability: AgentCapability, snapshot: AiIntegrationSnapshot) {
+        val configuration = snapshot.mcpConfigurations[capability.agent]
+        if (configuration != null) {
+            addMcpConfigurationRow(configuration)
+            return
         }
-        addDisclosure(mcpDetailsExpanded, ::updateDetails)
-        panel.add(details)
-        updateDetails(mcpDetailsExpanded)
+        val status = if (capability.cliIntegrationSupported) "Available through SonarQube CLI" else "IDE setup unavailable"
+        val actions = if (capability.cliIntegrationSupported && snapshot.cli.authentication == CliAuthenticationStatus.AUTHENTICATED) {
+            listOf(RowAction("Set up via CLI", AiIntegrationsIntent.IntegrateCli(capability.agent)))
+        } else {
+            emptyList()
+        }
+        addAgentRow(registry.displayName(capability.agent), status, actions = actions)
     }
 
     private fun CardBuilder.addMcpConfigurationRow(configuration: McpAgentConfiguration) {
