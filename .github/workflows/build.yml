@@ -698,7 +698,7 @@ jobs:
                 echo "cgroup memory.max: $(cat /sys/fs/cgroup/memory.max)"
                 grep -E 'oom' /sys/fs/cgroup/memory.events
               fi
-              ps -eo pid,rss,comm --sort=-rss | head -8
+              ps -eo pid,rss,args --sort=-rss | head -8 | cut -c1-250
               echo "::endgroup::"
               sleep 30
             done
