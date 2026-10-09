@@ -686,7 +686,26 @@ jobs:
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
           ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
-        run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
+        run: |
+          # Periodically log memory usage to the live job log: when the runner dies, no artifacts get uploaded
+          (
+            set +eo pipefail
+            while true; do
+              echo "::group::Memory usage $(date -u +%H:%M:%S)"
+              grep -E 'MemTotal|MemAvailable|SwapFree' /proc/meminfo
+              if [ -f /sys/fs/cgroup/memory.current ]; then
+                echo "cgroup memory.current: $(cat /sys/fs/cgroup/memory.current)"
+                echo "cgroup memory.max: $(cat /sys/fs/cgroup/memory.max)"
+                grep -E 'oom' /sys/fs/cgroup/memory.events
+              fi
+              ps -eo pid,rss,comm --sort=-rss | head -8
+              echo "::endgroup::"
+              sleep 30
+            done
+          ) &
+          MEMORY_MONITOR_PID=$!
+          trap 'kill $MEMORY_MONITOR_PID 2>/dev/null' EXIT
+          ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
 
       - name: Stop recording
         if: always()
