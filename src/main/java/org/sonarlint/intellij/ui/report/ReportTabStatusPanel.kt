@@ -19,12 +19,13 @@
  */
 package org.sonarlint.intellij.ui.report
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBPanel
 import java.awt.BorderLayout
 import org.sonarlint.intellij.ui.WhatsInThisViewPanel
 
-class ReportTabStatusPanel internal constructor(private val project: Project) : JBPanel<ReportTabStatusPanel>(BorderLayout()) {
+class ReportTabStatusPanel internal constructor(private val project: Project, private val parent: Disposable) : JBPanel<ReportTabStatusPanel>(BorderLayout()) {
     companion object {
         private const val HELP_TEXT = "A snapshot of findings from the analysis you triggered; findings remain even if they later change."
     }
@@ -34,6 +35,6 @@ class ReportTabStatusPanel internal constructor(private val project: Project) : 
     }
 
     private fun createPanel() {
-        add(WhatsInThisViewPanel(project, HELP_TEXT).panel, BorderLayout.EAST)
+        add(WhatsInThisViewPanel(project, HELP_TEXT, parent).panel, BorderLayout.EAST)
     }
 }

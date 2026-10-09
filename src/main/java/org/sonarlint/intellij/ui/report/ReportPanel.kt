@@ -25,6 +25,7 @@ import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLabel
@@ -72,16 +73,22 @@ const val VERTICAL_FLOW_LAYOUT_VGAP = 0
 
 class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, false), Disposable {
     
+    internal val lifetime = Disposer.newDisposable("Report panel")
+    @Volatile
+    private var invalidated = false
+
+    private fun isActive() = !invalidated && !project.isDisposed
+
     // Components
-    private val whatsNewPanel = ReportTabStatusPanel(project)
+    private val whatsNewPanel = ReportTabStatusPanel(project, lifetime)
     private val restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction()
     
     // Core managers
-    private val findingDetailsPanel = FindingDetailsPanel(project, this, FindingKind.MIX)
+    private val findingDetailsPanel = FindingDetailsPanel(project, lifetime, FindingKind.MIX)
     private val filtersPanel = createFiltersPanel()
     private val findingsFilter = FindingsFilter(project)
     private val displayManager = ReportDisplayManager(filtersPanel)
-    private val treeManager = ReportTreeManager(project, findingDetailsPanel)
+    private val treeManager = ReportTreeManager(project, findingDetailsPanel, ::isActive)
     
     // UI components
     private lateinit var findingsPanel: JBPanelWithEmptyText
@@ -107,12 +114,13 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private var analysisStatusLabel: JBLabel? = null
 
     init {
+        Disposer.register(this, lifetime)
         initializeUI()
         configureInitialState()
     }
 
     fun updateFindings(analysisResult: AnalysisResult) {
-        if (project.isDisposed) return
+        if (!isActive()) return
 
         // Update progress if in loading state
         if (isLoadingState) {
@@ -150,6 +158,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
 
     fun showFiltersPanel(show: Boolean) {
+        if (!isActive()) return
         filtersPanel.isVisible = show
         headerCardPanel.revalidate()
         headerCardPanel.repaint()
@@ -158,6 +167,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     fun isFiltersPanelVisible(): Boolean = filtersPanel.isVisible
 
     fun refreshView() {
+        if (!isActive()) return
         lastAnalysisResult?.let(::updateFindings) ?: showEmptyState()
     }
     
@@ -165,6 +175,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
      * Shows the loading state with a spinner and progress information.
      */
     fun showLoadingState(expectedModules: Int = 1) {
+        if (!isActive()) return
         isLoadingState = true
         expectedModuleCount = expectedModules
         receivedModuleCount = 0
@@ -177,6 +188,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
      * Updates the loading progress when a module completes analysis.
      */
     fun updateLoadingProgress() {
+        if (!isActive()) return
         receivedModuleCount++
         updateLoadingText()
 
@@ -193,6 +205,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
      * Updates the analysis progress with explicit counts from the callback.
      */
     fun updateAnalysisProgress(completedModules: Int, expectedModules: Int) {
+        if (!isActive()) return
         receivedModuleCount = completedModules
         expectedModuleCount = expectedModules
         
@@ -213,7 +226,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
      * This is used for incremental updates as modules complete analysis.
      */
     fun mergeAnalysisResults(newAnalysisResult: AnalysisResult) {
-        if (project.isDisposed) return
+        if (!isActive()) return
         
         lastAnalysisResult = lastAnalysisResult?.let { existing ->
             val mergedFindings = newAnalysisResult.findings.merge(existing.findings)
@@ -273,6 +286,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     )
     
     private fun handleSortingChange(sortMode: SortMode) {
+        if (!isActive()) return
         with(treeManager) {
             issuesTreeBuilder.sortMode = sortMode
             oldIssuesTreeBuilder.sortMode = sortMode
@@ -286,7 +300,9 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun handleFocusOnNewCodeChange(focusOnNewCode: Boolean) {
+        if (!isActive()) return
         runOnPooledThread(project) { 
+            if (!isActive()) return@runOnPooledThread
             getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCode)
         }
     }
@@ -333,7 +349,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         findingDetailsPanel.minimumSize = FINDING_DETAILS_MINIMUM_SIZE
         
         super.setContent(createSplitter(
-            project, this, this, mainContentPanel, 
+            project, this, lifetime, mainContentPanel,
             findingDetailsPanel, SPLIT_PROPORTION_PROPERTY,
             DEFAULT_SPLIT_PROPORTION
         ))
@@ -348,6 +364,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         }
         
         runOnUiThread(project) {
+            if (!isActive()) return@runOnUiThread
             with(treeManager) {
                 issuesTreeBuilder.updateModel(split.newIssues)
                 oldIssuesTreeBuilder.updateModel(split.oldIssues)
@@ -360,6 +377,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun refreshFilteredView() {
+        if (!isActive()) return
         lastAnalysisResult?.let { 
             applyFiltering()
             updateFindings(it)
@@ -389,6 +407,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun showEmptyState() {
+        if (!isActive()) return
         runOnPooledThread(project, ::configureEmptyView)
         findingsTreePane.isVisible = false
         whatsNewPanel.isVisible = false
@@ -400,16 +419,19 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun configureEmptyView() {
-        val statusText = findingsPanel.emptyText
+        if (!isActive()) return
         val backendIsAlive = getService(BackendService::class.java).isAlive()
-        
-        if (!backendIsAlive) {
-            statusText.text = RestartBackendAction.SONARLINT_ERROR_MSG
-            statusText.appendLine("Restart SonarQube for IDE Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { 
-                ActionUtil.invokeAction(restartSonarLintAction, this, TOOL_WINDOW_ID, null, null)
+        runOnUiThread(project) {
+            if (!isActive()) return@runOnUiThread
+            val statusText = findingsPanel.emptyText
+            if (!backendIsAlive) {
+                statusText.text = RestartBackendAction.SONARLINT_ERROR_MSG
+                statusText.appendLine("Restart SonarQube for IDE Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) {
+                    if (isActive()) ActionUtil.invokeAction(restartSonarLintAction, this, TOOL_WINDOW_ID, null, null)
+                }
+            } else {
+                configureAnalysisPrompts(statusText)
             }
-        } else {
-            configureAnalysisPrompts(statusText)
         }
     }
     
@@ -422,7 +444,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         analyzeChangedFiles.templateText?.let { text ->
             statusText.appendText(text, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) {
-                ActionUtil.invokeAction(analyzeChangedFiles, this, TOOL_WINDOW_ID, null, null)
+                if (isActive()) ActionUtil.invokeAction(analyzeChangedFiles, this, TOOL_WINDOW_ID, null, null)
             }
             if (analyzeAllFiles.templateText != null) {
                 statusText.appendText(" or ")
@@ -431,7 +453,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         analyzeAllFiles.templateText?.let { text ->
             statusText.appendText(text, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) {
-                ActionUtil.invokeAction(analyzeAllFiles, this, TOOL_WINDOW_ID, null, null)
+                if (isActive()) ActionUtil.invokeAction(analyzeAllFiles, this, TOOL_WINDOW_ID, null, null)
             }
         }
     }
@@ -587,14 +609,28 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
 
     fun expandAllTrees() {
+        if (!isActive()) return
         treeManager.expandAllTrees()
     }
     
     fun collapseAllTrees() {
+        if (!isActive()) return
         treeManager.collapseTrees()
     }
 
-    override fun dispose() {
+    internal fun invalidateReport() {
+        if (invalidated) return
+        invalidated = true
+        Disposer.dispose(lifetime)
+        treeManager.clear()
+        findingDetailsPanel.clear()
+        filteredFindingsCache = FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
+        filtersPanel.searchField.text = ""
+        isLoadingState = false
+        expectedModuleCount = 0
+        receivedModuleCount = 0
+        findingsPanel.removeAll()
+        headerCardPanel.removeAll()
         loadingIcon?.dispose()
         analysisStatusIcon?.dispose()
         
@@ -610,5 +646,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         lastAnalysisResult = null
     }
+
+    override fun dispose() = invalidateReport()
 
 }
