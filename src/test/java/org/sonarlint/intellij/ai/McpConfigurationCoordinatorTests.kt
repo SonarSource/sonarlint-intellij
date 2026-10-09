@@ -33,6 +33,8 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
@@ -443,9 +445,14 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
             AiAgent.CURSOR to McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.NOT_CONFIGURED, emptyList())
         ))
         val coordinator = coordinator()
+        globalSettings.serverConnections = emptyList()
         assertThat(coordinator.setUp(project, snapshot.copy(connectionChoices = emptyList()), AiAgent.CURSOR)).isFalse()
         assertThat(ui.settingsOpened).isTrue()
 
+        globalSettings.serverConnections = listOf(
+            connection,
+            ServerConnection.newBuilder().setName("recommended").setHostUrl("https://recommended.example").build()
+        )
         getSettingsFor(project).connectionName = "connection"
         plan(McpConfigurationKind.NOT_CONFIGURED, "created")
         val choices = snapshot.copy(
@@ -455,6 +462,32 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.setUp(project, choices, AiAgent.CURSOR)).isTrue()
         verify(backend).generateMcpConfiguration(eq("connection"), any())
         assertThat(ui.connectionChoices).isZero()
+        assertThat(Files.readString(path)).isEqualTo("created")
+    }
+
+    @ParameterizedTest
+    @EnumSource(CliAuthenticationStatus::class)
+    fun `MCP setup offers saved server and cloud connections independently of CLI authentication`(authentication: CliAuthenticationStatus) {
+        val cloud = ServerConnection.newBuilder().setName("cloud").setHostUrl("https://sonarcloud.io").setOrganizationKey("organization").build()
+        globalSettings.serverConnections = listOf(connection, cloud)
+        ui.selectedConnectionId = connection.name
+        val path = tempDir.resolve("mcp.json")
+        plan(McpConfigurationKind.NOT_CONFIGURED, "created")
+        val snapshot = baseSnapshot().let { base ->
+            base.copy(
+                cli = base.cli.copy(authentication = authentication),
+                connectionChoices = emptyList(),
+                mcpConfigurations = mapOf(
+                    AiAgent.CURSOR to McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.NOT_CONFIGURED, emptyList())
+                )
+            )
+        }
+
+        assertThat(coordinator().setUp(project, snapshot, AiAgent.CURSOR)).isTrue()
+
+        assertThat(ui.offeredConnections.map { it.connectionId }).containsExactly("connection", "cloud")
+        assertThat(ui.offeredConnections.last().organization).isEqualTo("organization")
+        verify(backend).generateMcpConfiguration("connection", "test-token")
         assertThat(Files.readString(path)).isEqualTo("created")
     }
 
@@ -519,11 +552,14 @@ private class RecordingMcpUi : McpUiAdapter {
     var proceedWithoutToken = false
     var tokenWarningRequests = 0
     var connectionChoices = 0
+    var offeredConnections: List<IntegrationConnection> = emptyList()
+    var selectedConnectionId: String? = null
     val messages = mutableListOf<UiMessage>()
 
     override fun chooseConnection(project: com.intellij.openapi.project.Project, connections: List<IntegrationConnection>): String? {
         connectionChoices++
-        return null
+        offeredConnections = connections
+        return selectedConnectionId
     }
 
     override fun confirmWithoutToken(project: com.intellij.openapi.project.Project): Boolean {

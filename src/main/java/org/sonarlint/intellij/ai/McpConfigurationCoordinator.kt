@@ -106,7 +106,10 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             return false
         }
         val connectionId = if (configuration.state == McpConfigurationKind.NOT_CONFIGURED) {
-            when (val selection = ConnectionSelector(ui::chooseConnection).select(project, snapshot)) {
+            val connections = getGlobalSettings().serverConnections.map { connection ->
+                IntegrationConnection(connection.name, connection.hostUrl, connection.organizationKey)
+            }
+            when (val selection = ConnectionSelector(ui::chooseConnection).select(project, snapshot.copy(connectionChoices = connections))) {
                 is ConnectionSelection.Selected -> selection.connectionId
                 ConnectionSelection.Missing -> {
                     ui.showMessage(project, "No SonarQube connection is available. Add a connection, then retry MCP setup.", NotificationType.ERROR)
