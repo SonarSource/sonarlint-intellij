@@ -83,7 +83,7 @@ class IntellijMcpUiAdapter : McpUiAdapter {
         jsonFactory.createParser(content).use { parser ->
             while (parser.nextToken() != null) {
                 val section = parser.parsingContext.parent
-                if (parser.currentToken == JsonToken.FIELD_NAME && parser.currentName == "sonarqube" &&
+                if (parser.currentToken == JsonToken.FIELD_NAME && parser.currentName() == "sonarqube" &&
                     section?.currentName in listOf("mcpServers", "servers") && section?.parent?.inRoot() == true) {
                     return@use parser.currentTokenLocation().charOffset.toInt()
                 }
