@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.icons.AllIcons
+import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBFont
@@ -502,6 +503,21 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain(
             "Some server tokens could not be revoked automatically. Revoke them manually in SonarQube.", "Reset complete"
         )
+    }
+
+    @Test
+    fun `offers details on failed results while keeping diagnostics hidden`() {
+        val panel = AiIntegrationsPanel()
+
+        UninstallCliResponse.Status.entries.forEach { status ->
+            val feedback = uninstallFeedback(UninstallCliResponse(status, "reset output", "reset stderr", "backend diagnostic"))
+            panel.setCliUninstallFeedback(feedback)
+
+            assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
+                .contains(feedback.summary).doesNotContain("reset output", "reset stderr")
+            val links = descendants(panel).filterIsInstance<ActionLink>().filter { it.text == "Show details" }
+            assertThat(links).hasSize(if (status == UninstallCliResponse.Status.FAILED) 1 else 0)
+        }
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }

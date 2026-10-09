@@ -127,6 +127,7 @@ sealed interface AiIntegrationsIntent {
 }
 
 sealed interface CliUninstallFeedback {
+    data object Checking : CliUninstallFeedback
     data object InProgress : CliUninstallFeedback
     data class Finished(
         val summary: String,
@@ -135,6 +136,8 @@ sealed interface CliUninstallFeedback {
         val status: UninstallCliResponse.Status = UninstallCliResponse.Status.FAILED,
         val backendMessage: String? = null
     ) : CliUninstallFeedback {
+        // The RPC has no structured revocation status. Keep these phrases aligned with
+        // sonarqube-cli/src/commands/auth/revoke-server-token.ts and the model tests.
         val tokenRevocationWarning: String?
             get() = if (cleanupWarnings.contains("could not be revoked", ignoreCase = true) ||
                 cleanupWarnings.contains("failed to revoke the server-side token", ignoreCase = true)) {
@@ -172,6 +175,7 @@ internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {
     return CliUninstallFeedback.Finished(
         CLI_UNINSTALL_FAILED,
         "",
-        cause.message?.takeIf { it.isNotBlank() }.orEmpty()
+        "",
+        backendMessage = cause.message?.takeIf { it.isNotBlank() }
     )
 }

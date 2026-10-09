@@ -62,7 +62,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     fun refresh() {
-        if (panel.isCliUninstallInProgress()) {
+        if (panel.isCliUninstallBusy()) {
             return
         }
         reload(showLoading = true, clearFeedback = true)
@@ -122,7 +122,7 @@ class AiIntegrationsController @JvmOverloads constructor(
         if (isDisposed() || !cliCoordinator.tryAcquire(project)) {
             return
         }
-        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
+        panel.setCliUninstallFeedback(CliUninstallFeedback.Checking)
         try {
             backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
                 runOnUiThread(ModalityState.defaultModalityState()) {
@@ -156,6 +156,7 @@ class AiIntegrationsController @JvmOverloads constructor(
             }
             return
         }
+        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
         try {
             backendService.uninstallCli().whenComplete { response, error ->
                 val feedback = if (error != null) uninstallFailure(error) else uninstallFeedback(response)

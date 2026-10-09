@@ -127,7 +127,8 @@ class AiIntegrationModelsTests {
             .isEqualTo("This CLI installation cannot be uninstalled here. Refresh to check its state.")
         val failure = uninstallFailure(CompletionException(IllegalStateException("connection lost")))
         assertThat(failure.summary).isEqualTo(CLI_UNINSTALL_FAILED)
-        assertThat(failure.cleanupWarnings).isEqualTo("connection lost")
+        assertThat(failure.cleanupWarnings).isEmpty()
+        assertThat(failure.backendMessage).isEqualTo("connection lost")
 
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "reset failed", "SonarQube CLI reset failed.")).summary)
             .isEqualTo("SonarQube CLI reset failed.")
@@ -152,6 +153,16 @@ class AiIntegrationModelsTests {
         }
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Token revoked.", "", null)).tokenRevocationWarning)
             .isNull()
+    }
+
+    @Test
+    fun `backend errors do not imply reset or token revocation failures`() {
+        val failure = uninstallFailure(IllegalStateException("Failed to revoke the server-side token: backend unavailable"))
+
+        assertThat(failure.resetOutput).isEmpty()
+        assertThat(failure.cleanupWarnings).isEmpty()
+        assertThat(failure.backendMessage).isEqualTo("Failed to revoke the server-side token: backend unavailable")
+        assertThat(failure.tokenRevocationWarning).isNull()
     }
 
     @Test

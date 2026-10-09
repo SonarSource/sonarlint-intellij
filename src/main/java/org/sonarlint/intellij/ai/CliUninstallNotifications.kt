@@ -36,26 +36,30 @@ internal fun notifyCliUninstallResult(feedback: CliUninstallFeedback.Finished) {
     }
     val message = listOfNotNull(feedback.summary.substringBefore("\n\n"), feedback.tokenRevocationWarning).joinToString("\n\n")
     projectLessNotification(CLI_UNINSTALL_TITLE, message, type, NotificationAction.createSimple("Show details") {
-        object : DialogWrapper(null, true) {
-            init {
-                title = CLI_UNINSTALL_TITLE
-                init()
-            }
-
-            override fun createCenterPanel(): JComponent = ScrollPaneFactory.createScrollPane(JBTextArea(
-                listOfNotNull(
-                    feedback.summary,
-                    feedback.tokenRevocationWarning,
-                    feedback.backendMessage?.takeIf { it.isNotBlank() && it != feedback.summary },
-                    "Reset output:\n${feedback.resetOutput}",
-                    "Reset errors and warnings:\n${feedback.cleanupWarnings}"
-                ).joinToString("\n\n"),
-                18, 80
-            ).apply {
-                isEditable = false
-                lineWrap = true
-                wrapStyleWord = true
-            })
-        }.show()
+        showCliUninstallDetails(feedback)
     })
+}
+
+internal fun showCliUninstallDetails(feedback: CliUninstallFeedback.Finished) {
+    object : DialogWrapper(null, true) {
+        init {
+            title = CLI_UNINSTALL_TITLE
+            init()
+        }
+
+        override fun createCenterPanel(): JComponent = ScrollPaneFactory.createScrollPane(JBTextArea(
+            listOfNotNull(
+                feedback.summary,
+                feedback.tokenRevocationWarning,
+                feedback.backendMessage?.takeIf { it.isNotBlank() && it != feedback.summary },
+                "Reset output:\n${feedback.resetOutput}",
+                "Reset errors and warnings:\n${feedback.cleanupWarnings}"
+            ).joinToString("\n\n"),
+            18, 80
+        ).apply {
+            isEditable = false
+            lineWrap = true
+            wrapStyleWord = true
+        })
+    }.show()
 }

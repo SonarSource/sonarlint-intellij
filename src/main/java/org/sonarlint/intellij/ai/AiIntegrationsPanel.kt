@@ -25,6 +25,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ex.ActionButtonLook
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
@@ -62,6 +63,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
@@ -92,6 +94,7 @@ private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
 private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
 private const val UNINSTALL_CLI_LABEL = "Uninstall CLI…"
+private const val CHECKING_CLI_UNINSTALL_MESSAGE = "Checking SonarQube CLI uninstall availability…"
 private const val UNINSTALLING_CLI_MESSAGE = "Uninstalling SonarQube CLI…"
 
 class AiIntegrationsPanel(
@@ -156,7 +159,8 @@ class AiIntegrationsPanel(
         intentListener = listener
     }
 
-    fun isCliUninstallInProgress(): Boolean = cliUninstallFeedback is CliUninstallFeedback.InProgress
+    fun isCliUninstallBusy(): Boolean = cliUninstallFeedback is CliUninstallFeedback.Checking ||
+        cliUninstallFeedback is CliUninstallFeedback.InProgress
 
     fun setCliUninstallFeedback(feedback: CliUninstallFeedback?) {
         cliUninstallFeedback = feedback
@@ -295,7 +299,7 @@ class AiIntegrationsPanel(
             preferredSize = JBUI.size(20)
             minimumSize = preferredSize
             maximumSize = preferredSize
-            isEnabled = !isCliUninstallInProgress()
+            isEnabled = !isCliUninstallBusy()
             addActionListener { intentListener(AiIntegrationsIntent.UninstallCli) }
         }
     }
@@ -315,7 +319,7 @@ class AiIntegrationsPanel(
         if (metadata.isNotEmpty()) {
             addMetadata(metadata)
         }
-        val uninstalling = cliUninstallFeedback is CliUninstallFeedback.InProgress
+        val uninstalling = isCliUninstallBusy()
         addCliUninstallFeedback()
         addCliPrimaryAction(snapshot, enabled = !uninstalling)
         addCapabilityOverview(
@@ -340,10 +344,17 @@ class AiIntegrationsPanel(
     private fun CardBuilder.addCliUninstallFeedback() {
         when (val feedback = cliUninstallFeedback) {
             null -> Unit
+            CliUninstallFeedback.Checking -> addMessage(CHECKING_CLI_UNINSTALL_MESSAGE)
             CliUninstallFeedback.InProgress -> addMessage(UNINSTALLING_CLI_MESSAGE)
             is CliUninstallFeedback.Finished -> {
                 addMessage(feedback.summary)
                 feedback.tokenRevocationWarning?.let { addMessage(it) }
+                if (feedback.status == UninstallCliResponse.Status.FAILED) {
+                    panel.add(ActionLink("Show details") { showCliUninstallDetails(feedback) }.apply {
+                        alignmentX = Component.LEFT_ALIGNMENT
+                    })
+                    panel.add(verticalSpace(10))
+                }
             }
         }
     }
