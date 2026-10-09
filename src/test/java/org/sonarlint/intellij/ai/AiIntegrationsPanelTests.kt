@@ -44,6 +44,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
 class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     @Test
@@ -61,7 +62,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
                 AgentCapability(AiAgent.GITHUB_COPILOT, setOf(AiAgentDetectionSource.IDE), false, false)
             ),
             mcpConfigurations = mapOf(AiAgent.CURSOR to McpAgentConfiguration(
-                AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.NOT_CONFIGURED, emptyList()
+                AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationState.NOT_CONFIGURED, emptyList()
             ))
         )
         val states = listOf(
@@ -292,7 +293,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             mcpConfigurations = mapOf(AiAgent.GITHUB_COPILOT to McpAgentConfiguration(
                 AiAgent.GITHUB_COPILOT,
                 java.nio.file.Path.of("/tmp/mcp.json"),
-                McpConfigurationKind.NOT_CONFIGURED,
+                McpConfigurationState.NOT_CONFIGURED,
                 emptyList()
             ))
         )
@@ -454,12 +455,12 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         val warningColor = descendants(panel).filterIsInstance<JBLabel>().first { it.text == "Needs attention" }.foreground
         val path = java.nio.file.Path.of("/tmp/mcp.json")
         val configurations = listOf(
-            McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationKind.NOT_CONFIGURED, emptyList()),
-            McpAgentConfiguration(AiAgent.GITHUB_COPILOT, path, McpConfigurationKind.STANDALONE, emptyList()),
-            McpAgentConfiguration(AiAgent.CLAUDE_CODE, path, McpConfigurationKind.STANDALONE, emptyList()),
-            McpAgentConfiguration(AiAgent.KIRO, path, McpConfigurationKind.CLI_MANAGED, emptyList()),
-            McpAgentConfiguration(AiAgent.CODEX, path, McpConfigurationKind.UNKNOWN, listOf("inspect manually")),
-            McpAgentConfiguration(AiAgent.WINDSURF, path, McpConfigurationKind.MALFORMED, listOf("invalid json"))
+            McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationState.NOT_CONFIGURED, emptyList()),
+            McpAgentConfiguration(AiAgent.GITHUB_COPILOT, path, McpConfigurationState.STANDALONE, emptyList()),
+            McpAgentConfiguration(AiAgent.CLAUDE_CODE, path, McpConfigurationState.STANDALONE, emptyList()),
+            McpAgentConfiguration(AiAgent.KIRO, path, McpConfigurationState.CLI_MANAGED, emptyList()),
+            McpAgentConfiguration(AiAgent.CODEX, path, McpConfigurationState.UNKNOWN, listOf("inspect manually")),
+            McpAgentConfiguration(AiAgent.WINDSURF, path, McpConfigurationState.MALFORMED, listOf("invalid json"))
         ).associateBy { it.agent }
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),
@@ -512,9 +513,9 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     fun `MCP inventory shows all five detected agents and offers CLI setup without inflating configured totals`() {
         val panel = AiIntegrationsPanel()
         val configured = McpAgentConfiguration(
-            AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationKind.STANDALONE, emptyList()
+            AiAgent.CURSOR, java.nio.file.Path.of("/tmp/mcp.json"), McpConfigurationState.STANDALONE, emptyList()
         )
-        val claude = configured.copy(agent = AiAgent.CLAUDE_CODE, state = McpConfigurationKind.CLI_MANAGED)
+        val claude = configured.copy(agent = AiAgent.CLAUDE_CODE, state = McpConfigurationState.CLI_MANAGED)
         val cliAgents = listOf(AiAgent.CODEX, AiAgent.GITHUB_COPILOT_CLI, AiAgent.ANTIGRAVITY)
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, null, null),
@@ -544,7 +545,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         }
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(mcpConfigurations = mapOf(
-            configured.agent to configured.copy(state = McpConfigurationKind.NOT_CONFIGURED),
+            configured.agent to configured.copy(state = McpConfigurationState.NOT_CONFIGURED),
             claude.agent to claude
         ))))
         assertThat(labelTexts(panel)).contains("MCP configured for 1 of 2 agents with IDE setup.")

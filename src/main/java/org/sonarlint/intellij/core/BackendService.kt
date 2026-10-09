@@ -59,9 +59,6 @@ import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.ai.AiIntegrationSnapshot
 import org.sonarlint.intellij.ai.CliCommand
 import org.sonarlint.intellij.ai.toAiIntegrationSnapshot
-import org.sonarlint.intellij.ai.McpConfigurationKind
-import org.sonarlint.intellij.ai.McpInspection
-import org.sonarlint.intellij.ai.McpUpdatePlan
 import org.sonarlint.intellij.actions.RestartBackendAction.Companion.SONARLINT_ERROR_MSG
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -112,7 +109,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticat
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationUpdateParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationUpdatePlanResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.GetMCPServerConfigurationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
@@ -1301,27 +1300,20 @@ class BackendService : Disposable {
     private fun toCliCommand(response: PrepareCliCommandResponse) =
         CliCommand(response.executable, response.arguments.toList(), response.isInteractive)
 
-    fun inspectMcpConfiguration(agent: AiAgent, content: String): CompletableFuture<McpInspection> =
+    fun inspectMcpConfiguration(agent: AiAgent, content: String): CompletableFuture<McpConfigurationInspectionResponse> =
         requestFromBackend {
             it.aiAgentService.inspectMcpConfiguration(
                 McpConfigurationInspectionParams(agent, content)
             )
-        }.thenApply { response ->
-            McpInspection(McpConfigurationKind.valueOf(response.state.name), response.diagnostics.toList())
         }
 
     fun planMcpConfigurationUpdate(
         agent: AiAgent,
         content: String,
         sonarMcpConfiguration: String
-    ): CompletableFuture<McpUpdatePlan> = requestFromBackend {
+    ): CompletableFuture<McpConfigurationUpdatePlanResponse> = requestFromBackend {
         it.aiAgentService.planMcpConfigurationUpdate(
             McpConfigurationUpdateParams(agent, content, sonarMcpConfiguration)
-        )
-    }.thenApply { response ->
-        McpUpdatePlan(
-            McpConfigurationKind.valueOf(response.state.name),
-            response.updatedContent
         )
     }
 

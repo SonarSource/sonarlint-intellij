@@ -441,15 +441,16 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             CompletableFuture.completedFuture(McpConfigurationInspectionResponse(McpConfigurationState.MALFORMED, listOf("bad json")))
         )
         `when`(backendAiAgentService.planMcpConfigurationUpdate(any())).thenReturn(
-            CompletableFuture.completedFuture(McpConfigurationUpdatePlanResponse(McpConfigurationState.STANDALONE, "updated", emptyList()))
+            CompletableFuture.completedFuture(McpConfigurationUpdatePlanResponse(McpConfigurationState.STANDALONE, "updated", listOf("planner diagnostic")))
         )
         `when`(backendConnectionService.getMCPServerConfiguration(any())).thenReturn(
             CompletableFuture.completedFuture(GetMCPServerConfigurationResponse("generated"))
         )
 
         assertThat(service.inspectMcpConfiguration(AiAgent.CLAUDE_CODE, "content").get().state.name).isEqualTo("MALFORMED")
-        assertThat(service.planMcpConfigurationUpdate(AiAgent.CLAUDE_CODE, "content", "generated").get().updatedContent)
-            .isEqualTo("updated")
+        val plan = service.planMcpConfigurationUpdate(AiAgent.CLAUDE_CODE, "content", "generated").get()
+        assertThat(plan.updatedContent).isEqualTo("updated")
+        assertThat(plan.diagnostics).containsExactly("planner diagnostic")
         assertThat(service.generateMcpConfiguration("connection", "token-value").get())
             .isEqualTo("generated")
 

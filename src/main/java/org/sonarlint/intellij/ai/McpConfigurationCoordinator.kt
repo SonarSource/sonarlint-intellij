@@ -41,6 +41,7 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
 @Service(Service.Level.APP)
 class McpConfigurationCoordinator @JvmOverloads constructor(
@@ -81,7 +82,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 McpAgentConfiguration(
                     capability.agent,
                     path,
-                    McpConfigurationKind.UNKNOWN,
+                    McpConfigurationState.UNKNOWN,
                     listOf(if (detail.isNullOrBlank()) "Unable to inspect the MCP configuration." else "Unable to inspect the MCP configuration: $detail")
                 )
             }
@@ -101,15 +102,15 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             return false
         }
         val path = configuration.path
-        if (configuration.state != McpConfigurationKind.NOT_CONFIGURED && configuration.state != McpConfigurationKind.STANDALONE) {
+        if (configuration.state != McpConfigurationState.NOT_CONFIGURED && configuration.state != McpConfigurationState.STANDALONE) {
             reportSetupResult(project, McpTransactionResult.Protected, null)
             return false
         }
-        val connectionId = if (configuration.state == McpConfigurationKind.NOT_CONFIGURED) {
+        val connectionId = if (configuration.state == McpConfigurationState.NOT_CONFIGURED) {
             val connections = getGlobalSettings().serverConnections.map { connection ->
                 IntegrationConnection(connection.name, connection.hostUrl, connection.organizationKey)
             }
-            when (val selection = ConnectionSelector(ui::chooseConnection).select(project, snapshot.copy(connectionChoices = connections))) {
+            when (val selection = ConnectionSelector(ui::chooseConnection).select(project, connections, snapshot.recommendedConnectionId)) {
                 is ConnectionSelection.Selected -> selection.connectionId
                 ConnectionSelection.Missing -> {
                     ui.showMessage(project, "No SonarQube connection is available. Add a connection, then retry MCP setup.", NotificationType.ERROR)
@@ -189,7 +190,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             return McpTransactionResult.SymlinkRefused
         }
         val inspection = backendService.inspectMcpConfiguration(agent, fileSystem.read(path).toText()).join()
-        if (inspection.state != McpConfigurationKind.NOT_CONFIGURED) {
+        if (inspection.state != McpConfigurationState.NOT_CONFIGURED) {
             return safeUpdate(agent, path)
         }
         val connection = getGlobalSettings().serverConnections.firstOrNull { it.name == connectionId }
@@ -218,7 +219,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         }
         val desired = configuration ?: """{"env":{"SONARQUBE_IDE_PORT":"$port"}}"""
         val plan = backendService.planMcpConfigurationUpdate(agent, snapshot.toText(), desired).join()
-        val expectedState = if (configuration == null) McpConfigurationKind.STANDALONE else McpConfigurationKind.NOT_CONFIGURED
+        val expectedState = if (configuration == null) McpConfigurationState.STANDALONE else McpConfigurationState.NOT_CONFIGURED
         if (plan.state != expectedState) {
             return McpTransactionResult.Protected
         }

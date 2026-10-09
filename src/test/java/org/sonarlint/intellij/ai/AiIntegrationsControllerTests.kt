@@ -45,6 +45,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
 class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private lateinit var backend: BackendService
@@ -58,7 +60,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         val registry = AiAgentRegistry(IdePluginDetector { it in enabledPluginIds })
         panel = AiIntegrationsPanel(registry)
         `when`(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
+            CompletableFuture.completedFuture(McpConfigurationInspectionResponse(McpConfigurationState.NOT_CONFIGURED, emptyList()))
         )
         val mcpCoordinator = McpConfigurationCoordinator(
             backendService = backend,
