@@ -20,46 +20,38 @@
 package org.sonarlint.intellij.its.tests.flavor
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.condition.EnabledIf
-import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
-import org.sonarlint.intellij.its.utils.OpeningUtils.openFileViaMenu
+import org.sonarlint.intellij.its.BaseStandaloneIntegrationTest
+import org.sonarlint.intellij.its.driver.openFileViaMenu
+import org.sonarlint.intellij.its.driver.openProjectFile
+import org.sonarlint.intellij.its.driver.verifyCurrentFileTabContainsMessages
 
 @EnabledIf("isRider")
-class RiderTests : BaseUiTest() {
+class RiderTests : BaseStandaloneIntegrationTest() {
 
     @Test
-    fun should_analyze_csharp() = uiTest {
-        openExistingProject("sample-rider")
-
-        openFile("file.cs")
-
+    fun should_analyze_csharp(testInfo: TestInfo) = uiTest(testInfo, "sample-rider") {
+        openProjectFile("file.cs")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
-            "Either remove or fill this block of code."
+            "Either remove or fill this block of code.",
         )
     }
 
     @Test
-    fun should_analyze_complex_csharp() = uiTest {
-        openExistingProject("sample-complex-rider")
-
-        openFile("folder1/file1.cs")
+    fun should_analyze_complex_csharp(testInfo: TestInfo) = uiTest(testInfo, "sample-complex-rider") {
+        openProjectFile("folder1/file1.cs")
         verifyCurrentFileTabContainsMessages(
             "Found 2 issues",
             "Remove this empty class, write its code or make it an \"interface\".",
-            "Rename class 'file1' to match pascal case naming rules, consider using 'File1'."
+            "Rename class 'file1' to match pascal case naming rules, consider using 'File1'.",
         )
-
         openFileViaMenu("file2.cs")
-
         verifyCurrentFileTabContainsMessages(
             "Found 2 issues",
             "Remove this empty class, write its code or make it an \"interface\".",
-            "Rename class 'file2' to match pascal case naming rules, consider using 'File2'."
+            "Rename class 'file2' to match pascal case naming rules, consider using 'File2'.",
         )
     }
-
 }

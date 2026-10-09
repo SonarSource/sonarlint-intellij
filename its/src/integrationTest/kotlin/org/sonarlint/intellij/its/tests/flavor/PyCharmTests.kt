@@ -20,25 +20,21 @@
 package org.sonarlint.intellij.its.tests.flavor
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.condition.EnabledIf
-import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
-import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
-import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
+import org.sonarlint.intellij.its.BaseStandaloneIntegrationTest
+import org.sonarlint.intellij.its.driver.openProjectFile
+import org.sonarlint.intellij.its.driver.verifyCurrentFileTabContainsMessages
 
 @EnabledIf("isPyCharm")
-class PyCharmTests : BaseUiTest() {
+class PyCharmTests : BaseStandaloneIntegrationTest() {
 
     @Test
-    fun should_analyze_python() = uiTest {
-        openExistingProject("sample-python")
-
-        openFile("file.py")
-
+    fun should_analyze_python(testInfo: TestInfo) = uiTest(testInfo, "sample-python") {
+        openProjectFile("file.py")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue",
-            "Refactor this method to not always return the same value."
+            "Refactor this method to not always return the same value.",
         )
     }
-
 }
