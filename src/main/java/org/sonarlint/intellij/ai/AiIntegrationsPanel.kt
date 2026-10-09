@@ -22,11 +22,13 @@ package org.sonarlint.intellij.ai
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ex.ActionButtonLook
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
+import com.intellij.util.IconUtil
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
@@ -227,7 +229,10 @@ class AiIntegrationsPanel(
         createUninstallAction(state)
     ) {
         when (state) {
-            AiIntegrationsPanelState.Loading -> addMessage(CLI_LOADING_MESSAGE)
+            AiIntegrationsPanelState.Loading -> {
+                addMessage(CLI_LOADING_MESSAGE)
+                addCliUninstallFeedback()
+            }
             is AiIntegrationsPanelState.Error -> {
                 addMessage(state.message)
                 addCliUninstallFeedback()
@@ -273,11 +278,25 @@ class AiIntegrationsPanel(
             else -> return null
         }
         if (!snapshot.cli.uninstallAvailable) return null
-        return JButton(AllIcons.Actions.GC).apply {
+        return object : JButton(IconUtil.scale(AllIcons.Actions.GC, null, 0.875f)) {
+            override fun paintComponent(graphics: Graphics) {
+                if (isEnabled && model.isRollover) {
+                    ActionButtonLook.SYSTEM_LOOK.paintLookBackground(graphics, Rectangle(size), JBUI.CurrentTheme.ActionButton.hoverBackground())
+                }
+                super.paintComponent(graphics)
+            }
+        }.apply {
             toolTipText = UNINSTALL_CLI_LABEL
             accessibleContext.accessibleName = UNINSTALL_CLI_LABEL
+            isOpaque = false
+            isRolloverEnabled = true
             isContentAreaFilled = false
             isBorderPainted = false
+            border = JBUI.Borders.empty()
+            margin = JBUI.emptyInsets()
+            preferredSize = JBUI.size(20)
+            minimumSize = preferredSize
+            maximumSize = preferredSize
             isEnabled = !isCliUninstallInProgress()
             addActionListener { intentListener(AiIntegrationsIntent.UninstallCli) }
         }

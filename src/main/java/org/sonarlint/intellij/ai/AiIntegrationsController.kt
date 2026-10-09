@@ -153,6 +153,8 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     private fun showUninstallResult(feedback: CliUninstallFeedback.Finished) {
+        latestSnapshot = null
+        panel.render(AiIntegrationsPanelState.Loading)
         panel.setCliUninstallFeedback(feedback)
         reload(showLoading = false, clearFeedback = false)
     }

@@ -64,7 +64,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         coordinator = CliOperationCoordinator(backend, { error("terminal unused") }, CliConnectionSelector(), { _, _, _ -> }, {})
         val registry = AiAgentRegistry(IdePluginDetector { it in enabledPluginIds })
         panel = AiIntegrationsPanel(registry)
-        controller = AiIntegrationsController(project, panel, backend, registry, coordinator, { results += it }) {
+        controller = AiIntegrationsController(project, panel, backend, registry, coordinator, notifyUninstallResult = { results += it }) {
             confirmationCount++
             acceptUninstall
         }
@@ -208,11 +208,12 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         val refreshed = CompletableFuture<AiIntegrationSnapshot>()
         `when`(backend.uninstallCli()).thenReturn(uninstall)
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(
-            CompletableFuture.completedFuture(installedCli()),
+            CompletableFuture.completedFuture(installedWithCliAgent()),
             refreshed
         )
         controller.loadInitially()
         UIUtil.dispatchAllInvocationEvents()
+        descendants(panel).filterIsInstance<JToggleButton>().first().doClick()
 
         uninstallButton().doClick()
 
@@ -223,6 +224,8 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         uninstall.complete(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "reset warning", "cleanup warning", null))
         UIUtil.dispatchAllInvocationEvents()
+        assertThat(buttonTexts()).doesNotContain("Uninstall CLI…", "Integrate", "Sign in")
+        assertThat(texts(panel)).contains("reset warning", "cleanup warning")
         refreshed.complete(installedCli().copy(cli = installedCli().cli.copy(
             installation = CliInstallationStatus.NOT_INSTALLED,
             uninstallAvailable = false
@@ -292,7 +295,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
             { _, _, _ -> },
             { refreshes++ }
         )
-        val local = AiIntegrationsController(closingProject, closingPanel, backend, AiAgentRegistry { false }, localCoordinator, {
+        val local = AiIntegrationsController(closingProject, closingPanel, backend, AiAgentRegistry { false }, localCoordinator, notifyUninstallResult = {
             assertThat(ApplicationManager.getApplication().isDispatchThread).isTrue()
             results += it
         }) { true }
@@ -378,8 +381,8 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
             }
         }
         val registry = AiAgentRegistry { false }
-        controller = AiIntegrationsController(project, panelA, backend, registry, publishing, { results += it }) { true }
-        extraController = AiIntegrationsController(otherProject, panelB, backend, registry, publishing, { results += it }) { true }
+        controller = AiIntegrationsController(project, panelA, backend, registry, publishing, notifyUninstallResult = { results += it }) { true }
+        extraController = AiIntegrationsController(otherProject, panelB, backend, registry, publishing, notifyUninstallResult = { results += it }) { true }
         val installed = installedCli()
         val removed = installed.copy(cli = installed.cli.copy(
             installation = CliInstallationStatus.NOT_INSTALLED,
@@ -430,7 +433,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
                 ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
             }
         }
-        controller = AiIntegrationsController(project, failurePanel, backend, AiAgentRegistry { false }, publishing, { results += it }) { true }
+        controller = AiIntegrationsController(project, failurePanel, backend, AiAgentRegistry { false }, publishing, notifyUninstallResult = { results += it }) { true }
         val installed = installedCli()
         val afterFailure = CompletableFuture<AiIntegrationSnapshot>()
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(
