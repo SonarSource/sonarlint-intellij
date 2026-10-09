@@ -49,6 +49,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliRespon
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
 class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private lateinit var backend: BackendService
@@ -71,7 +73,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         replaceApplicationService(SonarLintTelemetry::class.java, mock(SonarLintTelemetry::class.java))
         panel = AiIntegrationsPanel(registry)
         `when`(backend.inspectMcpConfiguration(any(), any())).thenReturn(
-            CompletableFuture.completedFuture(McpInspection(McpConfigurationKind.NOT_CONFIGURED, emptyList()))
+            CompletableFuture.completedFuture(McpConfigurationInspectionResponse(McpConfigurationState.NOT_CONFIGURED, emptyList()))
         )
         mcpCoordinator = McpConfigurationCoordinator(
             backendService = backend,

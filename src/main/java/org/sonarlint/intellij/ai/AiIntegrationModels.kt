@@ -29,6 +29,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationChec
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
 data class CliState(
     val installation: CliInstallationStatus,
@@ -73,28 +74,10 @@ data class AiIntegrationSnapshot(
     val mcpConfigurations: Map<AiAgent, McpAgentConfiguration> = emptyMap()
 )
 
-enum class McpConfigurationKind {
-    NOT_CONFIGURED,
-    STANDALONE,
-    CLI_MANAGED,
-    UNKNOWN,
-    MALFORMED
-}
-
-data class McpInspection(
-    val state: McpConfigurationKind,
-    val diagnostics: List<String>
-)
-
-data class McpUpdatePlan(
-    val state: McpConfigurationKind,
-    val updatedContent: String?
-)
-
 data class McpAgentConfiguration(
     val agent: AiAgent,
     val path: java.nio.file.Path,
-    val state: McpConfigurationKind,
+    val state: McpConfigurationState,
     val diagnostics: List<String>
 )
 

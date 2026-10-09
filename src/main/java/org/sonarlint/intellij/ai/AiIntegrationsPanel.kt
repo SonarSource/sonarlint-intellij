@@ -65,6 +65,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
@@ -295,31 +296,16 @@ class AiIntegrationsPanel(
     private fun mcpStatus(snapshot: AiIntegrationSnapshot): CardStatus {
         val configurations = snapshot.mcpConfigurations.values
         val needsAttention = configurations.any {
-            it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
+            it.state == McpConfigurationState.UNKNOWN || it.state == McpConfigurationState.MALFORMED
         }
         return CardStatus("IDE setup: ${configurations.size}", if (needsAttention) StatusTone.WARNING else StatusTone.NEUTRAL)
     }
 
     private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
         addMcpSummary(snapshot)
-        val details = JBPanel<JBPanel<*>>().apply {
-            isOpaque = false
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            alignmentX = Component.LEFT_ALIGNMENT
+        addAgentDetails(mcpDetailsExpanded, { mcpDetailsExpanded = it }) {
+            addMcpAgentRows(snapshot)
         }
-        fun updateDetails(show: Boolean) {
-            mcpDetailsExpanded = show
-            details.removeAll()
-            if (show) {
-                CardBuilder(details).addMcpAgentRows(snapshot)
-            }
-            details.isVisible = show
-            cards.revalidate()
-            cards.repaint()
-        }
-        addDisclosure(mcpDetailsExpanded, ::updateDetails)
-        panel.add(details)
-        updateDetails(mcpDetailsExpanded)
     }
 
     private fun CardBuilder.addMcpSummary(snapshot: AiIntegrationSnapshot) {
@@ -327,10 +313,10 @@ class AiIntegrationsPanel(
         addMetadata(listOf(agentCountText(snapshot.agents.size)))
         if (configurations.isNotEmpty()) {
             val configuredCount = configurations.count {
-                it.state == McpConfigurationKind.STANDALONE || it.state == McpConfigurationKind.CLI_MANAGED
+                it.state == McpConfigurationState.STANDALONE || it.state == McpConfigurationState.CLI_MANAGED
             }
             val attentionCount = configurations.count {
-                it.state == McpConfigurationKind.UNKNOWN || it.state == McpConfigurationKind.MALFORMED
+                it.state == McpConfigurationState.UNKNOWN || it.state == McpConfigurationState.MALFORMED
             }
             addMetadata(listOf(mcpSummary(configuredCount, configurations.size, attentionCount)))
         }
@@ -360,20 +346,20 @@ class AiIntegrationsPanel(
 
     private fun CardBuilder.addMcpConfigurationRow(configuration: McpAgentConfiguration) {
         val actions = when (configuration.state) {
-            McpConfigurationKind.NOT_CONFIGURED -> listOf(
+            McpConfigurationState.NOT_CONFIGURED -> listOf(
                 RowAction("Set up", AiIntegrationsIntent.SetUpMcp(configuration.agent))
             )
-            McpConfigurationKind.STANDALONE,
-            McpConfigurationKind.CLI_MANAGED,
-            McpConfigurationKind.UNKNOWN,
-            McpConfigurationKind.MALFORMED -> listOf(
+            McpConfigurationState.STANDALONE,
+            McpConfigurationState.CLI_MANAGED,
+            McpConfigurationState.UNKNOWN,
+            McpConfigurationState.MALFORMED -> listOf(
                 RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
             )
         }
         addAgentRow(
             registry.displayName(configuration.agent),
             configuration.displayText(),
-            diagnostic = configuration.diagnostics.takeIf { configuration.state != McpConfigurationKind.CLI_MANAGED && it.isNotEmpty() }?.joinToString(" • "),
+            diagnostic = configuration.diagnostics.takeIf { configuration.state != McpConfigurationState.CLI_MANAGED && it.isNotEmpty() }?.joinToString(" • "),
             actions = actions
         )
     }
@@ -462,6 +448,33 @@ class AiIntegrationsPanel(
         onExpandedChange: (Boolean) -> Unit
     ) {
         addMetadata(listOf(agentCountText(capabilities.size)))
+        addAgentDetails(expanded, onExpandedChange) {
+            if (capabilities.isEmpty()) {
+                addMessage(NO_AGENTS_MESSAGE)
+            }
+            capabilities.forEach { capability ->
+                val integration = if (cliIntegrations != null && supported(capability)) {
+                    cliIntegrations.firstOrNull { it.agent == capability.agent }
+                        ?: AgentCliIntegration(capability.agent, CliIntegrationRecordingStatus.UNKNOWN, emptyList())
+                } else {
+                    null
+                }
+                addAgentRow(
+                    registry.displayName(capability.agent),
+                    if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS,
+                    integration,
+                    actions = rowActions(capability),
+                    guidance = rowGuidance(capability)
+                )
+            }
+        }
+    }
+
+    private fun CardBuilder.addAgentDetails(
+        expanded: Boolean,
+        onExpandedChange: (Boolean) -> Unit,
+        content: CardBuilder.() -> Unit
+    ) {
         val details = JBPanel<JBPanel<*>>().apply {
             isOpaque = false
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -470,25 +483,7 @@ class AiIntegrationsPanel(
         fun updateDetails(show: Boolean) {
             details.removeAll()
             if (show) {
-                val detailBuilder = CardBuilder(details)
-                if (capabilities.isEmpty()) {
-                    detailBuilder.addMessage(NO_AGENTS_MESSAGE)
-                }
-                capabilities.forEach { capability ->
-                    val integration = if (cliIntegrations != null && supported(capability)) {
-                        cliIntegrations.firstOrNull { it.agent == capability.agent }
-                            ?: AgentCliIntegration(capability.agent, CliIntegrationRecordingStatus.UNKNOWN, emptyList())
-                    } else {
-                        null
-                    }
-                    detailBuilder.addAgentRow(
-                        registry.displayName(capability.agent),
-                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS,
-                        integration,
-                        actions = rowActions(capability),
-                        guidance = rowGuidance(capability)
-                    )
-                }
+                CardBuilder(details).content()
             }
             details.isVisible = show
             cards.revalidate()
@@ -857,11 +852,11 @@ private fun mcpSummary(configuredCount: Int, totalCount: Int, attentionCount: In
 }
 
 private fun McpAgentConfiguration.displayText(): String = when (state) {
-    McpConfigurationKind.NOT_CONFIGURED -> "Not configured"
-    McpConfigurationKind.STANDALONE -> "Configured"
-    McpConfigurationKind.CLI_MANAGED -> "Managed by CLI"
-    McpConfigurationKind.UNKNOWN -> "Status unknown"
-    McpConfigurationKind.MALFORMED -> "Invalid configuration"
+    McpConfigurationState.NOT_CONFIGURED -> "Not configured"
+    McpConfigurationState.STANDALONE -> "Configured"
+    McpConfigurationState.CLI_MANAGED -> "Managed by CLI"
+    McpConfigurationState.UNKNOWN -> "Status unknown"
+    McpConfigurationState.MALFORMED -> "Invalid configuration"
 }
 
 private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBTextArea(text).apply {

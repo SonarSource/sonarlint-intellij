@@ -72,7 +72,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
         try {
             when (intent) {
                 AiIntegrationsIntent.InstallCli -> prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
-                AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot)) {
+                AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot.connectionChoices, snapshot.recommendedConnectionId)) {
                     ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
                     ConnectionSelection.Missing -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
                     is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)

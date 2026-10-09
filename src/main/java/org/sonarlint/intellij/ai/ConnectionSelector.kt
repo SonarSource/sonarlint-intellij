@@ -45,13 +45,12 @@ class IntellijConnectionChoiceUi : ConnectionChoiceUi {
 }
 
 class ConnectionSelector(private val choiceUi: ConnectionChoiceUi) {
-    fun select(project: Project, snapshot: AiIntegrationSnapshot): ConnectionSelection {
-        val eligible = snapshot.connectionChoices
+    fun select(project: Project, eligible: List<IntegrationConnection>, recommendedConnectionId: String?): ConnectionSelection {
         val projectConnection = getSettingsFor(project).connectionName
         eligible.firstOrNull { it.connectionId == projectConnection }?.let {
             return ConnectionSelection.Selected(it.connectionId)
         }
-        eligible.firstOrNull { it.connectionId == snapshot.recommendedConnectionId }?.let {
+        eligible.firstOrNull { it.connectionId == recommendedConnectionId }?.let {
             return ConnectionSelection.Selected(it.connectionId)
         }
         if (eligible.size == 1) {
