@@ -26,7 +26,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDocumentManager
 import java.util.concurrent.atomic.AtomicReference
 import org.sonarlint.intellij.common.ui.ReadActionUtils.Companion.runReadActionSafely
 
@@ -38,9 +37,9 @@ fun Project.openFileFrom(rangeMarker: RangeMarker?) {
     }
 
     runReadActionSafely(this) {
-        val psiFile = PsiDocumentManager.getInstance(this).getPsiFile(rangeMarker.document)
-        if (psiFile != null && psiFile.isValid) {
-            OpenFileDescriptor(this, psiFile.virtualFile, rangeMarker.startOffset).navigate(false)
+        val file = FileDocumentManager.getInstance().getFile(rangeMarker.document)
+        if (file != null && file.isValid) {
+            OpenFileDescriptor(this, file, rangeMarker.startOffset).navigate(false)
         }
     }
 }

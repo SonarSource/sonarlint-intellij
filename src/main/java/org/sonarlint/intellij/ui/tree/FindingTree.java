@@ -21,11 +21,8 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.ide.DefaultTreeExpander;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiManager;
 import com.intellij.ui.treeStructure.Tree;
 import javax.annotation.CheckForNull;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -35,24 +32,8 @@ import org.sonarlint.intellij.ui.nodes.FileNode;
 
 public abstract class FindingTree extends Tree {
 
-  private final Project project;
-
-  FindingTree(Project project, TreeModel model) {
+  FindingTree(TreeModel model) {
     super(model);
-    this.project = project;
-  }
-
-  protected DataProvider getBackgroundDataProvider() {
-    var file = getSelectedFile();
-    if (file != null && file.isValid()) {
-      return otherId -> {
-        if (CommonDataKeys.PSI_FILE.is(otherId)) {
-          return PsiManager.getInstance(project).findFile(file);
-        }
-        return null;
-      };
-    }
-    return null;
   }
 
   @CheckForNull
@@ -74,10 +55,7 @@ public abstract class FindingTree extends Tree {
   }
 
   protected Object getDataInner(@NonNls String dataId) {
-    // use string literal as the key appeared in newer versions
-    if ("bgtDataProvider".equals(dataId)) {
-      return getBackgroundDataProvider();
-    } else if (PlatformDataKeys.TREE_EXPANDER.is(dataId)) {
+    if (PlatformDataKeys.TREE_EXPANDER.is(dataId)) {
       return new DefaultTreeExpander(this);
     } else if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
       return getSelectedFile();

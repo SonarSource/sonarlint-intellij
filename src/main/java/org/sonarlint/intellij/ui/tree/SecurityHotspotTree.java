@@ -49,7 +49,7 @@ public class SecurityHotspotTree extends FindingTree implements DataProvider {
   private final Project project;
 
   public SecurityHotspotTree(Project project, TreeModel model) {
-    super(project, model);
+    super(model);
     this.project = project;
     init();
   }
