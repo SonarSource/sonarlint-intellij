@@ -60,7 +60,7 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
             intentListener = it.getArgument(0)
             null
         }.whenever(panel).setIntentListener(any())
-        coordinator = CliOperationCoordinator(backend, { error("terminal unused") }, CliConnectionSelector(), { _, _, _ -> }, {})
+        coordinator = CliOperationCoordinator(backend, { error("terminal unused") }, ConnectionSelector(IntellijConnectionChoiceUi()), { _, _, _ -> }, {})
         doAnswer {
             statuses.add(it.getArgument(1))
             null
@@ -72,7 +72,13 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
                 emptyList(), emptyList(), null
             )
         ))
-        controller = AiIntegrationsController(project, panel, backend, AiAgentRegistry { false }, coordinator, telemetry = telemetry) { confirmation() }
+        val registry = AiAgentRegistry { false }
+        controller = AiIntegrationsController(
+            project, panel, backend, registry, coordinator,
+            telemetry = telemetry,
+            confirmUninstall = { confirmation() },
+            mcpCoordinator = McpConfigurationCoordinator(backend, registry)
+        )
         controller.loadInitially()
         UIUtil.dispatchAllInvocationEvents()
     }

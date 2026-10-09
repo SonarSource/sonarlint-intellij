@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -40,6 +41,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -183,6 +185,52 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
             .isEqualTo(McpTransactionResult.Cancelled)
         assertThat(ui.tokenWarningRequests).isEqualTo(1)
         verify(backend, never()).generateMcpConfiguration(any(), any())
+    }
+
+    @Test
+    fun `pending token consent and configuration generation do not block inspection`() {
+        val pool = Executors.newFixedThreadPool(2)
+        val consentRequested = CountDownLatch(1)
+        val consentRelease = CountDownLatch(1)
+        val generationRequested = CountDownLatch(1)
+        val generated = CompletableFuture<String>()
+        val path = tempDir.resolve("mcp.json")
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(path)
+        whenever(credentials.getCredentials(connection)).thenReturn(Either.forLeft(TokenDto("")))
+        whenever(backend.generateMcpConfiguration(any(), any())).thenAnswer {
+            generationRequested.countDown()
+            generated
+        }
+        ui.tokenConfirmation = {
+            consentRequested.countDown()
+            check(consentRelease.await(5, TimeUnit.SECONDS))
+            true
+        }
+        plan(McpConfigurationState.NOT_CONFIGURED, "created")
+        val coordinator = coordinator(executor = pool)
+        val snapshot = baseSnapshot(listOf(capability(AiAgent.CURSOR))).copy(mcpConfigurations = mapOf(
+            AiAgent.CURSOR to McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationState.NOT_CONFIGURED, emptyList())
+        ))
+        try {
+            assertThat(coordinator.setUp(project, snapshot, AiAgent.CURSOR)).isTrue()
+            assertThat(consentRequested.await(5, TimeUnit.SECONDS)).isTrue()
+            assertThat(coordinator.inspectSnapshot(snapshot).get(5, TimeUnit.SECONDS).mcpConfigurations.getValue(AiAgent.CURSOR).state)
+                .isEqualTo(McpConfigurationState.NOT_CONFIGURED)
+
+            consentRelease.countDown()
+            assertThat(generationRequested.await(5, TimeUnit.SECONDS)).isTrue()
+            assertThat(coordinator.inspectSnapshot(snapshot).get(5, TimeUnit.SECONDS).mcpConfigurations.getValue(AiAgent.CURSOR).state)
+                .isEqualTo(McpConfigurationState.NOT_CONFIGURED)
+
+            generated.complete("generated")
+            pool.shutdown()
+            assertThat(pool.awaitTermination(5, TimeUnit.SECONDS)).isTrue()
+            assertThat(Files.readString(path)).isEqualTo("created")
+        } finally {
+            consentRelease.countDown()
+            generated.complete("generated")
+            pool.shutdownNow()
+        }
     }
 
     @Test
@@ -351,7 +399,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
             CompletableFuture.completedFuture(McpConfigurationUpdatePlanResponse(McpConfigurationState.NOT_CONFIGURED, "planned", emptyList()))
         }
 
-        val result = coordinator().safeUpdate(AiAgent.CURSOR, path, "generated")
+        val result = coordinator().createConfiguration(project, AiAgent.CURSOR, path, "connection")
 
         assertThat(result).isEqualTo(McpTransactionResult.ConcurrentEdit)
         assertThat(Files.readString(path)).isEqualTo("concurrent edit")
@@ -364,7 +412,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         plan(McpConfigurationState.NOT_CONFIGURED, "planned")
         val fileSystem = MutatingAfterTempFileSystem(path)
 
-        val result = coordinator(fileSystem = fileSystem).safeUpdate(AiAgent.CURSOR, path, "generated")
+        val result = coordinator(fileSystem = fileSystem).createConfiguration(project, AiAgent.CURSOR, path, "connection")
 
         assertThat(result).isEqualTo(McpTransactionResult.ConcurrentEdit)
         assertThat(Files.readString(path)).isEqualTo("changed after temp creation")
@@ -378,7 +426,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         Files.writeString(target, "external")
         Files.createSymbolicLink(link, target)
 
-        assertThat(coordinator().safeUpdate(AiAgent.CURSOR, link, "generated")).isEqualTo(McpTransactionResult.SymlinkRefused)
+        assertThat(coordinator().createConfiguration(project, AiAgent.CURSOR, link, "connection")).isEqualTo(McpTransactionResult.SymlinkRefused)
         assertThat(Files.readString(target)).isEqualTo("external")
         verify(backend, never()).planMcpConfigurationUpdate(any(), any(), any())
     }
@@ -404,37 +452,46 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         plan(McpConfigurationState.NOT_CONFIGURED, "after")
         val fileSystem = FailingReplaceFileSystem()
 
-        assertThatThrownBy { coordinator(fileSystem = fileSystem).safeUpdate(AiAgent.CURSOR, path, "generated") }
+        assertThatThrownBy { coordinator(fileSystem = fileSystem).createConfiguration(project, AiAgent.CURSOR, path, "connection") }
             .isInstanceOf(IllegalStateException::class.java)
         assertThat(Files.exists(fileSystem.temp!!)).isFalse()
         assertThat(Files.readString(path)).isEqualTo("before")
     }
 
     @Test
-    fun `same normalized path is serialized`() {
+    fun `configuration commits for the same normalized path are serialized`() {
         val pool = Executors.newFixedThreadPool(2)
         val coordinator = coordinator(executor = pool)
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)
-        val active = AtomicInteger()
-        val maxActive = AtomicInteger()
+        val secondPrepared = CountDownLatch(1)
+        val preparations = AtomicInteger()
+        whenever(backend.generateMcpConfiguration(any(), any())).thenAnswer {
+            if (preparations.incrementAndGet() == 2) secondPrepared.countDown()
+            CompletableFuture.completedFuture("generated")
+        }
+        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer {
+            entered.countDown()
+            check(release.await(5, TimeUnit.SECONDS))
+            CompletableFuture.completedFuture(McpConfigurationUpdatePlanResponse(McpConfigurationState.NOT_CONFIGURED, "created", emptyList()))
+        }
         try {
-            val first = coordinator.executeSerialized(tempDir.resolve("a/../mcp.json")) {
-                maxActive.updateAndGet { maxOf(it, active.incrementAndGet()) }
-                entered.countDown()
-                release.await(5, TimeUnit.SECONDS)
-                active.decrementAndGet()
-                McpTransactionResult.Unchanged
-            }
+            val first = CompletableFuture.supplyAsync({
+                coordinator.createConfiguration(project, AiAgent.CURSOR, tempDir.resolve("a/../mcp.json"), "connection")
+            }, pool)
             assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue()
-            val second = coordinator.executeSerialized(tempDir.resolve("mcp.json")) {
-                maxActive.updateAndGet { maxOf(it, active.incrementAndGet()) }
-                active.decrementAndGet()
-                McpTransactionResult.Unchanged
-            }
+            val second = CompletableFuture.supplyAsync({
+                coordinator.createConfiguration(project, AiAgent.CURSOR, tempDir.resolve("mcp.json"), "connection")
+            }, pool)
+            assertThat(secondPrepared.await(5, TimeUnit.SECONDS)).isTrue()
+            assertThatThrownBy { second.get(100, TimeUnit.MILLISECONDS) }.isInstanceOf(TimeoutException::class.java)
+            verify(backend, times(1)).planMcpConfigurationUpdate(any(), any(), any())
+
             release.countDown()
             CompletableFuture.allOf(first, second).get(5, TimeUnit.SECONDS)
-            assertThat(maxActive.get()).isEqualTo(1)
+            assertThat(first.join()).isEqualTo(McpTransactionResult.Updated)
+            assertThat(second.join()).isEqualTo(McpTransactionResult.Unchanged)
+            assertThat(Files.readString(tempDir.resolve("mcp.json"))).isEqualTo("created")
         } finally {
             release.countDown()
             pool.shutdownNow()
@@ -554,6 +611,7 @@ private class RecordingMcpUi : McpUiAdapter {
     var settingsOpened = false
     var proceedWithoutToken = false
     var tokenWarningRequests = 0
+    var tokenConfirmation: () -> Boolean = { proceedWithoutToken }
     var connectionChoices = 0
     var offeredConnections: List<IntegrationConnection> = emptyList()
     var selectedConnectionId: String? = null
@@ -567,7 +625,7 @@ private class RecordingMcpUi : McpUiAdapter {
 
     override fun confirmWithoutToken(project: com.intellij.openapi.project.Project): Boolean {
         tokenWarningRequests++
-        return proceedWithoutToken
+        return tokenConfirmation()
     }
 
     override fun openConfiguration(project: com.intellij.openapi.project.Project, path: Path) = Unit

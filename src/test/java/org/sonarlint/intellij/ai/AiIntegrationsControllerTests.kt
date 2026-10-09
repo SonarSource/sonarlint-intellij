@@ -42,7 +42,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
@@ -104,22 +104,43 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `refreshes on CLI operation events only after first selection and until disposed`() {
+    fun `refreshes on integration events only after first selection and until disposed`() {
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture())
-        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC)
+        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC)
 
-        publisher.operationFinished()
+        publisher.stateChanged()
         verify(backend, never()).getAiIntegrationState(project, emptyList())
 
         controller.loadInitially()
-        publisher.operationFinished()
+        publisher.stateChanged()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
 
         controller.loadInitially()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
 
         Disposer.dispose(controller)
-        publisher.operationFinished()
+        publisher.stateChanged()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+    }
+
+    @Test
+    fun `MCP port refresh respects first selection and controller disposal`() {
+        `when`(backend.getAiIntegrationState(null, emptyList())).thenReturn(CompletableFuture.completedFuture(snapshot(emptyList())))
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture())
+        fun refreshMcp() {
+            mcpCoordinator.embeddedServerStarted(64121)
+            UIUtil.dispatchAllInvocationEvents()
+        }
+
+        refreshMcp()
+        verify(backend, never()).getAiIntegrationState(project, emptyList())
+
+        controller.loadInitially()
+        refreshMcp()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+
+        Disposer.dispose(controller)
+        refreshMcp()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
     }
 
@@ -422,7 +443,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         uninstallButton().click()
         refreshFromPanel()
-        ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
+        ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
         UIUtil.dispatchAllInvocationEvents()
 
         assertThat(texts(panel)).contains("Uninstalling SonarQube CLI…")
@@ -532,7 +553,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     private fun publishOperationFinished() =
-        ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
+        ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
 
     private fun prepareUninstall(
         snapshot: AiIntegrationSnapshot = installedCli(),

@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
@@ -38,6 +38,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
@@ -51,20 +52,11 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     private val fileSystem: McpFileSystem = NioMcpFileSystem(),
     private val ui: McpUiAdapter = IntellijMcpUiAdapter(),
     private val executor: Executor = AppExecutorUtil.getAppExecutorService()
-) : Disposable {
+) {
     private val pathLocks = ConcurrentHashMap<Path, ReentrantLock>()
-    private val refreshCallbacks = ConcurrentHashMap<Any, () -> Unit>()
     private val idePort = AtomicInteger()
     private val refreshRequested = AtomicBoolean()
     private val refreshWorkerRunning = AtomicBoolean()
-
-    fun register(owner: Any, refresh: () -> Unit) {
-        refreshCallbacks[owner] = refresh
-    }
-
-    fun unregister(owner: Any) {
-        refreshCallbacks.remove(owner)
-    }
 
     fun inspectSnapshot(snapshot: AiIntegrationSnapshot): CompletableFuture<AiIntegrationSnapshot> {
         val inspections = snapshot.agents.mapNotNull { capability ->
@@ -125,9 +117,9 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         } else {
             null
         }
-        executeSerialized(path) {
-            if (connectionId == null) safeUpdate(agent, path) else createConfiguration(project, agent, path, connectionId)
-        }.whenComplete { result, error ->
+        CompletableFuture.supplyAsync({
+            if (connectionId == null) refreshPort(agent, path) else createConfiguration(project, agent, path, connectionId)
+        }, executor).whenComplete { result, error ->
             runOnUiThread(project) {
                 reportSetupResult(project, result, error)
                 refreshAll()
@@ -167,7 +159,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 snapshot.agents.filter { it.standaloneMcpSupported }.forEach { capability ->
                     try {
                         registry.standaloneMcpPath(capability.agent)?.let { path ->
-                            runSerialized(path) { safeUpdate(capability.agent, path, port = port) }
+                            refreshPort(capability.agent, path, port)
                         }
                     } catch (error: Throwable) {
                         GlobalLogOutput.get().logError("Unable to refresh the MCP configuration for ${capability.agent}", error)
@@ -191,7 +183,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         }
         val inspection = backendService.inspectMcpConfiguration(agent, fileSystem.read(path).toText()).join()
         if (inspection.state != McpConfigurationState.NOT_CONFIGURED) {
-            return safeUpdate(agent, path)
+            return refreshPort(agent, path)
         }
         val connection = getGlobalSettings().serverConnections.firstOrNull { it.name == connectionId }
             ?: return McpTransactionResult.MissingConnection
@@ -201,55 +193,61 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             return McpTransactionResult.Cancelled
         }
         val generated = backendService.generateMcpConfiguration(connectionId, token).join()
-        val result = safeUpdate(agent, path, generated)
+        val result = updateConfiguration(agent, path, generated, McpConfigurationState.NOT_CONFIGURED)
         if (result == McpTransactionResult.Updated || result == McpTransactionResult.Unchanged) {
             requestRefresh()
         }
         return result
     }
 
-    internal fun safeUpdate(agent: AiAgent, path: Path, configuration: String? = null, port: Int = idePort.get()): McpTransactionResult {
+    private fun refreshPort(agent: AiAgent, path: Path, port: Int = idePort.get()): McpTransactionResult {
+        if (port !in 1..65535) return McpTransactionResult.Protected
+        return updateConfiguration(agent, path, """{"env":{"SONARQUBE_IDE_PORT":"$port"}}""", McpConfigurationState.STANDALONE) {
+            idePort.get() == port
+        }
+    }
+
+    private fun updateConfiguration(
+        agent: AiAgent,
+        path: Path,
+        desired: String,
+        expectedState: McpConfigurationState,
+        isCurrent: () -> Boolean = { true }
+    ): McpTransactionResult = runSerialized(path) {
         val normalizedPath = path.toAbsolutePath().normalize()
         if (fileSystem.isSymbolicLink(normalizedPath)) {
-            return McpTransactionResult.SymlinkRefused
+            return@runSerialized McpTransactionResult.SymlinkRefused
         }
         val snapshot = fileSystem.read(normalizedPath)
-        if (configuration == null && (snapshot == null || port !in 1..65535)) {
-            return McpTransactionResult.Protected
+        if (expectedState == McpConfigurationState.STANDALONE && snapshot == null) {
+            return@runSerialized McpTransactionResult.Protected
         }
-        val desired = configuration ?: """{"env":{"SONARQUBE_IDE_PORT":"$port"}}"""
         val plan = backendService.planMcpConfigurationUpdate(agent, snapshot.toText(), desired).join()
-        val expectedState = if (configuration == null) McpConfigurationState.STANDALONE else McpConfigurationState.NOT_CONFIGURED
         if (plan.state != expectedState) {
-            return McpTransactionResult.Protected
+            return@runSerialized McpTransactionResult.Protected
         }
-        val updatedBytes = plan.updatedContent?.toByteArray(StandardCharsets.UTF_8) ?: return McpTransactionResult.Protected
+        val updatedBytes = plan.updatedContent?.toByteArray(StandardCharsets.UTF_8) ?: return@runSerialized McpTransactionResult.Protected
         if (snapshot.contentEquals(updatedBytes)) {
-            return McpTransactionResult.Unchanged
+            return@runSerialized McpTransactionResult.Unchanged
         }
         val temp = fileSystem.writeSiblingTemp(normalizedPath, updatedBytes)
         try {
             if (fileSystem.isSymbolicLink(normalizedPath)) {
-                return McpTransactionResult.SymlinkRefused
+                return@runSerialized McpTransactionResult.SymlinkRefused
             }
             if (!snapshot.contentEquals(fileSystem.read(normalizedPath))) {
-                return McpTransactionResult.ConcurrentEdit
+                return@runSerialized McpTransactionResult.ConcurrentEdit
             }
-            if (configuration == null && idePort.get() != port) {
-                return McpTransactionResult.Protected
+            if (!isCurrent()) {
+                return@runSerialized McpTransactionResult.Protected
             }
             fileSystem.replace(temp, normalizedPath)
-            return McpTransactionResult.Updated
+            McpTransactionResult.Updated
         } finally {
             runCatching { fileSystem.deleteIfExists(temp) }.onFailure { error ->
                 GlobalLogOutput.get().logError("Unable to remove the temporary MCP configuration file", error)
             }
         }
-    }
-
-    internal fun executeSerialized(path: Path, action: () -> McpTransactionResult): CompletableFuture<McpTransactionResult> {
-        val normalized = path.toAbsolutePath().normalize()
-        return CompletableFuture.supplyAsync({ runSerialized(normalized, action) }, executor)
     }
 
     private fun <T> runSerialized(path: Path, action: () -> T): T =
@@ -289,11 +287,9 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     private fun refreshAll() {
-        refreshCallbacks.values.forEach { refresh -> runOnUiThread(ModalityState.defaultModalityState(), refresh) }
-    }
-
-    override fun dispose() {
-        refreshCallbacks.clear()
+        runOnUiThread(ModalityState.defaultModalityState()) {
+            ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
+        }
     }
 }
 
