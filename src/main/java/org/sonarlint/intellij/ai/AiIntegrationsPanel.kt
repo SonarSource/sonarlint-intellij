@@ -102,8 +102,6 @@ class AiIntegrationsPanel(
 
         private val CARD_BACKGROUND = JBColor(Color(0xFFFFFF), Color(0x2B2D30))
         private val CARD_BORDER = JBColor(Color(0xDDE0E5), Color(0x45474D))
-        private val ROW_BACKGROUND = JBColor(Color(0xF7F8FA), Color(0x323438))
-        private val ROW_BORDER = JBColor(Color(0xE9EBEF), Color(0x3D3F44))
         private val SECONDARY_TEXT = JBColor(Color(0x5F6673), Color(0xA8ADBD))
         private val LINK_TEXT = JBColor(Color(0x0B6BCB), Color(0x6CAEFF))
     }
@@ -278,6 +276,13 @@ class AiIntegrationsPanel(
                 } else {
                     emptyList()
                 }
+            },
+            rowGuidance = { capability ->
+                when {
+                    capability.cliIntegrationSupported -> null
+                    capability.standaloneMcpSupported -> "Use MCP Server"
+                    else -> "CLI integration unavailable"
+                }
             }
         ) { cliDetailsExpanded = it }
     }
@@ -309,6 +314,7 @@ class AiIntegrationsPanel(
         expanded: Boolean,
         cliIntegrations: List<AgentCliIntegration>? = null,
         rowActions: (AgentCapability) -> List<RowAction> = { emptyList() },
+        rowGuidance: (AgentCapability) -> String? = { null },
         onExpandedChange: (Boolean) -> Unit
     ) {
         addMetadata(listOf(agentCountText(capabilities.size)))
@@ -335,7 +341,8 @@ class AiIntegrationsPanel(
                         registry.displayName(capability.agent),
                         if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS,
                         integration,
-                        actions = rowActions(capability)
+                        actions = rowActions(capability),
+                        guidance = rowGuidance(capability)
                     )
                 }
             }
@@ -358,9 +365,9 @@ class AiIntegrationsPanel(
         status: CardStatus,
         content: CardBuilder.() -> Unit
     ): JPanel {
-        val body = RoundedSurfacePanel(CARD_BACKGROUND, CARD_BORDER, 16).apply {
+        val body = RoundedSurfacePanel(CARD_BACKGROUND, CARD_BORDER, 12).apply {
             layout = BorderLayout()
-            border = JBUI.Borders.empty(18, 20, 12, 20)
+            border = JBUI.Borders.empty(16)
             alignmentX = Component.LEFT_ALIGNMENT
             maximumSize = Dimension(Int.MAX_VALUE, Int.MAX_VALUE)
         }
@@ -397,7 +404,7 @@ class AiIntegrationsPanel(
         }, BorderLayout.CENTER)
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
             isOpaque = false
-            add(StatusPill(status), BorderLayout.NORTH)
+            add(statusLabel(status), BorderLayout.NORTH)
         }, BorderLayout.EAST)
     }
 
@@ -431,52 +438,50 @@ class AiIntegrationsPanel(
         }
 
         fun addDocumentationLink(label: String, url: String) {
+            panel.add(verticalSpace(6))
             panel.add(createLinkButton(label, url))
         }
 
-        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null, actions: List<RowAction> = emptyList()) {
-            val row = RoundedSurfacePanel(ROW_BACKGROUND, ROW_BORDER, 10, naturalHeight = integration != null).apply {
+        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null, actions: List<RowAction> = emptyList(), guidance: String? = null) {
+            val row = NaturalHeightPanel().apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
-                border = JBUI.Borders.empty(9, 11)
+                isOpaque = false
+                border = JBUI.Borders.empty(6, 0)
                 alignmentX = Component.LEFT_ALIGNMENT
             }
             row.add(JBPanel<JBPanel<*>>().apply {
                 isOpaque = false
                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
                 add(JBLabel(name).apply {
-                    font = JBFont.label().asBold()
+                    font = JBFont.label()
                     alignmentX = Component.LEFT_ALIGNMENT
                 })
-                add(JBLabel(status).apply {
-                    foreground = SECONDARY_TEXT
-                    font = JBFont.small()
-                    alignmentX = Component.LEFT_ALIGNMENT
-                })
+                if (guidance == null) {
+                    add(verticalSpace(3))
+                    add(statusLabel(integration?.recordingStatus?.toStatus() ?: CardStatus(status, StatusTone.NEUTRAL)).apply {
+                        alignmentX = Component.LEFT_ALIGNMENT
+                    })
+                }
             }, BorderLayout.CENTER)
-            if (integration != null || actions.isNotEmpty()) {
+            guidance?.let {
+                row.add(statusLabel(CardStatus(it, StatusTone.NEUTRAL)), BorderLayout.EAST)
+            }
+            if (actions.isNotEmpty()) {
                 row.add(JBPanel<JBPanel<*>>().apply {
                     isOpaque = false
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    integration?.let { add(StatusPill(it.recordingStatus.toStatus())) }
-                    if (actions.isNotEmpty()) {
-                        add(JBPanel<JBPanel<*>>().apply {
-                            isOpaque = false
-                            layout = BoxLayout(this, BoxLayout.X_AXIS)
-                            actions.forEachIndexed { index, action ->
-                                if (index > 0) {
-                                    add(horizontalSpace(4))
-                                }
-                                add(createCompactButton(action.label, action.intent))
-                            }
-                        })
+                    layout = BoxLayout(this, BoxLayout.X_AXIS)
+                    actions.forEachIndexed { index, action ->
+                        if (index > 0) {
+                            add(horizontalSpace(4))
+                        }
+                        add(createCompactButton(action.label, action.intent))
                     }
                 }, BorderLayout.EAST)
-                if (integration != null && integration.configurations.isNotEmpty()) {
-                    addCliConfigurationDetails(row, integration)
-                }
+            }
+            if (integration != null && integration.configurations.isNotEmpty()) {
+                addCliConfigurationDetails(row, integration)
             }
             panel.add(row)
-            panel.add(verticalSpace(6))
         }
 
         private fun addCliConfigurationDetails(row: JPanel, integration: AgentCliIntegration) {
@@ -623,54 +628,24 @@ private enum class StatusTone {
     NEUTRAL
 }
 
-private class StatusPill(status: CardStatus) : JBPanel<StatusPill>() {
-    init {
-        isOpaque = false
-        layout = BorderLayout()
-        border = JBUI.Borders.empty(4, 9)
-        val (foregroundColor, backgroundColor) = when (status.tone) {
-            StatusTone.SUCCESS -> SUCCESS_TEXT to SUCCESS_BACKGROUND
-            StatusTone.WARNING -> WARNING_TEXT to WARNING_BACKGROUND
-            StatusTone.NEUTRAL -> NEUTRAL_TEXT to NEUTRAL_BACKGROUND
-        }
-        background = backgroundColor
-        add(JBLabel(status.text).apply {
-            foreground = foregroundColor
-            font = JBFont.small().asBold()
-        })
+private fun statusLabel(status: CardStatus): JBLabel = JBLabel(status.text).apply {
+    font = JBFont.small()
+    foreground = when (status.tone) {
+        StatusTone.SUCCESS -> JBColor(Color(0x176B3A), Color(0x82D6A2))
+        StatusTone.WARNING -> JBColor(Color(0x8A4B08), Color(0xF2B66D))
+        StatusTone.NEUTRAL -> JBColor(Color(0x5F6673), Color(0xA8ADBD))
     }
-
-    override fun paintComponent(graphics: Graphics) {
-        val graphics2d = graphics.create() as Graphics2D
-        graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        graphics2d.color = background
-        graphics2d.fillRoundRect(0, 0, width, height, JBUI.scale(16), JBUI.scale(16))
-        graphics2d.dispose()
-        super.paintComponent(graphics)
-    }
-
-    companion object {
-        private val SUCCESS_TEXT = JBColor(Color(0x176B3A), Color(0x82D6A2))
-        private val SUCCESS_BACKGROUND = JBColor(Color(0xE7F6EC), Color(0x243C2D))
-        private val WARNING_TEXT = JBColor(Color(0x8A4B08), Color(0xF2B66D))
-        private val WARNING_BACKGROUND = JBColor(Color(0xFFF2DF), Color(0x45331F))
-        private val NEUTRAL_TEXT = JBColor(Color(0x545B66), Color(0xBEC3CF))
-        private val NEUTRAL_BACKGROUND = JBColor(Color(0xEFF1F4), Color(0x393B40))
-    }
+    if (status.tone == StatusTone.SUCCESS) icon = AllIcons.General.InspectionsOK
 }
 
 private class RoundedSurfacePanel(
     private val fillColor: Color,
     private val strokeColor: Color,
-    private val radius: Int,
-    private val naturalHeight: Boolean = false
+    private val radius: Int
 ) : JBPanel<RoundedSurfacePanel>() {
     init {
         isOpaque = false
     }
-
-    override fun getMaximumSize(): Dimension =
-        if (naturalHeight) Dimension(Int.MAX_VALUE, preferredSize.height) else super.getMaximumSize()
 
     override fun paintComponent(graphics: Graphics) {
         val graphics2d = graphics.create() as Graphics2D

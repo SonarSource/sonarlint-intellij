@@ -152,7 +152,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `keeps status pills visible in a narrow tool window`() {
+    fun `keeps status labels visible in a narrow tool window`() {
         val panel = AiIntegrationsPanel()
         panel.setSize(420, 600)
         panel.dispatchEvent(ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED))
@@ -187,7 +187,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `uses the IDE label font for body copy and keeps the status badge compact`() {
+    fun `uses the IDE label font for body copy and keeps the status label compact`() {
         val panel = AiIntegrationsPanel()
         panel.render(AiIntegrationsPanelState.Ready(AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null),
@@ -209,7 +209,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             .first { it.text.startsWith("Ask your agent about issues") }
         assertThat(cliDescription.foreground).isEqualTo(mcpDescription.foreground)
 
-        val status = descendants(panel).filterIsInstance<JBLabel>().first { it.text == "Installed" }.parent as JPanel
+        val status = descendants(panel).filterIsInstance<JBLabel>().first { it.text == "Installed" }
         assertThat(status.height).isEqualTo(status.preferredSize.height)
         assertThat(status.height).isLessThan(status.parent.height)
     }
@@ -300,7 +300,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(descendants(panel).filterIsInstance<JToggleButton>()[0]).isSameAs(cliDisclosure)
         assertThat(cliDisclosure.isSelected).isTrue()
         assertThat(cliDisclosure.text).startsWith("▾")
-        assertThat(labelTexts(cliCard)).containsSubsequence("Cursor", "Supported", "GitHub Copilot", "Not supported")
+        assertThat(labelTexts(cliCard)).containsSubsequence("Cursor", "Unknown", "GitHub Copilot", "Use MCP Server")
         assertThat(labelTexts(mcpCard)).doesNotContain("Not supported")
 
         mcpDisclosure.doClick()
@@ -314,7 +314,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `shows recording badges only with an installed CLI independently of authentication and standalone MCP`() {
+    fun `shows recording statuses only with an installed CLI independently of authentication and standalone MCP`() {
         val panel = AiIntegrationsPanel()
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNAUTHENTICATED, "1.0", null, null),
@@ -341,7 +341,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
 
         assertThat(labelTexts(cliCard).filter { it in setOf("Integration recorded", "No integration recorded", "Unknown") })
             .containsExactly("Integration recorded", "No integration recorded", "Unknown", "Unknown")
-        assertThat(labelTexts(cliCard)).doesNotContain("GitHub Copilot CLI")
+        assertThat(labelTexts(cliCard)).doesNotContain("GitHub Copilot CLI", "Supported")
         assertThat(labelTexts(cliCard).any { it.contains("Not signed in") }).isTrue()
         assertThat(labelTexts(mcpCard)).containsSubsequence("Claude Code", "Not supported", "Codex", "Supported")
             .doesNotContain("Integration recorded", "No integration recorded", "Unknown")
@@ -396,6 +396,16 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         val agentRow = configurationDisclosure.parent.parent as JPanel
         assertThat(agentRow.maximumSize.height).isEqualTo(agentRow.preferredSize.height)
         assertThat(agentRow.height).isEqualTo(agentRow.preferredSize.height)
+        val name = descendants(agentRow).filterIsInstance<JBLabel>().single { it.text == "Claude Code" }
+        val status = descendants(agentRow).filterIsInstance<JBLabel>().single { it.text == "Integration recorded" }
+        val action = descendants(agentRow).filterIsInstance<JButton>().single { it.text == "Integrate" }
+        assertThat(SwingUtilities.convertPoint(status, 0, 0, agentRow).x)
+            .isEqualTo(SwingUtilities.convertPoint(name, 0, 0, agentRow).x)
+        assertThat(SwingUtilities.convertPoint(status, 0, 0, agentRow).y)
+            .isGreaterThan(SwingUtilities.convertPoint(name, 0, 0, agentRow).y)
+        assertThat(SwingUtilities.convertPoint(action, 0, 0, agentRow).x)
+            .isGreaterThan(SwingUtilities.convertPoint(status, status.width, 0, agentRow).x)
+        assertThat(action.height).isEqualTo(action.preferredSize.height)
 
         panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(cli = snapshot.cli.copy(authentication = CliAuthenticationStatus.INVALID))))
         assertThat(descendants(panel).filterIsInstance<JToggleButton>().single { it.text.endsWith("Configuration details") }.isSelected).isTrue()
@@ -428,8 +438,8 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         val mcpCard = disclosures[1].parent.parent as Container
 
         assertThat(labelTexts(cliCard)).containsSubsequence(
-            "GitHub Copilot", "Not supported", "Junie", "Not supported", "JetBrains AI Assistant", "Not supported",
-            "Claude Code", "Supported", "Codex", "Supported"
+            "GitHub Copilot", "Use MCP Server", "Junie", "Use MCP Server", "JetBrains AI Assistant", "Use MCP Server",
+            "Claude Code", "Unknown", "Codex", "Unknown"
         )
         assertThat(labelTexts(mcpCard)).containsSubsequence(
             "GitHub Copilot", "Supported", "Junie", "Supported", "JetBrains AI Assistant", "Supported",
