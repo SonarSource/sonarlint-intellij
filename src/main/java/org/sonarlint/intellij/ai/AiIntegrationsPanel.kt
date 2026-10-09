@@ -270,7 +270,7 @@ class AiIntegrationsPanel(
             snapshot.agents,
             { it.cliIntegrationSupported },
             cliDetailsExpanded,
-            snapshot.cliIntegrations,
+            snapshot.cliIntegrations.takeIf { cli.installation == CliInstallationStatus.INSTALLED },
             rowActions = { capability ->
                 if (cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
                     listOf(RowAction("Integrate", AiIntegrationsIntent.IntegrateCli(capability.agent)))

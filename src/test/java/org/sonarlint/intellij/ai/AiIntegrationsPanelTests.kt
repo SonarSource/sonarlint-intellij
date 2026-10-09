@@ -314,7 +314,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `shows recording badges for detected CLI agents independently of authentication and standalone MCP`() {
+    fun `shows recording badges only with an installed CLI independently of authentication and standalone MCP`() {
         val panel = AiIntegrationsPanel()
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNAUTHENTICATED, "1.0", null, null),
@@ -345,6 +345,15 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(labelTexts(cliCard).any { it.contains("Not signed in") }).isTrue()
         assertThat(labelTexts(mcpCard)).containsSubsequence("Claude Code", "Not supported", "Codex", "Supported")
             .doesNotContain("Integration recorded", "No integration recorded", "Unknown")
+
+        panel.render(AiIntegrationsPanelState.Ready(snapshot.copy(cli = snapshot.cli.copy(
+            installation = CliInstallationStatus.NOT_INSTALLED,
+            authentication = CliAuthenticationStatus.UNAVAILABLE
+        ))))
+        val absentCliCard = descendants(panel).filterIsInstance<JToggleButton>().first().parent.parent as Container
+        assertThat(labelTexts(absentCliCard)).contains("Supported")
+            .doesNotContain("Integration recorded", "No integration recorded", "Unknown")
+        assertThat(descendants(absentCliCard).filterIsInstance<JButton>().map { it.text }).contains("Install SonarQube CLI")
     }
 
     @Test
