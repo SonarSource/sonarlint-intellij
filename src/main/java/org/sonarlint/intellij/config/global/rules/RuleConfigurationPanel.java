@@ -67,6 +67,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,6 +75,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -197,12 +199,10 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     if (paths == null) {
       return Collections.emptyList();
     }
-    final var q = new ArrayDeque<RulesTreeNode>(paths.length);
-    for (final TreePath path : paths) {
-      if (path != null) {
-        q.addLast((RulesTreeNode) path.getLastPathComponent());
-      }
-    }
+    final var q = Arrays.stream(paths)
+      .filter(Objects::nonNull)
+      .map(path -> (RulesTreeNode) path.getLastPathComponent())
+      .collect(Collectors.toCollection(() -> new ArrayDeque<RulesTreeNode>(paths.length)));
     return getRulesNodes(q);
   }
 
