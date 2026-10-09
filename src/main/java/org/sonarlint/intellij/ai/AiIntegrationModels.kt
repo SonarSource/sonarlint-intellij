@@ -133,13 +133,19 @@ sealed interface CliUninstallFeedback {
         val resetOutput: String,
         val cleanupWarnings: String,
         val status: UninstallCliResponse.Status = UninstallCliResponse.Status.FAILED
-    ) : CliUninstallFeedback
+    ) : CliUninstallFeedback {
+        val tokenRevocationWarning: String?
+            get() = if (cleanupWarnings.contains("could not be revoked", ignoreCase = true) ||
+                cleanupWarnings.contains("failed to revoke the server-side token", ignoreCase = true)) {
+                "Some server tokens could not be revoked automatically. Revoke them manually in SonarQube."
+            } else null
+    }
 }
 
 internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeedback.Finished {
     val summary = when (response.status) {
         UninstallCliResponse.Status.UNINSTALLED -> listOfNotNull(
-            "SonarQube CLI installation was removed. Review the reset output for any remaining cleanup.",
+            "SonarQube CLI removed.",
             response.message?.takeIf { it.isNotBlank() },
             cliPathCleanupHint()
         ).joinToString("\n\n")
@@ -152,9 +158,9 @@ internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeed
 }
 
 internal fun cliPathCleanupHint(windows: Boolean = SystemInfo.isWindows): String = if (windows) {
-    "Open ‘Edit environment variables for your account’, edit the user Path, and remove %LOCALAPPDATA%\\sonarqube-cli\\bin. Reopen terminals afterward."
+    "Remove %LOCALAPPDATA%\\sonarqube-cli\\bin from your user Path in Environment Variables. Reopen terminals."
 } else {
-    "Remove export PATH=\"\$HOME/.local/share/sonarqube-cli/bin:\$PATH\" from your shell profile (usually ~/.bashrc or ~/.zshrc). Reopen terminals afterward."
+    "Remove \$HOME/.local/share/sonarqube-cli/bin from PATH in your shell profile (~/.bashrc or ~/.zshrc). Reopen terminals."
 }
 
 internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {

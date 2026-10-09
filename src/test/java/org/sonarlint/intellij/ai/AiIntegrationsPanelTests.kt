@@ -44,6 +44,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     @Test
@@ -466,7 +467,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `shows uninstall progress and keeps reset output accessible`() {
+    fun `shows uninstall progress then concise guidance and a token revocation warning`() {
         val panel = AiIntegrationsPanel()
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null, uninstallAvailable = true),
@@ -483,22 +484,24 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains("Uninstalling SonarQube CLI…")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).doesNotContain("Integrate")
 
-        panel.setCliUninstallFeedback(CliUninstallFeedback.Finished(
-            "SonarQube CLI was removed, but cleanup reported warnings.",
-            "reset warning",
-            "cleanup warning"
+        val feedback = uninstallFeedback(UninstallCliResponse(
+            UninstallCliResponse.Status.UNINSTALLED,
+            "Reset complete",
+            "The token could not be revoked automatically.",
+            null
         ))
+        panel.setCliUninstallFeedback(feedback)
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains(
-            "SonarQube CLI was removed, but cleanup reported warnings.",
-            "reset warning",
-            "cleanup warning"
-        )
-        assertThat(labelTexts(panel)).contains("Reset output", "Reset errors and warnings")
+            feedback.summary,
+            "Some server tokens could not be revoked automatically. Revoke them manually in SonarQube."
+        ).doesNotContain(feedback.resetOutput, feedback.cleanupWarnings)
+        assertThat(labelTexts(panel)).doesNotContain("Reset output", "Reset errors and warnings")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).contains("Integrate")
-        assertThat(descendants(panel).filterIsInstance<JBTextArea>().single { it.text == "reset warning" }.accessibleContext.accessibleName)
-            .isEqualTo("Reset output")
-        assertThat(descendants(panel).filterIsInstance<JBTextArea>().single { it.text == "cleanup warning" }.accessibleContext.accessibleName)
-            .isEqualTo("Reset errors and warnings")
+
+        panel.setCliUninstallFeedback(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", "", null)))
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain(
+            "Some server tokens could not be revoked automatically. Revoke them manually in SonarQube.", "Reset complete"
+        )
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }

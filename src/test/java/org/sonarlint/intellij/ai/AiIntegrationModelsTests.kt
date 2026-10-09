@@ -109,13 +109,15 @@ class AiIntegrationModelsTests {
 
         assertThat(toAiIntegrationSnapshot(response).cli.uninstallAvailable).isTrue()
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary)
-            .contains("installation was removed", "remaining cleanup", "Reopen terminals")
+            .contains("SonarQube CLI removed.", "PATH", "Reopen terminals")
+            .doesNotContain("reset output")
 
         val warnings = uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", "cleanup warning", "Manual cleanup required"))
-        assertThat(warnings.summary).contains("installation was removed", "remaining cleanup", "Manual cleanup required")
+        assertThat(warnings.summary).contains("SonarQube CLI removed.", "Manual cleanup required")
             .doesNotContain("reported warnings")
         assertThat(warnings.resetOutput).isEqualTo("Reset complete")
         assertThat(warnings.cleanupWarnings).isEqualTo("cleanup warning")
+        assertThat(warnings.tokenRevocationWarning).isNull()
 
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "reset failed", "SonarQube CLI reset failed.")).summary)
             .isEqualTo("SonarQube CLI reset failed.")
@@ -128,10 +130,25 @@ class AiIntegrationModelsTests {
     }
 
     @Test
+    fun `summarizes token revocation failures without displaying reset diagnostics`() {
+        listOf(
+            "The server-side token name is unknown, so the token could not be revoked automatically.",
+            "Could not retrieve the local token, so the server-side token could not be revoked automatically.",
+            "Failed to revoke the server-side token: connection refused"
+        ).forEach { stderr ->
+            val feedback = uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", stderr, null))
+            assertThat(feedback.tokenRevocationWarning)
+                .isEqualTo("Some server tokens could not be revoked automatically. Revoke them manually in SonarQube.")
+        }
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Token revoked.", "", null)).tokenRevocationWarning)
+            .isNull()
+    }
+
+    @Test
     fun `provides manual PATH cleanup instructions for both installers`() {
         assertThat(cliPathCleanupHint(windows = true)).contains("user Path", "%LOCALAPPDATA%\\sonarqube-cli\\bin", "Reopen terminals")
         assertThat(cliPathCleanupHint(windows = false)).contains(
-            "export PATH=\"\$HOME/.local/share/sonarqube-cli/bin:\$PATH\"", "~/.bashrc", "~/.zshrc", "Reopen terminals"
+            "\$HOME/.local/share/sonarqube-cli/bin", "PATH", "~/.bashrc", "~/.zshrc", "Reopen terminals"
         )
     }
 

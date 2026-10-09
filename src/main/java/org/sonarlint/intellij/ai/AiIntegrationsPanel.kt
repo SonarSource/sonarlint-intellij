@@ -93,8 +93,6 @@ private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
 private const val UNINSTALL_CLI_LABEL = "Uninstall CLI…"
 private const val UNINSTALLING_CLI_MESSAGE = "Uninstalling SonarQube CLI…"
-private const val RESET_OUTPUT_LABEL = "Reset output"
-private const val CLEANUP_WARNINGS_LABEL = "Reset errors and warnings"
 
 class AiIntegrationsPanel(
     private val registry: AiAgentRegistry = AiAgentRegistry(),
@@ -345,12 +343,7 @@ class AiIntegrationsPanel(
             CliUninstallFeedback.InProgress -> addMessage(UNINSTALLING_CLI_MESSAGE)
             is CliUninstallFeedback.Finished -> {
                 addMessage(feedback.summary)
-                if (feedback.resetOutput.isNotBlank()) {
-                    addLabeledOutput(RESET_OUTPUT_LABEL, feedback.resetOutput)
-                }
-                if (feedback.cleanupWarnings.isNotBlank()) {
-                    addLabeledOutput(CLEANUP_WARNINGS_LABEL, feedback.cleanupWarnings)
-                }
+                feedback.tokenRevocationWarning?.let { addMessage(it) }
             }
         }
     }
@@ -611,18 +604,6 @@ class AiIntegrationsPanel(
                 alignmentX = Component.LEFT_ALIGNMENT
             })
             panel.add(verticalSpace(6))
-        }
-
-        fun addLabeledOutput(label: String, text: String) {
-            panel.add(JBLabel(label).apply {
-                font = JBFont.small().asBold()
-                alignmentX = Component.LEFT_ALIGNMENT
-            })
-            panel.add(verticalSpace(4))
-            panel.add(bodyText(text).apply {
-                accessibleContext.accessibleName = label
-            })
-            panel.add(verticalSpace(10))
         }
     }
 

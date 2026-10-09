@@ -225,7 +225,8 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         uninstall.complete(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "reset warning", "cleanup warning", null))
         UIUtil.dispatchAllInvocationEvents()
         assertThat(buttonTexts()).doesNotContain("Uninstall CLI…", "Integrate", "Sign in")
-        assertThat(texts(panel)).contains("reset warning", "cleanup warning")
+        assertThat(texts(panel)).contains(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary)
+            .doesNotContain("reset warning", "cleanup warning")
         refreshed.complete(installedCli().copy(cli = installedCli().cli.copy(
             installation = CliInstallationStatus.NOT_INSTALLED,
             uninstallAvailable = false
@@ -233,11 +234,9 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         UIUtil.dispatchAllInvocationEvents()
 
         assertThat(texts(panel)).contains(
-            uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary,
-            "reset warning",
-            "cleanup warning"
-        )
-        assertThat(labels(panel)).contains("Reset output", "Reset errors and warnings")
+            uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary
+        ).doesNotContain("reset warning", "cleanup warning")
+        assertThat(labels(panel)).doesNotContain("Reset output", "Reset errors and warnings")
         assertThat(buttonTexts()).contains("Install SonarQube CLI").doesNotContain("Uninstall CLI…")
         assertThat(coordinator.activeOperation()).isFalse()
     }
@@ -260,7 +259,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         stillInstalled.complete(installedCli())
         UIUtil.dispatchAllInvocationEvents()
 
-        assertThat(texts(panel)).contains("SonarQube CLI reset failed.", "reset failed")
+        assertThat(texts(panel)).contains("SonarQube CLI reset failed.").doesNotContain("reset failed")
         assertThat(buttonTexts()).contains("Uninstall CLI…").doesNotContain("Install SonarQube CLI")
 
         val deletionFailure = CompletableFuture<UninstallCliResponse>()
@@ -364,7 +363,8 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         UIUtil.dispatchAllInvocationEvents()
 
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
-        assertThat(texts(panel)).contains("reset output", "reset failed").doesNotContain("Uninstalling SonarQube CLI…")
+        assertThat(texts(panel)).contains("SonarQube CLI could not be uninstalled.")
+            .doesNotContain("reset output", "reset failed", "Uninstalling SonarQube CLI…")
         assertThat(uninstallButton().isEnabled).isTrue()
         assertThat(coordinator.activeOperation()).isFalse()
     }
@@ -421,7 +421,8 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         assertThat(descendants(panelA).filterIsInstance<JButton>().map { it.toolTipText ?: it.text })
             .contains("Install SonarQube CLI")
             .doesNotContain("Uninstall CLI…")
-        assertThat(texts(panelA)).contains(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary, "reset output", "cleanup warning")
+        assertThat(texts(panelA)).contains(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary)
+            .doesNotContain("reset output", "cleanup warning")
     }
 
     @Test

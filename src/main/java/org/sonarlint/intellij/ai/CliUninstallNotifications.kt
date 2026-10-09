@@ -30,7 +30,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliRespon
 
 internal fun notifyCliUninstallResult(feedback: CliUninstallFeedback.Finished) {
     val (message, type) = when (feedback.status) {
-        UninstallCliResponse.Status.UNINSTALLED -> "CLI installation removed. Review reset output and manual PATH cleanup." to NotificationType.INFORMATION
+        UninstallCliResponse.Status.UNINSTALLED -> "SonarQube CLI removed." to NotificationType.INFORMATION
         UninstallCliResponse.Status.NOT_AVAILABLE -> "This CLI installation cannot be uninstalled from the IDE." to NotificationType.WARNING
         UninstallCliResponse.Status.FAILED -> "SonarQube CLI uninstall failed. Review the details and refreshed CLI state." to NotificationType.ERROR
     }
