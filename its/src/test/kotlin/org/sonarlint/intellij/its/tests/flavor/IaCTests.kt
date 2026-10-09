@@ -95,6 +95,8 @@ class IaCTests : BaseUiTest() {
             .setEdition(Edition.ENTERPRISE)
             .activateLicense()
             .keepBundledPlugins()
+            // Default Elasticsearch heap (2g, pre-touched) adds a lot of memory pressure on CI runners next to the IDE and SLOOP
+            .setServerProperty("sonar.search.javaOpts", "-Xmx512m -Xms512m -XX:MaxDirectMemorySize=256m")
             .restoreProfileAtStartup(FileLocation.ofClasspath("/ansible-issue.xml"))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/shell-issue.xml"))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/azurepipelines-issue.xml"))
