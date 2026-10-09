@@ -307,7 +307,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         val focuses = AtomicInteger()
         whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started({ focuses.incrementAndGet() }, CompletableFuture()))
         var choices = 0
-        val selector = CliConnectionSelector { _, _ -> choices++; null }
+        val selector = ConnectionSelector { _, _ -> choices++; null }
         val coordinator = coordinator(backend, terminal, selector = selector)
         val connections = snapshot.copy(connectionChoices = listOf(
             IntegrationConnection("first", "https://first", null),
@@ -429,10 +429,25 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun `authenticates interactively when no connection is available`() {
+        val backend = mock<BackendService>()
+        whenever(backend.prepareAuthenticateCliCommand(null)).thenReturn(CompletableFuture.completedFuture(command))
+        val terminal = mock<CliTerminalAdapter>()
+        whenever(terminal.launch(any(), any())).thenReturn(
+            TerminalLaunch.Started({}, CompletableFuture.completedFuture(TerminalCompletion.Exited(0)))
+        )
+
+        assertThat(coordinator(backend, terminal).execute(project, snapshot, AiIntegrationsIntent.AuthenticateCli)).isTrue()
+
+        verify(backend).prepareAuthenticateCliCommand(null)
+        verify(terminal).launch(project, command)
+    }
+
+    @Test
     fun `reports explicit connection cancellation without preparing a command`() {
         val backend = mock<BackendService>()
         val notifications = mutableListOf<Notification>()
-        val cancelledSelector = CliConnectionSelector(ConnectionChoiceUi { _, _ -> null })
+        val cancelledSelector = ConnectionSelector(ConnectionChoiceUi { _, _ -> null })
         val multipleConnections = snapshot.copy(
             connectionChoices = listOf(
                 IntegrationConnection("first", "https://first", null),
@@ -585,7 +600,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
     private fun coordinator(
         backend: BackendService,
         terminal: CliTerminalAdapter,
-        selector: CliConnectionSelector = CliConnectionSelector(),
+        selector: ConnectionSelector = ConnectionSelector(IntellijConnectionChoiceUi()),
         notifications: MutableList<Notification> = mutableListOf(),
         refresh: () -> Unit = {},
         provider: () -> CliTerminalAdapter = { terminal },

@@ -23,47 +23,41 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.Settings.getSettingsFor
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 
-class CliConnectionSelectorTests : AbstractSonarLintLightTests() {
-    private val cli = CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.UNAUTHENTICATED, null, null, null)
+class ConnectionSelectorTests : AbstractSonarLintLightTests() {
     private val first = IntegrationConnection("first", "https://first", null)
     private val second = IntegrationConnection("second", "https://second", "org")
 
     @Test
     fun `prefers current project connection`() {
         getSettingsFor(project).connectionName = "second"
-        val selection = CliConnectionSelector { _, _ -> error("chooser should not open") }
-            .select(project, snapshot(listOf(first, second), "first"))
+        val selection = ConnectionSelector { _, _ -> error("chooser should not open") }
+            .select(project, listOf(first, second), "first")
 
         assertThat(selection).isEqualTo(ConnectionSelection.Selected("second"))
     }
 
     @Test
     fun `uses recommended then sole eligible connection`() {
-        val selector = CliConnectionSelector { _, _ -> error("chooser should not open") }
+        val selector = ConnectionSelector { _, _ -> error("chooser should not open") }
 
-        assertThat(selector.select(project, snapshot(listOf(first, second), "second")))
+        assertThat(selector.select(project, listOf(first, second), "second"))
             .isEqualTo(ConnectionSelection.Selected("second"))
-        assertThat(selector.select(project, snapshot(listOf(first), null)))
+        assertThat(selector.select(project, listOf(first), null))
             .isEqualTo(ConnectionSelection.Selected("first"))
     }
 
     @Test
     fun `uses chooser for several connections and supports cancellation`() {
-        assertThat(CliConnectionSelector { _, _ -> "second" }.select(project, snapshot(listOf(first, second), null)))
+        assertThat(ConnectionSelector { _, _ -> "second" }.select(project, listOf(first, second), null))
             .isEqualTo(ConnectionSelection.Selected("second"))
-        assertThat(CliConnectionSelector { _, _ -> null }.select(project, snapshot(listOf(first, second), null)))
+        assertThat(ConnectionSelector { _, _ -> null }.select(project, listOf(first, second), null))
             .isEqualTo(ConnectionSelection.Cancelled)
     }
 
     @Test
-    fun `uses interactive login without prefill when there is no connection`() {
-        assertThat(CliConnectionSelector().select(project, snapshot(emptyList(), null)))
-            .isEqualTo(ConnectionSelection.InteractiveLogin)
+    fun `reports missing connections without opening the chooser`() {
+        assertThat(ConnectionSelector { _, _ -> error("chooser should not open") }.select(project, emptyList(), null))
+            .isEqualTo(ConnectionSelection.Missing)
     }
-
-    private fun snapshot(connections: List<IntegrationConnection>, recommended: String?) =
-        AiIntegrationSnapshot(cli, emptyList(), connections, recommended)
 }

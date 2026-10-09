@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
-import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
@@ -47,13 +47,13 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWit
 class CliOperationCoordinator @JvmOverloads constructor(
     private val backendService: BackendService = getService(BackendService::class.java),
     private val terminalAdapterProvider: () -> CliTerminalAdapter = { CliTerminalAdapterProvider.create() },
-    private val connectionSelector: CliConnectionSelector = CliConnectionSelector(),
+    private val connectionSelector: ConnectionSelector = ConnectionSelector(IntellijConnectionChoiceUi()),
     private val notifyUser: (Project, String, NotificationType) -> Unit = { _, message, type ->
         projectLessNotification("SonarQube CLI", message, type)
     },
     private val refreshViews: () -> Unit = {
         runOnUiThread(ModalityState.defaultModalityState()) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
+            ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
         }
     },
     private val runAuthentication: (Task.Backgroundable) -> Unit = { it.queue() }
@@ -73,12 +73,13 @@ class CliOperationCoordinator @JvmOverloads constructor(
             Disposer.register(project, lease)
             when (intent) {
                 AiIntegrationsIntent.InstallCli -> prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
-                AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot)) {
+                AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot.connectionChoices, snapshot.recommendedConnectionId)) {
                     ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
-                    ConnectionSelection.InteractiveLogin -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
+                    ConnectionSelection.Missing -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
                     is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)
                 }
                 is AiIntegrationsIntent.IntegrateCli -> prepareAndLaunch(lease, backendService.prepareIntegrateCliCommand(intent.agent))
+                else -> throw IllegalArgumentException("Not a CLI operation: $intent")
             }
         } catch (_: CancellationException) {
             releaseAndNotify(lease, CliOperationOutcome.Cancelled,

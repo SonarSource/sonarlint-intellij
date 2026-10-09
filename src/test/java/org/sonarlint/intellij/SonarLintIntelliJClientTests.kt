@@ -40,6 +40,7 @@ import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.actions.OpenTrackedLinkAction
 import org.sonarlint.intellij.actions.RestartBackendNotificationAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.ai.McpConfigurationCoordinator
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
@@ -57,6 +58,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.config.binding.Bindin
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStateDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.PluginStatusDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.DependencyRiskDto
+import org.sonarsource.sonarlint.core.rpc.protocol.client.embeddedserver.EmbeddedServerStartedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageActionItem
 import org.sonarsource.sonarlint.core.rpc.protocol.client.message.MessageType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.plugin.DidSkipLoadingPluginParams
@@ -73,6 +75,16 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         // Important as this starts the notification manager service
         clearNotifications()
         client = SonarLintIntelliJClient
+    }
+
+    @Test
+    fun it_should_refresh_mcp_configs_with_the_announced_embedded_server_port() {
+        val coordinator = mock(McpConfigurationCoordinator::class.java)
+        replaceApplicationService(McpConfigurationCoordinator::class.java, coordinator)
+
+        client.embeddedServerStarted(EmbeddedServerStartedParams(64121))
+
+        verify(coordinator).embeddedServerStarted(64121)
     }
 
     @Test
