@@ -40,7 +40,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
@@ -52,6 +52,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private lateinit var backend: BackendService
     private lateinit var panel: AiIntegrationsPanel
     private lateinit var controller: AiIntegrationsController
+    private lateinit var mcpCoordinator: McpConfigurationCoordinator
     private var enabledPluginIds = emptySet<String>()
 
     @BeforeEach
@@ -62,7 +63,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         `when`(backend.inspectMcpConfiguration(any(), any())).thenReturn(
             CompletableFuture.completedFuture(McpConfigurationInspectionResponse(McpConfigurationState.NOT_CONFIGURED, emptyList()))
         )
-        val mcpCoordinator = McpConfigurationCoordinator(
+        mcpCoordinator = McpConfigurationCoordinator(
             backendService = backend,
             registry = registry,
             fileSystem = mock(McpFileSystem::class.java),
@@ -90,22 +91,43 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `refreshes on CLI operation events only after first selection and until disposed`() {
+    fun `refreshes on integration events only after first selection and until disposed`() {
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture())
-        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC)
+        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC)
 
-        publisher.operationFinished()
+        publisher.stateChanged()
         verify(backend, never()).getAiIntegrationState(project, emptyList())
 
         controller.loadInitially()
-        publisher.operationFinished()
+        publisher.stateChanged()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
 
         controller.loadInitially()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
 
         Disposer.dispose(controller)
-        publisher.operationFinished()
+        publisher.stateChanged()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+    }
+
+    @Test
+    fun `MCP port refresh respects first selection and controller disposal`() {
+        `when`(backend.getAiIntegrationState(null, emptyList())).thenReturn(CompletableFuture.completedFuture(snapshot(emptyList())))
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture())
+        fun refreshMcp() {
+            mcpCoordinator.embeddedServerStarted(64121)
+            UIUtil.dispatchAllInvocationEvents()
+        }
+
+        refreshMcp()
+        verify(backend, never()).getAiIntegrationState(project, emptyList())
+
+        controller.loadInitially()
+        refreshMcp()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+
+        Disposer.dispose(controller)
+        refreshMcp()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
     }
 

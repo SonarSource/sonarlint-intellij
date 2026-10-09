@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 
 class AiIntegrationsController @JvmOverloads constructor(
@@ -47,8 +47,7 @@ class AiIntegrationsController @JvmOverloads constructor(
         panel.setRefreshListener(::refresh)
         panel.setIntentListener(::handleIntent)
         ApplicationManager.getApplication().messageBus.connect(this)
-            .subscribe(CliOperationListener.TOPIC, CliOperationListener { if (started.get()) refresh() })
-        mcpCoordinator.register(this, ::refresh)
+            .subscribe(AiIntegrationListener.TOPIC, AiIntegrationListener { if (started.get()) refresh() })
     }
 
     fun loadInitially() {
@@ -117,7 +116,6 @@ class AiIntegrationsController @JvmOverloads constructor(
     override fun dispose() {
         disposed.set(true)
         generation.incrementAndGet()
-        mcpCoordinator.unregister(this)
         panel.dispose()
     }
 }

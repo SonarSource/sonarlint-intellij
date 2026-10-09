@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
-import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
@@ -53,7 +53,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
     },
     private val refreshViews: () -> Unit = {
         runOnUiThread(ModalityState.defaultModalityState()) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
+            ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
         }
     },
     private val runAuthentication: (Task.Backgroundable) -> Unit = { it.queue() }
