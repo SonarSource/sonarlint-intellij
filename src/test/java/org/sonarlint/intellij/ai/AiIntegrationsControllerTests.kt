@@ -56,6 +56,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private var enabledPluginIds = emptySet<String>()
     private var acceptUninstall = true
     private var confirmationCount = 0
+    private var duringConfirmation: () -> Unit = {}
     private val results = mutableListOf<CliUninstallFeedback.Finished>()
 
     @BeforeEach
@@ -66,6 +67,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         panel = AiIntegrationsPanel(registry)
         controller = AiIntegrationsController(project, panel, backend, registry, coordinator, notifyUninstallResult = { results += it }) {
             confirmationCount++
+            duringConfirmation()
             acceptUninstall
         }
     }
@@ -176,11 +178,65 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun `rechecks uninstall availability before prompting`() {
+        load(installedCli())
+        val removed = installedCli().copy(cli = installedCli().cli.copy(
+            installation = CliInstallationStatus.NOT_INSTALLED,
+            uninstallAvailable = false
+        ))
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture.completedFuture(removed))
+
+        uninstallButton().doClick()
+        UIUtil.dispatchAllInvocationEvents()
+
+        verify(backend, never()).uninstallCli()
+        assertThat(confirmationCount).isZero()
+        assertThat(results.single().summary).isEqualTo(CLI_UNINSTALL_UNAVAILABLE)
+        assertThat(buttonTexts()).contains("Install SonarQube CLI").doesNotContain("Uninstall CLI…")
+        assertThat(coordinator.activeOperation()).isFalse()
+    }
+
+    @Test
+    fun `disposal while checking availability releases the lease without prompting`() {
+        load(installedCli())
+        val checking = CompletableFuture<AiIntegrationSnapshot>()
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(checking)
+
+        uninstallButton().doClick()
+        uninstallButton().doClick()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+        assertThat(coordinator.activeOperation()).isTrue()
+        Disposer.dispose(controller)
+        checking.complete(installedCli())
+        UIUtil.dispatchAllInvocationEvents()
+
+        verify(backend, never()).uninstallCli()
+        assertThat(confirmationCount).isZero()
+        assertThat(results).isEmpty()
+        assertThat(coordinator.activeOperation()).isFalse()
+    }
+
+    @Test
+    fun `disposal during confirmation does not start uninstall`() {
+        load(installedCli())
+        duringConfirmation = { Disposer.dispose(controller) }
+
+        uninstallButton().doClick()
+        UIUtil.dispatchAllInvocationEvents()
+
+        verify(backend, never()).uninstallCli()
+        assertThat(confirmationCount).isEqualTo(1)
+        assertThat(results).isEmpty()
+        assertThat(coordinator.activeOperation()).isFalse()
+    }
+
+    @Test
     fun `cancelled confirmation leaves the CLI installation unchanged`() {
         acceptUninstall = false
         load(installedCli())
 
         uninstallButton().doClick()
+        UIUtil.dispatchAllInvocationEvents()
 
         verify(backend, never()).uninstallCli()
         assertThat(confirmationCount).isEqualTo(1)
@@ -208,6 +264,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         val refreshed = CompletableFuture<AiIntegrationSnapshot>()
         `when`(backend.uninstallCli()).thenReturn(uninstall)
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(
+            CompletableFuture.completedFuture(installedWithCliAgent()),
             CompletableFuture.completedFuture(installedWithCliAgent()),
             refreshed
         )
@@ -248,6 +305,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         `when`(backend.uninstallCli()).thenReturn(resetFailure)
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(
             CompletableFuture.completedFuture(installedCli()),
+            CompletableFuture.completedFuture(installedCli()),
             stillInstalled
         )
         controller.loadInitially()
@@ -265,7 +323,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         val deletionFailure = CompletableFuture<UninstallCliResponse>()
         val afterDeletionFailure = CompletableFuture<AiIntegrationSnapshot>()
         `when`(backend.uninstallCli()).thenReturn(deletionFailure)
-        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(afterDeletionFailure)
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture.completedFuture(installedCli()), afterDeletionFailure)
         uninstallButton().doClick()
         deletionFailure.complete(UninstallCliResponse(
             UninstallCliResponse.Status.FAILED, "", "", "Could not delete the SonarQube CLI installation folder."
@@ -307,6 +365,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         UIUtil.dispatchAllInvocationEvents()
 
         descendants(closingPanel).filterIsInstance<JButton>().single { it.toolTipText == "Uninstall CLI…" }.doClick()
+        UIUtil.dispatchAllInvocationEvents()
         assertThat(localCoordinator.activeOperation()).isTrue()
 
         projectDisposed = true
@@ -340,6 +399,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         `when`(backend.uninstallCli()).thenReturn(uninstall)
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(
             CompletableFuture.completedFuture(installed),
+            CompletableFuture.completedFuture(installed),
             afterUninstall
         )
         controller.loadInitially()
@@ -354,7 +414,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         assertThat(texts(panel)).contains("Uninstalling SonarQube CLI…")
         assertCliActionsStayDisabled()
-        verify(backend, times(1)).getAiIntegrationState(project, emptyList())
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
         assertThat(coordinator.activeOperation()).isTrue()
 
         uninstall.complete(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "reset output", "reset failed", null))
@@ -362,8 +422,8 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         afterUninstall.complete(installed)
         UIUtil.dispatchAllInvocationEvents()
 
-        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
-        assertThat(texts(panel)).contains("SonarQube CLI could not be uninstalled.")
+        verify(backend, times(3)).getAiIntegrationState(project, emptyList())
+        assertThat(texts(panel)).contains(CLI_UNINSTALL_FAILED)
             .doesNotContain("reset output", "reset failed", "Uninstalling SonarQube CLI…")
         assertThat(uninstallButton().isEnabled).isTrue()
         assertThat(coordinator.activeOperation()).isFalse()
@@ -391,6 +451,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         val afterUninstall = CompletableFuture<AiIntegrationSnapshot>()
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(
             CompletableFuture.completedFuture(installed),
+            CompletableFuture.completedFuture(installed),
             afterUninstall
         )
         `when`(backend.getAiIntegrationState(otherProject, emptyList())).thenReturn(
@@ -410,7 +471,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
             uninstall.complete(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "reset output", "cleanup warning", null))
         }.join()
         repeat(4) { UIUtil.dispatchAllInvocationEvents() }
-        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+        verify(backend, times(3)).getAiIntegrationState(project, emptyList())
         verify(backend, times(2)).getAiIntegrationState(otherProject, emptyList())
         afterUninstall.complete(removed)
         repeat(4) { UIUtil.dispatchAllInvocationEvents() }
@@ -439,6 +500,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         val afterFailure = CompletableFuture<AiIntegrationSnapshot>()
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(
             CompletableFuture.completedFuture(installed),
+            CompletableFuture.completedFuture(installed),
             afterFailure
         )
         `when`(backend.uninstallCli()).thenThrow(IllegalStateException("backend unavailable"))
@@ -448,13 +510,14 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         descendants(failurePanel).filterIsInstance<JButton>().single { it.toolTipText == "Uninstall CLI…" }.doClick()
         repeat(4) { UIUtil.dispatchAllInvocationEvents() }
 
-        assertThat(texts(failurePanel)).contains("backend unavailable")
-        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+        assertThat(texts(failurePanel)).contains(CLI_UNINSTALL_FAILED).doesNotContain("backend unavailable")
+        assertThat(results.single().cleanupWarnings).isEqualTo("backend unavailable")
+        verify(backend, times(3)).getAiIntegrationState(project, emptyList())
 
         afterFailure.complete(installed)
         repeat(4) { UIUtil.dispatchAllInvocationEvents() }
 
-        assertThat(texts(failurePanel)).contains("backend unavailable")
+        assertThat(texts(failurePanel)).contains(CLI_UNINSTALL_FAILED).doesNotContain("backend unavailable")
         assertThat(descendants(failurePanel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).contains("Uninstall CLI…")
     }
 

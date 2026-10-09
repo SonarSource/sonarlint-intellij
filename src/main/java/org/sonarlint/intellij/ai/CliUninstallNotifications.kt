@@ -29,11 +29,12 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Compan
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 internal fun notifyCliUninstallResult(feedback: CliUninstallFeedback.Finished) {
-    val (message, type) = when (feedback.status) {
-        UninstallCliResponse.Status.UNINSTALLED -> "SonarQube CLI removed." to NotificationType.INFORMATION
-        UninstallCliResponse.Status.NOT_AVAILABLE -> "This CLI installation cannot be uninstalled from the IDE." to NotificationType.WARNING
-        UninstallCliResponse.Status.FAILED -> "SonarQube CLI uninstall failed. Review the details and refreshed CLI state." to NotificationType.ERROR
+    val type = when (feedback.status) {
+        UninstallCliResponse.Status.UNINSTALLED -> if (feedback.tokenRevocationWarning == null) NotificationType.INFORMATION else NotificationType.WARNING
+        UninstallCliResponse.Status.NOT_AVAILABLE -> NotificationType.WARNING
+        UninstallCliResponse.Status.FAILED -> NotificationType.ERROR
     }
+    val message = listOfNotNull(feedback.summary.substringBefore("\n\n"), feedback.tokenRevocationWarning).joinToString("\n\n")
     projectLessNotification(CLI_UNINSTALL_TITLE, message, type, NotificationAction.createSimple("Show details") {
         object : DialogWrapper(null, true) {
             init {
@@ -42,7 +43,13 @@ internal fun notifyCliUninstallResult(feedback: CliUninstallFeedback.Finished) {
             }
 
             override fun createCenterPanel(): JComponent = ScrollPaneFactory.createScrollPane(JBTextArea(
-                "${feedback.summary}\n\nReset output:\n${feedback.resetOutput}\n\nReset errors and warnings:\n${feedback.cleanupWarnings}",
+                listOfNotNull(
+                    feedback.summary,
+                    feedback.tokenRevocationWarning,
+                    feedback.backendMessage?.takeIf { it.isNotBlank() && it != feedback.summary },
+                    "Reset output:\n${feedback.resetOutput}",
+                    "Reset errors and warnings:\n${feedback.cleanupWarnings}"
+                ).joinToString("\n\n"),
                 18, 80
             ).apply {
                 isEditable = false

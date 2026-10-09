@@ -24,6 +24,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
+import com.intellij.openapi.ui.Messages
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -31,6 +32,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.CliOperationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 class AiIntegrationsController @JvmOverloads constructor(
     private val project: Project,
@@ -120,17 +122,40 @@ class AiIntegrationsController @JvmOverloads constructor(
         if (isDisposed() || !cliCoordinator.tryAcquire(project)) {
             return
         }
+        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
+        try {
+            backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
+                runOnUiThread(ModalityState.defaultModalityState()) {
+                    when {
+                        isDisposed() -> cliCoordinator.releaseWithoutSideEffects()
+                        error != null -> completeUninstall(uninstallFailure(error))
+                        !snapshot.cli.uninstallAvailable -> completeUninstall(uninstallFeedback(
+                            UninstallCliResponse(UninstallCliResponse.Status.NOT_AVAILABLE, "", "", null)
+                        ))
+                        else -> confirmAndUninstallCli()
+                    }
+                }
+            }
+        } catch (error: Exception) {
+            completeUninstall(uninstallFailure(error))
+        }
+    }
+
+    private fun confirmAndUninstallCli() {
         val confirmed = try {
             confirmUninstall(project)
         } catch (error: Exception) {
-            cliCoordinator.releaseWithoutSideEffects()
-            throw error
-        }
-        if (!confirmed) {
-            cliCoordinator.releaseWithoutSideEffects()
+            completeUninstall(uninstallFailure(error))
             return
         }
-        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
+        if (!confirmed || isDisposed()) {
+            cliCoordinator.releaseWithoutSideEffects()
+            if (!isDisposed()) {
+                panel.setCliUninstallFeedback(null)
+                refresh()
+            }
+            return
+        }
         try {
             backendService.uninstallCli().whenComplete { response, error ->
                 val feedback = if (error != null) uninstallFailure(error) else uninstallFeedback(response)
@@ -175,11 +200,12 @@ class AiIntegrationsController @JvmOverloads constructor(
 
 internal const val CLI_UNINSTALL_TITLE = "Uninstall SonarQube CLI"
 internal const val CLI_UNINSTALL_MESSAGE =
-    "This removes the shared SonarQube CLI used by terminals, IDEs, and agents.\n\n" +
+    "This removes the shared CLI used by terminals, IDEs, and agents. " +
         "Reset removes credentials and registered integrations and may revoke recorded server tokens."
 
 internal fun confirmCliUninstall(project: Project): Boolean =
-    MessageDialogBuilder.okCancel(CLI_UNINSTALL_TITLE, CLI_UNINSTALL_MESSAGE)
+    MessageDialogBuilder.okCancel("$CLI_UNINSTALL_TITLE?", CLI_UNINSTALL_MESSAGE)
+        .icon(Messages.getWarningIcon())
         .yesText("Uninstall")
         .noText("Cancel")
         .ask(project)

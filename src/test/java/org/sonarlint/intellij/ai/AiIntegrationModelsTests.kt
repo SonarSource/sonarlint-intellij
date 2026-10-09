@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import java.util.concurrent.CompletionException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -109,15 +110,24 @@ class AiIntegrationModelsTests {
 
         assertThat(toAiIntegrationSnapshot(response).cli.uninstallAvailable).isTrue()
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary)
-            .contains("SonarQube CLI removed.", "PATH", "Reopen terminals")
+            .startsWith("SonarQube CLI was removed. Remove its PATH entry manually. Some configuration may remain; review the output.")
+            .contains("PATH", "Reopen terminals")
             .doesNotContain("reset output")
 
         val warnings = uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", "cleanup warning", "Manual cleanup required"))
-        assertThat(warnings.summary).contains("SonarQube CLI removed.", "Manual cleanup required")
-            .doesNotContain("reported warnings")
+        assertThat(warnings.summary).contains(CLI_UNINSTALL_COMPLETED)
+            .doesNotContain("reported warnings", "Manual cleanup required")
+        assertThat(warnings.backendMessage).isEqualTo("Manual cleanup required")
         assertThat(warnings.resetOutput).isEqualTo("Reset complete")
         assertThat(warnings.cleanupWarnings).isEqualTo("cleanup warning")
         assertThat(warnings.tokenRevocationWarning).isNull()
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "", null)).summary)
+            .isEqualTo("Could not uninstall SonarQube CLI. Review the output for details.")
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.NOT_AVAILABLE, "", "", null)).summary)
+            .isEqualTo("This CLI installation cannot be uninstalled here. Refresh to check its state.")
+        val failure = uninstallFailure(CompletionException(IllegalStateException("connection lost")))
+        assertThat(failure.summary).isEqualTo(CLI_UNINSTALL_FAILED)
+        assertThat(failure.cleanupWarnings).isEqualTo("connection lost")
 
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "reset failed", "SonarQube CLI reset failed.")).summary)
             .isEqualTo("SonarQube CLI reset failed.")

@@ -132,7 +132,8 @@ sealed interface CliUninstallFeedback {
         val summary: String,
         val resetOutput: String,
         val cleanupWarnings: String,
-        val status: UninstallCliResponse.Status = UninstallCliResponse.Status.FAILED
+        val status: UninstallCliResponse.Status = UninstallCliResponse.Status.FAILED,
+        val backendMessage: String? = null
     ) : CliUninstallFeedback {
         val tokenRevocationWarning: String?
             get() = if (cleanupWarnings.contains("could not be revoked", ignoreCase = true) ||
@@ -142,19 +143,22 @@ sealed interface CliUninstallFeedback {
     }
 }
 
+internal const val CLI_UNINSTALL_FAILED = "Could not uninstall SonarQube CLI. Review the output for details."
+internal const val CLI_UNINSTALL_UNAVAILABLE = "This CLI installation cannot be uninstalled here. Refresh to check its state."
+internal const val CLI_UNINSTALL_COMPLETED = "SonarQube CLI was removed. Remove its PATH entry manually. Some configuration may remain; review the output."
+
 internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeedback.Finished {
     val summary = when (response.status) {
         UninstallCliResponse.Status.UNINSTALLED -> listOfNotNull(
-            "SonarQube CLI removed.",
-            response.message?.takeIf { it.isNotBlank() },
+            CLI_UNINSTALL_COMPLETED,
             cliPathCleanupHint()
         ).joinToString("\n\n")
         UninstallCliResponse.Status.FAILED -> response.message?.takeIf { it.isNotBlank() }
-            ?: "SonarQube CLI could not be uninstalled."
+            ?: CLI_UNINSTALL_FAILED
         UninstallCliResponse.Status.NOT_AVAILABLE -> response.message?.takeIf { it.isNotBlank() }
-            ?: "Only an official per-user CLI installation can be uninstalled."
+            ?: CLI_UNINSTALL_UNAVAILABLE
     }
-    return CliUninstallFeedback.Finished(summary, response.stdout, response.stderr, response.status)
+    return CliUninstallFeedback.Finished(summary, response.stdout, response.stderr, response.status, response.message)
 }
 
 internal fun cliPathCleanupHint(windows: Boolean = SystemInfo.isWindows): String = if (windows) {
@@ -166,8 +170,8 @@ internal fun cliPathCleanupHint(windows: Boolean = SystemInfo.isWindows): String
 internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {
     val cause = if (error is CompletionException && error.cause != null) error.cause!! else error
     return CliUninstallFeedback.Finished(
-        cause.message?.takeIf { it.isNotBlank() } ?: "SonarQube CLI could not be uninstalled.",
+        CLI_UNINSTALL_FAILED,
         "",
-        ""
+        cause.message?.takeIf { it.isNotBlank() }.orEmpty()
     )
 }
