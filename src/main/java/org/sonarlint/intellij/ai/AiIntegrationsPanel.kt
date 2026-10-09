@@ -21,9 +21,11 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
+import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
@@ -53,7 +55,6 @@ import javax.swing.JScrollPane
 import javax.swing.JToggleButton
 import javax.swing.ScrollPaneConstants
 import javax.swing.Scrollable
-import javax.swing.SwingConstants
 import javax.swing.event.HyperlinkEvent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
@@ -534,10 +535,13 @@ class AiIntegrationsPanel(
     }
 
     private fun createPrimaryButton(label: String, action: () -> Unit): JButton = JButton(label).apply {
+        isOpaque = false
+        putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
         addActionListener { action() }
     }
 
     private fun createSecondaryButton(label: String, icon: Icon): JButton = JButton(label, icon).apply {
+        isOpaque = false
         addActionListener { refreshListener() }
     }
 
@@ -562,19 +566,9 @@ class AiIntegrationsPanel(
             }
         }
 
-    private fun createLinkButton(label: String, url: String): JButton = JButton(label, AllIcons.Ide.External_link_arrow).apply {
-        isOpaque = false
-        isContentAreaFilled = false
-        isBorderPainted = false
-        border = JBUI.Borders.empty()
-        margin = JBUI.emptyInsets()
-        horizontalAlignment = SwingConstants.LEFT
-        horizontalTextPosition = SwingConstants.LEFT
-        iconTextGap = JBUI.scale(4)
+    private fun createLinkButton(label: String, url: String): JButton = ActionLink(label, { openLink(url) }).apply {
+        setExternalLinkIcon()
         alignmentX = Component.LEFT_ALIGNMENT
-        foreground = LINK_TEXT
-        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-        addActionListener { openLink(url) }
     }
 
     override fun dispose() {

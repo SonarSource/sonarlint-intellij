@@ -269,7 +269,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         listOf("SonarQube CLI guide", "MCP configuration guide").forEach { label ->
             val guide = descendants(panel).filterIsInstance<JButton>().first { it.text == label }
             assertThat(guide.icon).isSameAs(AllIcons.Ide.External_link_arrow)
-            assertThat(guide.horizontalTextPosition).isEqualTo(SwingConstants.LEFT)
+            assertThat(guide.horizontalTextPosition).isEqualTo(SwingConstants.LEADING)
         }
     }
 
