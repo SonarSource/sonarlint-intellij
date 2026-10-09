@@ -307,6 +307,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(labelTexts(mcpCard)).containsSubsequence("Cursor", "Not supported", "GitHub Copilot", "Supported")
 
         cliDisclosure.doClick()
+        assertThat(labelTexts(cliCard)).doesNotContain("Unknown", "Use MCP Server")
         assertThat(labelTexts(cliCard)).doesNotContain("Not supported")
         assertThat(cliDisclosure.isSelected).isFalse()
         assertThat(cliDisclosure.text).startsWith("▸")
