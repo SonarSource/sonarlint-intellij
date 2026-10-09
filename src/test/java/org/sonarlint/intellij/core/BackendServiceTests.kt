@@ -81,6 +81,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticat
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.SonarQubeCliState
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.SonarProjectBranchRpcService
@@ -405,6 +406,19 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         val integrateCaptor = argumentCaptor<PrepareIntegrateCliCommandParams>()
         verify(backendAiAgentService).prepareIntegrateCommand(integrateCaptor.capture())
         assertThat(integrateCaptor.firstValue.agent).isEqualTo(AiAgent.CURSOR)
+    }
+
+    @Test
+    fun test_uninstall_cli_returns_the_backend_response() {
+        val uninstallResponse = UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "reset warning", "cleanup warning", null)
+        `when`(backendAiAgentService.uninstallCli()).thenReturn(CompletableFuture.completedFuture(uninstallResponse))
+
+        val result = service.uninstallCli().get(2, TimeUnit.SECONDS)
+
+        assertThat(result.status).isEqualTo(UninstallCliResponse.Status.UNINSTALLED)
+        assertThat(result.stdout).isEqualTo("reset warning")
+        assertThat(result.stderr).isEqualTo("cleanup warning")
+        verify(backendAiAgentService).uninstallCli()
     }
 
     @Test

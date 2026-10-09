@@ -108,6 +108,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationSt
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -1254,6 +1255,9 @@ class BackendService : Disposable {
         return requestFromBackend { it.aiAgentService.getIntegrationState(params) }
             .thenApply(::toAiIntegrationSnapshot)
     }
+
+    fun uninstallCli(): CompletableFuture<UninstallCliResponse> =
+        requestFromBackend { it.aiAgentService.uninstallCli() }
 
     fun prepareInstallCliCommand(): CompletableFuture<CliCommand> =
         requestFromBackend { it.aiAgentService.prepareInstallCommand() }.thenApply(::toCliCommand)

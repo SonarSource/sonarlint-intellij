@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.icons.AllIcons
+import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBFont
@@ -44,6 +45,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     @Test
@@ -434,6 +436,88 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(labelTexts(updatedMcpCard)).contains("0 supported").containsSubsequence(
             "GitHub Copilot", "Not supported", "Junie", "Not supported", "JetBrains AI Assistant", "Not supported"
         ).doesNotContain("Supported")
+    }
+
+    @Test
+    fun `offers uninstall for a supported local installation and keeps other installations unchanged`() {
+        val panel = AiIntegrationsPanel()
+        val official = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null, uninstallAvailable = true),
+            emptyList(),
+            emptyList(),
+            null
+        )
+        val intents = mutableListOf<AiIntegrationsIntent>()
+        panel.setIntentListener { intents += it }
+        panel.render(AiIntegrationsPanelState.Ready(official))
+
+        val uninstall = descendants(panel).filterIsInstance<JButton>().single { it.toolTipText == "Uninstall CLI…" }
+        assertThat(uninstall.text).isNullOrEmpty()
+        assertThat(uninstall.icon).isNotNull()
+        assertThat(uninstall.accessibleContext.accessibleName).isEqualTo("Uninstall CLI…")
+        uninstall.doClick()
+        assertThat(intents).containsExactly(AiIntegrationsIntent.UninstallCli)
+
+        panel.render(AiIntegrationsPanelState.Ready(official.copy(cli = official.cli.copy(uninstallAvailable = false))))
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).doesNotContain("Uninstall CLI…")
+
+        panel.render(AiIntegrationsPanelState.Empty(official.copy(
+            cli = official.cli.copy(authentication = CliAuthenticationStatus.UNAUTHENTICATED)
+        )))
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).contains("Uninstall CLI…", "Sign in")
+    }
+
+    @Test
+    fun `shows uninstall progress then concise guidance and a token revocation warning`() {
+        val panel = AiIntegrationsPanel()
+        val snapshot = AiIntegrationSnapshot(
+            CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null, uninstallAvailable = true),
+            listOf(AgentCapability(AiAgent.CLAUDE_CODE, setOf(AiAgentDetectionSource.IDE), true, false)),
+            emptyList(),
+            null
+        )
+        panel.render(AiIntegrationsPanelState.Ready(snapshot))
+        descendants(panel).filterIsInstance<JToggleButton>().first().doClick()
+        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
+
+        val uninstall = descendants(panel).filterIsInstance<JButton>().single { it.toolTipText == "Uninstall CLI…" }
+        assertThat(uninstall.isEnabled).isFalse()
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains("Uninstalling SonarQube CLI…")
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).doesNotContain("Integrate")
+
+        val feedback = uninstallFeedback(UninstallCliResponse(
+            UninstallCliResponse.Status.UNINSTALLED,
+            "Reset complete",
+            "The token could not be revoked automatically.",
+            null
+        ))
+        panel.setCliUninstallFeedback(feedback)
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains(
+            feedback.summary,
+            "Some server tokens could not be revoked automatically. Revoke them manually in SonarQube."
+        ).doesNotContain(feedback.resetOutput, feedback.cleanupWarnings)
+        assertThat(labelTexts(panel)).doesNotContain("Reset output", "Reset errors and warnings")
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).contains("Integrate")
+
+        panel.setCliUninstallFeedback(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", "", null)))
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain(
+            "Some server tokens could not be revoked automatically. Revoke them manually in SonarQube.", "Reset complete"
+        )
+    }
+
+    @Test
+    fun `offers details on failed results while keeping diagnostics hidden`() {
+        val panel = AiIntegrationsPanel()
+
+        UninstallCliResponse.Status.entries.forEach { status ->
+            val feedback = uninstallFeedback(UninstallCliResponse(status, "reset output", "reset stderr", "backend diagnostic"))
+            panel.setCliUninstallFeedback(feedback)
+
+            assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
+                .contains(feedback.summary).doesNotContain("reset output", "reset stderr")
+            val links = descendants(panel).filterIsInstance<ActionLink>().filter { it.text == "Show details" }
+            assertThat(links).hasSize(if (status == UninstallCliResponse.Status.FAILED) 1 else 0)
+        }
     }
 
     private fun labelTexts(container: Container) = descendants(container).filterIsInstance<JBLabel>().map { it.text }

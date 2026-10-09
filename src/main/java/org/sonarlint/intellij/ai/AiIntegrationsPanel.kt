@@ -22,11 +22,14 @@ package org.sonarlint.intellij.ai
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.ex.ActionButtonLook
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
+import com.intellij.util.IconUtil
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
@@ -60,6 +63,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
@@ -89,6 +93,9 @@ private const val ZERO_SUPPORTED_STATUS = "0 supported"
 private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
 private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
+private const val UNINSTALL_CLI_LABEL = "Uninstall CLI…"
+private const val CHECKING_CLI_UNINSTALL_MESSAGE = "Checking SonarQube CLI uninstall availability…"
+private const val UNINSTALLING_CLI_MESSAGE = "Uninstalling SonarQube CLI…"
 
 class AiIntegrationsPanel(
     private val registry: AiAgentRegistry = AiAgentRegistry(),
@@ -116,6 +123,7 @@ class AiIntegrationsPanel(
     private var cliDetailsExpanded = false
     private var mcpDetailsExpanded = false
     private val expandedCliConfigurations = mutableSetOf<AiAgent>()
+    private var cliUninstallFeedback: CliUninstallFeedback? = null
 
     val isDisposed: Boolean
         get() = disposed.get()
@@ -149,6 +157,16 @@ class AiIntegrationsPanel(
 
     fun setIntentListener(listener: (AiIntegrationsIntent) -> Unit) {
         intentListener = listener
+    }
+
+    fun isCliUninstallBusy(): Boolean = cliUninstallFeedback is CliUninstallFeedback.Checking ||
+        cliUninstallFeedback is CliUninstallFeedback.InProgress
+
+    fun setCliUninstallFeedback(feedback: CliUninstallFeedback?) {
+        cliUninstallFeedback = feedback
+        if (!isDisposed) {
+            rebuild()
+        }
     }
 
     fun render(state: AiIntegrationsPanelState) {
@@ -209,12 +227,17 @@ class AiIntegrationsPanel(
         CLI_CARD_TITLE,
         CLI_CARD_HEADLINE,
         createCliDescription(),
-        cliStatus(state)
+        cliStatus(state),
+        createUninstallAction(state)
     ) {
         when (state) {
-            AiIntegrationsPanelState.Loading -> addMessage(CLI_LOADING_MESSAGE)
+            AiIntegrationsPanelState.Loading -> {
+                addMessage(CLI_LOADING_MESSAGE)
+                addCliUninstallFeedback()
+            }
             is AiIntegrationsPanelState.Error -> {
                 addMessage(state.message)
+                addCliUninstallFeedback()
                 addPrimaryAction(RETRY_LABEL)
             }
             is AiIntegrationsPanelState.Empty -> addCliOverview(state.snapshot)
@@ -250,6 +273,37 @@ class AiIntegrationsPanel(
         }
     }
 
+    private fun createUninstallAction(state: AiIntegrationsPanelState): JButton? {
+        val snapshot = when (state) {
+            is AiIntegrationsPanelState.Ready -> state.snapshot
+            is AiIntegrationsPanelState.Empty -> state.snapshot
+            else -> return null
+        }
+        if (!snapshot.cli.uninstallAvailable) return null
+        return object : JButton(IconUtil.scale(AllIcons.Actions.GC, null, 0.875f)) {
+            override fun paintComponent(graphics: Graphics) {
+                if (isEnabled && model.isRollover) {
+                    ActionButtonLook.SYSTEM_LOOK.paintLookBackground(graphics, Rectangle(size), JBUI.CurrentTheme.ActionButton.hoverBackground())
+                }
+                super.paintComponent(graphics)
+            }
+        }.apply {
+            toolTipText = UNINSTALL_CLI_LABEL
+            accessibleContext.accessibleName = UNINSTALL_CLI_LABEL
+            isOpaque = false
+            isRolloverEnabled = true
+            isContentAreaFilled = false
+            isBorderPainted = false
+            border = JBUI.Borders.empty()
+            margin = JBUI.emptyInsets()
+            preferredSize = JBUI.size(20)
+            minimumSize = preferredSize
+            maximumSize = preferredSize
+            isEnabled = !isCliUninstallBusy()
+            addActionListener { intentListener(AiIntegrationsIntent.UninstallCli) }
+        }
+    }
+
     private fun CardBuilder.addCliOverview(snapshot: AiIntegrationSnapshot) {
         val cli = snapshot.cli
         val metadata = buildList {
@@ -265,14 +319,16 @@ class AiIntegrationsPanel(
         if (metadata.isNotEmpty()) {
             addMetadata(metadata)
         }
-        addCliPrimaryAction(snapshot)
+        val uninstalling = isCliUninstallBusy()
+        addCliUninstallFeedback()
+        addCliPrimaryAction(snapshot, enabled = !uninstalling)
         addCapabilityOverview(
             snapshot.agents,
             { it.cliIntegrationSupported },
             cliDetailsExpanded,
             snapshot.cliIntegrations,
             rowActions = { capability ->
-                if (cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
+                if (!uninstalling && cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
                     listOf(RowAction("Integrate", AiIntegrationsIntent.IntegrateCli(capability.agent)))
                 } else {
                     emptyList()
@@ -285,18 +341,36 @@ class AiIntegrationsPanel(
         addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) { mcpDetailsExpanded = it }
     }
 
-    private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot) {
+    private fun CardBuilder.addCliUninstallFeedback() {
+        when (val feedback = cliUninstallFeedback) {
+            null -> Unit
+            CliUninstallFeedback.Checking -> addMessage(CHECKING_CLI_UNINSTALL_MESSAGE)
+            CliUninstallFeedback.InProgress -> addMessage(UNINSTALLING_CLI_MESSAGE)
+            is CliUninstallFeedback.Finished -> {
+                addMessage(feedback.summary)
+                feedback.tokenRevocationWarning?.let { addMessage(it) }
+                if (feedback.status == UninstallCliResponse.Status.FAILED) {
+                    panel.add(ActionLink("Show details") { showCliUninstallDetails(feedback) }.apply {
+                        alignmentX = Component.LEFT_ALIGNMENT
+                    })
+                    panel.add(verticalSpace(10))
+                }
+            }
+        }
+    }
+
+    private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot, enabled: Boolean) {
         when (snapshot.cli.installation) {
-            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli)
-            CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot") {
+            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli, enabled)
+            CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot", enabled) {
                 openLink(SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
             }
             CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
                 CliAuthenticationStatus.UNAUTHENTICATED,
                 CliAuthenticationStatus.INVALID,
-                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli)
+                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli, enabled)
                 CliAuthenticationStatus.UNAVAILABLE,
-                CliAuthenticationStatus.UNKNOWN -> addPrimaryAction("Check again")
+                CliAuthenticationStatus.UNKNOWN -> addPrimaryAction("Check again", enabled) { refreshListener() }
                 CliAuthenticationStatus.AUTHENTICATED -> Unit
             }
         }
@@ -355,6 +429,7 @@ class AiIntegrationsPanel(
         headline: String,
         description: JComponent,
         status: CardStatus,
+        headerAction: JButton? = null,
         content: CardBuilder.() -> Unit
     ): JPanel {
         val body = RoundedSurfacePanel(CARD_BACKGROUND, CARD_BORDER, 16).apply {
@@ -367,7 +442,7 @@ class AiIntegrationsPanel(
             isOpaque = false
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
         }
-        content.add(createCardHeader(title, headline, description, status))
+        content.add(createCardHeader(title, headline, description, status, headerAction))
         content.add(verticalSpace(16))
         CardBuilder(content).content()
         body.add(content, BorderLayout.NORTH)
@@ -378,7 +453,8 @@ class AiIntegrationsPanel(
         title: String,
         headline: String,
         description: JComponent,
-        status: CardStatus
+        status: CardStatus,
+        headerAction: JButton?
     ): JPanel = JBPanel<JBPanel<*>>(BorderLayout(JBUI.scale(12), 0)).apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT
@@ -396,7 +472,15 @@ class AiIntegrationsPanel(
         }, BorderLayout.CENTER)
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
             isOpaque = false
-            add(StatusPill(status), BorderLayout.NORTH)
+            val badge = StatusPill(status)
+            val corner = if (headerAction == null) badge else JBPanel<JBPanel<*>>().apply {
+                isOpaque = false
+                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                add(badge)
+                add(horizontalSpace(4))
+                add(headerAction)
+            }
+            add(corner, BorderLayout.NORTH)
         }, BorderLayout.EAST)
     }
 
@@ -521,12 +605,13 @@ class AiIntegrationsPanel(
             addPrimaryAction(label) { refreshListener() }
         }
 
-        fun addPrimaryAction(label: String, intent: AiIntegrationsIntent) {
-            addPrimaryAction(label) { intentListener(intent) }
+        fun addPrimaryAction(label: String, intent: AiIntegrationsIntent, enabled: Boolean = true) {
+            addPrimaryAction(label, enabled) { intentListener(intent) }
         }
 
-        fun addPrimaryAction(label: String, action: () -> Unit) {
+        fun addPrimaryAction(label: String, enabled: Boolean = true, action: () -> Unit) {
             panel.add(createPrimaryButton(label, action).apply {
+                isEnabled = enabled
                 alignmentX = Component.LEFT_ALIGNMENT
             })
             panel.add(verticalSpace(6))

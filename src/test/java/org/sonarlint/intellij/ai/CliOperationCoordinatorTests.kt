@@ -42,6 +42,7 @@ import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore
 import org.sonarlint.intellij.core.BackendService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
@@ -280,6 +281,56 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.AuthenticationFailed)
         assertThat(notifications.single().message).contains("Retry").doesNotContain("unsafe exception details")
         verifyNoInteractions(terminal)
+    }
+
+    @Test
+    fun `a released uninstall lease does not notify, refresh, or record an outcome`() {
+        val backend = mock<BackendService>()
+        val notifications = mutableListOf<Notification>()
+        var refreshes = 0
+        val coordinator = coordinator(backend, mock(), notifications = notifications, refresh = { refreshes++ })
+
+        assertThat(coordinator.tryAcquire(project)).isTrue()
+        assertThat(coordinator.tryAcquire(project)).isFalse()
+        coordinator.releaseWithoutSideEffects()
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isNull()
+        assertThat(notifications).isEmpty()
+        assertThat(refreshes).isZero()
+        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.UninstallCli)).isFalse()
+        verifyNoInteractions(backend)
+        assertThat(coordinator.tryAcquire(project)).isTrue()
+    }
+
+    @Test
+    fun `closing the project does not free an uninstall lease until the backend finishes`() {
+        val closingProject = mock<Project>()
+        val otherProject = mock<Project>()
+        val notifications = mutableListOf<Notification>()
+        var refreshes = 0
+        val backend = mock<BackendService>()
+        val coordinator = coordinator(backend, mock(), notifications = notifications, refresh = { refreshes++ })
+
+        assertThat(coordinator.tryAcquire(closingProject)).isTrue()
+        Disposer.dispose(closingProject)
+
+        assertThat(coordinator.activeOperation()).isTrue()
+        assertThat(coordinator.lastOutcome()).isNull()
+        assertThat(refreshes).isZero()
+        assertThat(notifications).isEmpty()
+        assertThat(coordinator.execute(otherProject, snapshot, AiIntegrationsIntent.InstallCli)).isFalse()
+        assertThat(coordinator.execute(otherProject, snapshot, AiIntegrationsIntent.AuthenticateCli)).isFalse()
+        assertThat(coordinator.execute(otherProject, snapshot, AiIntegrationsIntent.IntegrateCli(AiAgent.CURSOR))).isFalse()
+        verifyNoInteractions(backend)
+
+        coordinator.releaseUninstall()
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isNull()
+        assertThat(notifications).isEmpty()
+        assertThat(refreshes).isEqualTo(1)
+        assertThat(coordinator.tryAcquire(otherProject)).isTrue()
     }
 
     @Test
