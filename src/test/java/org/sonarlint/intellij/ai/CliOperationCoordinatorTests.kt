@@ -284,53 +284,22 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `a released uninstall lease does not notify, refresh, or record an outcome`() {
+    fun `a released uninstall lease refreshes without notifying or recording an outcome`() {
         val backend = mock<BackendService>()
         val notifications = mutableListOf<Notification>()
         var refreshes = 0
         val coordinator = coordinator(backend, mock(), notifications = notifications, refresh = { refreshes++ })
 
-        assertThat(coordinator.tryAcquire(project)).isTrue()
-        assertThat(coordinator.tryAcquire(project)).isFalse()
-        coordinator.releaseWithoutSideEffects()
-
-        assertThat(coordinator.activeOperation()).isFalse()
-        assertThat(coordinator.lastOutcome()).isNull()
-        assertThat(notifications).isEmpty()
-        assertThat(refreshes).isZero()
-        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.UninstallCli)).isFalse()
-        verifyNoInteractions(backend)
-        assertThat(coordinator.tryAcquire(project)).isTrue()
-    }
-
-    @Test
-    fun `closing the project does not free an uninstall lease until the backend finishes`() {
-        val closingProject = mock<Project>()
-        val otherProject = mock<Project>()
-        val notifications = mutableListOf<Notification>()
-        var refreshes = 0
-        val backend = mock<BackendService>()
-        val coordinator = coordinator(backend, mock(), notifications = notifications, refresh = { refreshes++ })
-
-        assertThat(coordinator.tryAcquire(closingProject)).isTrue()
-        Disposer.dispose(closingProject)
-
-        assertThat(coordinator.activeOperation()).isTrue()
-        assertThat(coordinator.lastOutcome()).isNull()
-        assertThat(refreshes).isZero()
-        assertThat(notifications).isEmpty()
-        assertThat(coordinator.execute(otherProject, snapshot, AiIntegrationsIntent.InstallCli)).isFalse()
-        assertThat(coordinator.execute(otherProject, snapshot, AiIntegrationsIntent.AuthenticateCli)).isFalse()
-        assertThat(coordinator.execute(otherProject, snapshot, AiIntegrationsIntent.IntegrateCli(AiAgent.CURSOR))).isFalse()
-        verifyNoInteractions(backend)
-
-        coordinator.releaseUninstall()
+        assertThat(coordinator.acquire(project)).isTrue()
+        assertThat(coordinator.acquire(project)).isFalse()
+        coordinator.release()
 
         assertThat(coordinator.activeOperation()).isFalse()
         assertThat(coordinator.lastOutcome()).isNull()
         assertThat(notifications).isEmpty()
         assertThat(refreshes).isEqualTo(1)
-        assertThat(coordinator.tryAcquire(otherProject)).isTrue()
+        verifyNoInteractions(backend)
+        assertThat(coordinator.acquire(project)).isTrue()
     }
 
     @Test

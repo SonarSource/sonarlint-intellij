@@ -32,7 +32,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.messages.CliOperationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 class AiIntegrationsController @JvmOverloads constructor(
     private val project: Project,
@@ -46,13 +45,14 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val generation = AtomicLong()
     private val started = AtomicBoolean()
     private val disposed = AtomicBoolean()
+    private val confirmingUninstall = AtomicBoolean()
     private var latestSnapshot: AiIntegrationSnapshot? = null
 
     init {
         panel.setRefreshListener(::refresh)
         panel.setIntentListener(::handleIntent)
         ApplicationManager.getApplication().messageBus.connect(this)
-            .subscribe(CliOperationListener.TOPIC, CliOperationListener { if (started.get()) refresh() })
+            .subscribe(CliOperationListener.TOPIC, CliOperationListener { if (started.get()) refreshAfterOperation() })
     }
 
     fun loadInitially() {
@@ -65,10 +65,17 @@ class AiIntegrationsController @JvmOverloads constructor(
         if (panel.isCliUninstallBusy()) {
             return
         }
-        reload(showLoading = true, clearFeedback = true)
+        reload(clearFeedback = true)
     }
 
-    private fun reload(showLoading: Boolean, clearFeedback: Boolean) {
+    private fun refreshAfterOperation() {
+        if (panel.isCliUninstallBusy()) {
+            return
+        }
+        reload(clearFeedback = false)
+    }
+
+    private fun reload(clearFeedback: Boolean) {
         if (isDisposed()) {
             return
         }
@@ -76,9 +83,7 @@ class AiIntegrationsController @JvmOverloads constructor(
             panel.setCliUninstallFeedback(null)
         }
         val requestedGeneration = generation.incrementAndGet()
-        if (showLoading) {
-            publish(requestedGeneration, AiIntegrationsPanelState.Loading)
-        }
+        publish(requestedGeneration, AiIntegrationsPanelState.Loading)
         try {
             backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
                 val state = if (error != null) {
@@ -119,7 +124,7 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     private fun uninstallCli() {
-        if (isDisposed() || !cliCoordinator.tryAcquire(project)) {
+        if (isDisposed() || panel.isCliUninstallBusy() || !confirmingUninstall.compareAndSet(false, true)) {
             return
         }
         panel.setCliUninstallFeedback(CliUninstallFeedback.Checking)
@@ -127,62 +132,74 @@ class AiIntegrationsController @JvmOverloads constructor(
             backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
                 runOnUiThread(ModalityState.defaultModalityState()) {
                     when {
-                        isDisposed() -> cliCoordinator.releaseWithoutSideEffects()
-                        error != null -> completeUninstall(uninstallFailure(error))
-                        !snapshot.cli.uninstallAvailable -> completeUninstall(uninstallFeedback(
-                            UninstallCliResponse(UninstallCliResponse.Status.NOT_AVAILABLE, "", "", null)
-                        ))
+                        isDisposed() -> confirmingUninstall.set(false)
+                        error != null -> {
+                            confirmingUninstall.set(false)
+                            finishUninstall(uninstallFailure(error), releaseLease = false)
+                        }
+                        snapshot?.cli?.uninstallAvailable != true -> {
+                            confirmingUninstall.set(false)
+                            finishUninstall(uninstallUnavailableFeedback(), releaseLease = false)
+                        }
                         else -> confirmAndUninstallCli()
                     }
                 }
             }
         } catch (error: Exception) {
-            completeUninstall(uninstallFailure(error))
+            confirmingUninstall.set(false)
+            finishUninstall(uninstallFailure(error), releaseLease = false)
         }
     }
 
     private fun confirmAndUninstallCli() {
-        val confirmed = try {
-            confirmUninstall(project)
-        } catch (error: Exception) {
-            completeUninstall(uninstallFailure(error))
-            return
-        }
-        if (!confirmed || isDisposed()) {
-            cliCoordinator.releaseWithoutSideEffects()
+        try {
             if (!isDisposed()) {
                 panel.setCliUninstallFeedback(null)
-                refresh()
             }
-            return
-        }
-        panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
-        try {
-            backendService.uninstallCli().whenComplete { response, error ->
-                val feedback = if (error != null) uninstallFailure(error) else uninstallFeedback(response)
-                completeUninstall(feedback)
+            val confirmed = try {
+                confirmUninstall(project)
+            } catch (error: Exception) {
+                finishUninstall(uninstallFailure(error), releaseLease = false)
+                return
             }
-        } catch (error: Exception) {
-            completeUninstall(uninstallFailure(error))
+            if (!confirmed || isDisposed()) {
+                if (!isDisposed()) {
+                    panel.setCliUninstallFeedback(null)
+                }
+                return
+            }
+            if (!cliCoordinator.acquire(project)) {
+                return
+            }
+            panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
+            try {
+                backendService.uninstallCli().whenComplete { response, error ->
+                    val feedback = if (error != null) uninstallFailure(error) else uninstallFeedback(response)
+                    finishUninstall(feedback, releaseLease = true)
+                }
+            } catch (error: Exception) {
+                finishUninstall(uninstallFailure(error), releaseLease = true)
+            }
+        } finally {
+            confirmingUninstall.set(false)
         }
     }
 
-    private fun completeUninstall(feedback: CliUninstallFeedback.Finished) {
-        cliCoordinator.releaseUninstall()
+    private fun finishUninstall(feedback: CliUninstallFeedback.Finished, releaseLease: Boolean) {
         runOnUiThread(ModalityState.defaultModalityState()) {
             try {
                 notifyUninstallResult(feedback)
             } finally {
-                if (!isDisposed()) showUninstallResult(feedback)
+                if (!isDisposed()) {
+                    panel.setCliUninstallFeedback(feedback)
+                }
+                if (releaseLease) {
+                    cliCoordinator.release()
+                } else if (!isDisposed()) {
+                    reload(clearFeedback = false)
+                }
             }
         }
-    }
-
-    private fun showUninstallResult(feedback: CliUninstallFeedback.Finished) {
-        latestSnapshot = null
-        panel.render(AiIntegrationsPanelState.Loading)
-        panel.setCliUninstallFeedback(feedback)
-        reload(showLoading = false, clearFeedback = false)
     }
 
     private fun isDisposed() = disposed.get() || project.isDisposed || panel.isDisposed

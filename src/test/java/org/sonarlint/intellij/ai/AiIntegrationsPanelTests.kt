@@ -478,10 +478,13 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         )
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
         descendants(panel).filterIsInstance<JToggleButton>().first().doClick()
+        panel.setCliUninstallFeedback(CliUninstallFeedback.Checking)
+        assertThat(descendants(panel).filterIsInstance<JButton>().single { it.text == "Refresh" }.isEnabled).isFalse()
         panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
 
         val uninstall = descendants(panel).filterIsInstance<JButton>().single { it.toolTipText == "Uninstall CLI…" }
         assertThat(uninstall.isEnabled).isFalse()
+        assertThat(descendants(panel).filterIsInstance<JButton>().single { it.text == "Refresh" }.isEnabled).isFalse()
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains("Uninstalling SonarQube CLI…")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).doesNotContain("Integrate")
 
@@ -498,6 +501,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         ).doesNotContain(feedback.resetOutput, feedback.cleanupWarnings)
         assertThat(labelTexts(panel)).doesNotContain("Reset output", "Reset errors and warnings")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).contains("Integrate")
+        assertThat(descendants(panel).filterIsInstance<JButton>().single { it.text == "Refresh" }.isEnabled).isTrue()
 
         panel.setCliUninstallFeedback(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", "", null)))
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain(

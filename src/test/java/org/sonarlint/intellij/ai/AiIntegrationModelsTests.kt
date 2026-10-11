@@ -124,7 +124,9 @@ class AiIntegrationModelsTests {
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "", null)).summary)
             .isEqualTo("Could not uninstall SonarQube CLI. Review the output for details.")
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.NOT_AVAILABLE, "", "", null)).summary)
-            .isEqualTo("This CLI installation cannot be uninstalled here. Refresh to check its state.")
+            .isEqualTo("Only an official per-user CLI installation can be uninstalled.")
+        assertThat(uninstallUnavailableFeedback().summary).isEqualTo(CLI_UNINSTALL_UNAVAILABLE)
+        assertThat(uninstallUnavailableFeedback().status).isEqualTo(UninstallCliResponse.Status.NOT_AVAILABLE)
         val failure = uninstallFailure(CompletionException(IllegalStateException("connection lost")))
         assertThat(failure.summary).isEqualTo(CLI_UNINSTALL_FAILED)
         assertThat(failure.cleanupWarnings).isEmpty()
@@ -168,8 +170,9 @@ class AiIntegrationModelsTests {
     @Test
     fun `provides manual PATH cleanup instructions for both installers`() {
         assertThat(cliPathCleanupHint(windows = true)).contains("user Path", "%LOCALAPPDATA%\\sonarqube-cli\\bin", "Reopen terminals")
-        assertThat(cliPathCleanupHint(windows = false)).contains(
-            "\$HOME/.local/share/sonarqube-cli/bin", "PATH", "~/.bashrc", "~/.zshrc", "Reopen terminals"
+        assertThat(cliPathCleanupHint(windows = false)).isEqualTo(
+            "Remove \$HOME/.local/share/sonarqube-cli/bin from PATH in the shell profile the installer updated " +
+                "(~/.bashrc or ~/.bash_profile, ~/.zshrc or ~/.zprofile, or ~/.profile). Reopen terminals."
         )
     }
 

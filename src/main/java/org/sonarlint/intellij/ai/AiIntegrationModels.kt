@@ -147,7 +147,7 @@ sealed interface CliUninstallFeedback {
 }
 
 internal const val CLI_UNINSTALL_FAILED = "Could not uninstall SonarQube CLI. Review the output for details."
-internal const val CLI_UNINSTALL_UNAVAILABLE = "This CLI installation cannot be uninstalled here. Refresh to check its state."
+internal const val CLI_UNINSTALL_UNAVAILABLE = "Only an official per-user CLI installation can be uninstalled."
 internal const val CLI_UNINSTALL_COMPLETED = "SonarQube CLI was removed. Remove its PATH entry manually. Some configuration may remain; review the output."
 
 internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeedback.Finished {
@@ -167,8 +167,17 @@ internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeed
 internal fun cliPathCleanupHint(windows: Boolean = SystemInfo.isWindows): String = if (windows) {
     "Remove %LOCALAPPDATA%\\sonarqube-cli\\bin from your user Path in Environment Variables. Reopen terminals."
 } else {
-    "Remove \$HOME/.local/share/sonarqube-cli/bin from PATH in your shell profile (~/.bashrc or ~/.zshrc). Reopen terminals."
+    // install.sh detect_profile() writes bashrc, then bash_profile, zshrc, then zprofile, else .profile.
+    "Remove \$HOME/.local/share/sonarqube-cli/bin from PATH in the shell profile the installer updated " +
+        "(~/.bashrc or ~/.bash_profile, ~/.zshrc or ~/.zprofile, or ~/.profile). Reopen terminals."
 }
+
+internal fun uninstallUnavailableFeedback() = CliUninstallFeedback.Finished(
+    CLI_UNINSTALL_UNAVAILABLE,
+    "",
+    "",
+    UninstallCliResponse.Status.NOT_AVAILABLE
+)
 
 internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {
     val cause = if (error is CompletionException && error.cause != null) error.cause!! else error

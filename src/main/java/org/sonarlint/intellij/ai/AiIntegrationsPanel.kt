@@ -489,7 +489,9 @@ class AiIntegrationsPanel(
         layout = BoxLayout(this, BoxLayout.X_AXIS)
         alignmentX = Component.LEFT_ALIGNMENT
         maximumSize = Dimension(Int.MAX_VALUE, JBUI.scale(36))
-        add(createSecondaryButton(REFRESH_LABEL, AllIcons.Actions.Refresh))
+        add(createSecondaryButton(REFRESH_LABEL, AllIcons.Actions.Refresh).apply {
+            isEnabled = !isCliUninstallBusy()
+        })
         add(Box.createHorizontalGlue())
     }
 
