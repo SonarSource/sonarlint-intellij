@@ -132,16 +132,12 @@ class AiIntegrationsController @JvmOverloads constructor(
         if (isDisposed() || panel.isCliUninstallBusy() || !confirmingUninstall.compareAndSet(false, true)) {
             return
         }
-        reportUninstall(AiIntegrationActionStatus.STARTED)
         panel.setCliUninstallFeedback(CliUninstallFeedback.Checking)
         try {
             backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
                 runOnUiThread(ModalityState.defaultModalityState()) {
                     when {
-                        isDisposed() -> {
-                            confirmingUninstall.set(false)
-                            reportUninstall(AiIntegrationActionStatus.CANCELLED)
-                        }
+                        isDisposed() -> confirmingUninstall.set(false)
                         error != null -> {
                             confirmingUninstall.set(false)
                             finishUninstall(uninstallFailure(error), releaseLease = false)
@@ -168,9 +164,7 @@ class AiIntegrationsController @JvmOverloads constructor(
             val confirmed = try {
                 confirmUninstall(project)
             } catch (error: Exception) {
-                if (isDisposed()) {
-                    reportUninstall(AiIntegrationActionStatus.CANCELLED)
-                } else {
+                if (!isDisposed()) {
                     finishUninstall(uninstallFailure(error), releaseLease = false)
                 }
                 return
@@ -179,13 +173,12 @@ class AiIntegrationsController @JvmOverloads constructor(
                 if (!isDisposed()) {
                     panel.setCliUninstallFeedback(null)
                 }
-                reportUninstall(AiIntegrationActionStatus.CANCELLED)
                 return
             }
             if (!cliCoordinator.acquire(project)) {
-                reportUninstall(AiIntegrationActionStatus.CANCELLED)
                 return
             }
+            reportUninstall(AiIntegrationActionStatus.STARTED)
             try {
                 panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
                 backendService.uninstallCli().whenComplete { response, error ->
@@ -205,11 +198,13 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     private fun finishUninstall(feedback: CliUninstallFeedback.Finished, releaseLease: Boolean) {
-        reportUninstall(when (feedback.status) {
-            CliUninstallStatus.UNINSTALLED -> AiIntegrationActionStatus.SUCCEEDED
-            CliUninstallStatus.FAILED, CliUninstallStatus.NOT_AVAILABLE -> AiIntegrationActionStatus.FAILED
-            CliUninstallStatus.UNKNOWN -> AiIntegrationActionStatus.UNKNOWN
-        })
+        if (releaseLease) {
+            reportUninstall(when (feedback.status) {
+                CliUninstallStatus.UNINSTALLED -> AiIntegrationActionStatus.SUCCEEDED
+                CliUninstallStatus.FAILED, CliUninstallStatus.NOT_AVAILABLE -> AiIntegrationActionStatus.FAILED
+                CliUninstallStatus.UNKNOWN -> AiIntegrationActionStatus.UNKNOWN
+            })
+        }
         runOnUiThread(ModalityState.defaultModalityState()) {
             try {
                 notifyUninstallResult(feedback)

@@ -93,33 +93,41 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `declining confirmation reports cancellation after it starts`() {
-        confirmation = {
-            assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED)
-            false
-        }
+    fun `declining confirmation emits nothing`() {
+        confirmation = { false }
 
         clickUninstall()
 
-        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.CANCELLED)
+        assertThat(statuses).isEmpty()
         verify(backend, never()).uninstallCli()
         assertThat(coordinator.activeOperation()).isFalse()
     }
 
     @Test
-    fun `confirmation exception reports failure unless the controller was disposed`() {
+    fun `a busy lease emits nothing`() {
+        assertThat(coordinator.acquire(project)).isTrue()
+
+        clickUninstall()
+
+        assertThat(statuses).isEmpty()
+        verify(backend, never()).uninstallCli()
+        assertThat(coordinator.activeOperation()).isTrue()
+        coordinator.release()
+    }
+
+    @Test
+    fun `confirmation exception before the lease emits nothing`() {
         confirmation = { throw IllegalStateException("confirmation unavailable") }
         clickUninstall()
-        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.FAILED)
+        assertThat(statuses).isEmpty()
         verify(backend, never()).uninstallCli()
 
-        statuses.clear()
         confirmation = {
             Disposer.dispose(controller)
             throw IllegalStateException("confirmation unavailable")
         }
         clickUninstall()
-        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.CANCELLED)
+        assertThat(statuses).isEmpty()
         verify(backend, never()).uninstallCli()
     }
 

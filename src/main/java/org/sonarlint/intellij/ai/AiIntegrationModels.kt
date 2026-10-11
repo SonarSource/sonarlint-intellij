@@ -155,7 +155,7 @@ internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeed
         UninstallCliResponse.Status.UNINSTALLED -> CliUninstallStatus.UNINSTALLED
         UninstallCliResponse.Status.FAILED -> CliUninstallStatus.FAILED
         UninstallCliResponse.Status.NOT_AVAILABLE -> CliUninstallStatus.NOT_AVAILABLE
-        null -> return uninstallUnknownFeedback()
+        null -> return uninstallUnknownFeedback(response.stdout.orEmpty(), response.stderr.orEmpty(), response.message)
     }
     val summary = when (status) {
         CliUninstallStatus.UNINSTALLED -> listOfNotNull(
@@ -186,11 +186,16 @@ internal fun uninstallUnavailableFeedback() = CliUninstallFeedback.Finished(
     CliUninstallStatus.NOT_AVAILABLE
 )
 
-internal fun uninstallUnknownFeedback() = CliUninstallFeedback.Finished(
+internal fun uninstallUnknownFeedback(
+    resetOutput: String = "",
+    cleanupWarnings: String = "",
+    backendMessage: String? = null
+) = CliUninstallFeedback.Finished(
     CLI_UNINSTALL_UNKNOWN,
-    "",
-    "",
-    CliUninstallStatus.UNKNOWN
+    resetOutput,
+    cleanupWarnings,
+    CliUninstallStatus.UNKNOWN,
+    backendMessage
 )
 
 internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {
