@@ -22,7 +22,9 @@ package org.sonarlint.intellij.ai
 import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ex.ActionButtonLook
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.impl.ActionButton
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.ActionLink
@@ -273,34 +275,21 @@ class AiIntegrationsPanel(
         }
     }
 
-    private fun createUninstallAction(state: AiIntegrationsPanelState): JButton? {
+    private fun createUninstallAction(state: AiIntegrationsPanelState): ActionButton? {
         val snapshot = when (state) {
             is AiIntegrationsPanelState.Ready -> state.snapshot
             is AiIntegrationsPanelState.Empty -> state.snapshot
             else -> return null
         }
         if (!snapshot.cli.uninstallAvailable) return null
-        return object : JButton(IconUtil.scale(AllIcons.Actions.GC, null, 0.875f)) {
-            override fun paintComponent(graphics: Graphics) {
-                if (isEnabled && model.isRollover) {
-                    ActionButtonLook.SYSTEM_LOOK.paintLookBackground(graphics, Rectangle(size), JBUI.CurrentTheme.ActionButton.hoverBackground())
-                }
-                super.paintComponent(graphics)
-            }
-        }.apply {
+        val action = DumbAwareAction.create(UNINSTALL_CLI_LABEL, IconUtil.scale(AllIcons.Actions.GC, null, 0.875f)) {
+            intentListener(AiIntegrationsIntent.UninstallCli)
+        }
+        return ActionButton(action, null, ActionPlaces.UNKNOWN, JBUI.size(20)).apply {
+            presentation.isEnabled = !isCliUninstallBusy()
             toolTipText = UNINSTALL_CLI_LABEL
             accessibleContext.accessibleName = UNINSTALL_CLI_LABEL
-            isOpaque = false
-            isRolloverEnabled = true
-            isContentAreaFilled = false
-            isBorderPainted = false
-            border = JBUI.Borders.empty()
-            margin = JBUI.emptyInsets()
-            preferredSize = JBUI.size(20)
-            minimumSize = preferredSize
             maximumSize = preferredSize
-            isEnabled = !isCliUninstallBusy()
-            addActionListener { intentListener(AiIntegrationsIntent.UninstallCli) }
         }
     }
 
@@ -429,7 +418,7 @@ class AiIntegrationsPanel(
         headline: String,
         description: JComponent,
         status: CardStatus,
-        headerAction: JButton? = null,
+        headerAction: JComponent? = null,
         content: CardBuilder.() -> Unit
     ): JPanel {
         val body = RoundedSurfacePanel(CARD_BACKGROUND, CARD_BORDER, 16).apply {
@@ -454,7 +443,7 @@ class AiIntegrationsPanel(
         headline: String,
         description: JComponent,
         status: CardStatus,
-        headerAction: JButton?
+        headerAction: JComponent?
     ): JPanel = JBPanel<JBPanel<*>>(BorderLayout(JBUI.scale(12), 0)).apply {
         isOpaque = false
         alignmentX = Component.LEFT_ALIGNMENT

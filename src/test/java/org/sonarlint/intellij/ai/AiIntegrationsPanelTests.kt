@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
@@ -451,20 +452,20 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         panel.setIntentListener { intents += it }
         panel.render(AiIntegrationsPanelState.Ready(official))
 
-        val uninstall = descendants(panel).filterIsInstance<JButton>().single { it.toolTipText == "Uninstall CLI…" }
-        assertThat(uninstall.text).isNullOrEmpty()
+        val uninstall = descendants(panel).filterIsInstance<ActionButton>().single()
         assertThat(uninstall.icon).isNotNull()
         assertThat(uninstall.accessibleContext.accessibleName).isEqualTo("Uninstall CLI…")
-        uninstall.doClick()
+        uninstall.click()
         assertThat(intents).containsExactly(AiIntegrationsIntent.UninstallCli)
 
         panel.render(AiIntegrationsPanelState.Ready(official.copy(cli = official.cli.copy(uninstallAvailable = false))))
-        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).doesNotContain("Uninstall CLI…")
+        assertThat(descendants(panel).filterIsInstance<ActionButton>()).isEmpty()
 
         panel.render(AiIntegrationsPanelState.Empty(official.copy(
             cli = official.cli.copy(authentication = CliAuthenticationStatus.UNAUTHENTICATED)
         )))
-        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).contains("Uninstall CLI…", "Sign in")
+        assertThat(descendants(panel).filterIsInstance<ActionButton>().single().presentation.text).isEqualTo("Uninstall CLI…")
+        assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).contains("Sign in")
     }
 
     @Test
@@ -482,7 +483,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         assertThat(descendants(panel).filterIsInstance<JButton>().single { it.text == "Refresh" }.isEnabled).isFalse()
         panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
 
-        val uninstall = descendants(panel).filterIsInstance<JButton>().single { it.toolTipText == "Uninstall CLI…" }
+        val uninstall = descendants(panel).filterIsInstance<ActionButton>().single()
         assertThat(uninstall.isEnabled).isFalse()
         assertThat(descendants(panel).filterIsInstance<JButton>().single { it.text == "Refresh" }.isEnabled).isFalse()
         assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains("Uninstalling SonarQube CLI…")

@@ -22,6 +22,8 @@ package org.sonarlint.intellij.ai
 import java.util.concurrent.CompletionException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
@@ -132,14 +134,16 @@ class AiIntegrationModelsTests {
         assertThat(failure.cleanupWarnings).isEmpty()
         assertThat(failure.backendMessage).isEqualTo("connection lost")
 
-        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "reset failed", "SonarQube CLI reset failed.")).summary)
-            .isEqualTo("SonarQube CLI reset failed.")
-        assertThat(uninstallFeedback(UninstallCliResponse(
-            UninstallCliResponse.Status.FAILED, "", "", "Could not delete the SonarQube CLI installation folder."
-        )).summary).isEqualTo("Could not delete the SonarQube CLI installation folder.")
         assertThat(uninstallFeedback(UninstallCliResponse(
             UninstallCliResponse.Status.NOT_AVAILABLE, "", "", "Only an official per-user CLI installation can be uninstalled."
         )).summary).contains("official per-user")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["SonarQube CLI reset failed.", "Could not delete the SonarQube CLI installation folder."])
+    fun `preserves the backend failure message`(message: String) {
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "", message)).summary)
+            .isEqualTo(message)
     }
 
     @Test
