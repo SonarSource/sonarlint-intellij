@@ -295,30 +295,19 @@ class AiIntegrationsPanel(
 
     private fun mcpStatus(snapshot: AiIntegrationSnapshot): CardStatus {
         val configurations = snapshot.mcpConfigurations.values
-        val needsAttention = configurations.any {
-            it.state == McpConfigurationState.UNKNOWN || it.state == McpConfigurationState.MALFORMED
+        if (configurations.isEmpty()) {
+            return CardStatus("No agents with MCP configuration files", StatusTone.NEUTRAL)
         }
-        return CardStatus("IDE setup: ${configurations.size}", if (needsAttention) StatusTone.WARNING else StatusTone.NEUTRAL)
+        val configuredCount = configurations.count {
+            it.state == McpConfigurationState.STANDALONE || it.state == McpConfigurationState.CLI_MANAGED
+        }
+        return CardStatus("$configuredCount configured", if (configuredCount == configurations.size) StatusTone.SUCCESS else StatusTone.NEUTRAL)
     }
 
     private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
-        addMcpSummary(snapshot)
+        addMetadata(listOf(agentCountText(snapshot.agents.size)))
         addAgentDetails(mcpDetailsExpanded, { mcpDetailsExpanded = it }) {
             addMcpAgentRows(snapshot)
-        }
-    }
-
-    private fun CardBuilder.addMcpSummary(snapshot: AiIntegrationSnapshot) {
-        val configurations = snapshot.mcpConfigurations.values
-        addMetadata(listOf(agentCountText(snapshot.agents.size)))
-        if (configurations.isNotEmpty()) {
-            val configuredCount = configurations.count {
-                it.state == McpConfigurationState.STANDALONE || it.state == McpConfigurationState.CLI_MANAGED
-            }
-            val attentionCount = configurations.count {
-                it.state == McpConfigurationState.UNKNOWN || it.state == McpConfigurationState.MALFORMED
-            }
-            addMetadata(listOf(mcpSummary(configuredCount, configurations.size, attentionCount)))
         }
     }
 
@@ -341,7 +330,7 @@ class AiIntegrationsPanel(
         } else {
             emptyList()
         }
-        addAgentRow(registry.displayName(capability.agent), status, actions = actions)
+        addAgentRow(registry.displayName(capability.agent), CardStatus(status, StatusTone.NEUTRAL), actions = actions)
     }
 
     private fun CardBuilder.addMcpConfigurationRow(configuration: McpAgentConfiguration) {
@@ -353,14 +342,15 @@ class AiIntegrationsPanel(
             McpConfigurationState.CLI_MANAGED,
             McpConfigurationState.UNKNOWN,
             McpConfigurationState.MALFORMED -> listOf(
-                RowAction("Open", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
+                RowAction("Open configuration", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
             )
         }
         addAgentRow(
             registry.displayName(configuration.agent),
-            configuration.displayText(),
+            configuration.toStatus(),
             diagnostic = configuration.diagnostics.takeIf { configuration.state != McpConfigurationState.CLI_MANAGED && it.isNotEmpty() }?.joinToString(" • "),
-            actions = actions
+            actions = actions,
+            statusTooltip = configuration.path.toString()
         )
     }
 
@@ -461,7 +451,7 @@ class AiIntegrationsPanel(
                 }
                 addAgentRow(
                     registry.displayName(capability.agent),
-                    if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS,
+                    CardStatus(if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS, StatusTone.NEUTRAL),
                     integration,
                     actions = rowActions(capability),
                     guidance = rowGuidance(capability)
@@ -593,7 +583,7 @@ class AiIntegrationsPanel(
             panel.add(createLinkButton(label, url))
         }
 
-        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null, diagnostic: String? = null, actions: List<RowAction> = emptyList(), guidance: String? = null) {
+        fun addAgentRow(name: String, status: CardStatus, integration: AgentCliIntegration? = null, diagnostic: String? = null, actions: List<RowAction> = emptyList(), guidance: String? = null, statusTooltip: String? = null) {
             val row = NaturalHeightPanel().apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
                 isOpaque = false
@@ -609,8 +599,9 @@ class AiIntegrationsPanel(
                 })
                 if (guidance == null) {
                     add(verticalSpace(3))
-                    add(statusLabel(integration?.recordingStatus?.toStatus() ?: CardStatus(status, StatusTone.NEUTRAL)).apply {
+                    add(statusLabel(integration?.recordingStatus?.toStatus() ?: status).apply {
                         alignmentX = Component.LEFT_ALIGNMENT
+                        toolTipText = statusTooltip
                     })
                 }
                 diagnostic?.let { add(bodyText(it)) }
@@ -845,18 +836,12 @@ private fun disclosureLabel(expanded: Boolean, label: String): String = "${if (e
 
 private fun agentCountText(count: Int): String = "$count ${if (count == 1) "agent" else "agents"} detected"
 
-private fun mcpSummary(configuredCount: Int, totalCount: Int, attentionCount: Int): String = when {
-    attentionCount > 0 -> "$attentionCount ${if (attentionCount == 1) "configuration needs" else "configurations need"} attention."
-    configuredCount > 0 -> "MCP configured for $configuredCount of $totalCount ${if (totalCount == 1) "agent" else "agents"} with IDE setup."
-    else -> "MCP setup is available for $totalCount ${if (totalCount == 1) "agent" else "agents"} in this IDE."
-}
-
-private fun McpAgentConfiguration.displayText(): String = when (state) {
-    McpConfigurationState.NOT_CONFIGURED -> "Not configured"
-    McpConfigurationState.STANDALONE -> "Configured"
-    McpConfigurationState.CLI_MANAGED -> "Managed by CLI"
-    McpConfigurationState.UNKNOWN -> "Status unknown"
-    McpConfigurationState.MALFORMED -> "Invalid configuration"
+private fun McpAgentConfiguration.toStatus(): CardStatus = when (state) {
+    McpConfigurationState.NOT_CONFIGURED -> CardStatus("Not configured", StatusTone.NEUTRAL)
+    McpConfigurationState.STANDALONE,
+    McpConfigurationState.CLI_MANAGED -> CardStatus("Configured", StatusTone.SUCCESS)
+    McpConfigurationState.UNKNOWN,
+    McpConfigurationState.MALFORMED -> CardStatus(NEEDS_ATTENTION, StatusTone.NEUTRAL)
 }
 
 private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBTextArea(text).apply {

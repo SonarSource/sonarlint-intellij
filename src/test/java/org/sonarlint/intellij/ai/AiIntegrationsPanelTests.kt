@@ -70,16 +70,16 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         )
         val states = listOf(
             AiIntegrationsPanelState.Loading to listOf("Checking", "Checking"),
-            AiIntegrationsPanelState.Ready(readySnapshot) to listOf("Installed", "IDE setup: 1"),
+            AiIntegrationsPanelState.Ready(readySnapshot) to listOf("Installed", "0 configured"),
             AiIntegrationsPanelState.Error("failed") to listOf("Needs attention", "Needs attention"),
-            AiIntegrationsPanelState.Ready(emptySnapshot) to listOf("Installed", "IDE setup: 0")
+            AiIntegrationsPanelState.Ready(emptySnapshot) to listOf("Installed", "No agents with MCP configuration files")
         )
 
         states.forEach { (state, expectedStatuses) ->
             panel.render(state)
             val statusLabels = descendants(panel).filterIsInstance<JBLabel>()
                 .map { it.text }
-                .filter { it in setOf("Checking", "Installed", "Needs attention") || it.startsWith("IDE setup: ") }
+                .filter { it in setOf("Checking", "Installed", "Needs attention", "0 configured", "No agents with MCP configuration files") }
             assertThat(statusLabels).containsExactlyElementsOf(expectedStatuses)
         }
     }
@@ -466,7 +466,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             it.copy(standaloneMcpSupported = false)
         })))
         val updatedMcpCard = descendants(panel).filterIsInstance<JToggleButton>()[1].parent.parent as Container
-        assertThat(labelTexts(updatedMcpCard)).contains("IDE setup: 0").containsSubsequence(
+        assertThat(labelTexts(updatedMcpCard)).contains("No agents with MCP configuration files").containsSubsequence(
             "GitHub Copilot", "IDE setup unavailable", "Junie", "IDE setup unavailable", "JetBrains AI Assistant", "IDE setup unavailable"
         ).doesNotContain("Supported")
     }
@@ -553,14 +553,12 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     @Test
     fun `reveals compact MCP actions and inline diagnostics for standalone agents`() {
         val panel = AiIntegrationsPanel()
-        panel.render(AiIntegrationsPanelState.Error("failed"))
-        val warningColor = descendants(panel).filterIsInstance<JBLabel>().first { it.text == "Needs attention" }.foreground
         val path = java.nio.file.Path.of("/tmp/mcp.json")
         val configurations = listOf(
             McpAgentConfiguration(AiAgent.CURSOR, path, McpConfigurationState.NOT_CONFIGURED, emptyList()),
             McpAgentConfiguration(AiAgent.GITHUB_COPILOT, path, McpConfigurationState.STANDALONE, emptyList()),
             McpAgentConfiguration(AiAgent.CLAUDE_CODE, path, McpConfigurationState.STANDALONE, emptyList()),
-            McpAgentConfiguration(AiAgent.KIRO, path, McpConfigurationState.CLI_MANAGED, emptyList()),
+            McpAgentConfiguration(AiAgent.KIRO, path, McpConfigurationState.CLI_MANAGED, listOf("CLI manages this file")),
             McpAgentConfiguration(AiAgent.CODEX, path, McpConfigurationState.UNKNOWN, listOf("inspect manually")),
             McpAgentConfiguration(AiAgent.WINDSURF, path, McpConfigurationState.MALFORMED, listOf("invalid json"))
         ).associateBy { it.agent }
@@ -577,10 +575,11 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         panel.setIntentListener { lastIntent = it }
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
 
-        val status = descendants(panel).filterIsInstance<JBLabel>().single { it.text == "IDE setup: 6" }
-        assertThat(status.foreground).isEqualTo(warningColor)
-        assertThat(labelTexts(panel)).contains("2 configurations need attention.")
-        assertThat(labelTexts(panel)).doesNotContain("Not configured", "Invalid configuration")
+        panel.setSize(AiIntegrationsPanel.WIDE_LAYOUT_THRESHOLD + 200, 1000)
+        panel.dispatchEvent(ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED))
+        val status = descendants(panel).filterIsInstance<JBLabel>().single { it.text == "3 configured" }
+        assertThat(status.icon).isNull()
+        assertThat(labelTexts(panel)).doesNotContain("Not configured", "Needs attention")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text })
             .doesNotContain("Set up an agent…", "Set up Cursor", "Set up")
         val disclosure = descendants(panel).filterIsInstance<JToggleButton>().last()
@@ -596,19 +595,41 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
                 else -> ""
             }
         }
-        assertThat(buttonLabels).contains("Set up", "Open")
+        assertThat(buttonLabels).contains("Set up", "Open configuration")
             .doesNotContain("Replace…", "Integrate with CLI", "CLI", "Use CLI")
-        assertThat(text).contains("Configured", "Managed by CLI", "Status unknown", "Invalid configuration", "inspect manually", "invalid json")
-            .doesNotContain("Connection not verified", "Configured externally", "Available through CLI")
+        assertThat(text).contains("Configured", "Needs attention", "inspect manually", "invalid json")
+            .doesNotContain("Connection not verified", "Configured externally", "Available through CLI", "CLI manages this file")
+        val mcpCard = disclosure.parent.parent as Container
+        val statuses = descendants(mcpCard).filterIsInstance<JBLabel>()
+            .filter { it.text in setOf("Not configured", "Configured", "Needs attention") }
+        assertThat(statuses.map { it.text }).containsExactly("Not configured", "Configured", "Configured", "Configured", "Needs attention", "Needs attention")
+        assertThat(statuses.map { it.toolTipText }).containsOnly(path.toString())
+        val successColor = descendants(panel).filterIsInstance<JBLabel>().single { it.text == "Installed" }.foreground
+        repeat(2) { layoutRecursively(panel) }
+        statuses.forEach {
+            val name = it.parent.components.filterIsInstance<JBLabel>().first()
+            val namePosition = SwingUtilities.convertPoint(name, 0, 0, mcpCard)
+            val statusPosition = SwingUtilities.convertPoint(it, 0, 0, mcpCard)
+            assertThat(statusPosition.x).isEqualTo(namePosition.x)
+            assertThat(statusPosition.y).isGreaterThan(namePosition.y)
+            val action = descendants(it.parent.parent).filterIsInstance<JButton>().single()
+            assertThat(SwingUtilities.convertPoint(action, 0, 0, mcpCard).x).isGreaterThan(statusPosition.x)
+            if (it.text == "Configured") {
+                assertThat(it.icon).isEqualTo(AllIcons.General.InspectionsOK)
+                assertThat(it.foreground).isEqualTo(successColor)
+            } else {
+                assertThat(it.icon).isNull()
+            }
+        }
 
         descendants(panel).filterIsInstance<JButton>().first { it.text == "Set up" }.doClick()
         assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.SetUpMcp(AiAgent.CURSOR))
-        descendants(panel).filterIsInstance<JButton>().first { it.text == "Open" }.doClick()
+        descendants(panel).filterIsInstance<JButton>().first { it.text == "Open configuration" }.doClick()
         assertThat(lastIntent).isEqualTo(AiIntegrationsIntent.OpenMcpConfiguration(AiAgent.GITHUB_COPILOT))
 
         disclosure.doClick()
         assertThat(disclosure.isSelected).isFalse()
-        assertThat(labelTexts(panel)).doesNotContain("Invalid configuration")
+        assertThat(labelTexts(panel)).doesNotContain("Needs attention")
     }
 
     @Test
@@ -633,8 +654,9 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         var lastIntent: AiIntegrationsIntent? = null
         panel.setIntentListener { lastIntent = it }
         panel.render(AiIntegrationsPanelState.Ready(snapshot))
-        assertThat(labelTexts(panel)).contains("5 agents detected", "IDE setup: 2", "MCP configured for 2 of 2 agents with IDE setup.")
-            .doesNotContain("MCP is configured for all 2 detected agents.")
+        assertThat(labelTexts(panel)).contains("5 agents detected", "2 configured")
+        assertThat(descendants(panel).filterIsInstance<JBLabel>().single { it.text == "2 configured" }.icon)
+            .isEqualTo(AllIcons.General.InspectionsOK)
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).doesNotContain("Set up an agent…")
         descendants(panel).filterIsInstance<JToggleButton>().last().doClick()
         val mcpCard = descendants(panel).filterIsInstance<JToggleButton>().last().parent.parent as Container
@@ -650,7 +672,8 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             configured.agent to configured.copy(state = McpConfigurationState.NOT_CONFIGURED),
             claude.agent to claude
         ))))
-        assertThat(labelTexts(panel)).contains("MCP configured for 1 of 2 agents with IDE setup.")
+        assertThat(labelTexts(panel)).contains("1 configured")
+        assertThat(descendants(panel).filterIsInstance<JBLabel>().single { it.text == "1 configured" }.icon).isNull()
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text })
             .contains("Set up").doesNotContain("Set up Cursor", "Set up an agent…")
 
@@ -659,7 +682,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             agents = snapshot.agents.filter { it.agent in cliAgents },
             mcpConfigurations = emptyMap()
         )))
-        assertThat(labelTexts(panel)).contains("IDE setup: 0", "Codex", "GitHub Copilot CLI", "Antigravity")
+        assertThat(labelTexts(panel)).contains("No agents with MCP configuration files", "Codex", "GitHub Copilot CLI", "Antigravity")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.text }).doesNotContain("Set up via CLI")
     }
 

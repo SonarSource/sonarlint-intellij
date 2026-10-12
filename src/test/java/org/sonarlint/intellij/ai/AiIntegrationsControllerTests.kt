@@ -189,7 +189,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         first.complete(snapshot(bothJetBrainsAgents.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
         descendants(panel).filterIsInstance<JToggleButton>().forEach { it.doClick() }
-        assertThat(labels(panel)).contains("3 agents detected", "IDE setup: 1")
+        assertThat(labels(panel)).contains("3 agents detected", "0 configured")
             .containsSubsequence("GitHub Copilot", "Junie", "JetBrains AI Assistant")
 
         enabledPluginIds = setOf("com.intellij.ml.llm")
@@ -197,7 +197,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, onlyAiAssistant)
         second.complete(snapshot(onlyAiAssistant.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 agent detected", "IDE setup: 0", "JetBrains AI Assistant")
+        assertThat(labels(panel)).contains("1 agent detected", "No agents with MCP configuration files", "JetBrains AI Assistant")
             .doesNotContain("GitHub Copilot", "Junie")
 
         enabledPluginIds = emptySet()
@@ -205,7 +205,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, emptyList())
         third.complete(snapshot(emptyList()))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("0 agents detected", "IDE setup: 0")
+        assertThat(labels(panel)).contains("0 agents detected", "No agents with MCP configuration files")
             .doesNotContain("GitHub Copilot", "Junie", "JetBrains AI Assistant")
     }
 
