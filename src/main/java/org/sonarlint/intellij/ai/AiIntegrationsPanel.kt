@@ -65,7 +65,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
@@ -337,7 +336,7 @@ class AiIntegrationsPanel(
             CliUninstallFeedback.InProgress -> addMessage(UNINSTALLING_CLI_MESSAGE)
             is CliUninstallFeedback.Finished -> {
                 addMessage(feedback.summary)
-                if (feedback.status == UninstallCliResponse.Status.FAILED) {
+                if (feedback.status == CliUninstallStatus.FAILED) {
                     panel.add(ActionLink("Show details") { showCliUninstallDetails(feedback) }.apply {
                         alignmentX = Component.LEFT_ALIGNMENT
                     })

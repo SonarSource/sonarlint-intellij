@@ -127,7 +127,20 @@ class AiIntegrationModelsTests {
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.NOT_AVAILABLE, "", "", null)).summary)
             .isEqualTo("Only an official per-user CLI installation can be uninstalled.")
         assertThat(uninstallUnavailableFeedback().summary).isEqualTo(CLI_UNINSTALL_UNAVAILABLE)
-        assertThat(uninstallUnavailableFeedback().status).isEqualTo(UninstallCliResponse.Status.NOT_AVAILABLE)
+        assertThat(uninstallUnavailableFeedback().status).isEqualTo(CliUninstallStatus.NOT_AVAILABLE)
+        assertThat(uninstallUnknownFeedback().status).isEqualTo(CliUninstallStatus.UNKNOWN)
+        assertThat(uninstallUnknownFeedback().summary).isEqualTo(CLI_UNINSTALL_UNKNOWN).doesNotContain("Could not uninstall")
+        val missingStatusResponse = mock(UninstallCliResponse::class.java)
+        `when`(missingStatusResponse.status).thenReturn(null)
+        `when`(missingStatusResponse.stdout).thenReturn("reset output")
+        `when`(missingStatusResponse.stderr).thenReturn("reset stderr")
+        `when`(missingStatusResponse.message).thenReturn("backend diagnostic")
+        val missingStatus = uninstallFeedback(missingStatusResponse)
+        assertThat(missingStatus.status).isEqualTo(CliUninstallStatus.UNKNOWN)
+        assertThat(missingStatus.summary).isEqualTo(CLI_UNINSTALL_UNKNOWN).doesNotContain("Could not uninstall")
+        assertThat(missingStatus.resetOutput).isEqualTo("reset output")
+        assertThat(missingStatus.cleanupWarnings).isEqualTo("reset stderr")
+        assertThat(missingStatus.backendMessage).isEqualTo("backend diagnostic")
         val failure = uninstallFailure(CompletionException(IllegalStateException("connection lost")))
         assertThat(failure.summary).isEqualTo(CLI_UNINSTALL_FAILED)
         assertThat(failure.cleanupWarnings).isEmpty()
@@ -143,6 +156,22 @@ class AiIntegrationModelsTests {
     fun `preserves the backend failure message`(message: String) {
         assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "", message)).summary)
             .isEqualTo(message)
+    }
+
+    @Test
+    fun `known statuses keep empty diagnostics when reset output is null`() {
+        val response = mock(UninstallCliResponse::class.java)
+        `when`(response.status).thenReturn(UninstallCliResponse.Status.FAILED)
+        `when`(response.stdout).thenReturn(null)
+        `when`(response.stderr).thenReturn(null)
+        `when`(response.message).thenReturn("SonarQube CLI reset failed.")
+
+        val feedback = uninstallFeedback(response)
+
+        assertThat(feedback.status).isEqualTo(CliUninstallStatus.FAILED)
+        assertThat(feedback.summary).isEqualTo("SonarQube CLI reset failed.")
+        assertThat(feedback.resetOutput).isEmpty()
+        assertThat(feedback.cleanupWarnings).isEmpty()
     }
 
     @Test

@@ -126,6 +126,13 @@ sealed interface AiIntegrationsIntent {
     data object UninstallCli : AiIntegrationsIntent
 }
 
+enum class CliUninstallStatus {
+    UNINSTALLED,
+    FAILED,
+    NOT_AVAILABLE,
+    UNKNOWN,
+}
+
 sealed interface CliUninstallFeedback {
     data object Checking : CliUninstallFeedback
     data object InProgress : CliUninstallFeedback
@@ -133,27 +140,37 @@ sealed interface CliUninstallFeedback {
         val summary: String,
         val resetOutput: String,
         val cleanupWarnings: String,
-        val status: UninstallCliResponse.Status = UninstallCliResponse.Status.FAILED,
+        val status: CliUninstallStatus = CliUninstallStatus.FAILED,
         val backendMessage: String? = null
     ) : CliUninstallFeedback
 }
 
 internal const val CLI_UNINSTALL_FAILED = "Could not uninstall SonarQube CLI. Review the output for details."
 internal const val CLI_UNINSTALL_UNAVAILABLE = "Only an official per-user CLI installation can be uninstalled."
+internal const val CLI_UNINSTALL_UNKNOWN = "The SonarQube CLI uninstall result could not be determined."
 internal const val CLI_UNINSTALL_COMPLETED = "SonarQube CLI was removed. Remove its PATH entry manually. Some configuration may remain; review the output."
 
 internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeedback.Finished {
-    val summary = when (response.status) {
-        UninstallCliResponse.Status.UNINSTALLED -> listOfNotNull(
+    val stdout = response.stdout.orEmpty()
+    val stderr = response.stderr.orEmpty()
+    val status = when (response.status) {
+        UninstallCliResponse.Status.UNINSTALLED -> CliUninstallStatus.UNINSTALLED
+        UninstallCliResponse.Status.FAILED -> CliUninstallStatus.FAILED
+        UninstallCliResponse.Status.NOT_AVAILABLE -> CliUninstallStatus.NOT_AVAILABLE
+        null -> return uninstallUnknownFeedback(stdout, stderr, response.message)
+    }
+    val summary = when (status) {
+        CliUninstallStatus.UNINSTALLED -> listOfNotNull(
             CLI_UNINSTALL_COMPLETED,
             cliPathCleanupHint()
         ).joinToString("\n\n")
-        UninstallCliResponse.Status.FAILED -> response.message?.takeIf { it.isNotBlank() }
+        CliUninstallStatus.FAILED -> response.message?.takeIf { it.isNotBlank() }
             ?: CLI_UNINSTALL_FAILED
-        UninstallCliResponse.Status.NOT_AVAILABLE -> response.message?.takeIf { it.isNotBlank() }
+        CliUninstallStatus.NOT_AVAILABLE -> response.message?.takeIf { it.isNotBlank() }
             ?: CLI_UNINSTALL_UNAVAILABLE
+        CliUninstallStatus.UNKNOWN -> CLI_UNINSTALL_UNKNOWN
     }
-    return CliUninstallFeedback.Finished(summary, response.stdout, response.stderr, response.status, response.message)
+    return CliUninstallFeedback.Finished(summary, stdout, stderr, status, response.message)
 }
 
 internal fun cliPathCleanupHint(windows: Boolean = SystemInfo.isWindows): String = if (windows) {
@@ -168,7 +185,19 @@ internal fun uninstallUnavailableFeedback() = CliUninstallFeedback.Finished(
     CLI_UNINSTALL_UNAVAILABLE,
     "",
     "",
-    UninstallCliResponse.Status.NOT_AVAILABLE
+    CliUninstallStatus.NOT_AVAILABLE
+)
+
+internal fun uninstallUnknownFeedback(
+    resetOutput: String = "",
+    cleanupWarnings: String = "",
+    backendMessage: String? = null
+) = CliUninstallFeedback.Finished(
+    CLI_UNINSTALL_UNKNOWN,
+    resetOutput,
+    cleanupWarnings,
+    CliUninstallStatus.UNKNOWN,
+    backendMessage
 )
 
 internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {
