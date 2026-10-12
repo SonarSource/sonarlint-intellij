@@ -337,7 +337,6 @@ class AiIntegrationsPanel(
             CliUninstallFeedback.InProgress -> addMessage(UNINSTALLING_CLI_MESSAGE)
             is CliUninstallFeedback.Finished -> {
                 addMessage(feedback.summary)
-                feedback.tokenRevocationWarning?.let { addMessage(it) }
                 if (feedback.status == UninstallCliResponse.Status.FAILED) {
                     panel.add(ActionLink("Show details") { showCliUninstallDetails(feedback) }.apply {
                         alignmentX = Component.LEFT_ALIGNMENT

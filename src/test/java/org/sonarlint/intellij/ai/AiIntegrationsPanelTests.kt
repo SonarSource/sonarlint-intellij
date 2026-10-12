@@ -469,7 +469,7 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `shows uninstall progress then concise guidance and a token revocation warning`() {
+    fun `shows uninstall progress then concise guidance`() {
         val panel = AiIntegrationsPanel()
         val snapshot = AiIntegrationSnapshot(
             CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null, uninstallAvailable = true),
@@ -492,22 +492,15 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
         val feedback = uninstallFeedback(UninstallCliResponse(
             UninstallCliResponse.Status.UNINSTALLED,
             "Reset complete",
-            "The token could not be revoked automatically.",
+            "cleanup warning",
             null
         ))
         panel.setCliUninstallFeedback(feedback)
-        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).contains(
-            feedback.summary,
-            "Some server tokens could not be revoked automatically. Revoke them manually in SonarQube."
-        ).doesNotContain(feedback.resetOutput, feedback.cleanupWarnings)
+        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text })
+            .contains(feedback.summary).doesNotContain(feedback.resetOutput, feedback.cleanupWarnings)
         assertThat(labelTexts(panel)).doesNotContain("Reset output", "Reset errors and warnings")
         assertThat(descendants(panel).filterIsInstance<JButton>().map { it.toolTipText ?: it.text }).contains("Integrate")
         assertThat(descendants(panel).filterIsInstance<JButton>().single { it.text == "Refresh" }.isEnabled).isTrue()
-
-        panel.setCliUninstallFeedback(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", "", null)))
-        assertThat(descendants(panel).filterIsInstance<JBTextArea>().map { it.text }).doesNotContain(
-            "Some server tokens could not be revoked automatically. Revoke them manually in SonarQube.", "Reset complete"
-        )
     }
 
     @Test
