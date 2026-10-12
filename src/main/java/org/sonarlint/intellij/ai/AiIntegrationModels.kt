@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.openapi.util.SystemInfo
+import java.util.concurrent.CompletionException
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
@@ -26,13 +28,15 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationSta
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 data class CliState(
     val installation: CliInstallationStatus,
     val authentication: CliAuthenticationStatus,
     val version: String?,
     val serverUrl: String?,
-    val organization: String?
+    val organization: String?,
+    val uninstallAvailable: Boolean = false
 )
 
 data class AgentCapability(
@@ -77,7 +81,14 @@ data class CliCommand(
 internal fun toAiIntegrationSnapshot(response: GetAiIntegrationStateResponse): AiIntegrationSnapshot {
     val cli = response.cli
     return AiIntegrationSnapshot(
-        CliState(cli.installationStatus, cli.authenticationStatus, cli.version, cli.serverUrl, cli.organization),
+        CliState(
+            cli.installationStatus,
+            cli.authenticationStatus,
+            cli.version,
+            cli.serverUrl,
+            cli.organization,
+            cli.isUninstallAvailable
+        ),
         response.agents.map { capability ->
             AgentCapability(
                 capability.agent,
@@ -112,4 +123,60 @@ sealed interface AiIntegrationsIntent {
     data object InstallCli : AiIntegrationsIntent
     data object AuthenticateCli : AiIntegrationsIntent
     data class IntegrateCli(val agent: AiAgent) : AiIntegrationsIntent
+    data object UninstallCli : AiIntegrationsIntent
+}
+
+sealed interface CliUninstallFeedback {
+    data object Checking : CliUninstallFeedback
+    data object InProgress : CliUninstallFeedback
+    data class Finished(
+        val summary: String,
+        val resetOutput: String,
+        val cleanupWarnings: String,
+        val status: UninstallCliResponse.Status = UninstallCliResponse.Status.FAILED,
+        val backendMessage: String? = null
+    ) : CliUninstallFeedback
+}
+
+internal const val CLI_UNINSTALL_FAILED = "Could not uninstall SonarQube CLI. Review the output for details."
+internal const val CLI_UNINSTALL_UNAVAILABLE = "Only an official per-user CLI installation can be uninstalled."
+internal const val CLI_UNINSTALL_COMPLETED = "SonarQube CLI was removed. Remove its PATH entry manually. Some configuration may remain; review the output."
+
+internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeedback.Finished {
+    val summary = when (response.status) {
+        UninstallCliResponse.Status.UNINSTALLED -> listOfNotNull(
+            CLI_UNINSTALL_COMPLETED,
+            cliPathCleanupHint()
+        ).joinToString("\n\n")
+        UninstallCliResponse.Status.FAILED -> response.message?.takeIf { it.isNotBlank() }
+            ?: CLI_UNINSTALL_FAILED
+        UninstallCliResponse.Status.NOT_AVAILABLE -> response.message?.takeIf { it.isNotBlank() }
+            ?: CLI_UNINSTALL_UNAVAILABLE
+    }
+    return CliUninstallFeedback.Finished(summary, response.stdout, response.stderr, response.status, response.message)
+}
+
+internal fun cliPathCleanupHint(windows: Boolean = SystemInfo.isWindows): String = if (windows) {
+    "Remove %LOCALAPPDATA%\\sonarqube-cli\\bin from your user Path in Environment Variables. Reopen terminals."
+} else {
+    // install.sh detect_profile() writes bashrc, then bash_profile, zshrc, then zprofile, else .profile.
+    "Remove \$HOME/.local/share/sonarqube-cli/bin from PATH in the shell profile the installer updated " +
+        "(~/.bashrc or ~/.bash_profile, ~/.zshrc or ~/.zprofile, or ~/.profile). Reopen terminals."
+}
+
+internal fun uninstallUnavailableFeedback() = CliUninstallFeedback.Finished(
+    CLI_UNINSTALL_UNAVAILABLE,
+    "",
+    "",
+    UninstallCliResponse.Status.NOT_AVAILABLE
+)
+
+internal fun uninstallFailure(error: Throwable): CliUninstallFeedback.Finished {
+    val cause = if (error is CompletionException && error.cause != null) error.cause!! else error
+    return CliUninstallFeedback.Finished(
+        CLI_UNINSTALL_FAILED,
+        "",
+        "",
+        backendMessage = cause.message?.takeIf { it.isNotBlank() }
+    )
 }

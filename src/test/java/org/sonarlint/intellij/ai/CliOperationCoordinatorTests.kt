@@ -42,6 +42,7 @@ import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore
 import org.sonarlint.intellij.core.BackendService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
@@ -280,6 +281,25 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.AuthenticationFailed)
         assertThat(notifications.single().message).contains("Retry").doesNotContain("unsafe exception details")
         verifyNoInteractions(terminal)
+    }
+
+    @Test
+    fun `a released uninstall lease refreshes without notifying or recording an outcome`() {
+        val backend = mock<BackendService>()
+        val notifications = mutableListOf<Notification>()
+        var refreshes = 0
+        val coordinator = coordinator(backend, mock(), notifications = notifications, refresh = { refreshes++ })
+
+        assertThat(coordinator.acquire(project)).isTrue()
+        assertThat(coordinator.acquire(project)).isFalse()
+        coordinator.release()
+
+        assertThat(coordinator.activeOperation()).isFalse()
+        assertThat(coordinator.lastOutcome()).isNull()
+        assertThat(notifications).isEmpty()
+        assertThat(refreshes).isEqualTo(1)
+        verifyNoInteractions(backend)
+        assertThat(coordinator.acquire(project)).isTrue()
     }
 
     @Test

@@ -61,24 +61,26 @@ class CliOperationCoordinator @JvmOverloads constructor(
     private val active = AtomicReference<OperationLease?>()
     private val lastOutcome = AtomicReference<CliOperationOutcome?>()
     fun execute(project: Project, snapshot: AiIntegrationSnapshot, intent: AiIntegrationsIntent): Boolean {
-        if (project.isDisposed) {
+        if (project.isDisposed || intent is AiIntegrationsIntent.UninstallCli) {
             return false
         }
-        val lease = OperationLease(project) { releaseOperation(it, CliOperationOutcome.Cancelled) }
-        if (!active.compareAndSet(null, lease)) {
-            active.get()?.terminalSession?.focus?.invoke()
+        if (!acquire(project)) {
             return false
         }
+        val lease = active.get() ?: return false
+        Disposer.register(project, lease)
         try {
-            Disposer.register(project, lease)
             when (intent) {
-                AiIntegrationsIntent.InstallCli -> prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
-                AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot)) {
-                    ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
-                    ConnectionSelection.InteractiveLogin -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
-                    is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)
-                }
-                is AiIntegrationsIntent.IntegrateCli -> prepareAndLaunch(lease, backendService.prepareIntegrateCliCommand(intent.agent))
+                AiIntegrationsIntent.InstallCli ->
+                    prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
+                AiIntegrationsIntent.AuthenticateCli ->
+                    when (val selection = connectionSelector.select(project, snapshot)) {
+                        ConnectionSelection.Cancelled -> throw CancellationException("CLI sign-in cancelled")
+                        ConnectionSelection.InteractiveLogin -> prepareAndLaunch(lease, backendService.prepareAuthenticateCliCommand(null))
+                        is ConnectionSelection.Selected -> authenticateWithConnection(lease, selection.connectionId)
+                    }
+                is AiIntegrationsIntent.IntegrateCli ->
+                    prepareAndLaunch(lease, backendService.prepareIntegrateCliCommand(intent.agent))
             }
         } catch (_: CancellationException) {
             releaseAndNotify(lease, CliOperationOutcome.Cancelled,
@@ -181,6 +183,25 @@ class CliOperationCoordinator @JvmOverloads constructor(
             CompletableFuture.failedFuture(error)
         }
         prepareAndLaunch(lease, preparation)
+    }
+
+    internal fun acquire(project: Project): Boolean {
+        if (project.isDisposed) {
+            return false
+        }
+        val lease = OperationLease(project) { releaseOperation(it, CliOperationOutcome.Cancelled) }
+        if (!active.compareAndSet(null, lease)) {
+            active.get()?.terminalSession?.focus?.invoke()
+            return false
+        }
+        return true
+    }
+
+    internal fun release() {
+        val lease = active.get() ?: return
+        if (active.compareAndSet(lease, null)) {
+            refreshViews()
+        }
     }
 
     private fun launch(lease: OperationLease, command: CliCommand) {

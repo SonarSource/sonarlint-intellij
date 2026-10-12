@@ -19,8 +19,11 @@
  */
 package org.sonarlint.intellij.ai
 
+import java.util.concurrent.CompletionException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
@@ -35,6 +38,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationReco
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationState
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.SonarQubeCliState
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 
 class AiIntegrationModelsTests {
     @Test
@@ -60,6 +64,7 @@ class AiIntegrationModelsTests {
         val snapshot = toAiIntegrationSnapshot(response)
 
         assertThat(snapshot.cli.authentication).isEqualTo(CliAuthenticationStatus.UNAUTHENTICATED)
+        assertThat(snapshot.cli.uninstallAvailable).isFalse()
         assertThat(snapshot.agents.single().agent).isEqualTo(AiAgent.CLAUDE_CODE)
         assertThat(snapshot.connectionChoices).containsExactly(IntegrationConnection("connection", "https://sonar.example", "organization"))
         assertThat(snapshot.recommendedConnectionId).isEqualTo("connection")
@@ -93,6 +98,68 @@ class AiIntegrationModelsTests {
 
         assertThat(toAiIntegrationSnapshot(response).cliIntegrations).containsExactly(
             AgentCliIntegration(AiAgent.CODEX, CliIntegrationRecordingStatus.UNKNOWN, emptyList())
+        )
+    }
+
+    @Test
+    fun `maps uninstall availability and preserves output without inferring cleanup success`() {
+        val response = GetAiIntegrationStateResponse(
+            SonarQubeCliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, null, "1.2.3", null, null, true),
+            emptyList(),
+            emptyList(),
+            null
+        )
+
+        assertThat(toAiIntegrationSnapshot(response).cli.uninstallAvailable).isTrue()
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null)).summary)
+            .startsWith("SonarQube CLI was removed. Remove its PATH entry manually. Some configuration may remain; review the output.")
+            .contains("PATH", "Reopen terminals")
+            .doesNotContain("reset output")
+
+        val warnings = uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "Reset complete", "cleanup warning", "Manual cleanup required"))
+        assertThat(warnings.summary).contains(CLI_UNINSTALL_COMPLETED)
+            .doesNotContain("reported warnings", "Manual cleanup required")
+        assertThat(warnings.backendMessage).isEqualTo("Manual cleanup required")
+        assertThat(warnings.resetOutput).isEqualTo("Reset complete")
+        assertThat(warnings.cleanupWarnings).isEqualTo("cleanup warning")
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "", null)).summary)
+            .isEqualTo("Could not uninstall SonarQube CLI. Review the output for details.")
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.NOT_AVAILABLE, "", "", null)).summary)
+            .isEqualTo("Only an official per-user CLI installation can be uninstalled.")
+        assertThat(uninstallUnavailableFeedback().summary).isEqualTo(CLI_UNINSTALL_UNAVAILABLE)
+        assertThat(uninstallUnavailableFeedback().status).isEqualTo(UninstallCliResponse.Status.NOT_AVAILABLE)
+        val failure = uninstallFailure(CompletionException(IllegalStateException("connection lost")))
+        assertThat(failure.summary).isEqualTo(CLI_UNINSTALL_FAILED)
+        assertThat(failure.cleanupWarnings).isEmpty()
+        assertThat(failure.backendMessage).isEqualTo("connection lost")
+
+        assertThat(uninstallFeedback(UninstallCliResponse(
+            UninstallCliResponse.Status.NOT_AVAILABLE, "", "", "Only an official per-user CLI installation can be uninstalled."
+        )).summary).contains("official per-user")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["SonarQube CLI reset failed.", "Could not delete the SonarQube CLI installation folder."])
+    fun `preserves the backend failure message`(message: String) {
+        assertThat(uninstallFeedback(UninstallCliResponse(UninstallCliResponse.Status.FAILED, "", "", message)).summary)
+            .isEqualTo(message)
+    }
+
+    @Test
+    fun `keeps backend errors separate from reset output`() {
+        val failure = uninstallFailure(IllegalStateException("backend unavailable"))
+
+        assertThat(failure.resetOutput).isEmpty()
+        assertThat(failure.cleanupWarnings).isEmpty()
+        assertThat(failure.backendMessage).isEqualTo("backend unavailable")
+    }
+
+    @Test
+    fun `provides manual PATH cleanup instructions for both installers`() {
+        assertThat(cliPathCleanupHint(windows = true)).contains("user Path", "%LOCALAPPDATA%\\sonarqube-cli\\bin", "Reopen terminals")
+        assertThat(cliPathCleanupHint(windows = false)).isEqualTo(
+            "Remove \$HOME/.local/share/sonarqube-cli/bin from PATH in the shell profile the installer updated " +
+                "(~/.bashrc or ~/.bash_profile, ~/.zshrc or ~/.zprofile, or ~/.profile). Reopen terminals."
         )
     }
 
