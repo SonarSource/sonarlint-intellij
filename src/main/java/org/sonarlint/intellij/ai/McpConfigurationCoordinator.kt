@@ -25,8 +25,8 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
+import java.nio.file.FileSystemLoopException
 import java.nio.file.Files
-import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.AclFileAttributeView
@@ -240,7 +240,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         if (!isCurrent()) {
             return McpTransactionResult.Protected
         }
-        val target = if (Files.exists(normalizedPath, LinkOption.NOFOLLOW_LINKS)) normalizedPath.toRealPath() else normalizedPath
+        val target = resolveConfigTarget(normalizedPath)
         Files.createDirectories(target.parent)
         val posix = Files.getFileStore(target.parent).supportsFileAttributeView(PosixFileAttributeView::class.java)
         val attributes = if (posix) arrayOf(PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))) else emptyArray()
@@ -250,8 +250,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             if (snapshot != null) {
                 preservePermissions(target, temporary, posix)
             }
-            if (readConfig(normalizedPath) != snapshot ||
-                Files.exists(normalizedPath, LinkOption.NOFOLLOW_LINKS) && normalizedPath.toRealPath() != target) {
+            if (readConfig(normalizedPath) != snapshot || resolveConfigTarget(normalizedPath) != target) {
                 return McpTransactionResult.ConcurrentEdit
             }
             if (!isCurrent()) {
@@ -262,6 +261,19 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         } finally {
             Files.deleteIfExists(temporary)
         }
+    }
+
+    private fun resolveConfigTarget(path: Path): Path {
+        var target = path
+        val visited = mutableSetOf<Path>()
+        while (Files.isSymbolicLink(target)) {
+            val link = target.parent.toRealPath().resolve(target.fileName)
+            if (!visited.add(link)) {
+                throw FileSystemLoopException(link.toString())
+            }
+            target = link.parent.resolve(Files.readSymbolicLink(link))
+        }
+        return if (Files.exists(target)) target.toRealPath() else target
     }
 
     private fun preservePermissions(source: Path, temporary: Path, posix: Boolean) {

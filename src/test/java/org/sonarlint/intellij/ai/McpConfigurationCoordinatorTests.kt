@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ai
 import com.intellij.notification.NotificationType
 import com.fasterxml.jackson.databind.json.JsonMapper
 import java.io.IOException
+import java.nio.file.FileSystemLoopException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.AclFileAttributeView
@@ -529,6 +530,60 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(Files.readString(link)).isEqualTo("updated")
         Files.list(target.parent).use { assertThat(it).containsExactly(target) }
         verify(backend, atLeastOnce()).inspectMcpConfiguration(AiAgent.CURSOR, "external")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["relative", "absolute", "chain", "parent alias"])
+    fun `setup creates a missing symlink target without replacing the links`(linkType: String) {
+        val target = tempDir.resolve("settings/target.json")
+        val link = tempDir.resolve("mcp.json")
+        val linkTarget = when (linkType) {
+            "absolute" -> target
+            "chain" -> {
+                val intermediate = tempDir.resolve("alias.json")
+                Files.createSymbolicLink(intermediate, tempDir.relativize(target))
+                tempDir.relativize(intermediate)
+            }
+            "parent alias" -> {
+                val directory = Files.createDirectories(target.parent.resolve("nested"))
+                Files.createSymbolicLink(tempDir.resolve("alias"), directory)
+                Path.of("alias/../target.json")
+            }
+            else -> tempDir.relativize(target)
+        }
+        Files.createSymbolicLink(link, linkTarget)
+        plan(McpConfigurationState.NOT_CONFIGURED, "created with token")
+
+        assertThat(coordinator().createConfiguration(project, AiAgent.CURSOR, link, "connection"))
+            .isEqualTo(McpTransactionResult.Updated)
+
+        assertThat(Files.readSymbolicLink(link)).isEqualTo(linkTarget)
+        assertThat(Files.readString(link)).isEqualTo("created with token")
+        assertThat(Files.readString(target)).isEqualTo("created with token")
+        if (linkType == "chain") {
+            assertThat(Files.isSymbolicLink(tempDir.resolve("alias.json"))).isTrue()
+        }
+        if (Files.getFileStore(target).supportsFileAttributeView(PosixFileAttributeView::class.java)) {
+            assertThat(Files.getPosixFilePermissions(target)).isEqualTo(PosixFilePermissions.fromString("rw-------"))
+        }
+        val entries = if (linkType == "parent alias") listOf(target, target.parent.resolve("nested")) else listOf(target)
+        Files.list(target.parent).use { assertThat(it).containsExactlyInAnyOrderElementsOf(entries) }
+    }
+
+    @Test
+    fun `setup rejects a symlink cycle without replacing the links`() {
+        val link = tempDir.resolve("mcp.json")
+        val other = tempDir.resolve("alias.json")
+        Files.createSymbolicLink(link, other.fileName)
+        Files.createSymbolicLink(other, link.fileName)
+        plan(McpConfigurationState.NOT_CONFIGURED, "created with token")
+
+        assertThatThrownBy { coordinator().createConfiguration(project, AiAgent.CURSOR, link, "connection") }
+            .isInstanceOf(FileSystemLoopException::class.java)
+
+        assertThat(Files.readSymbolicLink(link)).isEqualTo(other.fileName)
+        assertThat(Files.readSymbolicLink(other)).isEqualTo(link.fileName)
+        Files.list(tempDir).use { assertThat(it).containsExactlyInAnyOrder(link, other) }
     }
 
     @Test
