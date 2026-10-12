@@ -268,7 +268,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 } catch (error: AccessDeniedException) {
                     // Windows readers can briefly prevent an atomic replacement.
                     if (++deniedMoves == 20) throw error
-                    Thread.sleep(50)
+                    Thread.sleep(minOf(25L * deniedMoves, 100L))
                 }
             }
         } finally {

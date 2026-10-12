@@ -219,6 +219,8 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
             do {
                 assertThat(Files.readString(path)).isIn(before, updated)
                 started.countDown()
+                // Give Windows a chance to replace the file between read handles.
+                if (SystemInfo.isWindows) Thread.sleep(1)
             } while (reading.get())
         }
         try {
@@ -234,6 +236,37 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
             pool.shutdown()
         }
         reader.get(10, TimeUnit.SECONDS)
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
+    }
+
+    @Test
+    fun `Windows replacement succeeds after a reader releases its handle`() {
+        assumeTrue(SystemInfo.isWindows)
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "before")
+        plan(McpConfigurationState.NOT_CONFIGURED, "updated")
+        val denied = CountDownLatch(1)
+        val writer = McpConfigurationCoordinator(backend, registry, credentials, ui, java.util.concurrent.Executor { it.run() }) { source, target ->
+            try {
+                Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+            } catch (error: AccessDeniedException) {
+                denied.countDown()
+                throw error
+            }
+        }
+        val pool = Executors.newSingleThreadExecutor()
+        val reader = Files.newByteChannel(path)
+        try {
+            val update = pool.submit<McpTransactionResult> { writer.createConfiguration(project, AiAgent.CURSOR, path, "connection") }
+            assertThat(denied.await(10, TimeUnit.SECONDS)).isTrue()
+            assertThat(Files.readString(path)).isEqualTo("before")
+            reader.close()
+            assertThat(update.get(10, TimeUnit.SECONDS)).isEqualTo(McpTransactionResult.Updated)
+        } finally {
+            reader.close()
+            pool.shutdownNow()
+        }
+        assertThat(Files.readString(path)).isEqualTo("updated")
         Files.list(tempDir).use { assertThat(it).containsExactly(path) }
     }
 
