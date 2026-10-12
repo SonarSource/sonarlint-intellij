@@ -25,6 +25,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
+import java.nio.file.AccessDeniedException
 import java.nio.file.FileSystemLoopException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -53,7 +54,10 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     private val registry: AiAgentRegistry = AiAgentRegistry(),
     private val credentialsService: CredentialsService = getService(CredentialsService::class.java),
     private val ui: McpUiAdapter = IntellijMcpUiAdapter(),
-    private val executor: Executor = AppExecutorUtil.getAppExecutorService()
+    private val executor: Executor = AppExecutorUtil.getAppExecutorService(),
+    private val moveConfigFile: (Path, Path) -> Unit = { source, target ->
+        Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    }
 ) {
     private val idePort = AtomicInteger()
     private val refreshRequested = AtomicBoolean()
@@ -250,14 +254,23 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             if (snapshot != null) {
                 preservePermissions(target, temporary, posix)
             }
-            if (readConfig(normalizedPath) != snapshot || resolveConfigTarget(normalizedPath) != target) {
-                return McpTransactionResult.ConcurrentEdit
+            var deniedMoves = 0
+            while (true) {
+                if (readConfig(normalizedPath) != snapshot || resolveConfigTarget(normalizedPath) != target) {
+                    return McpTransactionResult.ConcurrentEdit
+                }
+                if (!isCurrent()) {
+                    return McpTransactionResult.Protected
+                }
+                try {
+                    moveConfigFile(temporary, target)
+                    return McpTransactionResult.Updated
+                } catch (error: AccessDeniedException) {
+                    // Windows readers can briefly prevent an atomic replacement.
+                    if (++deniedMoves == 20) throw error
+                    Thread.sleep(50)
+                }
             }
-            if (!isCurrent()) {
-                return McpTransactionResult.Protected
-            }
-            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            return McpTransactionResult.Updated
         } finally {
             Files.deleteIfExists(temporary)
         }

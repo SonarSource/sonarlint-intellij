@@ -20,11 +20,14 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.util.SystemInfo
 import com.fasterxml.jackson.databind.json.JsonMapper
 import java.io.IOException
+import java.nio.file.AccessDeniedException
 import java.nio.file.FileSystemLoopException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.AclFileAttributeView
 import java.nio.file.attribute.PosixFileAttributeView
 import java.nio.file.attribute.PosixFilePermissions
@@ -231,6 +234,56 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
             pool.shutdown()
         }
         reader.get(10, TimeUnit.SECONDS)
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
+    }
+
+    @Test
+    fun `atomic replacement retries a temporary sharing violation`() {
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "before")
+        plan(McpConfigurationState.NOT_CONFIGURED, "updated")
+        var deniedMoves = 0
+        val writer = McpConfigurationCoordinator(backend, registry, credentials, ui, java.util.concurrent.Executor { it.run() }) { source, target ->
+            if (deniedMoves++ < 2) throw AccessDeniedException(target.toString())
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        }
+
+        assertThat(writer.createConfiguration(project, AiAgent.CURSOR, path, "connection"))
+            .isEqualTo(McpTransactionResult.Updated)
+
+        assertThat(Files.readString(path)).isEqualTo("updated")
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
+    }
+
+    @Test
+    fun `permanent replacement denial preserves the original and removes the temporary file`() {
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "before")
+        plan(McpConfigurationState.NOT_CONFIGURED, "updated")
+        val denied = AccessDeniedException(path.toString())
+        val writer = McpConfigurationCoordinator(backend, registry, credentials, ui, java.util.concurrent.Executor { it.run() }) { _, _ -> throw denied }
+
+        assertThatThrownBy { writer.createConfiguration(project, AiAgent.CURSOR, path, "connection") }
+            .isSameAs(denied)
+
+        assertThat(Files.readString(path)).isEqualTo("before")
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
+    }
+
+    @Test
+    fun `replacement retries abort when another writer edits the configuration`() {
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "before")
+        plan(McpConfigurationState.NOT_CONFIGURED, "updated")
+        val writer = McpConfigurationCoordinator(backend, registry, credentials, ui, java.util.concurrent.Executor { it.run() }) { _, _ ->
+            Files.writeString(path, "concurrent edit")
+            throw AccessDeniedException(path.toString())
+        }
+
+        assertThat(writer.createConfiguration(project, AiAgent.CURSOR, path, "connection"))
+            .isEqualTo(McpTransactionResult.ConcurrentEdit)
+
+        assertThat(Files.readString(path)).isEqualTo("concurrent edit")
         Files.list(tempDir).use { assertThat(it).containsExactly(path) }
     }
 
@@ -533,7 +586,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["relative", "absolute", "chain", "parent alias"])
+    @ValueSource(strings = ["relative", "absolute", "chain", "parent alias", "parent traversal"])
     fun `setup creates a missing symlink target without replacing the links`(linkType: String) {
         val target = tempDir.resolve("settings/target.json")
         val link = tempDir.resolve("mcp.json")
@@ -545,6 +598,13 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
                 tempDir.relativize(intermediate)
             }
             "parent alias" -> {
+                Files.createDirectories(target.parent)
+                Files.createSymbolicLink(tempDir.resolve("alias"), target.parent)
+                Path.of("alias/target.json")
+            }
+            "parent traversal" -> {
+                // Windows resolves '..' before following the parent symlink.
+                assumeTrue(!SystemInfo.isWindows)
                 val directory = Files.createDirectories(target.parent.resolve("nested"))
                 Files.createSymbolicLink(tempDir.resolve("alias"), directory)
                 Path.of("alias/../target.json")
@@ -566,7 +626,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         if (Files.getFileStore(target).supportsFileAttributeView(PosixFileAttributeView::class.java)) {
             assertThat(Files.getPosixFilePermissions(target)).isEqualTo(PosixFilePermissions.fromString("rw-------"))
         }
-        val entries = if (linkType == "parent alias") listOf(target, target.parent.resolve("nested")) else listOf(target)
+        val entries = if (linkType == "parent traversal") listOf(target, target.parent.resolve("nested")) else listOf(target)
         Files.list(target.parent).use { assertThat(it).containsExactlyInAnyOrderElementsOf(entries) }
     }
 
