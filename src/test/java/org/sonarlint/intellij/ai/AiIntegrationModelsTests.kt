@@ -159,6 +159,22 @@ class AiIntegrationModelsTests {
     }
 
     @Test
+    fun `known statuses keep empty diagnostics when reset output is null`() {
+        val response = mock(UninstallCliResponse::class.java)
+        `when`(response.status).thenReturn(UninstallCliResponse.Status.FAILED)
+        `when`(response.stdout).thenReturn(null)
+        `when`(response.stderr).thenReturn(null)
+        `when`(response.message).thenReturn("SonarQube CLI reset failed.")
+
+        val feedback = uninstallFeedback(response)
+
+        assertThat(feedback.status).isEqualTo(CliUninstallStatus.FAILED)
+        assertThat(feedback.summary).isEqualTo("SonarQube CLI reset failed.")
+        assertThat(feedback.resetOutput).isEmpty()
+        assertThat(feedback.cleanupWarnings).isEmpty()
+    }
+
+    @Test
     fun `keeps backend errors separate from reset output`() {
         val failure = uninstallFailure(IllegalStateException("backend unavailable"))
 

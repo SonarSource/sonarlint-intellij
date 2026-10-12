@@ -151,11 +151,13 @@ internal const val CLI_UNINSTALL_UNKNOWN = "The SonarQube CLI uninstall result c
 internal const val CLI_UNINSTALL_COMPLETED = "SonarQube CLI was removed. Remove its PATH entry manually. Some configuration may remain; review the output."
 
 internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeedback.Finished {
+    val stdout = response.stdout.orEmpty()
+    val stderr = response.stderr.orEmpty()
     val status = when (response.status) {
         UninstallCliResponse.Status.UNINSTALLED -> CliUninstallStatus.UNINSTALLED
         UninstallCliResponse.Status.FAILED -> CliUninstallStatus.FAILED
         UninstallCliResponse.Status.NOT_AVAILABLE -> CliUninstallStatus.NOT_AVAILABLE
-        null -> return uninstallUnknownFeedback(response.stdout.orEmpty(), response.stderr.orEmpty(), response.message)
+        null -> return uninstallUnknownFeedback(stdout, stderr, response.message)
     }
     val summary = when (status) {
         CliUninstallStatus.UNINSTALLED -> listOfNotNull(
@@ -168,7 +170,7 @@ internal fun uninstallFeedback(response: UninstallCliResponse): CliUninstallFeed
             ?: CLI_UNINSTALL_UNAVAILABLE
         CliUninstallStatus.UNKNOWN -> CLI_UNINSTALL_UNKNOWN
     }
-    return CliUninstallFeedback.Finished(summary, response.stdout, response.stderr, status, response.message)
+    return CliUninstallFeedback.Finished(summary, stdout, stderr, status, response.message)
 }
 
 internal fun cliPathCleanupHint(windows: Boolean = SystemInfo.isWindows): String = if (windows) {
