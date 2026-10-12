@@ -25,15 +25,13 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
-import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
@@ -49,14 +47,13 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     private val backendService: BackendService = getService(BackendService::class.java),
     private val registry: AiAgentRegistry = AiAgentRegistry(),
     private val credentialsService: CredentialsService = getService(CredentialsService::class.java),
-    private val fileSystem: McpFileSystem = NioMcpFileSystem(),
     private val ui: McpUiAdapter = IntellijMcpUiAdapter(),
     private val executor: Executor = AppExecutorUtil.getAppExecutorService()
 ) {
-    private val pathLocks = ConcurrentHashMap<Path, ReentrantLock>()
     private val idePort = AtomicInteger()
     private val refreshRequested = AtomicBoolean()
     private val refreshWorkerRunning = AtomicBoolean()
+    private val refreshDiagnostics = ConcurrentHashMap<AiAgent, List<String>>()
 
     fun inspectSnapshot(snapshot: AiIntegrationSnapshot): CompletableFuture<AiIntegrationSnapshot> {
         val inspections = snapshot.agents.mapNotNull { capability ->
@@ -65,10 +62,9 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
             }
             val path = registry.standaloneMcpPath(capability.agent) ?: return@mapNotNull null
             CompletableFuture.supplyAsync({
-                runSerialized(path) {
-                    val inspection = backendService.inspectMcpConfiguration(capability.agent, fileSystem.read(path).toText()).join()
-                    McpAgentConfiguration(capability.agent, path, inspection.state, inspection.diagnostics)
-                }
+                val inspection = backendService.inspectMcpConfiguration(capability.agent, readConfig(path) ?: "").join()
+                val diagnostics = (inspection.diagnostics + rememberedDiagnostics(capability.agent)).distinct()
+                McpAgentConfiguration(capability.agent, path, inspection.state, diagnostics)
             }, executor).exceptionally { error ->
                 val detail = error.cause?.message ?: error.message
                 McpAgentConfiguration(
@@ -135,6 +131,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     fun embeddedServerStarted(port: Int) {
         if (port !in 1..65535) {
             idePort.set(0)
+            clearRefreshDiagnostics()
             return
         }
         idePort.set(port)
@@ -178,10 +175,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     internal fun createConfiguration(project: Project, agent: AiAgent, path: Path, connectionId: String): McpTransactionResult {
-        if (fileSystem.isSymbolicLink(path)) {
-            return McpTransactionResult.SymlinkRefused
-        }
-        val inspection = backendService.inspectMcpConfiguration(agent, fileSystem.read(path).toText()).join()
+        val inspection = backendService.inspectMcpConfiguration(agent, readConfig(path) ?: "").join()
         if (inspection.state != McpConfigurationState.NOT_CONFIGURED) {
             return refreshPort(agent, path)
         }
@@ -201,7 +195,10 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     private fun refreshPort(agent: AiAgent, path: Path, port: Int = idePort.get()): McpTransactionResult {
-        if (port !in 1..65535) return McpTransactionResult.Protected
+        if (port !in 1..65535) {
+            refreshDiagnostics.remove(agent)
+            return McpTransactionResult.Protected
+        }
         return updateConfiguration(agent, path, """{"env":{"SONARQUBE_IDE_PORT":"$port"}}""", McpConfigurationState.STANDALONE) {
             idePort.get() == port
         }
@@ -213,45 +210,67 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         desired: String,
         expectedState: McpConfigurationState,
         isCurrent: () -> Boolean = { true }
-    ): McpTransactionResult = runSerialized(path) {
+    ): McpTransactionResult {
         val normalizedPath = path.toAbsolutePath().normalize()
-        if (fileSystem.isSymbolicLink(normalizedPath)) {
-            return@runSerialized McpTransactionResult.SymlinkRefused
-        }
-        val snapshot = fileSystem.read(normalizedPath)
+        val snapshot = readConfig(normalizedPath)
         if (expectedState == McpConfigurationState.STANDALONE && snapshot == null) {
-            return@runSerialized McpTransactionResult.Protected
+            return McpTransactionResult.Protected
         }
-        val plan = backendService.planMcpConfigurationUpdate(agent, snapshot.toText(), desired).join()
+        val plan = backendService.planMcpConfigurationUpdate(agent, snapshot ?: "", desired).join()
         if (plan.state != expectedState) {
-            return@runSerialized McpTransactionResult.Protected
+            return McpTransactionResult.Protected
         }
-        val updatedBytes = plan.updatedContent?.toByteArray(StandardCharsets.UTF_8) ?: return@runSerialized McpTransactionResult.Protected
-        if (snapshot.contentEquals(updatedBytes)) {
-            return@runSerialized McpTransactionResult.Unchanged
+        val updated = plan.updatedContent
+        if (updated == null) {
+            rememberPlanDiagnostics(agent, plan.diagnostics)
+            return McpTransactionResult.Protected
         }
-        val temp = fileSystem.writeSiblingTemp(normalizedPath, updatedBytes)
-        try {
-            if (fileSystem.isSymbolicLink(normalizedPath)) {
-                return@runSerialized McpTransactionResult.SymlinkRefused
+        refreshDiagnostics.remove(agent)
+        if (updated == snapshot) {
+            return McpTransactionResult.Unchanged
+        }
+        if (readConfig(normalizedPath) != snapshot) {
+            return McpTransactionResult.ConcurrentEdit
+        }
+        if (!isCurrent()) {
+            return McpTransactionResult.Protected
+        }
+        normalizedPath.parent?.let { parent ->
+            if (!Files.exists(parent)) {
+                Files.createDirectories(parent)
             }
-            if (!snapshot.contentEquals(fileSystem.read(normalizedPath))) {
-                return@runSerialized McpTransactionResult.ConcurrentEdit
-            }
-            if (!isCurrent()) {
-                return@runSerialized McpTransactionResult.Protected
-            }
-            fileSystem.replace(temp, normalizedPath)
-            McpTransactionResult.Updated
-        } finally {
-            runCatching { fileSystem.deleteIfExists(temp) }.onFailure { error ->
-                GlobalLogOutput.get().logError("Unable to remove the temporary MCP configuration file", error)
-            }
+        }
+        Files.writeString(normalizedPath, updated)
+        return McpTransactionResult.Updated
+    }
+
+    private fun rememberedDiagnostics(agent: AiAgent): List<String> {
+        if (idePort.get() == 0) {
+            return emptyList()
+        }
+        return refreshDiagnostics[agent].orEmpty()
+    }
+
+    private fun rememberPlanDiagnostics(agent: AiAgent, diagnostics: List<String>) {
+        if (idePort.get() == 0 || diagnostics.isEmpty()) {
+            refreshDiagnostics.remove(agent)
+            return
+        }
+        refreshDiagnostics[agent] = diagnostics
+        if (idePort.get() == 0) {
+            refreshDiagnostics.remove(agent)
         }
     }
 
-    private fun <T> runSerialized(path: Path, action: () -> T): T =
-        pathLocks.computeIfAbsent(path.toAbsolutePath().normalize()) { ReentrantLock() }.withLock(action)
+    private fun clearRefreshDiagnostics() {
+        if (refreshDiagnostics.isEmpty()) {
+            return
+        }
+        refreshDiagnostics.clear()
+        refreshAll()
+    }
+
+    private fun readConfig(path: Path): String? = if (Files.exists(path)) Files.readString(path) else null
 
     internal fun reportSetupResult(project: Project, result: McpTransactionResult?, error: Throwable?) {
         if (error != null) {
@@ -275,8 +294,6 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 "The selected SonarQube connection no longer exists. Add or select a connection, then retry." to NotificationType.ERROR
             McpTransactionResult.Cancelled ->
                 "MCP setup was cancelled. Choose Set up when you are ready to continue." to NotificationType.INFORMATION
-            McpTransactionResult.SymlinkRefused ->
-                "The MCP configuration is a symbolic link and was not changed. Update the linked file manually or replace the link, then retry." to NotificationType.WARNING
             null ->
                 "MCP setup did not return a result. Refresh this view and retry." to NotificationType.WARNING
         }
@@ -299,8 +316,5 @@ enum class McpTransactionResult {
     ConcurrentEdit,
     Protected,
     MissingConnection,
-    Cancelled,
-    SymlinkRefused
+    Cancelled
 }
-
-private fun ByteArray?.toText(): String = this?.toString(StandardCharsets.UTF_8) ?: ""

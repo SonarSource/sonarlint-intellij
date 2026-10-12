@@ -27,21 +27,18 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -288,17 +285,23 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `startup leaves a config without the IDE port field unchanged`() {
+    fun `startup leaves a config without the IDE port field unchanged and keeps the planner diagnostic`() {
         val path = detectedFile()
         val content = """{"mcpServers":{"sonarqube":{"command":"docker","args":["sonarsource/sonarqube-mcp"],"env":{"SONARQUBE_TOKEN":"user-token"}}}}"""
         Files.writeString(path, content)
         useCorePlanner()
+        val updatingCoordinator = coordinator()
 
-        coordinator().embeddedServerStarted(64121)
+        updatingCoordinator.embeddedServerStarted(64121)
 
         assertThat(Files.readString(path)).isEqualTo(content)
+        assertThat(inspectedDiagnostics(updatingCoordinator)).anyMatch { it.contains("SONARQUBE_IDE_PORT") }
         verify(backend).planMcpConfigurationUpdate(AiAgent.CURSOR, content, portConfiguration(64121))
         verify(backend, never()).generateMcpConfiguration(any(), any())
+
+        updatingCoordinator.embeddedServerStarted(0)
+
+        assertThat(inspectedDiagnostics(updatingCoordinator)).noneMatch { it.contains("SONARQUBE_IDE_PORT") }
     }
 
     @Test
@@ -370,24 +373,21 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     @Test
     fun `newest announced port supersedes a refresh still being planned`() {
         val path = detectedFile()
-        val writtenPorts = mutableListOf<Int>()
-        val fileSystem = object : McpFileSystem by NioMcpFileSystem() {
-            override fun replace(temp: Path, target: Path) {
-                writtenPorts += if (Files.readString(temp) == portConfiguration(64122)) 64122 else 64121
-                NioMcpFileSystem().replace(temp, target)
-            }
-        }
-        val updatingCoordinator = coordinator(fileSystem = fileSystem)
+        val updatingCoordinator = coordinator()
         whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer { invocation ->
             val desired = invocation.getArgument<String>(2)
-            if (desired == portConfiguration(64121)) updatingCoordinator.embeddedServerStarted(64122)
+            if (desired == portConfiguration(64121)) {
+                updatingCoordinator.embeddedServerStarted(64122)
+            }
+            if (desired == portConfiguration(64122)) {
+                assertThat(Files.readString(path)).isEqualTo("existing")
+            }
             CompletableFuture.completedFuture(McpConfigurationUpdatePlanResponse(McpConfigurationState.STANDALONE, desired, emptyList()))
         }
 
         updatingCoordinator.embeddedServerStarted(64121)
 
         assertThat(Files.readString(path)).isEqualTo(portConfiguration(64122))
-        assertThat(writtenPorts).containsExactly(64122)
     }
 
     @Test
@@ -406,96 +406,34 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `compare and swap rechecks after temp creation and removes the temporary file`() {
-        val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "before")
-        plan(McpConfigurationState.NOT_CONFIGURED, "planned")
-        val fileSystem = MutatingAfterTempFileSystem(path)
-
-        val result = coordinator(fileSystem = fileSystem).createConfiguration(project, AiAgent.CURSOR, path, "connection")
-
-        assertThat(result).isEqualTo(McpTransactionResult.ConcurrentEdit)
-        assertThat(Files.readString(path)).isEqualTo("changed after temp creation")
-        assertThat(Files.exists(fileSystem.temp!!)).isFalse()
-    }
-
-    @Test
-    fun `symbolic link is refused before content is read or planned`() {
+    fun `a configuration symlink is read and updated through its target`() {
         val target = tempDir.resolve("target.json")
         val link = tempDir.resolve("mcp.json")
         Files.writeString(target, "external")
         Files.createSymbolicLink(link, target)
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(link)
+        plan(McpConfigurationState.NOT_CONFIGURED, "updated")
+        val updatingCoordinator = coordinator()
 
-        assertThat(coordinator().createConfiguration(project, AiAgent.CURSOR, link, "connection")).isEqualTo(McpTransactionResult.SymlinkRefused)
-        assertThat(Files.readString(target)).isEqualTo("external")
-        verify(backend, never()).planMcpConfigurationUpdate(any(), any(), any())
+        val inspected = updatingCoordinator.inspectSnapshot(baseSnapshot(listOf(capability(AiAgent.CURSOR)))).get()
+
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).path).isEqualTo(link)
+        assertThat(updatingCoordinator.createConfiguration(project, AiAgent.CURSOR, link, "connection")).isEqualTo(McpTransactionResult.Updated)
+        assertThat(Files.isSymbolicLink(link)).isTrue()
+        assertThat(Files.readString(target)).isEqualTo("updated")
+        assertThat(Files.readString(link)).isEqualTo("updated")
+        verify(backend, atLeastOnce()).inspectMcpConfiguration(AiAgent.CURSOR, "external")
     }
 
     @Test
-    fun `unchanged port refresh does not write a temporary file or replace the configuration`() {
+    fun `unchanged port refresh does not rewrite the configuration`() {
         val path = detectedFile()
         plan(McpConfigurationState.STANDALONE, "existing")
-        val fileSystem = mock<McpFileSystem>()
-        whenever(fileSystem.read(path)).thenReturn("existing".toByteArray())
 
-        coordinator(fileSystem = fileSystem).embeddedServerStarted(64121)
+        coordinator().embeddedServerStarted(64121)
 
         assertThat(Files.readString(path)).isEqualTo("existing")
-        verify(fileSystem, never()).writeSiblingTemp(any(), any())
-        verify(fileSystem, never()).replace(any(), any())
-    }
-
-    @Test
-    fun `failed final move cleans the sibling temp and preserves the original`() {
-        val path = tempDir.resolve("mcp.json")
-        Files.writeString(path, "before")
-        plan(McpConfigurationState.NOT_CONFIGURED, "after")
-        val fileSystem = FailingReplaceFileSystem()
-
-        assertThatThrownBy { coordinator(fileSystem = fileSystem).createConfiguration(project, AiAgent.CURSOR, path, "connection") }
-            .isInstanceOf(IllegalStateException::class.java)
-        assertThat(Files.exists(fileSystem.temp!!)).isFalse()
-        assertThat(Files.readString(path)).isEqualTo("before")
-    }
-
-    @Test
-    fun `configuration commits for the same normalized path are serialized`() {
-        val pool = Executors.newFixedThreadPool(2)
-        val coordinator = coordinator(executor = pool)
-        val entered = CountDownLatch(1)
-        val release = CountDownLatch(1)
-        val secondPrepared = CountDownLatch(1)
-        val preparations = AtomicInteger()
-        whenever(backend.generateMcpConfiguration(any(), any())).thenAnswer {
-            if (preparations.incrementAndGet() == 2) secondPrepared.countDown()
-            CompletableFuture.completedFuture("generated")
-        }
-        whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenAnswer {
-            entered.countDown()
-            check(release.await(5, TimeUnit.SECONDS))
-            CompletableFuture.completedFuture(McpConfigurationUpdatePlanResponse(McpConfigurationState.NOT_CONFIGURED, "created", emptyList()))
-        }
-        try {
-            val first = CompletableFuture.supplyAsync({
-                coordinator.createConfiguration(project, AiAgent.CURSOR, tempDir.resolve("a/../mcp.json"), "connection")
-            }, pool)
-            assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue()
-            val second = CompletableFuture.supplyAsync({
-                coordinator.createConfiguration(project, AiAgent.CURSOR, tempDir.resolve("mcp.json"), "connection")
-            }, pool)
-            assertThat(secondPrepared.await(5, TimeUnit.SECONDS)).isTrue()
-            assertThatThrownBy { second.get(100, TimeUnit.MILLISECONDS) }.isInstanceOf(TimeoutException::class.java)
-            verify(backend, times(1)).planMcpConfigurationUpdate(any(), any(), any())
-
-            release.countDown()
-            CompletableFuture.allOf(first, second).get(5, TimeUnit.SECONDS)
-            assertThat(first.join()).isEqualTo(McpTransactionResult.Updated)
-            assertThat(second.join()).isEqualTo(McpTransactionResult.Unchanged)
-            assertThat(Files.readString(tempDir.resolve("mcp.json"))).isEqualTo("created")
-        } finally {
-            release.countDown()
-            pool.shutdownNow()
-        }
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
     }
 
     @Test
@@ -551,22 +489,13 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(Files.readString(path)).isEqualTo("created")
     }
 
-    @Test
-    fun `every setup result and unexpected failure has actionable feedback`() {
-        val coordinator = coordinator()
-        McpTransactionResult.entries.forEach { coordinator.reportSetupResult(project, it, null) }
-        coordinator.reportSetupResult(project, null, IllegalStateException("planning failed"))
-
-        assertThat(ui.messages).hasSize(McpTransactionResult.entries.size + 1)
-        assertThat(ui.messages.map { it.message }).allSatisfy { assertThat(it).isNotBlank() }
-        assertThat(ui.messages.map { it.type }).contains(NotificationType.ERROR, NotificationType.WARNING)
-        assertThat(ui.settingsOpened).isTrue()
-    }
-
     private fun coordinator(
-        fileSystem: McpFileSystem = NioMcpFileSystem(),
         executor: java.util.concurrent.Executor = java.util.concurrent.Executor { it.run() }
-    ) = McpConfigurationCoordinator(backend, registry, credentials, fileSystem, ui, executor)
+    ) = McpConfigurationCoordinator(backend, registry, credentials, ui, executor)
+
+    private fun inspectedDiagnostics(updatingCoordinator: McpConfigurationCoordinator): List<String> =
+        updatingCoordinator.inspectSnapshot(baseSnapshot(listOf(capability(AiAgent.CURSOR)))).get()
+            .mcpConfigurations.getValue(AiAgent.CURSOR).diagnostics
 
     private fun plan(state: McpConfigurationState, content: String?) {
         whenever(backend.planMcpConfigurationUpdate(any(), any(), any())).thenReturn(
@@ -639,25 +568,4 @@ private class RecordingMcpUi : McpUiAdapter {
     }
 
     data class UiMessage(val message: String, val type: NotificationType)
-}
-
-private class FailingReplaceFileSystem(private val delegate: McpFileSystem = NioMcpFileSystem()) : McpFileSystem by delegate {
-    var temp: Path? = null
-
-    override fun writeSiblingTemp(path: Path, content: ByteArray): Path =
-        delegate.writeSiblingTemp(path, content).also { temp = it }
-
-    override fun replace(temp: Path, target: Path) {
-        throw IllegalStateException("move failed")
-    }
-}
-
-private class MutatingAfterTempFileSystem(private val target: Path, private val delegate: McpFileSystem = NioMcpFileSystem()) : McpFileSystem by delegate {
-    var temp: Path? = null
-
-    override fun writeSiblingTemp(path: Path, content: ByteArray): Path =
-        delegate.writeSiblingTemp(path, content).also {
-            temp = it
-            Files.writeString(target, "changed after temp creation")
-        }
 }

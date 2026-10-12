@@ -19,15 +19,33 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationsManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 
 class McpUiAdaptersTests : AbstractSonarLintLightTests() {
+    @TempDir
+    lateinit var tempDir: Path
+
+    @Test
+    fun `open notifies when the configuration path cannot be resolved`() = ApplicationManager.getApplication().invokeAndWait {
+        val missing = tempDir.resolve("missing-mcp.json")
+
+        IntellijMcpUiAdapter().openConfiguration(project, missing)
+
+        val notifications = NotificationsManager.getNotificationsManager().getNotificationsOfType(Notification::class.java, project)
+        assertThat(notifications.map { it.content }).anyMatch { it.contains("could not be resolved") }
+        notifications.forEach { it.expire() }
+    }
+
     @ParameterizedTest
     @ValueSource(strings = ["mcpServers", "servers"])
     fun `open selects the root SonarQube entry rather than unrelated project entries`(section: String) = ApplicationManager.getApplication().invokeAndWait {

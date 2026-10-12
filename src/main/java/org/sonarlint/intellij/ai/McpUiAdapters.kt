@@ -73,10 +73,17 @@ class IntellijMcpUiAdapter : McpUiAdapter {
     }
 
     override fun openConfiguration(project: Project, path: Path) {
-        LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)?.let { file ->
-            val offset = FileDocumentManager.getInstance().getDocument(file)?.text?.let(::sonarQubeOffset) ?: 0
-            OpenFileDescriptor(project, file, offset).navigate(true)
+        val file = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
+        if (file == null) {
+            showMessage(
+                project,
+                "Could not open the SonarQube MCP configuration file. The path could not be resolved.",
+                NotificationType.WARNING
+            )
+            return
         }
+        val offset = FileDocumentManager.getInstance().getDocument(file)?.text?.let(::sonarQubeOffset) ?: 0
+        OpenFileDescriptor(project, file, offset).navigate(true)
     }
 
     private fun sonarQubeOffset(content: String): Int = runCatching {

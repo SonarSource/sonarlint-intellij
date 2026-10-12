@@ -78,7 +78,6 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         mcpCoordinator = McpConfigurationCoordinator(
             backendService = backend,
             registry = registry,
-            fileSystem = mock(McpFileSystem::class.java),
             executor = Runnable::run
         )
         controller = createController()
@@ -530,7 +529,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     private fun createCoordinator(refreshViews: () -> Unit = ::publishOperationFinished) =
-        CliOperationCoordinator(backend, { error("terminal unused") }, CliConnectionSelector(), { _, _, _ -> }, refreshViews)
+        CliOperationCoordinator(backend, { error("terminal unused") }, ConnectionSelector(IntellijConnectionChoiceUi()), { _, _, _ -> }, refreshViews)
 
     private fun createController(
         project: Project = this.project,
