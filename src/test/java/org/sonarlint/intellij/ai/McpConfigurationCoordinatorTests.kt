@@ -21,18 +21,26 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
 import com.fasterxml.jackson.databind.json.JsonMapper
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.AclFileAttributeView
+import java.nio.file.attribute.PosixFileAttributeView
+import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
@@ -139,6 +147,103 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         Files.list(tempDir).use { assertThat(it).containsExactly(path) }
         verify(backend).generateMcpConfiguration(eq("connection"), any())
         assertThat(ui.tokenWarningRequests).isZero()
+    }
+
+    @Test
+    fun `new configuration files are created with owner only POSIX permissions`() {
+        assumeTrue(Files.getFileStore(tempDir).supportsFileAttributeView(PosixFileAttributeView::class.java))
+        val path = tempDir.resolve("settings/mcp.json")
+        plan(McpConfigurationState.NOT_CONFIGURED, "created with token")
+
+        assertThat(coordinator().createConfiguration(project, AiAgent.CURSOR, path, "connection"))
+            .isEqualTo(McpTransactionResult.Updated)
+
+        assertThat(Files.getPosixFilePermissions(path)).isEqualTo(PosixFilePermissions.fromString("rw-------"))
+        assertThat(Files.readString(path)).isEqualTo("created with token")
+        Files.list(path.parent).use { assertThat(it).containsExactly(path) }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["rw-------", "rw-r-----", "rw-r--r--"])
+    fun `atomic replacement preserves existing POSIX permissions and ownership`(permissions: String) {
+        assumeTrue(Files.getFileStore(tempDir).supportsFileAttributeView(PosixFileAttributeView::class.java))
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "before")
+        Files.setPosixFilePermissions(path, PosixFilePermissions.fromString(permissions))
+        val original = Files.getFileAttributeView(path, PosixFileAttributeView::class.java).readAttributes()
+        plan(McpConfigurationState.NOT_CONFIGURED, "updated")
+
+        assertThat(coordinator().createConfiguration(project, AiAgent.CURSOR, path, "connection"))
+            .isEqualTo(McpTransactionResult.Updated)
+
+        val actual = Files.getFileAttributeView(path, PosixFileAttributeView::class.java).readAttributes()
+        assertThat(actual.permissions()).isEqualTo(original.permissions())
+        assertThat(actual.owner()).isEqualTo(original.owner())
+        assertThat(actual.group()).isEqualTo(original.group())
+        assertThat(Files.readString(path)).isEqualTo("updated")
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
+    }
+
+    @Test
+    fun `atomic replacement preserves an existing ACL`() {
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "before")
+        val view = Files.getFileAttributeView(path, AclFileAttributeView::class.java)
+        assumeTrue(view != null)
+        val original = view!!.acl.filter { it.principal() == view.owner }
+        assumeTrue(original.isNotEmpty())
+        view.acl = original
+        plan(McpConfigurationState.NOT_CONFIGURED, "updated")
+
+        assertThat(coordinator().createConfiguration(project, AiAgent.CURSOR, path, "connection"))
+            .isEqualTo(McpTransactionResult.Updated)
+
+        assertThat(Files.getFileAttributeView(path, AclFileAttributeView::class.java).acl).isEqualTo(original)
+        assertThat(Files.readString(path)).isEqualTo("updated")
+    }
+
+    @Test
+    fun `concurrent readers only see complete configuration files during replacement`() {
+        val path = tempDir.resolve("mcp.json")
+        val before = "before" + "a".repeat(256 * 1024)
+        val updated = "after" + "b".repeat(256 * 1024)
+        Files.writeString(path, before)
+        val pool = Executors.newSingleThreadExecutor()
+        val reading = AtomicBoolean(true)
+        val started = CountDownLatch(1)
+        val reader = pool.submit {
+            do {
+                assertThat(Files.readString(path)).isIn(before, updated)
+                started.countDown()
+            } while (reading.get())
+        }
+        try {
+            assertThat(started.await(10, TimeUnit.SECONDS)).isTrue()
+            val writer = coordinator()
+            repeat(32) {
+                plan(McpConfigurationState.NOT_CONFIGURED, if (it % 2 == 0) updated else before)
+                assertThat(writer.createConfiguration(project, AiAgent.CURSOR, path, "connection"))
+                    .isEqualTo(McpTransactionResult.Updated)
+            }
+        } finally {
+            reading.set(false)
+            pool.shutdown()
+        }
+        reader.get(10, TimeUnit.SECONDS)
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
+    }
+
+    @Test
+    fun `failed temporary writes preserve the original and remove the temporary file`() {
+        val path = tempDir.resolve("mcp.json")
+        Files.writeString(path, "before")
+        plan(McpConfigurationState.NOT_CONFIGURED, "\uD800")
+
+        assertThatThrownBy { coordinator().createConfiguration(project, AiAgent.CURSOR, path, "connection") }
+            .isInstanceOf(IOException::class.java)
+
+        assertThat(Files.readString(path)).isEqualTo("before")
+        Files.list(tempDir).use { assertThat(it).containsExactly(path) }
     }
 
     @Test
@@ -407,7 +512,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
 
     @Test
     fun `a configuration symlink is read and updated through its target`() {
-        val target = tempDir.resolve("target.json")
+        val target = Files.createDirectory(tempDir.resolve("settings")).resolve("target.json")
         val link = tempDir.resolve("mcp.json")
         Files.writeString(target, "external")
         Files.createSymbolicLink(link, target)
@@ -422,6 +527,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(Files.isSymbolicLink(link)).isTrue()
         assertThat(Files.readString(target)).isEqualTo("updated")
         assertThat(Files.readString(link)).isEqualTo("updated")
+        Files.list(target.parent).use { assertThat(it).containsExactly(target) }
         verify(backend, atLeastOnce()).inspectMcpConfiguration(AiAgent.CURSOR, "external")
     }
 

@@ -26,7 +26,12 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.AclFileAttributeView
+import java.nio.file.attribute.PosixFileAttributeView
+import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
@@ -235,13 +240,46 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         if (!isCurrent()) {
             return McpTransactionResult.Protected
         }
-        normalizedPath.parent?.let { parent ->
-            if (!Files.exists(parent)) {
-                Files.createDirectories(parent)
+        val target = if (Files.exists(normalizedPath, LinkOption.NOFOLLOW_LINKS)) normalizedPath.toRealPath() else normalizedPath
+        Files.createDirectories(target.parent)
+        val posix = Files.getFileStore(target.parent).supportsFileAttributeView(PosixFileAttributeView::class.java)
+        val attributes = if (posix) arrayOf(PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))) else emptyArray()
+        val temporary = Files.createTempFile(target.parent, ".sonarqube-mcp-", ".tmp", *attributes)
+        try {
+            Files.writeString(temporary, updated)
+            if (snapshot != null) {
+                preservePermissions(target, temporary, posix)
+            }
+            if (readConfig(normalizedPath) != snapshot ||
+                Files.exists(normalizedPath, LinkOption.NOFOLLOW_LINKS) && normalizedPath.toRealPath() != target) {
+                return McpTransactionResult.ConcurrentEdit
+            }
+            if (!isCurrent()) {
+                return McpTransactionResult.Protected
+            }
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+            return McpTransactionResult.Updated
+        } finally {
+            Files.deleteIfExists(temporary)
+        }
+    }
+
+    private fun preservePermissions(source: Path, temporary: Path, posix: Boolean) {
+        if (posix) {
+            val original = Files.getFileAttributeView(source, PosixFileAttributeView::class.java).readAttributes()
+            Files.getFileAttributeView(temporary, PosixFileAttributeView::class.java).apply {
+                if (owner != original.owner()) owner = original.owner()
+                if (readAttributes().group() != original.group()) setGroup(original.group())
+                setPermissions(original.permissions())
+            }
+        } else {
+            Files.getFileAttributeView(source, AclFileAttributeView::class.java)?.let { original ->
+                Files.getFileAttributeView(temporary, AclFileAttributeView::class.java).apply {
+                    if (owner != original.owner) owner = original.owner
+                    acl = original.acl
+                }
             }
         }
-        Files.writeString(normalizedPath, updated)
-        return McpTransactionResult.Updated
     }
 
     private fun rememberedDiagnostics(agent: AiAgent): List<String> {
