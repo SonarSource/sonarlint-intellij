@@ -1,0 +1,6 @@
+// JavaAnalysisConfigurator is loaded only by the optional plugin-java.xml descriptor.
+// Apply these rules only to products without com.intellij.modules.java.
+org.sonarlint.idea::.*Package 'com\.intellij\.openapi\.vfs\.jrt' is not found.*
+org.sonarlint.idea::.*Package 'com\.intellij\.pom\.java' is not found.*
+org.sonarlint.idea::.*Package 'com\.intellij\.compiler' is not found.*
+org.sonarlint.idea::Access to unresolved class com\.intellij\.openapi\.module\.LanguageLevelUtil

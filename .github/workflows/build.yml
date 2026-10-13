@@ -326,6 +326,12 @@ jobs:
             !/home/runner/.gradle/caches/*/transforms/
             /home/runner/.gradle/wrapper
 
+      - name: Verify Java APIs
+        run: ./gradlew :verifyPlugin -PverifierEnv=JAVA_CI
+
+      - name: Verify CLion APIs without CLion exclusions
+        run: ./gradlew :verifyPlugin -PverifierEnv=CLION_CI
+
   setup-qa-matrix:
     runs-on: sonar-xs
     name: Setup QA matrix
