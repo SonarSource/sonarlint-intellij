@@ -29,6 +29,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationChec
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.GetAiIntegrationStateResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
 data class CliState(
     val installation: CliInstallationStatus,
@@ -69,7 +70,15 @@ data class AiIntegrationSnapshot(
     val agents: List<AgentCapability>,
     val connectionChoices: List<IntegrationConnection>,
     val recommendedConnectionId: String?,
-    val cliIntegrations: List<AgentCliIntegration> = emptyList()
+    val cliIntegrations: List<AgentCliIntegration> = emptyList(),
+    val mcpConfigurations: Map<AiAgent, McpAgentConfiguration> = emptyMap()
+)
+
+data class McpAgentConfiguration(
+    val agent: AiAgent,
+    val path: java.nio.file.Path,
+    val state: McpConfigurationState,
+    val diagnostics: List<String>
 )
 
 data class CliCommand(
@@ -116,13 +125,14 @@ internal fun toAiIntegrationSnapshot(response: GetAiIntegrationStateResponse): A
 sealed interface AiIntegrationsPanelState {
     data object Loading : AiIntegrationsPanelState
     data class Ready(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
-    data class Empty(val snapshot: AiIntegrationSnapshot) : AiIntegrationsPanelState
     data class Error(val message: String) : AiIntegrationsPanelState
 }
 sealed interface AiIntegrationsIntent {
     data object InstallCli : AiIntegrationsIntent
     data object AuthenticateCli : AiIntegrationsIntent
     data class IntegrateCli(val agent: AiAgent) : AiIntegrationsIntent
+    data class SetUpMcp(val agent: AiAgent) : AiIntegrationsIntent
+    data class OpenMcpConfiguration(val agent: AiAgent) : AiIntegrationsIntent
     data object UninstallCli : AiIntegrationsIntent
 }
 

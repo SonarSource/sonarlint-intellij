@@ -109,6 +109,11 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareAuthenticat
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareCliCommandResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.PrepareIntegrateCliCommandParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationUpdateParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationUpdatePlanResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.connection.GetMCPServerConfigurationParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.binding.GetSharedConnectedModeConfigFileResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.branch.DidVcsRepositoryChangeParams
@@ -1244,12 +1249,12 @@ class BackendService : Disposable {
         return requestFromBackend { it.pluginService.getPluginStatuses(GetPluginStatusesParams(projectId)) }
     }
 
-    fun getAiIntegrationState(project: Project, detectedAgents: List<AiAgent>): CompletableFuture<AiIntegrationSnapshot> {
+    fun getAiIntegrationState(project: Project?, detectedAgents: List<AiAgent>): CompletableFuture<AiIntegrationSnapshot> {
         val params = GetAiIntegrationStateParams(
             AiIntegrationHost.INTELLIJ,
             detectedAgents,
             AiIntegrationScope.GLOBAL,
-            projectId(project),
+            project?.let(::projectId),
             true
         )
         return requestFromBackend { it.aiAgentService.getIntegrationState(params) }
@@ -1298,5 +1303,29 @@ class BackendService : Disposable {
 
     private fun toCliCommand(response: PrepareCliCommandResponse) =
         CliCommand(response.executable, response.arguments.toList(), response.isInteractive)
+
+    fun inspectMcpConfiguration(agent: AiAgent, content: String): CompletableFuture<McpConfigurationInspectionResponse> =
+        requestFromBackend {
+            it.aiAgentService.inspectMcpConfiguration(
+                McpConfigurationInspectionParams(agent, content)
+            )
+        }
+
+    fun planMcpConfigurationUpdate(
+        agent: AiAgent,
+        content: String,
+        sonarMcpConfiguration: String
+    ): CompletableFuture<McpConfigurationUpdatePlanResponse> = requestFromBackend {
+        it.aiAgentService.planMcpConfigurationUpdate(
+            McpConfigurationUpdateParams(agent, content, sonarMcpConfiguration)
+        )
+    }
+
+    fun generateMcpConfiguration(connectionId: String, token: String): CompletableFuture<String> =
+        requestFromBackend {
+            it.connectionService.getMCPServerConfiguration(
+                GetMCPServerConfigurationParams(connectionId, token)
+            )
+        }.thenApply { it.jsonConfiguration }
 
 }

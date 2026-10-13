@@ -21,10 +21,10 @@ package org.sonarlint.intellij.messages
 
 import com.intellij.util.messages.Topic
 
-fun interface CliOperationListener {
-    fun operationFinished()
+fun interface AiIntegrationListener {
+    fun stateChanged()
 
     companion object {
-        val TOPIC = Topic.create("SonarQube CLI operation events", CliOperationListener::class.java)
+        val TOPIC = Topic.create("SonarQube AI integration events", AiIntegrationListener::class.java)
     }
 }

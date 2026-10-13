@@ -65,6 +65,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationCheckStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliIntegrationRecordingStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
@@ -90,7 +91,6 @@ private const val RETRY_LABEL = "Try again"
 private const val MANAGE_AGENTS_LABEL = "Manage agents"
 private const val SUPPORTED_STATUS = "Supported"
 private const val NOT_SUPPORTED_STATUS = "Not supported"
-private const val ZERO_SUPPORTED_STATUS = "0 supported"
 private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
 private const val MCP_GUIDE_LABEL = "MCP configuration guide"
 private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
@@ -239,7 +239,6 @@ class AiIntegrationsPanel(
                 addCliUninstallFeedback()
                 addPrimaryAction(RETRY_LABEL)
             }
-            is AiIntegrationsPanelState.Empty -> addCliOverview(state.snapshot)
             is AiIntegrationsPanelState.Ready -> addCliOverview(state.snapshot)
         }
         addDocumentationLink(CLI_GUIDE_LABEL, SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
@@ -254,8 +253,7 @@ class AiIntegrationsPanel(
         when (state) {
             AiIntegrationsPanelState.Loading -> addMessage(MCP_LOADING_MESSAGE)
             is AiIntegrationsPanelState.Error -> addMessage(MCP_ERROR_MESSAGE)
-            is AiIntegrationsPanelState.Empty -> addMcpOverview(state.snapshot)
-            is AiIntegrationsPanelState.Ready -> addMcpOverview(state.snapshot)
+            is AiIntegrationsPanelState.Ready -> addMcpConfigurations(state.snapshot)
         }
         addDocumentationLink(MCP_GUIDE_LABEL, SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK)
     }
@@ -275,7 +273,6 @@ class AiIntegrationsPanel(
     private fun createUninstallAction(state: AiIntegrationsPanelState): ActionButton? {
         val snapshot = when (state) {
             is AiIntegrationsPanelState.Ready -> state.snapshot
-            is AiIntegrationsPanelState.Empty -> state.snapshot
             else -> return null
         }
         if (!snapshot.cli.uninstallAvailable) return null
@@ -288,6 +285,73 @@ class AiIntegrationsPanel(
             accessibleContext.accessibleName = UNINSTALL_CLI_LABEL
             maximumSize = preferredSize
         }
+    }
+
+    private fun mcpStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
+        AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
+        is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
+        is AiIntegrationsPanelState.Ready -> mcpStatus(state.snapshot)
+    }
+
+    private fun mcpStatus(snapshot: AiIntegrationSnapshot): CardStatus {
+        val configurations = snapshot.mcpConfigurations.values
+        if (configurations.isEmpty()) {
+            return CardStatus("No agents with MCP configuration files", StatusTone.NEUTRAL)
+        }
+        val configuredCount = configurations.count {
+            it.state == McpConfigurationState.STANDALONE || it.state == McpConfigurationState.CLI_MANAGED
+        }
+        return CardStatus("$configuredCount configured", if (configuredCount == configurations.size) StatusTone.SUCCESS else StatusTone.NEUTRAL)
+    }
+
+    private fun CardBuilder.addMcpConfigurations(snapshot: AiIntegrationSnapshot) {
+        addMetadata(listOf(agentCountText(snapshot.agents.size)))
+        addAgentDetails(mcpDetailsExpanded, { mcpDetailsExpanded = it }) {
+            addMcpAgentRows(snapshot)
+        }
+    }
+
+    private fun CardBuilder.addMcpAgentRows(snapshot: AiIntegrationSnapshot) {
+        if (snapshot.agents.isEmpty()) {
+            addMessage(NO_AGENTS_MESSAGE)
+        }
+        snapshot.agents.forEach { capability -> addMcpAgentRow(capability, snapshot) }
+    }
+
+    private fun CardBuilder.addMcpAgentRow(capability: AgentCapability, snapshot: AiIntegrationSnapshot) {
+        val configuration = snapshot.mcpConfigurations[capability.agent]
+        if (configuration != null) {
+            addMcpConfigurationRow(configuration)
+            return
+        }
+        val status = if (capability.cliIntegrationSupported) "Available through SonarQube CLI" else "IDE setup unavailable"
+        val actions = if (capability.cliIntegrationSupported && snapshot.cli.authentication == CliAuthenticationStatus.AUTHENTICATED) {
+            listOf(RowAction("Set up via CLI", AiIntegrationsIntent.IntegrateCli(capability.agent)))
+        } else {
+            emptyList()
+        }
+        addAgentRow(registry.displayName(capability.agent), CardStatus(status, StatusTone.NEUTRAL), actions = actions)
+    }
+
+    private fun CardBuilder.addMcpConfigurationRow(configuration: McpAgentConfiguration) {
+        val actions = when (configuration.state) {
+            McpConfigurationState.NOT_CONFIGURED -> listOf(
+                RowAction("Set up", AiIntegrationsIntent.SetUpMcp(configuration.agent))
+            )
+            McpConfigurationState.STANDALONE,
+            McpConfigurationState.CLI_MANAGED,
+            McpConfigurationState.UNKNOWN,
+            McpConfigurationState.MALFORMED -> listOf(
+                RowAction("Open configuration", AiIntegrationsIntent.OpenMcpConfiguration(configuration.agent))
+            )
+        }
+        addAgentRow(
+            registry.displayName(configuration.agent),
+            configuration.toStatus(),
+            diagnostic = configuration.diagnostics.takeIf { configuration.state != McpConfigurationState.CLI_MANAGED && it.isNotEmpty() }?.joinToString(" • "),
+            actions = actions,
+            statusTooltip = configuration.path.toString()
+        )
     }
 
     private fun CardBuilder.addCliOverview(snapshot: AiIntegrationSnapshot) {
@@ -328,10 +392,6 @@ class AiIntegrationsPanel(
                 }
             }
         ) { cliDetailsExpanded = it }
-    }
-
-    private fun CardBuilder.addMcpOverview(snapshot: AiIntegrationSnapshot) {
-        addCapabilityOverview(snapshot.agents, { it.standaloneMcpSupported }, mcpDetailsExpanded) { mcpDetailsExpanded = it }
     }
 
     private fun CardBuilder.addCliUninstallFeedback() {
@@ -378,6 +438,33 @@ class AiIntegrationsPanel(
         onExpandedChange: (Boolean) -> Unit
     ) {
         addMetadata(listOf(agentCountText(capabilities.size)))
+        addAgentDetails(expanded, onExpandedChange) {
+            if (capabilities.isEmpty()) {
+                addMessage(NO_AGENTS_MESSAGE)
+            }
+            capabilities.forEach { capability ->
+                val integration = if (cliIntegrations != null && supported(capability)) {
+                    cliIntegrations.firstOrNull { it.agent == capability.agent }
+                        ?: AgentCliIntegration(capability.agent, CliIntegrationRecordingStatus.UNKNOWN, emptyList())
+                } else {
+                    null
+                }
+                addAgentRow(
+                    registry.displayName(capability.agent),
+                    CardStatus(if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS, StatusTone.NEUTRAL),
+                    integration,
+                    actions = rowActions(capability),
+                    guidance = rowGuidance(capability)
+                )
+            }
+        }
+    }
+
+    private fun CardBuilder.addAgentDetails(
+        expanded: Boolean,
+        onExpandedChange: (Boolean) -> Unit,
+        content: CardBuilder.() -> Unit
+    ) {
         val details = JBPanel<JBPanel<*>>().apply {
             isOpaque = false
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -386,25 +473,7 @@ class AiIntegrationsPanel(
         fun updateDetails(show: Boolean) {
             details.removeAll()
             if (show) {
-                val detailBuilder = CardBuilder(details)
-                if (capabilities.isEmpty()) {
-                    detailBuilder.addMessage(NO_AGENTS_MESSAGE)
-                }
-                capabilities.forEach { capability ->
-                    val integration = if (cliIntegrations != null && supported(capability)) {
-                        cliIntegrations.firstOrNull { it.agent == capability.agent }
-                            ?: AgentCliIntegration(capability.agent, CliIntegrationRecordingStatus.UNKNOWN, emptyList())
-                    } else {
-                        null
-                    }
-                    detailBuilder.addAgentRow(
-                        registry.displayName(capability.agent),
-                        if (supported(capability)) SUPPORTED_STATUS else NOT_SUPPORTED_STATUS,
-                        integration,
-                        actions = rowActions(capability),
-                        guidance = rowGuidance(capability)
-                    )
-                }
+                CardBuilder(details).content()
             }
             details.isVisible = show
             cards.revalidate()
@@ -514,7 +583,7 @@ class AiIntegrationsPanel(
             panel.add(createLinkButton(label, url))
         }
 
-        fun addAgentRow(name: String, status: String, integration: AgentCliIntegration? = null, actions: List<RowAction> = emptyList(), guidance: String? = null) {
+        fun addAgentRow(name: String, status: CardStatus, integration: AgentCliIntegration? = null, diagnostic: String? = null, actions: List<RowAction> = emptyList(), guidance: String? = null, statusTooltip: String? = null) {
             val row = NaturalHeightPanel().apply {
                 layout = BorderLayout(JBUI.scale(12), 0)
                 isOpaque = false
@@ -530,10 +599,12 @@ class AiIntegrationsPanel(
                 })
                 if (guidance == null) {
                     add(verticalSpace(3))
-                    add(statusLabel(integration?.recordingStatus?.toStatus() ?: CardStatus(status, StatusTone.NEUTRAL)).apply {
+                    add(statusLabel(integration?.recordingStatus?.toStatus() ?: status).apply {
                         alignmentX = Component.LEFT_ALIGNMENT
+                        toolTipText = statusTooltip
                     })
                 }
+                diagnostic?.let { add(bodyText(it)) }
             }, BorderLayout.CENTER)
             guidance?.let {
                 row.add(statusLabel(CardStatus(it, StatusTone.NEUTRAL)), BorderLayout.EAST)
@@ -600,7 +671,7 @@ class AiIntegrationsPanel(
         }
 
         fun addPrimaryAction(label: String, intent: AiIntegrationsIntent, enabled: Boolean = true) {
-            addPrimaryAction(label, enabled) { intentListener(intent) }
+            addPrimaryAction(label, enabled) { dispatchIntent(intent) }
         }
 
         fun addPrimaryAction(label: String, enabled: Boolean = true, action: () -> Unit) {
@@ -625,7 +696,7 @@ class AiIntegrationsPanel(
 
     private fun createCompactButton(label: String, intent: AiIntegrationsIntent): JButton = JButton(label).apply {
         isOpaque = false
-        addActionListener { intentListener(intent) }
+        addActionListener { dispatchIntent(intent) }
     }
 
     private fun createDisclosureButton(expanded: Boolean, label: String = MANAGE_AGENTS_LABEL, toggle: (Boolean) -> Unit): JToggleButton =
@@ -647,6 +718,10 @@ class AiIntegrationsPanel(
     private fun createLinkButton(label: String, url: String): JButton = ActionLink(label, { openLink(url) }).apply {
         setExternalLinkIcon()
         alignmentX = Component.LEFT_ALIGNMENT
+    }
+
+    private fun dispatchIntent(intent: AiIntegrationsIntent) {
+        intentListener(intent)
     }
 
     override fun dispose() {
@@ -735,18 +810,7 @@ private class RoundedSurfacePanel(
 private fun AiIntegrationsPanel.cliStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
     AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
     is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
-    is AiIntegrationsPanelState.Empty -> state.snapshot.cli.toStatus()
     is AiIntegrationsPanelState.Ready -> state.snapshot.cli.toStatus()
-}
-
-private fun AiIntegrationsPanel.mcpStatus(state: AiIntegrationsPanelState): CardStatus = when (state) {
-    AiIntegrationsPanelState.Loading -> CardStatus(CHECKING_STATUS, StatusTone.NEUTRAL)
-    is AiIntegrationsPanelState.Error -> CardStatus(NEEDS_ATTENTION, StatusTone.WARNING)
-    is AiIntegrationsPanelState.Empty -> CardStatus(ZERO_SUPPORTED_STATUS, StatusTone.NEUTRAL)
-    is AiIntegrationsPanelState.Ready -> {
-        val count = state.snapshot.agents.count { it.standaloneMcpSupported }
-        CardStatus("$count supported", StatusTone.NEUTRAL)
-    }
 }
 
 private fun CliState.toStatus(): CardStatus = when (installation) {
@@ -771,6 +835,14 @@ private fun CliIntegrationCheckStatus.displayText(): String = when (this) {
 private fun disclosureLabel(expanded: Boolean, label: String): String = "${if (expanded) "▾" else "▸"} $label"
 
 private fun agentCountText(count: Int): String = "$count ${if (count == 1) "agent" else "agents"} detected"
+
+private fun McpAgentConfiguration.toStatus(): CardStatus = when (state) {
+    McpConfigurationState.NOT_CONFIGURED -> CardStatus("Not configured", StatusTone.NEUTRAL)
+    McpConfigurationState.STANDALONE,
+    McpConfigurationState.CLI_MANAGED -> CardStatus("Configured", StatusTone.SUCCESS)
+    McpConfigurationState.UNKNOWN,
+    McpConfigurationState.MALFORMED -> CardStatus(NEEDS_ATTENTION, StatusTone.NEUTRAL)
+}
 
 private fun bodyText(text: String, secondary: Boolean = false): JBTextArea = JBTextArea(text).apply {
     font = JBFont.label()

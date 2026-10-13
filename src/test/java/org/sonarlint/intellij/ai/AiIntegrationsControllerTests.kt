@@ -39,21 +39,25 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.messages.CliOperationListener
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationInspectionResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
 class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private lateinit var backend: BackendService
     private lateinit var panel: AiIntegrationsPanel
     private lateinit var controller: AiIntegrationsController
     private lateinit var coordinator: CliOperationCoordinator
+    private lateinit var mcpCoordinator: McpConfigurationCoordinator
     private var extraController: AiIntegrationsController? = null
     private var enabledPluginIds = emptySet<String>()
     private val registry = AiAgentRegistry(IdePluginDetector { it in enabledPluginIds })
@@ -68,6 +72,14 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         coordinator = createCoordinator()
         replaceApplicationService(SonarLintTelemetry::class.java, mock(SonarLintTelemetry::class.java))
         panel = AiIntegrationsPanel(registry)
+        `when`(backend.inspectMcpConfiguration(any(), any())).thenReturn(
+            CompletableFuture.completedFuture(McpConfigurationInspectionResponse(McpConfigurationState.NOT_CONFIGURED, emptyList()))
+        )
+        mcpCoordinator = McpConfigurationCoordinator(
+            backendService = backend,
+            registry = registry,
+            executor = Runnable::run
+        )
         controller = createController()
     }
 
@@ -91,22 +103,43 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `refreshes on CLI operation events only after first selection and until disposed`() {
+    fun `refreshes on integration events only after first selection and until disposed`() {
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture())
-        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC)
+        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC)
 
-        publisher.operationFinished()
+        publisher.stateChanged()
         verify(backend, never()).getAiIntegrationState(project, emptyList())
 
         controller.loadInitially()
-        publisher.operationFinished()
+        publisher.stateChanged()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
 
         controller.loadInitially()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
 
         Disposer.dispose(controller)
-        publisher.operationFinished()
+        publisher.stateChanged()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+    }
+
+    @Test
+    fun `MCP port refresh respects first selection and controller disposal`() {
+        `when`(backend.getAiIntegrationState(null, emptyList())).thenReturn(CompletableFuture.completedFuture(snapshot(emptyList())))
+        `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture())
+        fun refreshMcp() {
+            mcpCoordinator.embeddedServerStarted(64121)
+            UIUtil.dispatchAllInvocationEvents()
+        }
+
+        refreshMcp()
+        verify(backend, never()).getAiIntegrationState(project, emptyList())
+
+        controller.loadInitially()
+        refreshMcp()
+        verify(backend, times(2)).getAiIntegrationState(project, emptyList())
+
+        Disposer.dispose(controller)
+        refreshMcp()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
     }
 
@@ -118,13 +151,13 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         controller.refresh()
         controller.refresh()
-        second.complete(snapshot(listOf(AgentCapability(AiAgent.CODEX, emptySet(), false, true))))
+        second.complete(snapshot(listOf(AgentCapability(AiAgent.CODEX, emptySet(), true, false))))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 supported")
+        assertThat(labels(panel)).contains("1 agent detected")
 
         first.complete(snapshot(emptyList()))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 supported")
+        assertThat(labels(panel)).contains("1 agent detected")
     }
 
     @Test
@@ -156,7 +189,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         first.complete(snapshot(bothJetBrainsAgents.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
         descendants(panel).filterIsInstance<JToggleButton>().forEach { it.doClick() }
-        assertThat(labels(panel)).contains("3 agents detected", "3 supported")
+        assertThat(labels(panel)).contains("3 agents detected", "0 configured")
             .containsSubsequence("GitHub Copilot", "Junie", "JetBrains AI Assistant")
 
         enabledPluginIds = setOf("com.intellij.ml.llm")
@@ -164,7 +197,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, onlyAiAssistant)
         second.complete(snapshot(onlyAiAssistant.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 agent detected", "1 supported", "JetBrains AI Assistant")
+        assertThat(labels(panel)).contains("1 agent detected", "No agents with MCP configuration files", "JetBrains AI Assistant")
             .doesNotContain("GitHub Copilot", "Junie")
 
         enabledPluginIds = emptySet()
@@ -172,7 +205,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, emptyList())
         third.complete(snapshot(emptyList()))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("0 agents detected", "0 supported")
+        assertThat(labels(panel)).contains("0 agents detected", "No agents with MCP configuration files")
             .doesNotContain("GitHub Copilot", "Junie", "JetBrains AI Assistant")
     }
 
@@ -409,7 +442,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         uninstallButton().click()
         refreshFromPanel()
-        ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
+        ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
         UIUtil.dispatchAllInvocationEvents()
 
         assertThat(texts(panel)).contains("Uninstalling SonarQube CLI…")
@@ -496,18 +529,18 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     private fun createCoordinator(refreshViews: () -> Unit = ::publishOperationFinished) =
-        CliOperationCoordinator(backend, { error("terminal unused") }, CliConnectionSelector(), { _, _, _ -> }, refreshViews)
+        CliOperationCoordinator(backend, { error("terminal unused") }, ConnectionSelector(IntellijConnectionChoiceUi()), { _, _, _ -> }, refreshViews)
 
     private fun createController(
         project: Project = this.project,
         panel: AiIntegrationsPanel = this.panel,
         coordinator: CliOperationCoordinator = this.coordinator,
         notifyUninstallResult: (CliUninstallFeedback.Finished) -> Unit = { results += it }
-    ) = AiIntegrationsController(project, panel, backend, registry, coordinator, notifyUninstallResult) {
+    ) = AiIntegrationsController(project, panel, backend, registry, coordinator, notifyUninstallResult, confirmUninstall = {
         confirmationCount++
         duringConfirmation()
         acceptUninstall
-    }
+    }, mcpCoordinator = mcpCoordinator)
 
     private fun useQueuedRefresh() {
         Disposer.dispose(controller)
@@ -519,7 +552,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     private fun publishOperationFinished() =
-        ApplicationManager.getApplication().messageBus.syncPublisher(CliOperationListener.TOPIC).operationFinished()
+        ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
 
     private fun prepareUninstall(
         snapshot: AiIntegrationSnapshot = installedCli(),

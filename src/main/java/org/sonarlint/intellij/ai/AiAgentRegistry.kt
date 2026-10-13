@@ -22,6 +22,10 @@ package org.sonarlint.intellij.ai
 import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.EnvironmentUtil
+import com.intellij.util.SystemProperties
+import java.nio.file.Path
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
 fun interface IdePluginDetector {
@@ -49,6 +53,31 @@ class AiAgentRegistry(private val pluginDetector: IdePluginDetector = IntellijId
     }
 
     fun displayName(agent: AiAgent): String = DISPLAY_NAMES.getValue(agent)
+
+    fun standaloneMcpPath(agent: AiAgent): Path? {
+        val userHome = Path.of(SystemProperties.getUserHome()).toAbsolutePath().normalize()
+        val localAppData = EnvironmentUtil.getValue("LOCALAPPDATA")?.let(Path::of)
+        return standaloneMcpPath(agent, userHome, SystemInfo.isWindows, localAppData)
+    }
+
+    internal fun standaloneMcpPath(
+        agent: AiAgent,
+        userHome: Path,
+        windows: Boolean,
+        localAppData: Path?
+    ): Path? {
+        return when (agent) {
+            AiAgent.GITHUB_COPILOT -> if (windows) {
+                (localAppData ?: userHome.resolve("AppData/Local"))
+                    .resolve("github-copilot/intellij/mcp.json").toAbsolutePath().normalize()
+            } else {
+                userHome.resolve(".config/github-copilot/intellij/mcp.json")
+            }
+            AiAgent.CURSOR -> userHome.resolve(".cursor/mcp.json")
+            AiAgent.CLAUDE_CODE -> userHome.resolve(".claude.json")
+            else -> null
+        }
+    }
 
     companion object {
         const val GITHUB_COPILOT_PLUGIN_ID = "com.github.copilot"
