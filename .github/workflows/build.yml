@@ -406,6 +406,8 @@ jobs:
       QA_CATEGORY: ${{ matrix.qa_category }}
       TEST_SUITE: ${{ matrix.test_suite }}
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
+      # IDE startup and ITs need separate Gradle daemons; leave room for the IDE, SLOOP and SonarQube.
+      QA_GRADLE_JVM_ARGS: '-Xmx2G -XX:MaxMetaspaceSize=512M -Dfile.encoding=UTF-8'
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
@@ -642,7 +644,8 @@ jobs:
           ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
         run: |
           # Start IDE in background using Gradle
-          nohup ./gradlew :its:runIdeForUiTests --stacktrace -i \
+          nohup ./gradlew :its:runIdeForUiTests --stacktrace -i --max-workers=2 \
+            "-Dorg.gradle.jvmargs=${QA_GRADLE_JVM_ARGS}" \
             -PijVersion=${IDEA_VERSION} \
             -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
           echo "IDE_PID=$!" >> $GITHUB_ENV
@@ -705,7 +708,10 @@ jobs:
           ) &
           MEMORY_MONITOR_PID=$!
           trap 'kill $MEMORY_MONITOR_PID 2>/dev/null' EXIT
-          ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
+          ./gradlew :its:check --stacktrace -i --max-workers=2 \
+            "-Dorg.gradle.jvmargs=${QA_GRADLE_JVM_ARGS}" \
+            -PijVersion=${IDEA_VERSION} \
+            -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
 
       - name: Stop recording
         if: always()
