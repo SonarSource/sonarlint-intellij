@@ -51,17 +51,19 @@ class AnalysisState(
     private var hasReceivedFinalHotspots = false
 
     fun addRawHotspots(analysisId: UUID, hotspotsByFile: Map<URI, List<RaisedHotspotDto>>, isIntermediate: Boolean) {
-        hasReceivedFinalHotspots = !isIntermediate
-
-        liveHotspots.putAll(hotspotsByFile.mapNotNull { (uri, rawHotspots) ->
-            val virtualFile = uriToVirtualFile(uri)
-            if (virtualFile != null) {
-                val liveHotspots = convertRawHotspots(virtualFile, rawHotspots)
-                virtualFile to liveHotspots
-            } else {
-                null
+        val convertedHotspots = convertOrFinishOnCancellation {
+            hotspotsByFile.mapNotNull { (uri, rawHotspots) ->
+                val virtualFile = uriToVirtualFile(uri)
+                if (virtualFile != null) {
+                    val liveHotspots = convertRawHotspots(virtualFile, rawHotspots)
+                    virtualFile to liveHotspots
+                } else {
+                    null
+                }
             }
-        })
+        }
+        liveHotspots.putAll(convertedHotspots)
+        hasReceivedFinalHotspots = !isIntermediate
 
         if (isAnalysisFinished()) {
             analysisCallback.onSuccess(
@@ -79,17 +81,19 @@ class AnalysisState(
     }
 
     fun addRawIssues(analysisId: UUID, issuesByFile: Map<URI, List<RaisedIssueDto>>, isIntermediate: Boolean) {
-        hasReceivedFinalIssues = !isIntermediate
-
-        liveIssues.putAll(issuesByFile.mapNotNull { (uri, rawIssues) ->
-            val virtualFile = uriToVirtualFile(uri)
-            if (virtualFile != null) {
-                val liveIssues = convertRawIssues(virtualFile, rawIssues)
-                virtualFile to liveIssues
-            } else {
-                null
+        val convertedIssues = convertOrFinishOnCancellation {
+            issuesByFile.mapNotNull { (uri, rawIssues) ->
+                val virtualFile = uriToVirtualFile(uri)
+                if (virtualFile != null) {
+                    val liveIssues = convertRawIssues(virtualFile, rawIssues)
+                    virtualFile to liveIssues
+                } else {
+                    null
+                }
             }
-        })
+        }
+        liveIssues.putAll(convertedIssues)
+        hasReceivedFinalIssues = !isIntermediate
 
         if (isAnalysisFinished()) {
             analysisCallback.onSuccess(
@@ -103,6 +107,19 @@ class AnalysisState(
             getService(module.project, RunningAnalysesTracker::class.java).finish(this)
         } else {
             analysisCallback.onIntermediateResult(AnalysisIntermediateResult(LiveFindings(liveIssues, liveHotspots)))
+        }
+    }
+
+    private fun <T> convertOrFinishOnCancellation(convert: () -> T): T {
+        try {
+            return convert()
+        } catch (e: ProcessCanceledException) {
+            try {
+                analysisCallback.onError(e)
+            } finally {
+                getService(module.project, RunningAnalysesTracker::class.java).finish(this)
+            }
+            throw e
         }
     }
 

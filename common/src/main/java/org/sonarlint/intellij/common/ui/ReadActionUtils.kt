@@ -42,8 +42,8 @@ import java.util.concurrent.Callable
  * - **Background thread** → [ReadAction.nonBlocking] (cancellable; expires when the project or [VirtualFile] is disposed/invalid)
  * - **EDT** → [ReadAction.compute] / [ReadAction.run] ([ReadAction.nonBlocking] must not run on EDT)
  *
- * On background threads, cancellation or project expiration returns `null` (compute) or no-ops (run)
- * instead of throwing [ProcessCanceledException]. Non-blocking read actions may re-run their lambda
+ * On background threads, project or file expiration returns `null` (compute) or no-ops (run).
+ * Other cancellation propagates as [ProcessCanceledException]. Non-blocking read actions may re-run their lambda
  * after cancellation; keep read-action bodies idempotent and free of non-repeatable side effects.
  *
  * Prefer these methods over calling [ReadAction] directly.
@@ -121,7 +121,8 @@ class ReadActionUtils {
                     executeNonBlockingReadAction(
                         ReadAction.nonBlocking(Callable { action.compute() })
                             .inSmartMode(project)
-                            .expireWhen { project.isDisposed || !virtualFile.isValid }
+                            .expireWhen { project.isDisposed || !virtualFile.isValid },
+                        { project.isDisposed || !virtualFile.isValid }
                     )
                 }
             }
@@ -146,7 +147,7 @@ class ReadActionUtils {
                 if (project != null) {
                     readAction = readAction.expireWhen { project.isDisposed }
                 }
-                executeNonBlockingReadAction(readAction)
+                executeNonBlockingReadAction(readAction) { project?.isDisposed == true }
             }
         }
 
@@ -165,18 +166,21 @@ class ReadActionUtils {
                         || (virtualFileForExpiration != null && !virtualFileForExpiration.isValid)
                 }
             }
-            return executeNonBlockingReadAction(readAction)
+            return executeNonBlockingReadAction(readAction) {
+                projectForExpiration?.isDisposed == true
+                    || (virtualFileForExpiration != null && !virtualFileForExpiration.isValid)
+            }
         }
 
         /**
          * Runs a non-blocking read action on a background thread.
-         * Returns null when the action is cancelled or expired — intentional boundary for *Safely* helpers.
+         * Returns null when the project or file expires. Other cancellation propagates.
          */
-        private fun <T> executeNonBlockingReadAction(readAction: NonBlockingReadAction<T>): T? {
+        private fun <T> executeNonBlockingReadAction(readAction: NonBlockingReadAction<T>, expired: () -> Boolean): T? {
             return try {
                 readAction.executeSynchronously()
-            } catch (_: ProcessCanceledException) {
-                null
+            } catch (e: ProcessCanceledException) {
+                if (expired()) null else throw e
             }
         }
     }

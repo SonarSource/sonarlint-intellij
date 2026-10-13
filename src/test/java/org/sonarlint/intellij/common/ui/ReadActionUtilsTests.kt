@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.common.ui
 
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.concurrent.CompletableFuture
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -42,6 +44,24 @@ class ReadActionUtilsTests : AbstractSonarLintLightTests() {
         }.get(10, TimeUnit.SECONDS)
 
         assertThat(result).isEqualTo("computed")
+    }
+
+    @Test
+    fun computeReadActionSafely_propagates_cancellation_from_background_thread() {
+        assertThatThrownBy {
+            CompletableFuture.supplyAsync {
+                ReadActionUtils.computeReadActionSafely(project) { throw ProcessCanceledException() }
+            }.get(10, TimeUnit.SECONDS)
+        }.hasCauseInstanceOf(ProcessCanceledException::class.java)
+    }
+
+    @Test
+    fun runReadActionSafely_propagates_cancellation_from_background_thread() {
+        assertThatThrownBy {
+            CompletableFuture.runAsync {
+                ReadActionUtils.runReadActionSafely(project) { throw ProcessCanceledException() }
+            }.get(10, TimeUnit.SECONDS)
+        }.hasCauseInstanceOf(ProcessCanceledException::class.java)
     }
 
     @Test
@@ -85,13 +105,29 @@ class ReadActionUtilsTests : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun computeReadActionSafelyInSmartMode_propagates_cancellation_from_background_thread() {
+        myFixture.configureByText("Sample.java", "class Sample {}")
+
+        assertThatThrownBy {
+            CompletableFuture.supplyAsync {
+                ReadActionUtils.computeReadActionSafelyInSmartMode(myFixture.file.virtualFile, project) {
+                    throw ProcessCanceledException()
+                }
+            }.get(10, TimeUnit.SECONDS)
+        }.hasCauseInstanceOf(ProcessCanceledException::class.java)
+    }
+
+    @Test
     fun computeReadActionSafely_returns_null_when_virtual_file_expires_during_background_read() {
         val expiringFile = mock(VirtualFile::class.java)
-        val validityChecks = AtomicInteger(0)
-        `when`(expiringFile.isValid).thenAnswer { validityChecks.incrementAndGet() > 1 }
+        val valid = AtomicBoolean(true)
+        `when`(expiringFile.isValid).thenAnswer { valid.get() }
 
-        val result = CompletableFuture.supplyAsync {
-            ReadActionUtils.computeReadActionSafely(expiringFile, project) { "ignored" }
+        val result = CompletableFuture.supplyAsync<String?> {
+            ReadActionUtils.computeReadActionSafely(expiringFile, project) {
+                valid.set(false)
+                throw ProcessCanceledException()
+            }
         }.get(10, TimeUnit.SECONDS)
 
         assertThat(result).isNull()
@@ -140,6 +176,15 @@ class ReadActionUtilsTests : AbstractSonarLintLightTests() {
         runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
             assertThat(ReadActionUtils.computeReadActionSafely(project) { "computed-on-edt" })
                 .isEqualTo("computed-on-edt")
+        }
+    }
+
+    @Test
+    fun computeReadActionSafely_propagates_cancellation_on_edt() {
+        runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
+            assertThatThrownBy {
+                ReadActionUtils.computeReadActionSafely(project) { throw ProcessCanceledException() }
+            }.isInstanceOf(ProcessCanceledException::class.java)
         }
     }
 

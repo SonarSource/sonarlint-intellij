@@ -21,6 +21,7 @@ package org.sonarlint.intellij.common.util
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileElement
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.roots.GeneratedSourcesFilter.isGeneratedSourceByAnyFilter
@@ -51,6 +52,8 @@ object FileUtils {
             }
 
             return false == toSkip
+        } catch (e: ProcessCanceledException) {
+            throw e
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.message)
             return false
@@ -78,6 +81,8 @@ object FileUtils {
             }
 
             return false == toSkip
+        } catch (e: ProcessCanceledException) {
+            throw e
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Error while visiting a file, reason: " + e.message)
             return false
