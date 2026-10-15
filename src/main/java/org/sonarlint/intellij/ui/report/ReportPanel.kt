@@ -26,7 +26,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
-import com.intellij.openapi.util.Disposer
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLabel
@@ -54,7 +53,6 @@ import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.createSplitter
 import org.sonarlint.intellij.ui.filter.FilterSettingsService
-import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.FindingsFilter
 import org.sonarlint.intellij.ui.filter.SortMode
@@ -73,18 +71,17 @@ const val VERTICAL_FLOW_LAYOUT_VGAP = 0
 
 class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, false), Disposable {
     
-    internal val lifetime = Disposer.newDisposable("Report panel")
     @Volatile
     private var invalidated = false
 
     private fun isActive() = !invalidated && !project.isDisposed
 
     // Components
-    private val whatsNewPanel = ReportTabStatusPanel(project, lifetime)
+    private val whatsNewPanel = ReportTabStatusPanel(project, this)
     private val restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction()
     
     // Core managers
-    private val findingDetailsPanel = FindingDetailsPanel(project, lifetime, FindingKind.MIX)
+    private val findingDetailsPanel = FindingDetailsPanel(project, this, FindingKind.MIX)
     private val filtersPanel = createFiltersPanel()
     private val findingsFilter = FindingsFilter(project)
     private val displayManager = ReportDisplayManager(filtersPanel)
@@ -99,7 +96,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private var lastAnalysisResult: AnalysisResult? = null
     @Volatile
     private var refreshGeneration = 0L
-    private var filteredFindingsCache = FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
     private var isLoadingState = false
     private var expectedModuleCount = 1
     private var receivedModuleCount = 0
@@ -116,7 +112,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private var analysisStatusLabel: JBLabel? = null
 
     init {
-        Disposer.register(this, lifetime)
         initializeUI()
         configureInitialState()
     }
@@ -171,23 +166,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         createLoadingPanel()
         showLoadingPanel()
-    }
-    
-    /**
-     * Updates the loading progress when a module completes analysis.
-     */
-    fun updateLoadingProgress() {
-        if (!isActive()) return
-        receivedModuleCount++
-        updateLoadingText()
-
-        if (analysisStatusPanel != null) {
-            updateAnalysisStatusText()
-        }
-
-        if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
-            showAnalysisStatusPanel()
-        }
     }
     
     /**
@@ -338,7 +316,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         findingDetailsPanel.minimumSize = FINDING_DETAILS_MINIMUM_SIZE
         
         super.setContent(createSplitter(
-            project, this, lifetime, mainContentPanel,
+            project, this, this, mainContentPanel,
             findingDetailsPanel, SPLIT_PROPORTION_PROPERTY,
             DEFAULT_SPLIT_PROPORTION
         ))
@@ -389,7 +367,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
 
             runOnUiThread(project) {
                 if (!isCurrentRefresh(generation)) return@runOnUiThread
-                filteredFindingsCache = filtered
                 val treeState = treeManager.takeTreeStateSnapshot()
                 updateTreeModels(split)
                 treeManager.configureTreeVisibility(focusOnNewCode)
@@ -618,13 +595,11 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         treeManager.collapseTrees()
     }
 
-    internal fun invalidateReport() {
+    override fun dispose() {
         if (invalidated) return
         invalidated = true
-        Disposer.dispose(lifetime)
         treeManager.clear()
         findingDetailsPanel.clear()
-        filteredFindingsCache = FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
         filtersPanel.searchField.text = ""
         isLoadingState = false
         expectedModuleCount = 0
@@ -646,7 +621,5 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         lastAnalysisResult = null
     }
-
-    override fun dispose() = invalidateReport()
 
 }

@@ -44,7 +44,6 @@ import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.issue.LiveIssue
-import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.MqrImpactFilter
 import org.sonarlint.intellij.ui.filter.SeverityFilter
@@ -161,7 +160,6 @@ class ReportPanelTests : AbstractSonarLintLightTests() {
         runNext(tasks)
         drainEdt()
         assertThat(displayedIssues()).containsExactly(first)
-        assertThat((field(panel, "filteredFindingsCache") as FilteredFindings).issues).containsExactly(first)
     }
 
     @Test
@@ -173,7 +171,6 @@ class ReportPanelTests : AbstractSonarLintLightTests() {
         drainEdt()
 
         assertThat(displayedIssues()).isEmpty()
-        assertThat((field(panel, "filteredFindingsCache") as FilteredFindings).isEmpty()).isTrue()
         assertThat(field(panel, "lastAnalysisResult")).isNull()
     }
 

@@ -79,7 +79,7 @@ private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
 private const val RULE_DETAILS_ERROR = "Cannot get rule description"
 private const val LOADING_TEXT = "Loading rule description\u2026"
 
-class SonarLintRulePanel(private val project: Project, private val parent: Disposable) : JBLoadingPanel(BorderLayout(), parent) {
+class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBLoadingPanel(BorderLayout(), parent) {
 
     @Volatile
     private var disposed = false
@@ -139,7 +139,12 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         ApplicationManager.getApplication().messageBus.connect(parent)
             .subscribe(
                 LafManagerListener.TOPIC,
-                LafManagerListener { runOnUiThread(project) { updateUiComponents() } })
+                LafManagerListener { updateOnUiThread { updateUiComponents() } })
+    }
+
+    private fun updateOnUiThread(action: () -> Unit) {
+        if (!isActive()) return
+        runOnUiThread(project) { if (isActive()) action() }
     }
 
     private data class RuleDetailsLoaderState(
@@ -166,7 +171,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
             val newState = RuleDetailsLoaderState(module, null, ruleKey)
             if (state == newState) {
                 // Still force a refresh of the UI, as some other fields of the finding may be different
-                runOnUiThread(project) {
+                updateOnUiThread {
                     updateUiComponents()
                 }
                 return
@@ -203,8 +208,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
 
         private fun refreshUi(openOnCodeFixTab: Boolean) {
-            runOnUiThread(project) {
-                if (!isActive()) return@runOnUiThread
+            updateOnUiThread {
                 updateUiComponents()
                 if (openOnCodeFixTab) {
                     descriptionPanel.openCodeFixTabAndGenerate()
@@ -230,9 +234,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
 
 
         private fun applyRuleDetailsResponse(response: GetEffectiveRuleDetailsResponse?, error: Throwable?) {
-            if (!isActive()) return
-            runOnUiThread(project) {
-                if (!isActive()) return@runOnUiThread
+            updateOnUiThread {
                 stopLoading()
                 ruleDetails = if (error != null) {
                     SonarLintConsole.get(project).error(RULE_DETAILS_ERROR, error)
@@ -245,9 +247,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
 
         private fun applyIssueDetailsResponse(module: Module, response: GetEffectiveIssueDetailsResponse?, error: Throwable?, openOnCodeFixTab: Boolean) {
-            if (!isActive()) return
-            runOnUiThread(project) {
-                if (!isActive()) return@runOnUiThread
+            updateOnUiThread {
                 if (error != null) {
                     handleIssueDetailsError(module, error, openOnCodeFixTab)
                 } else {
@@ -257,7 +257,6 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
 
         private fun handleIssueDetailsError(module: Module, error: Throwable, openOnCodeFixTab: Boolean) {
-            if (!isActive()) return
             val isIssueNotFound = isIssueNotFoundError(error)
             
             if (isIssueNotFound && finding != null) {
@@ -273,7 +272,6 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
 
         private fun tryFallbackToRuleDetails(module: Module, openOnCodeFixTab: Boolean) {
-            if (!isActive()) return
             issueNotFoundError = true
             val findingRuleKey = finding?.getRuleKey()
             val contextKey = finding?.getRuleDescriptionContextKey()
@@ -286,14 +284,11 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
 
         private fun loadRuleDetailsFallback(module: Module, ruleKey: String, contextKey: String?, openOnCodeFixTab: Boolean) {
-            if (!isActive()) return
             SonarLintUtils.getService(BackendService::class.java)
                 .getEffectiveRuleDetails(module, ruleKey, contextKey)
                 .orTimeout(30, TimeUnit.SECONDS)
                 .handle { ruleResponse, ruleError ->
-                    if (!isActive()) return@handle null
-                    runOnUiThread(project) {
-                        if (!isActive()) return@runOnUiThread
+                    updateOnUiThread {
                         stopLoading()
                         if (ruleError != null) {
                             SonarLintConsole.get(project).error(RULE_DETAILS_ERROR, ruleError)
@@ -310,7 +305,6 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
 
         private fun handleErrorWithoutFallback(error: Throwable?, isIssueNotFound: Boolean, openOnCodeFixTab: Boolean) {
-            if (!isActive()) return
             stopLoading()
             if (error != null) {
                 SonarLintConsole.get(project).error(RULE_DETAILS_ERROR, error)
@@ -321,7 +315,6 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
         }
 
         private fun handleIssueDetailsSuccess(details: EffectiveIssueDetailsDto, openOnCodeFixTab: Boolean) {
-            if (!isActive()) return
             stopLoading()
             issueDetails = details
             issueNotFoundError = false
@@ -331,7 +324,7 @@ class SonarLintRulePanel(private val project: Project, private val parent: Dispo
 
     fun clear() {
         clearValues()
-        runOnUiThread(project) { updateUiComponents() }
+        updateOnUiThread { updateUiComponents() }
     }
 
     private fun clearValues() {

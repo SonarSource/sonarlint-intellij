@@ -24,6 +24,8 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.testFramework.PlatformTestUtil
+import com.intellij.ui.content.ContentManagerEvent
+import com.intellij.ui.content.ContentManagerListener
 import com.intellij.ui.content.ContentUI
 import com.intellij.ui.content.impl.ContentManagerImpl
 import java.time.Instant
@@ -45,6 +47,7 @@ import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.callable.ShowReportCallable
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -55,7 +58,6 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.ui.ToolWindowConstants
-import org.sonarlint.intellij.ui.filter.FilteredFindings
 
 class ReportTabManagerTests : AbstractSonarLintLightTests() {
     private lateinit var manager: ReportTabManager
@@ -86,44 +88,45 @@ class ReportTabManagerTests : AbstractSonarLintLightTests() {
 
     @Test
     fun `closing a running report suppresses every late and duplicate completion`() {
-        manager.createLoadingReportTab("running", 3)
+        val report = manager.createLoadingReportTab(3)!!
         val content = contents.getContent(0)!!
         val panel = content.component as ReportPanel
         assertThat(contents.removeContent(content, true)).isTrue()
         clearInvocations(toolWindow)
 
         repeat(4) { completion ->
-            assertThat(manager.updateOrCreateReportTab("running", result(), completion + 1, 3)).isNull()
+            report.update(result(), completion + 1, 3)
         }
-        assertThat(manager.createLoadingReportTab("running", 3)).isNull()
+        assertThat(field(report, "panel")).isNull()
         drainEdt()
 
         assertThat(contents.contentCount).isZero()
         verify(toolWindow, never()).show()
-        assertIndexesEmpty()
+        assertNoReportTabs()
         assertPanelCleared(panel)
         assertThat(project.isDisposed).isFalse()
     }
 
     @Test
-    fun `repeated report closure releases indexes while project remains open`() {
-        repeat(12) { cycle ->
-            manager.createLoadingReportTab("batch-$cycle")
+    fun `repeated report closure releases panels while project remains open`() {
+        repeat(12) {
+            val report = manager.createLoadingReportTab()!!
             val content = contents.getContent(0)!!
             val panel = content.component as ReportPanel
-            manager.updateOrCreateReportTab("batch-$cycle", result())
+            report.update(result())
             contents.removeContent(content, true)
-            assertIndexesEmpty()
+            assertNoReportTabs()
             assertPanelCleared(panel)
+            assertThat(field(report, "panel")).isNull()
         }
         drainEdt()
-        assertIndexesEmpty()
+        assertNoReportTabs()
         assertThat(project.isDisposed).isFalse()
     }
 
     @Test
-    fun `removal without disposal invalidates the panel and queued tree work`() {
-        manager.createLoadingReportTab("removed")
+    fun `removal without content disposal ends the panel and queued tree work`() {
+        val report = manager.createLoadingReportTab()!!
         val content = contents.getContent(0)!!
         val panel = content.component as ReportPanel
         val file = createTestFile("Report.java", "class Report {}")
@@ -144,39 +147,42 @@ class ReportTabManagerTests : AbstractSonarLintLightTests() {
         panel.collapseAllTrees()
         drainEdt()
 
-        assertThat(Disposer.isDisposed(panel.lifetime)).isTrue()
+        assertThat(Disposer.isDisposed(panel)).isTrue()
+        assertThat(field(report, "panel")).isNull()
         assertThat(Disposer.isDisposed(content)).isFalse()
         assertPanelCleared(panel)
         assertThat(panel.isFiltersPanelVisible()).isFalse()
-        assertIndexesEmpty()
+        assertNoReportTabs()
         Disposer.dispose(content)
         panel.dispose()
-        assertIndexesEmpty()
+        assertNoReportTabs()
         assertThat(project.isDisposed).isFalse()
     }
 
     @Test
     fun `direct content and panel disposal both clean exact ownership`() {
-        manager.createLoadingReportTab("content")
+        val firstReport = manager.createLoadingReportTab()!!
         val first = contents.getContent(0)!!
         Disposer.dispose(first)
-        assertIndexesEmpty()
-        assertThat(manager.updateOrCreateReportTab("content", result())).isNull()
+        assertNoReportTabs()
+        firstReport.update(result())
+        assertThat(field(firstReport, "panel")).isNull()
         contents.removeContent(first, false)
 
-        manager.createLoadingReportTab("panel")
+        val secondReport = manager.createLoadingReportTab()!!
         val second = contents.getContent(0)!!
         Disposer.dispose(second.component as ReportPanel)
-        assertIndexesEmpty()
-        assertThat(manager.updateOrCreateReportTab("panel", result())).isNull()
+        assertNoReportTabs()
+        secondReport.update(result())
+        assertThat(field(secondReport, "panel")).isNull()
         contents.removeContent(second, true)
         assertThat(project.isDisposed).isFalse()
     }
 
     @Test
     fun `identical titles have independent ownership and the surviving report still merges`() {
-        manager.createLoadingReportTab("first")
-        manager.createLoadingReportTab("second")
+        val firstReport = manager.createLoadingReportTab()!!
+        val secondReport = manager.createLoadingReportTab()!!
         val first = contents.getContent(0)!!
         val second = contents.getContent(1)!!
         second.displayName = first.displayName
@@ -185,33 +191,90 @@ class ReportTabManagerTests : AbstractSonarLintLightTests() {
         val secondFile = createTestFile("second.txt", "second")
         val firstResult = result().copy(analyzedFiles = listOf(firstFile))
         val secondResult = result().copy(analyzedFiles = listOf(secondFile))
-        assertThat(manager.updateOrCreateReportTab("first", firstResult)).isNull()
-        assertThat(manager.updateOrCreateReportTab("second", firstResult)).isEqualTo(second.displayName)
-        assertThat(manager.updateOrCreateReportTab("second", secondResult)).isEqualTo(second.displayName)
+        firstReport.update(firstResult)
+        secondReport.update(firstResult)
+        secondReport.update(secondResult)
         drainEdt()
 
         val panel = second.component as ReportPanel
         assertThat((field(panel, "lastAnalysisResult") as AnalysisResult).analyzedFiles).containsExactly(firstFile, secondFile)
         assertThat(contents.contentCount).isEqualTo(1)
-        assertThat(manager.getOpenReportTabs()).containsExactly(second.displayName)
+        assertThat(field(firstReport, "panel")).isNull()
+        assertThat(field(secondReport, "panel")).isSameAs(panel)
     }
 
     @Test
-    fun `an unseen batch creates a report and unbatched reports also release their panel`() {
-        assertThat(manager.updateOrCreateReportTab("unseen", result())).isNotNull()
-        contents.removeContent(contents.getContent(0)!!, true)
-        assertThat(manager.createReportTab(result())).isNotNull()
-        contents.removeContent(contents.getContent(0)!!, true)
+    fun `reports opened with existing results also release their panel`() {
+        val report = manager.createReportTab(result())!!
+        val content = contents.getContent(0)!!
+        val panel = content.component as ReportPanel
+        contents.removeContent(content, true)
         drainEdt()
-        assertIndexesEmpty()
+        assertNoReportTabs()
+        assertPanelCleared(panel)
+        assertThat(field(report, "panel")).isNull()
     }
 
     @Test
-    fun `callbacks created together get independent batch ids`() {
+    fun `callbacks created together get independent reports`() {
         val first = ShowReportCallable(project)
         val second = ShowReportCallable(project)
-        assertThat(field(first, "batchId")).isNotEqualTo(field(second, "batchId"))
         drainEdt()
+        assertThat(contents.contentCount).isEqualTo(2)
+        assertThat(field(first, "report")).isNotSameAs(field(second, "report"))
+    }
+
+    @Test
+    fun `callback retries report creation when the tool window becomes available`() {
+        val windows = getService(project, ToolWindowManager::class.java)
+        whenever(windows.getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)).thenReturn(null)
+        val callback = ShowReportCallable(project, 3)
+        drainEdt()
+        callback.onSuccess(result())
+        drainEdt()
+        assertThat(contents.contentCount).isZero()
+
+        whenever(windows.getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)).thenReturn(toolWindow)
+        callback.onSuccess(result())
+        drainEdt()
+
+        val panel = contents.getContent(0)!!.component as ReportPanel
+        assertThat(field(panel, "receivedModuleCount")).isEqualTo(2)
+        assertThat(field(panel, "expectedModuleCount")).isEqualTo(3)
+    }
+
+    @Test
+    fun `a report closed synchronously during creation stays closed`() {
+        val closeOnAdd = object : ContentManagerListener {
+            override fun contentAdded(event: ContentManagerEvent) {
+                contents.removeContent(event.content, true)
+            }
+        }
+        contents.addContentManagerListener(closeOnAdd)
+        val callback = ShowReportCallable(project, 2)
+        drainEdt()
+        contents.removeContentManagerListener(closeOnAdd)
+        clearInvocations(toolWindow)
+        callback.onSuccess(result())
+        drainEdt()
+
+        assertThat(contents.contentCount).isZero()
+        assertThat(field(field(callback, "report")!!, "panel")).isNull()
+        verify(toolWindow, never()).show()
+    }
+
+    @Test
+    fun `disposing the service releases open panels and their callback handles`() {
+        val report = manager.createLoadingReportTab()!!
+        val panel = contents.getContent(0)!!.component as ReportPanel
+        Disposer.dispose(manager)
+        report.update(result())
+        drainEdt()
+
+        assertNoReportTabs()
+        assertPanelCleared(panel)
+        assertThat(field(report, "panel")).isNull()
+        assertThat(manager.createLoadingReportTab()).isNull()
     }
 
 
@@ -259,7 +322,7 @@ class ReportTabManagerTests : AbstractSonarLintLightTests() {
         callback.onSuccess(result())
         drainEdt()
 
-        assertIndexesEmpty()
+        assertNoReportTabs()
         assertThat(contents.contentCount).isZero()
         verify(restarter, times(3)).refreshOpenFiles()
         verify(toolWindow, never()).show()
@@ -270,15 +333,12 @@ class ReportTabManagerTests : AbstractSonarLintLightTests() {
 
     private fun drainEdt() = PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
 
-    private fun assertIndexesEmpty() {
-        assertThat(manager.getOpenReportTabs()).isEmpty()
-        assertThat(field(manager, "reportTabs") as Map<*, *>).isEmpty()
-        assertThat(field(manager, "batchToContent") as Map<*, *>).isEmpty()
+    private fun assertNoReportTabs() {
+        assertThat(contents.contents.filter { it.component is ReportPanel && !Disposer.isDisposed(it.component as ReportPanel) }).isEmpty()
     }
 
     private fun assertPanelCleared(panel: ReportPanel) {
         assertThat(field(panel, "lastAnalysisResult")).isNull()
-        assertThat((field(panel, "filteredFindingsCache") as FilteredFindings).isEmpty()).isTrue()
         assertThat(field(panel, "loadingPanel")).isNull()
         assertThat(field(panel, "loadingIcon")).isNull()
         val trees = field(panel, "treeManager") as ReportTreeManager

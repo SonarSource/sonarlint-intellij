@@ -20,102 +20,78 @@
 package org.sonarlint.intellij.ui.report
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.ui.content.Content
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.IdentityHashMap
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.ui.ToolWindowConstants
 
-/** Manages dated report tabs and suppresses results for reports closed by the user. */
+/** Creates dated report tabs. Each analysis callback keeps its own report handle. */
 @Service(Service.Level.PROJECT)
 class ReportTabManager(private val project: Project) : Disposable {
 
-    private val reportTabs = IdentityHashMap<Content, ReportPanel>()
-    private val batchToContent = mutableMapOf<String, Content>()
-    // Keep only scalar IDs until project disposal: even duplicate completions must not reopen a report.
-    private val closedBatches = mutableSetOf<String>()
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm")
+    @Volatile
     private var disposed = false
 
-    @Synchronized
-    fun createLoadingReportTab(batchId: String, expectedModuleCount: Int = 1): String? {
-        if (disposed || project.isDisposed || batchId in closedBatches) return null
-        batchToContent[batchId]?.let { return it.displayName }
-        return createReportTab(batchId) { it.showLoadingState(expectedModuleCount) }
-    }
+    fun createLoadingReportTab(expectedModuleCount: Int = 1): ReportTab? =
+        createReportTab { it.showLoadingState(expectedModuleCount) }
 
-    @Synchronized
-    fun updateOrCreateReportTab(batchId: String, analysisResult: AnalysisResult, completedModules: Int = 1, expectedModules: Int = 1): String? {
-        if (disposed || project.isDisposed || batchId in closedBatches) return null
-        val content = batchToContent[batchId]
-        if (content != null) {
-            val panel = reportTabs[content] ?: return null
-            panel.updateAnalysisProgress(completedModules, expectedModules)
-            panel.mergeAnalysisResults(analysisResult)
-            return content.displayName
-        }
-        return createReportTab(batchId) { it.updateFindings(analysisResult) }
-    }
+    fun createReportTab(analysisResult: AnalysisResult): ReportTab? =
+        createReportTab { it.updateFindings(analysisResult) }
 
-    @Synchronized
-    fun createReportTab(analysisResult: AnalysisResult): String? =
-        createReportTab(null) { it.updateFindings(analysisResult) }
-
-    private fun createReportTab(batchId: String?, initialize: (ReportPanel) -> Unit): String? {
-        if (disposed || project.isDisposed || batchId in closedBatches) return null
-        val toolWindow = getToolWindow() ?: return null
+    private fun createReportTab(initialize: (ReportPanel) -> Unit): ReportTab? {
+        ApplicationManager.getApplication().assertIsDispatchThread()
+        if (disposed || project.isDisposed) return null
+        val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID) ?: return null
         val contentManager = toolWindow.contentManager
-        val tabTitle = "Report - ${dateFormatter.format(LocalDateTime.now())}"
         val panel = ReportPanel(project)
+        Disposer.register(this, panel)
+        val report = ReportTab(panel)
+        val tabTitle = "Report - ${dateFormatter.format(LocalDateTime.now())}"
         val content = contentManager.factory.createContent(panel, tabTitle, false).apply { isCloseable = true }
-
-        // Install ownership before adding content, since add/select can notify listeners synchronously.
-        reportTabs[content] = panel
-        batchId?.let { batchToContent[it] = content }
         val listener = object : ContentManagerListener {
             override fun contentRemoved(event: ContentManagerEvent) {
-                if (event.content === content) closeReport(content)
+                // Removal can happen without content disposal; either path ends the report.
+                if (event.content === content) Disposer.dispose(panel)
             }
         }
         contentManager.addContentManagerListener(listener)
-        Disposer.register(panel.lifetime, Disposable { contentManager.removeContentManagerListener(listener) })
-        Disposer.register(content, Disposable { closeReport(content) })
-        Disposer.register(panel.lifetime, Disposable { closeReport(content) })
+        Disposer.register(panel, Disposable { contentManager.removeContentManagerListener(listener) })
         initialize(panel)
         contentManager.addContent(content)
-        if (!reportTabs.containsKey(content)) return null
-        contentManager.setSelectedContent(content)
-        if (!reportTabs.containsKey(content)) return null
-        toolWindow.show()
-        return tabTitle
+        // Content listeners can close the report synchronously during add/select.
+        if (report.isOpen) contentManager.setSelectedContent(content)
+        if (report.isOpen) toolWindow.show()
+        return report
     }
 
-    @Synchronized
-    private fun closeReport(content: Content) {
-        val batches = batchToContent.filterValues { it === content }.keys
-        closedBatches.addAll(batches)
-        batches.forEach(batchToContent::remove)
-        reportTabs.remove(content)?.invalidateReport()
-    }
-
-    @Synchronized
-    fun getOpenReportTabs(): Set<String> = reportTabs.keys.map { it.displayName }.toSet()
-
-    private fun getToolWindow(): ToolWindow? =
-        ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)
-
-    @Synchronized
     override fun dispose() {
         disposed = true
-        reportTabs.keys.toList().forEach(::closeReport)
-        closedBatches.clear()
+    }
+
+    /** A closed handle retains no panel and ignores all later module completions. */
+    class ReportTab internal constructor(panel: ReportPanel) {
+        @Volatile
+        private var panel: ReportPanel? = panel
+        internal val isOpen: Boolean get() = panel != null
+
+        init {
+            Disposer.register(panel, Disposable { this.panel = null })
+        }
+
+        fun update(analysisResult: AnalysisResult, completedModules: Int = 1, expectedModules: Int = 1) {
+            ApplicationManager.getApplication().assertIsDispatchThread()
+            panel?.let {
+                it.updateAnalysisProgress(completedModules, expectedModules)
+                it.mergeAnalysisResults(analysisResult)
+            }
+        }
     }
 }
