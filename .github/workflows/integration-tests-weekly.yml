@@ -23,14 +23,14 @@ jobs:
       docker_password: ${{ steps.login-ecr.outputs.docker_password_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           aws-region: eu-central-1
           role-to-assume: arn:aws:iam::275878209202:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2.1.5
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
         with:
           mask-password: 'false'
 
@@ -52,9 +52,9 @@ jobs:
     outputs:
       PROJECT_VERSION: ${{ steps.set_version.outputs.project-version }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
-      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
           version: 2025.9.12
 
@@ -65,7 +65,21 @@ jobs:
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
-      - uses: SonarSource/ci-github-actions/build-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+      - name: Configure Gradle
+        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        with:
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          cache-paths: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+
+      - name: Point resolve at Edge
+        if: runner.environment != 'github-hosted'
+        uses: ./.github/actions/point-resolve-at-edge
+
+      - uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
         id: build_plugin
         with:
           sonar-platform: none
@@ -83,7 +97,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: weekly-plugin
-          path: build/distributions/sonarlint-intellij-*.zip
+          path: |
+            build/distributions/sonarlint-intellij-*.zip
+            !build/distributions/*.blockmap.zip
           if-no-files-found: error
 
   setup-matrix:
@@ -93,7 +109,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - name: Build weekly QA matrix
         id: set-matrix
@@ -123,7 +139,7 @@ jobs:
     env:
       DISPLAY: ':10'
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - name: Download built plugin
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -134,8 +150,18 @@ jobs:
       - name: Resolve plugin zip path
         id: plugin-zip
         run: |
-          ZIP=$(ls -1 "${GITHUB_WORKSPACE}/plugin-zip"/sonarlint-intellij-*.zip)
-          echo "path=${ZIP}" >> "$GITHUB_OUTPUT"
+          shopt -s nullglob
+          PLUGIN_ZIPS=()
+          for zip in "${GITHUB_WORKSPACE}/plugin-zip"/sonarlint-intellij-*.zip; do
+            if [[ "${zip}" != *.blockmap.zip ]]; then
+              PLUGIN_ZIPS+=("${zip}")
+            fi
+          done
+          if [[ ${#PLUGIN_ZIPS[@]} -ne 1 ]]; then
+            echo "::error::Expected one plugin archive, found ${#PLUGIN_ZIPS[@]}"
+            exit 1
+          fi
+          echo "path=${PLUGIN_ZIPS[0]}" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/run-qa-its
         with:

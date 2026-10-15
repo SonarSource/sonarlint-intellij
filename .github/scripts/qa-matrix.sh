@@ -117,10 +117,24 @@ changed_files() {
     # Do not pass --depth=1: setup-qa-matrix already checked out with fetch-depth 0.
     # A shallow fetch would write .git/shallow and can break merge-base computation.
     git fetch --no-tags origin "${GITHUB_BASE_REF}" >/dev/null 2>&1 || true
-    if git rev-parse --verify "origin/${GITHUB_BASE_REF}" >/dev/null 2>&1; then
-      git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD"
-      return
+    git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD"
+    return
+  fi
+  if [[ "${GITHUB_EVENT_NAME:-}" == "push" ]]; then
+    local before
+    before="$(jq -r '.before // empty' "${GITHUB_EVENT_PATH}")" || return
+    if [[ -n "${before}" && ! "${before}" =~ ^0+$ ]]; then
+      git diff --name-only "${before}" HEAD
+    else
+      # A newly created branch has no previous revision to compare against.
+      git ls-files
     fi
+    return
+  fi
+  if [[ "${GITHUB_EVENT_NAME:-}" == "workflow_dispatch" ]]; then
+    # A manual run requests coverage regardless of the last commit's paths.
+    git ls-files
+    return
   fi
   if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
     git diff --name-only HEAD~1 HEAD
@@ -167,7 +181,12 @@ PYCHARM_LATEST="$(prop_or latestPyCharmIdeVersion "${LATEST}")"
 case "${MODE}" in
   pr)
     echo "PR matrix: latest=${LATEST} rider=${RIDER_LATEST} (min=${MIN} is weekly-only)"
-    mapfile -t FILES < <(changed_files)
+    # Capture the status before mapfile: process substitution hides git failures.
+    CHANGED_FILES="$(changed_files)"
+    FILES=()
+    if [[ -n "${CHANGED_FILES}" ]]; then
+      mapfile -t FILES <<< "${CHANGED_FILES}"
+    fi
     if [[ ${#FILES[@]} -eq 0 ]]; then
       emit "$(idea_suites "IC-${LATEST}" "IdeaLatest")" "false"
       exit 0

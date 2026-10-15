@@ -19,6 +19,8 @@ Path-filtered matrix from [`.github/scripts/qa-matrix.sh`](../.github/scripts/qa
 
 Harness means `its/`, `.github/`, Gradle files, or `mise.toml`. Changing those runs CLion and Rider as well as IntelliJ.
 
+Pushes compare the complete pushed commit range. Manual workflow runs and newly created branches run all three IDEs. QA matrix regression tests run with `python3 .github/scripts/test_qa_matrix.py`.
+
 Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet OmniSharp.dll`) and load the `net6.0` sample projects. CI installs that SDK on `RD-*` jobs. Local Rider ITs need the same.
 
 ### Weekly (Sundays 02:00 UTC)

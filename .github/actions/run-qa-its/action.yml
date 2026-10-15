@@ -23,12 +23,12 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+    - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
       with:
         version: 2025.9.12
 
     - name: Configure Gradle
-      uses: SonarSource/ci-github-actions/config-gradle@1df8fda46f8e82cfdd17b6a8e16a199282988b4f # 1.8.8
+      uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
       with:
         sonar-platform: none
         use-develocity: true
@@ -36,13 +36,21 @@ runs:
         artifactory-reader-role: private-reader
         disable-caching: 'true'
 
+    - name: Point resolve at Edge
+      if: runner.environment != 'github-hosted'
+      uses: ./.github/actions/point-resolve-at-edge
+
+    - name: Configure QA Gradle memory
+      shell: bash
+      run: echo 'QA_GRADLE_JVM_ARGS=-Xmx2G -XX:MaxMetaspaceSize=512M -Dfile.encoding=UTF-8' >> "$GITHUB_ENV"
+
     - name: Select Java 21
       shell: bash
       run: mise use java@21
 
     - name: Vault Secrets
       id: secrets
-      uses: SonarSource/vault-action-wrapper@881045d830534a70ec3c7c275fa3714412c8ff6e # 3.6.1
+      uses: SonarSource/vault-action-wrapper@a7fa5fd4a4e4e0f2593f6137c0812cac196cf4ce # 3.7.0
       with:
         secrets: |
           development/team/sonarlint/kv/data/ide.keys clion | CLION_KEY;
@@ -64,7 +72,7 @@ runs:
         echo "ORCHESTRATOR_HOME=${ORCHESTRATOR_HOME}" >> "$GITHUB_ENV"
         mkdir -p "${ORCHESTRATOR_HOME}"
 
-    - uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
+    - uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
       with:
         path: ${{ github.workspace }}/orchestrator/${{ steps.month.outputs.month }}
         key: cache-${{ runner.os }}-${{ steps.month.outputs.month }}
@@ -82,7 +90,7 @@ runs:
         rm -f gradle-md5-sums.txt
 
     - name: Restore Gradle Cache
-      uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
+      uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
       with:
         path: |
           /home/runner/.gradle/caches
@@ -145,7 +153,7 @@ runs:
 
     - name: Restore IDE from cache
       if: steps.ide-source.outputs.embedded == 'false'
-      uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
+      uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
       with:
         path: ${{ steps.ide-source.outputs.cache_path }}
         key: ${{ runner.os }}-jetbrains-ide-${{ inputs.ide_version }}
@@ -183,7 +191,7 @@ runs:
         echo "IDE validation successful: ${IDE_VAR}=${IDE_PATH}"
 
     - name: Extract and setup plugin
-      shell: bash
+      shell: bash --noprofile --norc -euo pipefail {0}
       env:
         PROJECT_VERSION: ${{ inputs.project_version }}
         IDEA_VERSION: ${{ inputs.ide_version }}
@@ -202,7 +210,7 @@ runs:
           echo "Using project version: ${PROJECT_VERSION}"
           curl -fsSL -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_ACCESS_TOKEN}" \
             -o sonarlint-intellij.zip \
-            "${ARTIFACTORY_URL}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
+            "${ARTIFACTORY_RESOLVE_URL:-${ARTIFACTORY_URL}}/sonarsource-public-qa/org/sonarsource/sonarlint/intellij/sonarlint-intellij/${PROJECT_VERSION}/sonarlint-intellij-${PROJECT_VERSION}.zip"
           unzip sonarlint-intellij.zip -d ${GITHUB_WORKSPACE}/downloaded-plugin
           rm sonarlint-intellij.zip
         fi
@@ -245,7 +253,7 @@ runs:
     # the Rider sample projects target net6.0 so MSBuild can load System.Runtime 6.
     - name: Restore .NET SDK cache
       if: startsWith(inputs.ide_version, 'RD-')
-      uses: SonarSource/gh-action_cache@0666e03d7b6480758214db522a3aac989d67b026 # v1.7.0
+      uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
       with:
         path: ~/.dotnet
         key: ${{ runner.os }}-dotnet-sdk-6.0
@@ -278,6 +286,8 @@ runs:
       shell: bash
       env:
         IDEA_VERSION: ${{ inputs.ide_version }}
+        ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
+        ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
       run: |
         if [[ "${IDEA_VERSION}" == RD-* ]]; then
           export DOTNET_ROOT="${DOTNET_ROOT:-${HOME}/.dotnet}"
@@ -286,6 +296,7 @@ runs:
           dotnet --info
         fi
         nohup ./gradlew :its:runIdeForUiTests --stacktrace -i \
+          "-Dorg.gradle.jvmargs=${QA_GRADLE_JVM_ARGS}" \
           -PijVersion=${IDEA_VERSION} \
           -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin > ${GITHUB_WORKSPACE}/runIdeGradle.log 2>&1 &
         echo "IDE_PID=$!" >> $GITHUB_ENV
@@ -316,9 +327,14 @@ runs:
         echo "FFMPEG_PID=$!" >> $GITHUB_ENV
 
     - name: Configure Maven
-      uses: SonarSource/ci-github-actions/config-maven@71df716ff4caba2dbb7cd08a5f6fb932503602fc # 1.7.2
+      uses: SonarSource/ci-github-actions/config-maven@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
       with:
         artifactory-reader-role: private-reader
+
+    # config-maven refreshes the reader token and resets the resolve URL.
+    - name: Point resolve at Edge after Maven
+      if: runner.environment != 'github-hosted'
+      uses: ./.github/actions/point-resolve-at-edge
 
     - name: Run integration tests
       shell: bash
@@ -327,7 +343,31 @@ runs:
         GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
         IDEA_VERSION: ${{ inputs.ide_version }}
         TEST_SUITE: ${{ inputs.test_suite }}
-      run: ./gradlew :its:check --stacktrace -i -PijVersion=${IDEA_VERSION} -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
+        ARTIFACTORY_URL: https://repox-internal.dev.sonar.build/artifactory
+        ARTIFACTORY_RESOLVE_URL: https://repox-internal.dev.sonar.build/artifactory
+      run: |
+        # Periodically log memory usage to the live job log: when the runner dies, no artifacts get uploaded
+        (
+          set +eo pipefail
+          while true; do
+            echo "::group::Memory usage $(date -u +%H:%M:%S)"
+            grep -E 'MemTotal|MemAvailable|SwapFree' /proc/meminfo
+            if [ -f /sys/fs/cgroup/memory.current ]; then
+              echo "cgroup memory.current: $(cat /sys/fs/cgroup/memory.current)"
+              echo "cgroup memory.max: $(cat /sys/fs/cgroup/memory.max)"
+              grep -E 'oom' /sys/fs/cgroup/memory.events
+            fi
+            ps -eo pid,rss,args --sort=-rss | head -8 | cut -c1-250
+            echo "::endgroup::"
+            sleep 30
+          done
+        ) &
+        MEMORY_MONITOR_PID=$!
+        trap 'kill $MEMORY_MONITOR_PID 2>/dev/null' EXIT
+        ./gradlew :its:check --stacktrace -i \
+          "-Dorg.gradle.jvmargs=${QA_GRADLE_JVM_ARGS}" \
+          -PijVersion=${IDEA_VERSION} \
+          -PslPluginDirectory=${GITHUB_WORKSPACE}/downloaded-plugin --rerun-tasks
 
     - name: Stop recording
       if: always()
@@ -354,7 +394,7 @@ runs:
         fi
 
     - name: Publish Test Report
-      uses: mikepenz/action-junit-report@3a81627bfac62268172037048872e8ebd4207e6d # v6.4.1
+      uses: mikepenz/action-junit-report@a9170d5795813c01ab4901ffb045b52bab4ab09d # v6.5.0
       if: ${{ !cancelled() }}
       with:
         report_paths: '**/test-results/**/*.xml'
