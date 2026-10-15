@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.report
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -47,7 +48,6 @@ import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.ui.FindingDetailsPanel
 import org.sonarlint.intellij.ui.FindingKind
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
@@ -97,6 +97,8 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     
     // State
     private var lastAnalysisResult: AnalysisResult? = null
+    @Volatile
+    private var refreshGeneration = 0L
     private var filteredFindingsCache = FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
     private var isLoadingState = false
     private var expectedModuleCount = 1
@@ -122,26 +124,13 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     fun updateFindings(analysisResult: AnalysisResult) {
         if (!isActive()) return
 
-        // Update progress if in loading state
-        if (isLoadingState) {
-            updateLoadingProgress()
-        }
+        ApplicationManager.getApplication().assertIsDispatchThread()
 
         lastAnalysisResult = analysisResult
-        val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
+        refreshFilteredView()
+    }
 
-        applyFiltering()
-        val findings = ReportFilteringUtils.convertFilteredFindingsToMap(filteredFindingsCache)
-
-        // Take snapshot of expansion state before updating tree models (which will reset expansion state)
-        val treeStateSnapshot = treeManager.takeTreeStateSnapshot()
-        
-        updateTreeModels(findings, isFocusOnNewCode)
-        treeManager.configureTreeVisibility(isFocusOnNewCode)
-        
-        // Restore expansion state from snapshot
-        treeManager.restoreTreeState(treeStateSnapshot)
-
+    private fun showResults() {
         // Transition from loading to results
         if (isLoadingState) {
             hideLoadingPanel()
@@ -168,7 +157,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
 
     fun refreshView() {
         if (!isActive()) return
-        lastAnalysisResult?.let(::updateFindings) ?: showEmptyState()
+        if (lastAnalysisResult != null) refreshFilteredView() else showEmptyState()
     }
     
     /**
@@ -355,57 +344,68 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         ))
     }
     
-    private fun updateTreeModels(findings: LiveFindings, isFocusOnNewCode: Boolean) {
-        val taints = filteredFindingsCache.taints
-        val split = if (isFocusOnNewCode) {
-            ReportFilteringUtils.splitFindingsByCodeAge(findings, taints)
-        } else {
-            ReportFilteringUtils.createNoFocusSplit(findings, taints)
+    private fun updateTreeModels(split: SplitFindings) {
+        with(treeManager) {
+            issuesTreeBuilder.updateModel(split.newIssues)
+            oldIssuesTreeBuilder.updateModel(split.oldIssues)
+            securityHotspotsTreeBuilder.updateModel(split.newHotspots)
+            oldSecurityHotspotsTreeBuilder.updateModel(split.oldHotspots)
+            taintsTreeBuilder.updateModel(split.newTaints)
+            oldTaintsTreeBuilder.updateModel(split.oldTaints)
         }
-        
-        runOnUiThread(project) {
-            if (!isActive()) return@runOnUiThread
-            with(treeManager) {
-                issuesTreeBuilder.updateModel(split.newIssues)
-                oldIssuesTreeBuilder.updateModel(split.oldIssues)
-                securityHotspotsTreeBuilder.updateModel(split.newHotspots)
-                oldSecurityHotspotsTreeBuilder.updateModel(split.oldHotspots)
-                taintsTreeBuilder.updateModel(split.newTaints)
-                oldTaintsTreeBuilder.updateModel(split.oldTaints)
+    }
+
+    private fun isCurrentRefresh(generation: Long) = isActive() && generation == refreshGeneration
+
+    private fun refreshFilteredView() {
+        if (!isActive()) return
+        ApplicationManager.getApplication().assertIsDispatchThread()
+        val result = lastAnalysisResult ?: return
+        val generation = ++refreshGeneration
+        val criteria = displayManager.getCurrentFilterCriteria()
+        val focusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
+
+        runOnPooledThread(project) {
+            if (!isCurrentRefresh(generation)) return@runOnPooledThread
+            val mqrMode = detectMqrMode(result) ?: criteria.isMqrMode
+            if (mqrMode != criteria.isMqrMode) {
+                runOnUiThread(project) {
+                    if (!isCurrentRefresh(generation)) return@runOnUiThread
+                    displayManager.updateMqrMode(mqrMode)
+                    // The new severity model resets the filter; capture its updated criteria.
+                    if (isCurrentRefresh(generation)) refreshFilteredView()
+                }
+                return@runOnPooledThread
+            }
+
+            val filtered = findingsFilter.filterAllFindings(result, criteria)
+            val findings = ReportFilteringUtils.convertFilteredFindingsToMap(filtered)
+            val split = if (focusOnNewCode) {
+                ReportFilteringUtils.splitFindingsByCodeAge(findings, filtered.taints)
+            } else {
+                ReportFilteringUtils.createNoFocusSplit(findings, filtered.taints)
+            }
+            if (!isCurrentRefresh(generation)) return@runOnPooledThread
+
+            runOnUiThread(project) {
+                if (!isCurrentRefresh(generation)) return@runOnUiThread
+                filteredFindingsCache = filtered
+                val treeState = treeManager.takeTreeStateSnapshot()
+                updateTreeModels(split)
+                treeManager.configureTreeVisibility(focusOnNewCode)
+                treeManager.restoreTreeState(treeState)
+                showResults()
             }
         }
     }
-    
-    private fun refreshFilteredView() {
-        if (!isActive()) return
-        lastAnalysisResult?.let { 
-            applyFiltering()
-            updateFindings(it)
-        }
-    }
-    
-    private fun applyFiltering() {
-        val result = lastAnalysisResult
-        if (result == null) {
-            filteredFindingsCache = FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
-            return
-        }
-        
-        detectAndUpdateMqrMode(result)
-        val filterCriteria = displayManager.getCurrentFilterCriteria()
-        filteredFindingsCache = findingsFilter.filterAllFindings(result, filterCriteria)
-    }
-    
-    private fun detectAndUpdateMqrMode(analysisResult: AnalysisResult) {
-        val rawFindings = analysisResult.findings
-        val allIssues = rawFindings.issuesPerFile.values.flatten()
-        val allHotspots = rawFindings.securityHotspotsPerFile.values.flatten()
-        val allTaints = filteredFindingsCache.taints
 
-        val rawFilteredFindings = FilteredFindings(allIssues, allHotspots, allTaints, emptyList())
-        displayManager.updateMqrMode(rawFilteredFindings)
+    private fun detectMqrMode(result: AnalysisResult): Boolean? {
+        val issues = result.findings.issuesPerFile.values
+        val hotspots = result.findings.securityHotspotsPerFile.values
+        if (issues.all { it.isEmpty() } && hotspots.all { it.isEmpty() }) return null
+        return issues.asSequence().flatten().any { it.isMqrMode } || hotspots.asSequence().flatten().any { it.isMqrMode }
     }
-    
+
     private fun showEmptyState() {
         if (!isActive()) return
         runOnPooledThread(project, ::configureEmptyView)
