@@ -103,8 +103,10 @@ is_rider_path() {
         src/*|its/src/test/*)
           return 0
           ;;
+        *)
+          return 1
+          ;;
       esac
-      return 1
       ;;
     *)
       return 1

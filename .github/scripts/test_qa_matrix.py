@@ -52,7 +52,11 @@ class QaMatrixTest(unittest.TestCase):
         result = subprocess.run(["bash", ".github/scripts/qa-matrix.sh", mode],
                                 cwd=self.repo, env=self.env | env,
                                 text=True, capture_output=True)
-        values = dict(line.split("=", 1) for line in output.read_text().splitlines()) if output.exists() else {}
+        values = {}
+        if output.exists():
+            for line in output.read_text().splitlines():
+                key, value = line.split("=", 1)
+                values[key] = value
         return result, values
 
     def push_event(self, before):
