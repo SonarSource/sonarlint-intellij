@@ -19,7 +19,7 @@ Path-filtered matrix from [`.github/scripts/qa-matrix.sh`](../.github/scripts/qa
 
 Harness means `its/`, `.github/`, Gradle files, or `mise.toml`. Changing those runs CLion and Rider as well as IntelliJ.
 
-Pushes compare the complete pushed commit range. Manual workflow runs and newly created branches run all three IDEs. QA matrix regression tests run with `python3 .github/scripts/test_qa_matrix.py`.
+Pushes compare the complete pushed commit range. Manual workflow runs, newly created branches, and force-pushes whose previous SHA is not in the clone run all three IDEs. QA matrix regression tests run with `python3 .github/scripts/test_qa_matrix.py`.
 
 Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet OmniSharp.dll`) and load the `net6.0` sample projects. CI installs that SDK on `RD-*` jobs. Local Rider ITs need the same.
 
@@ -31,6 +31,8 @@ One scheduled workflow, one plugin build:
 - IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion` (Rider uses `eapRiderIdeVersion` when set)
 
 Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change).
+
+QA jobs run `./gradlew :its:check` with `TEST_SUITE` as JUnit `includeTags`. Standalone and flavor classes must stay in `src/test` with those tags. If ITs move to another source set, update `.github/actions/run-qa-its` to run that Gradle task and keep the tags.
 
 ## Version bumps
 

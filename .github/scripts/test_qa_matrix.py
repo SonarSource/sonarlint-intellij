@@ -110,12 +110,16 @@ class QaMatrixTest(unittest.TestCase):
         self.git("restore", "--source", self.base, "--staged", "--worktree",
                  ".github/scripts/qa-matrix.sh", "gradle.properties")
         self.commit("OTHER.md")
-        for env in [{"GITHUB_BASE_REF": "missing"}, {"GITHUB_BASE_REF": "master"},
-                    self.push_event("1" * 40)]:
+        for env in [{"GITHUB_BASE_REF": "missing"}, {"GITHUB_BASE_REF": "master"}]:
             with self.subTest(env=env):
                 result, values = self.run_matrix(**env)
                 self.assertNotEqual(0, result.returncode)
                 self.assertEqual({}, values)
+
+    def test_force_push_missing_before_runs_all_flavors(self):
+        result, values = self.run_matrix(**self.push_event("1" * 40))
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assert_suites(values, ("CLion", "Rider"))
 
     def test_weekly_matrix_keeps_minimum_flavor_and_eap_coverage(self):
         result, values = self.run_matrix("weekly")
