@@ -337,6 +337,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Test QA matrix selection
+        run: python3 .github/scripts/test_qa_matrix.py
+
       - name: Build PR QA matrix
         id: set-matrix
         run: .github/scripts/qa-matrix.sh pr
@@ -366,8 +369,6 @@ jobs:
     env:
       DISPLAY: ':10'
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
-      # IDE startup and ITs need separate Gradle daemons; leave room for the IDE, SLOOP and SonarQube.
-      QA_GRADLE_JVM_ARGS: '-Xmx2G -XX:MaxMetaspaceSize=512M -Dfile.encoding=UTF-8'
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
