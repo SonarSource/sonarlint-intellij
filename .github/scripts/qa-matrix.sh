@@ -123,10 +123,11 @@ changed_files() {
   if [[ "${GITHUB_EVENT_NAME:-}" == "push" ]]; then
     local before
     before="$(jq -r '.before // empty' "${GITHUB_EVENT_PATH}")" || return
-    if [[ -n "${before}" && ! "${before}" =~ ^0+$ ]]; then
+    if [[ -n "${before}" && ! "${before}" =~ ^0+$ ]] \
+        && git cat-file -e "${before}^{commit}" 2>/dev/null; then
       git diff --name-only "${before}" HEAD
     else
-      # A newly created branch has no previous revision to compare against.
+      # New branch or force-push: the previous revision is not in this clone.
       git ls-files
     fi
     return
