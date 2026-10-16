@@ -36,13 +36,11 @@ class ReportTabTests {
                     toolWindow {
                         content("ReportPanel") {
                             expectedMessages.forEach {
-                                try {
-                                    waitFor(duration = Duration.ofSeconds(45)) { hasText(it) }
-                                } catch (e: Throwable) {
-                                    throw AssertionError(
-                                        "Unable to find '$it' in: ${findAllText().map { text -> text.text }}",
-                                        e
-                                    )
+                                waitFor(
+                                    duration = Duration.ofSeconds(45),
+                                    errorMessage = "Unable to find '$it' in: ${findAllText()}"
+                                ) {
+                                    hasText(it)
                                 }
                             }
                         }

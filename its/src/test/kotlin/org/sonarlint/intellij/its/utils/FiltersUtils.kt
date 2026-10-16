@@ -32,10 +32,6 @@ object FiltersUtils {
         setFocusOnNewCode(true)
     }
 
-    fun resetFocusOnNewCode() {
-        setFocusOnNewCode(false)
-    }
-
     fun setFocusOnNewCode(focusOnNewCode: Boolean) {
         optionalIdeaFrame()?.apply {
             toolWindow {

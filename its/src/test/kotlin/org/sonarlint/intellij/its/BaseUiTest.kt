@@ -36,7 +36,6 @@ import org.sonarlint.intellij.its.fixtures.isRider
 import org.sonarlint.intellij.its.fixtures.isSQLPlugin
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.closeProject
 import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.ThreadDumpOnFailure
@@ -185,13 +184,17 @@ open class BaseUiTest {
 
     @AfterEach
     fun closeProjectAfterEach() {
-        // Focus on new code is a global setting. Reset it while the project is still
-        // open so a failed CAYC assertion cannot hide findings in later tests.
-        optionalStep {
-            resetFocusOnNewCode()
-        }
-        optionalStep {
-            closeProject()
+        try {
+            // Reset application state synchronously, even if the test left no project open.
+            remoteRobot.runJs("""
+                const plugin = com.intellij.ide.plugins.PluginManagerCore.getPlugin(com.intellij.openapi.extensions.PluginId.getId("org.sonarlint.idea"))
+                const serviceClass = plugin.getPluginClassLoader().loadClass("org.sonarlint.intellij.cayc.CleanAsYouCodeService")
+                com.intellij.openapi.application.ApplicationManager.getApplication().getService(serviceClass).setFocusOnNewCode(false)
+            """)
+        } finally {
+            optionalStep {
+                closeProject()
+            }
         }
     }
 

@@ -9,7 +9,7 @@
 # latestStableIdeVersion, eapIdeVersion, and optional per-product overrides).
 #
 # Writes GITHUB_OUTPUT keys:
-#   matrix     JSON array of {ide_version, qa_category, test_suite?}
+#   matrix     JSON array of {ide_version, test_suite}
 #   skip_its   true when a PR/push only touches documentation
 #
 # Exit codes:
@@ -31,87 +31,13 @@ if [[ -z "${MODE}" ]]; then
 fi
 
 read_gradle_prop() {
-  local key="$1"
-  local line
-  line="$(grep "^${key}=" "${PROPS}" || true)"
-  if [[ -z "${line}" ]]; then
-    echo ""
-    return
-  fi
-  echo "${line#*=}" | cut -d'#' -f1 | xargs
+  sed -n "s/^$1=//p" "${PROPS}" | cut -d'#' -f1 | xargs
 }
 
 prop_or() {
-  local override="$1"
-  local fallback="$2"
   local value
-  value="$(read_gradle_prop "${override}")"
-  if [[ -n "${value}" ]]; then
-    echo "${value}"
-  else
-    echo "${fallback}"
-  fi
-}
-
-is_docs_path() {
-  local f="$1"
-  case "${f}" in
-    *.md|HEADER|LICENSE|LICENSE.*|docs/*|.github/CODEOWNERS|.github/renovate.json)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
-  esac
-}
-
-is_harness_path() {
-  local f="$1"
-  case "${f}" in
-    its/README.md)
-      return 1
-      ;;
-    its/*|.github/*|gradle/*|*.gradle.kts|gradle.properties|settings.gradle.kts|mise.toml)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
-  esac
-}
-
-is_clion_path() {
-  local f="$1"
-  case "${f}" in
-    clion/*|clion-resharper/*|src/main/resources/META-INF/plugin-clion*.xml|its/projects/sample-cpp/*)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
-  esac
-}
-
-is_rider_path() {
-  local f="$1"
-  case "${f}" in
-    rider/*|src/main/resources/META-INF/plugin-rider.xml|its/projects/sample-rider/*|its/projects/sample-complex-rider/*)
-      return 0
-      ;;
-    *Rider*|*rider*)
-      case "${f}" in
-        src/*|its/src/test/*)
-          return 0
-          ;;
-        *)
-          return 1
-          ;;
-      esac
-      ;;
-    *)
-      return 1
-      ;;
-  esac
+  value="$(read_gradle_prop "$1")"
+  echo "${value:-$2}"
 }
 
 changed_files() {
@@ -148,21 +74,14 @@ changed_files() {
 
 idea_suites() {
   local version="$1"
-  local category="$2"
-  jq -nc --arg ver "$version" --arg cat "$category" '
+  jq -nc --arg ver "$version" '
     ["OpenInIdeTests","ConnectedAnalysisTests","ConfigurationTests","Standalone"]
-    | map({ide_version: $ver, qa_category: $cat, test_suite: .})
+    | map({ide_version: $ver, test_suite: .})
   '
 }
 
 append_json() {
-  local acc="$1"
-  local more="$2"
-  if [[ -z "${acc}" || "${acc}" == "[]" ]]; then
-    echo "${more}"
-  else
-    jq -nc --argjson a "${acc}" --argjson b "${more}" '$a + $b'
-  fi
+  jq -nc --argjson a "$1" --argjson b "$2" '$a + $b'
 }
 
 emit() {
@@ -191,58 +110,62 @@ case "${MODE}" in
       mapfile -t FILES <<< "${CHANGED_FILES}"
     fi
     if [[ ${#FILES[@]} -eq 0 ]]; then
-      emit "$(idea_suites "IC-${LATEST}" "IdeaLatest")" "false"
+      emit "$(idea_suites "IC-${LATEST}")" "false"
       exit 0
     fi
     docs_only=true
     run_clion=false
     run_rider=false
     for f in "${FILES[@]}"; do
-      if ! is_docs_path "${f}"; then
-        docs_only=false
-      fi
-      if is_harness_path "${f}" || is_clion_path "${f}"; then
-        run_clion=true
-      fi
-      if is_harness_path "${f}" || is_rider_path "${f}"; then
-        run_rider=true
-      fi
+      case "${f}" in
+        *.md|HEADER|LICENSE|LICENSE.*|docs/*|.github/CODEOWNERS|.github/renovate.json)
+          continue ;;
+        its/*|.github/*|gradle/*|*.gradle.kts|gradle.properties|mise.toml)
+          run_clion=true
+          run_rider=true ;;
+        clion/*|clion-resharper/*|src/main/resources/META-INF/plugin-clion*.xml)
+          run_clion=true ;;
+        rider/*|src/*Rider*|src/*rider*)
+          run_rider=true ;;
+        *) ;;
+      esac
+      docs_only=false
     done
     if [[ "${docs_only}" == "true" ]]; then
       emit "[]" "true"
       exit 0
     fi
-    MATRIX="$(idea_suites "IC-${LATEST}" "IdeaLatest")"
+    MATRIX="$(idea_suites "IC-${LATEST}")"
     if [[ "${run_clion}" == "true" ]]; then
       MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "CL-${LATEST}" \
-        '[{ide_version:$ver,qa_category:"CLionLatest",test_suite:"CLion"}]')")"
+        '[{ide_version:$ver,test_suite:"CLion"}]')")"
     fi
     if [[ "${run_rider}" == "true" ]]; then
       MATRIX="$(append_json "${MATRIX}" "$(jq -nc --arg ver "RD-${RIDER_LATEST}" \
-        '[{ide_version:$ver,qa_category:"RiderLatest",test_suite:"Rider"}]')")"
+        '[{ide_version:$ver,test_suite:"Rider"}]')")"
     fi
     emit "${MATRIX}" "false"
     ;;
   weekly)
     RIDER_EAP="$(prop_or eapRiderIdeVersion "${EAP}")"
-    MATRIX="$(idea_suites "IC-${MIN}" "IdeaMin")"
-    MATRIX="$(append_json "${MATRIX}" "$(idea_suites "IU-${EAP}" "IdeaUltimateEAP")")"
+    MATRIX="$(idea_suites "IC-${MIN}")"
+    MATRIX="$(append_json "${MATRIX}" "$(idea_suites "IU-${EAP}")")"
     MATRIX="$(append_json "${MATRIX}" "$(jq -nc \
       --arg clmin "CL-${MIN}" --arg cllat "CL-${LATEST}" --arg cleap "CL-${EAP}" \
       --arg rdmin "RD-${RIDER_MIN}" --arg rdlat "RD-${RIDER_LATEST}" --arg rdeap "RD-${RIDER_EAP}" \
       --arg pslat "PS-${LATEST}" --arg pylat "PY-${PYCHARM_LATEST}" \
       --arg golat "GO-${LATEST}" --arg iumin "IU-${MIN}" \
       '[
-        {ide_version:$clmin,qa_category:"CLionMin",test_suite:"CLion"},
-        {ide_version:$cllat,qa_category:"CLionLatest",test_suite:"CLion"},
-        {ide_version:$cleap,qa_category:"CLionEAP",test_suite:"CLion"},
-        {ide_version:$rdmin,qa_category:"RiderMin",test_suite:"Rider"},
-        {ide_version:$rdlat,qa_category:"RiderLatest",test_suite:"Rider"},
-        {ide_version:$rdeap,qa_category:"RiderEAP",test_suite:"Rider"},
-        {ide_version:$pslat,qa_category:"PhpStormLatest",test_suite:"PhpStorm"},
-        {ide_version:$pylat,qa_category:"PyCharmLatest",test_suite:"PyCharm"},
-        {ide_version:$golat,qa_category:"GoLandLatest",test_suite:"GoLand"},
-        {ide_version:$iumin,qa_category:"IdeaUltimateMin",test_suite:"PLSQL"}
+        {ide_version:$clmin,test_suite:"CLion"},
+        {ide_version:$cllat,test_suite:"CLion"},
+        {ide_version:$cleap,test_suite:"CLion"},
+        {ide_version:$rdmin,test_suite:"Rider"},
+        {ide_version:$rdlat,test_suite:"Rider"},
+        {ide_version:$rdeap,test_suite:"Rider"},
+        {ide_version:$pslat,test_suite:"PhpStorm"},
+        {ide_version:$pylat,test_suite:"PyCharm"},
+        {ide_version:$golat,test_suite:"GoLand"},
+        {ide_version:$iumin,test_suite:"PLSQL"}
       ]')")"
     emit "${MATRIX}" "false"
     ;;
