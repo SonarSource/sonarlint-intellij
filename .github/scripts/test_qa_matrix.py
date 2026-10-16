@@ -72,6 +72,11 @@ class QaMatrixTest(unittest.TestCase):
     def test_pr_path_selection(self):
         for path, flavors in [("README.md", None), ("src/Main.kt", ()),
                               ("rider/src/Main.kt", ("Rider",)), ("clion/src/Main.kt", ("CLion",)),
+                              ("clion-resharper/src/Main.kt", ("CLion",)),
+                              ("src/main/resources/META-INF/plugin-clion.xml", ("CLion",)),
+                              ("src/main/resources/META-INF/plugin-rider.xml", ("Rider",)),
+                              ("src/main/RiderSupport.kt", ("Rider",)),
+                              ("src/main/rider/Support.kt", ("Rider",)),
                               ("its/src/Test.kt", ("CLion", "Rider"))]:
             with self.subTest(path=path):
                 self.git("reset", "--hard", self.base)
@@ -82,6 +87,18 @@ class QaMatrixTest(unittest.TestCase):
                     self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
                 else:
                     self.assert_suites(values, flavors)
+
+    def test_documentation_does_not_add_flavors_to_source_changes(self):
+        for path in ["rider/README.md", "clion/README.md", "its/README.md",
+                     ".github/ISSUE_TEMPLATE/bug_report.md", ".github/CODEOWNERS",
+                     "docs/rider/setup.md"]:
+            with self.subTest(path=path):
+                self.git("reset", "--hard", self.base)
+                self.commit("src/Main.kt")
+                self.commit(path)
+                result, values = self.run_matrix(GITHUB_BASE_REF="master")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assert_suites(values)
 
     def test_push_includes_source_changes_before_final_docs_commit(self):
         self.commit("rider/src/Main.kt")
@@ -130,11 +147,11 @@ class QaMatrixTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         jobs = json.loads(values["matrix"])
         self.assertEqual(18, len(jobs))
-        categories = [job["qa_category"] for job in jobs]
-        self.assertEqual(4, categories.count("IdeaMin"))
-        self.assertEqual(4, categories.count("IdeaUltimateEAP"))
-        self.assertIn("RiderEAP", categories)
-        self.assertIn("CLionEAP", categories)
+        self.assertEqual(18, len({(job["ide_version"], job["test_suite"]) for job in jobs}))
+        versions = [job["ide_version"] for job in jobs]
+        self.assertEqual(4, sum(version.startswith("IC-") for version in versions))
+        eap_products = [version.split("-", 1)[0] for version in versions if version.endswith("-EAP")]
+        self.assertCountEqual(["IU"] * 4 + ["RD", "CL"], eap_products)
         self.assertIn("PLSQL", [job["test_suite"] for job in jobs])
 
 

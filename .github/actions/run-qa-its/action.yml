@@ -5,16 +5,12 @@ inputs:
   ide_version:
     description: IDE identifier (e.g. IC-2025.3.2, CL-2024.2)
     required: true
-  qa_category:
-    description: Label for artifacts and job naming
-    required: true
   project_version:
     description: Built plugin version to download from Artifactory QA repo
     required: true
   test_suite:
-    description: Optional JUnit tag (OpenInIdeTests, ConnectedAnalysisTests, ConfigurationTests, Standalone, CLion, Rider, PhpStorm, PyCharm, GoLand, PLSQL)
-    required: false
-    default: ''
+    description: JUnit tag selecting the integration test suite
+    required: true
   plugin_zip_path:
     description: Optional local plugin zip; skips the Artifactory QA download when set
     required: false
@@ -404,7 +400,7 @@ runs:
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
-        name: test-recording-${{ inputs.ide_version }}-${{ inputs.test_suite || inputs.qa_category }}
+        name: test-recording-${{ inputs.ide_version }}-${{ inputs.test_suite }}
         path: ${{ github.workspace }}/recording_${{ inputs.ide_version }}.mp4
         if-no-files-found: warn
 
@@ -412,7 +408,7 @@ runs:
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
-        name: test-reports-qa-${{ inputs.ide_version }}-${{ inputs.test_suite || inputs.qa_category }}
+        name: test-reports-qa-${{ inputs.ide_version }}-${{ inputs.test_suite }}
         path: "**/reports/**/*"
         if-no-files-found: warn
 
@@ -420,5 +416,5 @@ runs:
       if: ${{ !cancelled() }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
-        name: junit-results-qa-${{ inputs.ide_version }}-${{ inputs.test_suite || inputs.qa_category }}
+        name: junit-results-qa-${{ inputs.ide_version }}-${{ inputs.test_suite }}
         path: "**/test-results/**/*.xml"
