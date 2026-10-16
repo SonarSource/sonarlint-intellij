@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.report
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -46,14 +47,12 @@ import org.sonarlint.intellij.cayc.CleanAsYouCodeService
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.finding.LiveFindings
 import org.sonarlint.intellij.ui.FindingDetailsPanel
 import org.sonarlint.intellij.ui.FindingKind
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.ui.factory.PanelFactory.Companion.createSplitter
 import org.sonarlint.intellij.ui.filter.FilterSettingsService
-import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.FindingsFilter
 import org.sonarlint.intellij.ui.filter.SortMode
@@ -72,8 +71,13 @@ const val VERTICAL_FLOW_LAYOUT_VGAP = 0
 
 class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, false), Disposable {
     
+    @Volatile
+    private var invalidated = false
+
+    private fun isActive() = !invalidated && !project.isDisposed
+
     // Components
-    private val whatsNewPanel = ReportTabStatusPanel(project)
+    private val whatsNewPanel = ReportTabStatusPanel(project, this)
     private val restartSonarLintAction = SonarLintActions.getInstance().restartSonarLintAction()
     
     // Core managers
@@ -81,7 +85,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private val filtersPanel = createFiltersPanel()
     private val findingsFilter = FindingsFilter(project)
     private val displayManager = ReportDisplayManager(filtersPanel)
-    private val treeManager = ReportTreeManager(project, findingDetailsPanel)
+    private val treeManager = ReportTreeManager(project, findingDetailsPanel, ::isActive)
     
     // UI components
     private lateinit var findingsPanel: JBPanelWithEmptyText
@@ -90,7 +94,8 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     
     // State
     private var lastAnalysisResult: AnalysisResult? = null
-    private var filteredFindingsCache = FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
+    @Volatile
+    private var refreshGeneration = 0L
     private var isLoadingState = false
     private var expectedModuleCount = 1
     private var receivedModuleCount = 0
@@ -112,28 +117,15 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
 
     fun updateFindings(analysisResult: AnalysisResult) {
-        if (project.isDisposed) return
+        if (!isActive()) return
 
-        // Update progress if in loading state
-        if (isLoadingState) {
-            updateLoadingProgress()
-        }
+        ApplicationManager.getApplication().assertIsDispatchThread()
 
         lastAnalysisResult = analysisResult
-        val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
+        refreshFilteredView()
+    }
 
-        applyFiltering()
-        val findings = ReportFilteringUtils.convertFilteredFindingsToMap(filteredFindingsCache)
-
-        // Take snapshot of expansion state before updating tree models (which will reset expansion state)
-        val treeStateSnapshot = treeManager.takeTreeStateSnapshot()
-        
-        updateTreeModels(findings, isFocusOnNewCode)
-        treeManager.configureTreeVisibility(isFocusOnNewCode)
-        
-        // Restore expansion state from snapshot
-        treeManager.restoreTreeState(treeStateSnapshot)
-
+    private fun showResults() {
         // Transition from loading to results
         if (isLoadingState) {
             hideLoadingPanel()
@@ -150,6 +142,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
 
     fun showFiltersPanel(show: Boolean) {
+        if (!isActive()) return
         filtersPanel.isVisible = show
         headerCardPanel.revalidate()
         headerCardPanel.repaint()
@@ -158,13 +151,15 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     fun isFiltersPanelVisible(): Boolean = filtersPanel.isVisible
 
     fun refreshView() {
-        lastAnalysisResult?.let(::updateFindings) ?: showEmptyState()
+        if (!isActive()) return
+        if (lastAnalysisResult != null) refreshFilteredView() else showEmptyState()
     }
     
     /**
      * Shows the loading state with a spinner and progress information.
      */
     fun showLoadingState(expectedModules: Int = 1) {
+        if (!isActive()) return
         isLoadingState = true
         expectedModuleCount = expectedModules
         receivedModuleCount = 0
@@ -174,25 +169,10 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     /**
-     * Updates the loading progress when a module completes analysis.
-     */
-    fun updateLoadingProgress() {
-        receivedModuleCount++
-        updateLoadingText()
-
-        if (analysisStatusPanel != null) {
-            updateAnalysisStatusText()
-        }
-
-        if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
-            showAnalysisStatusPanel()
-        }
-    }
-    
-    /**
      * Updates the analysis progress with explicit counts from the callback.
      */
     fun updateAnalysisProgress(completedModules: Int, expectedModules: Int) {
+        if (!isActive()) return
         receivedModuleCount = completedModules
         expectedModuleCount = expectedModules
         
@@ -213,7 +193,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
      * This is used for incremental updates as modules complete analysis.
      */
     fun mergeAnalysisResults(newAnalysisResult: AnalysisResult) {
-        if (project.isDisposed) return
+        if (!isActive()) return
         
         lastAnalysisResult = lastAnalysisResult?.let { existing ->
             val mergedFindings = newAnalysisResult.findings.merge(existing.findings)
@@ -273,6 +253,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     )
     
     private fun handleSortingChange(sortMode: SortMode) {
+        if (!isActive()) return
         with(treeManager) {
             issuesTreeBuilder.sortMode = sortMode
             oldIssuesTreeBuilder.sortMode = sortMode
@@ -286,7 +267,9 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun handleFocusOnNewCodeChange(focusOnNewCode: Boolean) {
+        if (!isActive()) return
         runOnPooledThread(project) { 
+            if (!isActive()) return@runOnPooledThread
             getService(CleanAsYouCodeService::class.java).setFocusOnNewCode(focusOnNewCode)
         }
     }
@@ -333,62 +316,75 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         findingDetailsPanel.minimumSize = FINDING_DETAILS_MINIMUM_SIZE
         
         super.setContent(createSplitter(
-            project, this, this, mainContentPanel, 
+            project, this, this, mainContentPanel,
             findingDetailsPanel, SPLIT_PROPORTION_PROPERTY,
             DEFAULT_SPLIT_PROPORTION
         ))
     }
     
-    private fun updateTreeModels(findings: LiveFindings, isFocusOnNewCode: Boolean) {
-        val taints = filteredFindingsCache.taints
-        val split = if (isFocusOnNewCode) {
-            ReportFilteringUtils.splitFindingsByCodeAge(findings, taints)
-        } else {
-            ReportFilteringUtils.createNoFocusSplit(findings, taints)
+    private fun updateTreeModels(split: SplitFindings) {
+        with(treeManager) {
+            issuesTreeBuilder.updateModel(split.newIssues)
+            oldIssuesTreeBuilder.updateModel(split.oldIssues)
+            securityHotspotsTreeBuilder.updateModel(split.newHotspots)
+            oldSecurityHotspotsTreeBuilder.updateModel(split.oldHotspots)
+            taintsTreeBuilder.updateModel(split.newTaints)
+            oldTaintsTreeBuilder.updateModel(split.oldTaints)
         }
-        
-        runOnUiThread(project) {
-            with(treeManager) {
-                issuesTreeBuilder.updateModel(split.newIssues)
-                oldIssuesTreeBuilder.updateModel(split.oldIssues)
-                securityHotspotsTreeBuilder.updateModel(split.newHotspots)
-                oldSecurityHotspotsTreeBuilder.updateModel(split.oldHotspots)
-                taintsTreeBuilder.updateModel(split.newTaints)
-                oldTaintsTreeBuilder.updateModel(split.oldTaints)
+    }
+
+    private fun isCurrentRefresh(generation: Long) = isActive() && generation == refreshGeneration
+
+    private fun refreshFilteredView() {
+        if (!isActive()) return
+        ApplicationManager.getApplication().assertIsDispatchThread()
+        val result = lastAnalysisResult ?: return
+        val generation = ++refreshGeneration
+        val criteria = displayManager.getCurrentFilterCriteria()
+        val focusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
+
+        runOnPooledThread(project) {
+            if (!isCurrentRefresh(generation)) return@runOnPooledThread
+            val mqrMode = detectMqrMode(result) ?: criteria.isMqrMode
+            if (mqrMode != criteria.isMqrMode) {
+                runOnUiThread(project) {
+                    if (!isCurrentRefresh(generation)) return@runOnUiThread
+                    displayManager.updateMqrMode(mqrMode)
+                    // The new severity model resets the filter; capture its updated criteria.
+                    if (isCurrentRefresh(generation)) refreshFilteredView()
+                }
+                return@runOnPooledThread
+            }
+
+            val filtered = findingsFilter.filterAllFindings(result, criteria)
+            val findings = ReportFilteringUtils.convertFilteredFindingsToMap(filtered)
+            val split = if (focusOnNewCode) {
+                ReportFilteringUtils.splitFindingsByCodeAge(findings, filtered.taints)
+            } else {
+                ReportFilteringUtils.createNoFocusSplit(findings, filtered.taints)
+            }
+            if (!isCurrentRefresh(generation)) return@runOnPooledThread
+
+            runOnUiThread(project) {
+                if (!isCurrentRefresh(generation)) return@runOnUiThread
+                val treeState = treeManager.takeTreeStateSnapshot()
+                updateTreeModels(split)
+                treeManager.configureTreeVisibility(focusOnNewCode)
+                treeManager.restoreTreeState(treeState)
+                showResults()
             }
         }
     }
-    
-    private fun refreshFilteredView() {
-        lastAnalysisResult?.let { 
-            applyFiltering()
-            updateFindings(it)
-        }
-    }
-    
-    private fun applyFiltering() {
-        val result = lastAnalysisResult
-        if (result == null) {
-            filteredFindingsCache = FilteredFindings(emptyList(), emptyList(), emptyList(), emptyList())
-            return
-        }
-        
-        detectAndUpdateMqrMode(result)
-        val filterCriteria = displayManager.getCurrentFilterCriteria()
-        filteredFindingsCache = findingsFilter.filterAllFindings(result, filterCriteria)
-    }
-    
-    private fun detectAndUpdateMqrMode(analysisResult: AnalysisResult) {
-        val rawFindings = analysisResult.findings
-        val allIssues = rawFindings.issuesPerFile.values.flatten()
-        val allHotspots = rawFindings.securityHotspotsPerFile.values.flatten()
-        val allTaints = filteredFindingsCache.taints
 
-        val rawFilteredFindings = FilteredFindings(allIssues, allHotspots, allTaints, emptyList())
-        displayManager.updateMqrMode(rawFilteredFindings)
+    private fun detectMqrMode(result: AnalysisResult): Boolean? {
+        val issues = result.findings.issuesPerFile.values
+        val hotspots = result.findings.securityHotspotsPerFile.values
+        if (issues.all { it.isEmpty() } && hotspots.all { it.isEmpty() }) return null
+        return issues.asSequence().flatten().any { it.isMqrMode } || hotspots.asSequence().flatten().any { it.isMqrMode }
     }
-    
+
     private fun showEmptyState() {
+        if (!isActive()) return
         runOnPooledThread(project, ::configureEmptyView)
         findingsTreePane.isVisible = false
         whatsNewPanel.isVisible = false
@@ -400,16 +396,19 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
     
     private fun configureEmptyView() {
-        val statusText = findingsPanel.emptyText
+        if (!isActive()) return
         val backendIsAlive = getService(BackendService::class.java).isAlive()
-        
-        if (!backendIsAlive) {
-            statusText.text = RestartBackendAction.SONARLINT_ERROR_MSG
-            statusText.appendLine("Restart SonarQube for IDE Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) { 
-                ActionUtil.invokeAction(restartSonarLintAction, this, TOOL_WINDOW_ID, null, null)
+        runOnUiThread(project) {
+            if (!isActive()) return@runOnUiThread
+            val statusText = findingsPanel.emptyText
+            if (!backendIsAlive) {
+                statusText.text = RestartBackendAction.SONARLINT_ERROR_MSG
+                statusText.appendLine("Restart SonarQube for IDE Service", SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) {
+                    if (isActive()) ActionUtil.invokeAction(restartSonarLintAction, this, TOOL_WINDOW_ID, null, null)
+                }
+            } else {
+                configureAnalysisPrompts(statusText)
             }
-        } else {
-            configureAnalysisPrompts(statusText)
         }
     }
     
@@ -422,7 +421,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         analyzeChangedFiles.templateText?.let { text ->
             statusText.appendText(text, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) {
-                ActionUtil.invokeAction(analyzeChangedFiles, this, TOOL_WINDOW_ID, null, null)
+                if (isActive()) ActionUtil.invokeAction(analyzeChangedFiles, this, TOOL_WINDOW_ID, null, null)
             }
             if (analyzeAllFiles.templateText != null) {
                 statusText.appendText(" or ")
@@ -431,7 +430,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         analyzeAllFiles.templateText?.let { text ->
             statusText.appendText(text, SimpleTextAttributes.LINK_PLAIN_ATTRIBUTES) {
-                ActionUtil.invokeAction(analyzeAllFiles, this, TOOL_WINDOW_ID, null, null)
+                if (isActive()) ActionUtil.invokeAction(analyzeAllFiles, this, TOOL_WINDOW_ID, null, null)
             }
         }
     }
@@ -587,14 +586,26 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     }
 
     fun expandAllTrees() {
+        if (!isActive()) return
         treeManager.expandAllTrees()
     }
     
     fun collapseAllTrees() {
+        if (!isActive()) return
         treeManager.collapseTrees()
     }
 
     override fun dispose() {
+        if (invalidated) return
+        invalidated = true
+        treeManager.clear()
+        findingDetailsPanel.clear()
+        filtersPanel.searchField.text = ""
+        isLoadingState = false
+        expectedModuleCount = 0
+        receivedModuleCount = 0
+        findingsPanel.removeAll()
+        headerCardPanel.removeAll()
         loadingIcon?.dispose()
         analysisStatusIcon?.dispose()
         

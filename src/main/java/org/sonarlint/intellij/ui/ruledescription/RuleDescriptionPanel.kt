@@ -23,6 +23,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -46,6 +47,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RuleSplitDescri
 
 class RuleDescriptionPanel(private val project: Project, private val parent: Disposable) : JBPanel<RuleDescriptionPanel>(BorderLayout()) {
 
+    @Volatile
+    private var disposed = false
+
     private var sectionsTabs: JBTabbedPane? = null
     private var codeFixTab: CodeFixTabPanel? = null
 
@@ -53,14 +57,24 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         private const val AI_CODEFIX_TITLE = "AI CodeFix"
     }
 
+    init {
+        Disposer.register(parent, Disposable {
+            disposed = true
+            removeAll()
+        })
+    }
+
     fun openCodeFixTabAndGenerate() {
+        if (disposed || project.isDisposed) return
         val tabs = sectionsTabs ?: return
         val codeFixTabIndex = tabs.indexOfTab(AI_CODEFIX_TITLE)
         if (codeFixTabIndex < 0) {
             return
         }
         tabs.selectedIndex = codeFixTabIndex
-        runOnPooledThread(project) { codeFixTab?.loadSuggestion() }
+        runOnPooledThread(project) {
+            if (!disposed) codeFixTab?.loadSuggestion()
+        }
     }
 
     override fun removeAll() {

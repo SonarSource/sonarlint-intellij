@@ -29,37 +29,30 @@ import org.sonarlint.intellij.ui.report.ReportTabManager
 
 class ShowReportCallable(private val project: Project, private val expectedModuleCount: Int = 1) : AnalysisCallback {
 
-    private val batchId: String = generateBatchId()
+    // Accessed only on EDT. A closed report keeps its empty handle, preventing recreation.
+    private var report: ReportTabManager.ReportTab? = null
     private var completedModuleCount = 0
-    
+
     init {
-        // Create loading tab immediately
-        runOnUiThread(project) {
-            val reportTabManager = SonarLintUtils.getService(project, ReportTabManager::class.java)
-            reportTabManager.createLoadingReportTab(batchId, expectedModuleCount)
+        runOnUiThread(project) { createReportIfNeeded() }
+    }
+
+    private fun createReportIfNeeded() {
+        if (report == null) {
+            report = SonarLintUtils.getService(project, ReportTabManager::class.java).createLoadingReportTab(expectedModuleCount)
         }
     }
 
     override fun onSuccess(analysisResult: AnalysisResult) {
-        // All UI operations must run on EDT, with synchronization happening on EDT
         runOnUiThread(project) {
-            synchronized(this@ShowReportCallable) {
-                completedModuleCount++
-                val reportTabManager = SonarLintUtils.getService(project, ReportTabManager::class.java)
-                reportTabManager.updateOrCreateReportTab(batchId, analysisResult, completedModuleCount, expectedModuleCount)
-                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-            }
+            createReportIfNeeded()
+            completedModuleCount++
+            report?.update(analysisResult, completedModuleCount, expectedModuleCount)
+            SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
         }
     }
 
     override fun onError(e: Throwable) {
-        // For errors, we don't need to do anything special - just let the existing tab remain
+        // Leave the report open so successful modules remain available.
     }
-    
-    companion object {
-        private fun generateBatchId(): String {
-            return "batch-${System.currentTimeMillis()}"
-        }
-    }
-
 }

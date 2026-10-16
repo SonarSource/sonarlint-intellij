@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.currentfile;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
@@ -54,7 +55,11 @@ public class CurrentFileStatusPanel extends JBPanel<CurrentFileStatusPanel> {
   }
 
   public static void subscribeToEventsThatAffectCurrentFile(Project project, Runnable runnable) {
-    var busConnection = project.getMessageBus().connect();
+    subscribeToEventsThatAffectCurrentFile(project, project, runnable);
+  }
+
+  public static void subscribeToEventsThatAffectCurrentFile(Project project, Disposable parent, Runnable runnable) {
+    var busConnection = project.getMessageBus().connect(parent);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
       public void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings) {
