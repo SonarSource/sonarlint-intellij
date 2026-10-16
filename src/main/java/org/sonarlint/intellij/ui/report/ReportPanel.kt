@@ -87,6 +87,9 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private lateinit var findingsPanel: JBPanelWithEmptyText
     private lateinit var findingsTreePane: JScrollPane
     private lateinit var headerCardPanel: JBPanel<*>
+    private val analysisFailureLabel = JBLabel("Analysis incomplete. One or more modules could not be analyzed.").apply {
+        isVisible = false
+    }
     
     // State
     private var lastAnalysisResult: AnalysisResult? = null
@@ -113,11 +116,6 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
 
     fun updateFindings(analysisResult: AnalysisResult) {
         if (project.isDisposed) return
-
-        // Update progress if in loading state
-        if (isLoadingState) {
-            updateLoadingProgress()
-        }
 
         lastAnalysisResult = analysisResult
         val isFocusOnNewCode = getService(CleanAsYouCodeService::class.java).shouldFocusOnNewCode()
@@ -158,7 +156,8 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     fun isFiltersPanelVisible(): Boolean = filtersPanel.isVisible
 
     fun refreshView() {
-        lastAnalysisResult?.let(::updateFindings) ?: showEmptyState()
+        if (isLoadingState) return
+        lastAnalysisResult?.let(::updateFindings) ?: if (analysisFailureLabel.isVisible) showFailedState() else showEmptyState()
     }
     
     /**
@@ -168,25 +167,22 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         isLoadingState = true
         expectedModuleCount = expectedModules
         receivedModuleCount = 0
+        analysisFailureLabel.isVisible = false
         
         createLoadingPanel()
         showLoadingPanel()
     }
     
-    /**
-     * Updates the loading progress when a module completes analysis.
-     */
-    fun updateLoadingProgress() {
-        receivedModuleCount++
-        updateLoadingText()
-
-        if (analysisStatusPanel != null) {
-            updateAnalysisStatusText()
+    fun showAnalysisFailure(completedModules: Int, expectedModules: Int) {
+        analysisFailureLabel.isVisible = true
+        updateAnalysisProgress(completedModules, expectedModules)
+        if (isLoadingState && receivedModuleCount >= expectedModuleCount) {
+            hideLoadingPanel()
+            isLoadingState = false
+            showFailedState()
         }
-
-        if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
-            showAnalysisStatusPanel()
-        }
+        headerCardPanel.revalidate()
+        headerCardPanel.repaint()
     }
     
     /**
@@ -203,7 +199,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
 
         if (expectedModuleCount > 1 && receivedModuleCount < expectedModuleCount) {
             showAnalysisStatusPanel()
-        } else if (expectedModuleCount > 1) {
+        } else {
             hideAnalysisStatusPanel()
         }
     }
@@ -314,6 +310,7 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
         
         // Header with filters
         val headerPanel = JBPanel<ReportPanel>(VerticalFlowLayout(0, 0)).apply {
+            add(analysisFailureLabel)
             add(filtersPanel)
         }
         
@@ -397,6 +394,12 @@ class ReportPanel(private val project: Project) : SimpleToolWindowPanel(false, f
     private fun showFindingsState() {
         findingsTreePane.isVisible = true
         whatsNewPanel.isVisible = true
+    }
+
+    private fun showFailedState() {
+        findingsTreePane.isVisible = false
+        whatsNewPanel.isVisible = false
+        findingsPanel.emptyText.text = "Analysis did not complete. Run the analysis again."
     }
     
     private fun configureEmptyView() {

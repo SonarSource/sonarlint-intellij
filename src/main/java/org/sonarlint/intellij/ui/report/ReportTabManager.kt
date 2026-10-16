@@ -112,6 +112,12 @@ class ReportTabManager(private val project: Project) {
             createReportTab(analysisResult, batchId)
         }
     }
+
+    @Synchronized
+    fun reportModuleFailed(batchId: String, completedModules: Int, expectedModules: Int) {
+        val tabTitle = batchToTabTitle[batchId] ?: return
+        reportTabs[tabTitle]?.showAnalysisFailure(completedModules, expectedModules)
+    }
     
     /**
      * Creates a new report tab with the current timestamp and displays the analysis results.
