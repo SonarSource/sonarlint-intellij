@@ -179,9 +179,29 @@ To run it locally:
 ```bash
 ./gradlew :verifyPlugin
 
-# For regular CI builds, only minimal version of IC
+# For regular CI builds, the minimum releases of the main products
 ./gradlew :verifyPlugin -PverifierEnv=CI
+
+# For the latest stable releases covered by the nightly job
+./gradlew :verifyPlugin -PverifierEnv=LATEST
+
+# For CLion API checks without optional-dependency exclusions
+./gradlew :verifyPlugin -PverifierEnv=CLION_CI
+./gradlew :verifyPlugin -PverifierEnv=CLION_LATEST
 ```
+
+The CI verifier targets the 2024.2 release of IntelliJ IDEA Community and Ultimate,
+Rider, CLion, and WebStorm. This includes the minimum supported IntelliJ IDEA build
+242.20224.300. The LATEST verifier targets current stable releases across the
+product matrix. It includes Android Studio Rabbit 1 (2026.2.1.8), IntelliJ IDEA
+Community and PyCharm Community 2025.3. It also includes the 2026.2 releases of
+IntelliJ IDEA Ultimate, PyCharm Professional, RubyMine, GoLand, PhpStorm, Rider,
+CLion, and WebStorm.
+Update these versions when the supported stable releases change. Community tests
+optional integrations without their product plugins. The other products test them with
+their plugins present. The mixed-product passes use four specific missing-package
+exclusions for optional CLion dependencies. Separate CLion passes use no exclusions,
+so missing or changed CLion APIs fail verification.
 
 License
 -------
