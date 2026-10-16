@@ -38,7 +38,6 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ena
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.utils.ConnectionType
-import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
@@ -155,23 +154,19 @@ class ConnectedAnalysisTests : BaseUiTest() {
             enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode()
-            try {
-                analyzeAndVerifyReportTabContainsMessages(
-                    "No new issues from last 1 days",
-                    "No new Security Hotspots from last 1 days",
-                    "Found 3 older issues"
-                )
-                // FIXME workaround: the Current File tab does not refresh after toggling the
-                // Focus On New Code filter, so trigger an explicit re-analysis. Unlike the
-                // StandaloneIdeaTests workaround (SLCORE-2533) this lag is not yet tracked.
-                analyzeCurrentFileFromToolWindow()
-                verifyCurrentFileTabContainsMessages(
-                    "Found 3 older issues",
-                    "Found 1 older Taint Vulnerability"
-                )
-            } finally {
-                resetFocusOnNewCode()
-            }
+            analyzeAndVerifyReportTabContainsMessages(
+                "No new issues from last 1 days",
+                "No new Security Hotspots from last 1 days",
+                "Found 3 older issues"
+            )
+            // FIXME workaround: the Current File tab does not refresh after toggling the
+            // Focus On New Code filter, so trigger an explicit re-analysis. Unlike the
+            // StandaloneIdeaTests workaround (SLCORE-2533) this lag is not yet tracked.
+            analyzeCurrentFileFromToolWindow()
+            verifyCurrentFileTabContainsMessages(
+                "Found 3 older issues",
+                "Found 1 older Taint Vulnerability"
+            )
         }
 
         @Test
