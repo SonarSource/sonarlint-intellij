@@ -31,13 +31,16 @@ if [[ -z "${MODE}" ]]; then
 fi
 
 read_gradle_prop() {
-  sed -n "s/^$1=//p" "${PROPS}" | cut -d'#' -f1 | xargs
+  local key="$1"
+  sed -n "s/^${key}=//p" "${PROPS}" | cut -d'#' -f1 | xargs
 }
 
 prop_or() {
+  local key="$1"
+  local fallback="$2"
   local value
-  value="$(read_gradle_prop "$1")"
-  echo "${value:-$2}"
+  value="$(read_gradle_prop "${key}")"
+  echo "${value:-${fallback}}"
 }
 
 changed_files() {
@@ -81,7 +84,9 @@ idea_suites() {
 }
 
 append_json() {
-  jq -nc --argjson a "$1" --argjson b "$2" '$a + $b'
+  local acc="$1"
+  local more="$2"
+  jq -nc --argjson a "${acc}" --argjson b "${more}" '$a + $b'
 }
 
 emit() {
