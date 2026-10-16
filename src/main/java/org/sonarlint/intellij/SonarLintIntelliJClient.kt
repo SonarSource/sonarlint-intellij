@@ -952,7 +952,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     ) {
         val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
-        val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
+        val tracker = getService(project, RunningAnalysesTracker::class.java)
+        if (analysisId != null && tracker.isCanceled(analysisId)) return
+        val runningAnalysis = analysisId?.let { tracker.getById(it) }
         getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
         if (runningAnalysis != null) {
@@ -971,7 +973,9 @@ object SonarLintIntelliJClient : SonarLintRpcClientDelegate {
     ) {
         val module = findModule(configurationScopeId)
         val project = module?.project ?: BackendService.findProject(configurationScopeId) ?: return
-        val runningAnalysis = analysisId?.let { getService(project, RunningAnalysesTracker::class.java).getById(it) }
+        val tracker = getService(project, RunningAnalysesTracker::class.java)
+        if (analysisId != null && tracker.isCanceled(analysisId)) return
+        val runningAnalysis = analysisId?.let { tracker.getById(it) }
         getService(project, NewCodePeriodCache::class.java).refreshAsync()
 
         if (runningAnalysis != null) {

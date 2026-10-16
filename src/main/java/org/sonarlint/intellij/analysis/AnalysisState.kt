@@ -117,7 +117,7 @@ class AnalysisState(
             try {
                 analysisCallback.onError(e)
             } finally {
-                getService(module.project, RunningAnalysesTracker::class.java).finish(this)
+                getService(module.project, RunningAnalysesTracker::class.java).finishCanceled(this)
             }
             throw e
         }

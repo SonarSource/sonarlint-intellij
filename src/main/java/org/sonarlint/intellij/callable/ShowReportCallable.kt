@@ -53,7 +53,13 @@ class ShowReportCallable(private val project: Project, private val expectedModul
     }
 
     override fun onError(e: Throwable) {
-        // For errors, we don't need to do anything special - just let the existing tab remain
+        runOnUiThread(project) {
+            synchronized(this@ShowReportCallable) {
+                completedModuleCount++
+                SonarLintUtils.getService(project, ReportTabManager::class.java)
+                    .reportModuleFailed(batchId, completedModuleCount, expectedModuleCount)
+            }
+        }
     }
     
     companion object {

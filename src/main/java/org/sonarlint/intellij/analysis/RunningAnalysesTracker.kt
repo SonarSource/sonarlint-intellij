@@ -30,6 +30,8 @@ import org.sonarlint.intellij.core.BackendService
 class RunningAnalysesTracker(private val project: Project) {
 
     private val analysisStateById: MutableMap<UUID, AnalysisState> = ConcurrentHashMap<UUID, AnalysisState>()
+    // Canceled analyses may never send a final publication. Keep only their IDs until the project closes.
+    private val canceledAnalysisIds = ConcurrentHashMap.newKeySet<UUID>()
 
     fun track(analysisState: AnalysisState) {
         analysisState.id.let { analysisStateById[it] = analysisState }
@@ -39,6 +41,13 @@ class RunningAnalysesTracker(private val project: Project) {
         getService(project, AnalysisStatus::class.java).stopRun(analysisState.id)
         analysisStateById.remove(analysisState.id)
     }
+
+    fun finishCanceled(analysisState: AnalysisState) {
+        canceledAnalysisIds.add(analysisState.id)
+        finish(analysisState)
+    }
+
+    fun isCanceled(analysisId: UUID): Boolean = analysisId in canceledAnalysisIds
 
     fun getById(analysisId: UUID): AnalysisState? {
         return analysisStateById[analysisId]
@@ -54,6 +63,7 @@ class RunningAnalysesTracker(private val project: Project) {
             getService(BackendService::class.java).cancelTask(uuid.toString())
         }
         analysisStateById.clear()
+        canceledAnalysisIds.clear()
     }
 
 }

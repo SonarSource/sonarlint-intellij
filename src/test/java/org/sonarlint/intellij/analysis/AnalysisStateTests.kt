@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
@@ -27,14 +28,22 @@ import java.util.UUID
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.SonarLintTestUtils.createIssue
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThreadAndWait
 import org.sonarsource.sonarlint.core.rpc.protocol.client.hotspot.RaisedHotspotDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.issue.RaisedIssueDto
 
@@ -75,6 +84,7 @@ class AnalysisStateTests : AbstractSonarLintLightTests() {
         verifyNoMoreInteractions(callback)
         verify(status).stopRun(analysisId)
         assertThat(tracker.getById(analysisId)).isNull()
+        assertThat(tracker.isCanceled(analysisId)).isTrue()
     }
 
     @Test
@@ -103,5 +113,56 @@ class AnalysisStateTests : AbstractSonarLintLightTests() {
         verifyNoMoreInteractions(callback)
         verify(status).stopRun(analysisId)
         assertThat(tracker.getById(analysisId)).isNull()
+        assertThat(tracker.isCanceled(analysisId)).isTrue()
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun canceled_analysis_drops_later_issue_and_hotspot_publications(cancelHotspot: Boolean) {
+        myFixture.configureByText("Sample.java", "class Sample {}")
+        val uri = URI.create(myFixture.file.virtualFile.url)
+        val analysisId = UUID.randomUUID()
+        val callback = mock(AnalysisCallback::class.java)
+        val tracker = RunningAnalysesTracker(project)
+        replaceProjectService(RunningAnalysesTracker::class.java, tracker)
+        replaceProjectService(AnalysisStatus::class.java, mock(AnalysisStatus::class.java))
+        tracker.track(AnalysisState(analysisId, callback, module))
+        val holder = mock(OnTheFlyFindingsHolder::class.java)
+        val submitter = mock(AnalysisSubmitter::class.java)
+        whenever(submitter.onTheFlyFindingsHolder).thenReturn(holder)
+        replaceProjectService(AnalysisSubmitter::class.java, submitter)
+        val scopeId = BackendService.moduleId(module)
+        val cancellation = ProcessCanceledException()
+
+        runOnUiThreadAndWait(project, ModalityState.defaultModalityState()) {
+            assertThatThrownBy {
+                if (cancelHotspot) {
+                    val hotspot = mock(RaisedHotspotDto::class.java)
+                    whenever(hotspot.textRange).thenThrow(cancellation)
+                    SonarLintIntelliJClient.raiseHotspots(scopeId, mapOf(uri to listOf(hotspot)), true, analysisId)
+                } else {
+                    val issue = mock(RaisedIssueDto::class.java)
+                    whenever(issue.textRange).thenThrow(cancellation)
+                    SonarLintIntelliJClient.raiseIssues(scopeId, mapOf(uri to listOf(issue)), true, analysisId)
+                }
+            }.isSameAs(cancellation)
+        }
+
+        for (intermediate in listOf(true, false)) {
+            SonarLintIntelliJClient.raiseIssues(scopeId, mapOf(uri to emptyList()), intermediate, analysisId)
+            SonarLintIntelliJClient.raiseHotspots(scopeId, mapOf(uri to emptyList()), intermediate, analysisId)
+        }
+        verifyNoInteractions(holder)
+        verify(callback).onError(cancellation)
+        verifyNoMoreInteractions(callback)
+        assertThat(tracker.isEmpty()).isTrue()
+
+        // Backend-triggered analyses and updates outside an analysis must still reach the live views.
+        for (otherId in listOf(null, UUID.randomUUID())) {
+            SonarLintIntelliJClient.raiseIssues(scopeId, mapOf(uri to emptyList()), false, otherId)
+            SonarLintIntelliJClient.raiseHotspots(scopeId, mapOf(uri to emptyList()), false, otherId)
+        }
+        verify(holder, times(2)).updateViewsWithNewIssues(module, mapOf(uri to emptyList()), false)
+        verify(holder, times(2)).updateViewsWithNewSecurityHotspots(module, mapOf(uri to emptyList()), false)
     }
 }
