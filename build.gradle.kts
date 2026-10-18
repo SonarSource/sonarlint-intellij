@@ -133,6 +133,11 @@ license {
 }
 
 intellijPlatform {
+    caching {
+        ides {
+            enabled = true
+        }
+    }
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "242.20224.300"

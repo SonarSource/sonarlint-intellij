@@ -24,16 +24,15 @@ jobs:
         with:
           version: 2025.9.12
 
-      # Cache verifier IDE binaries separately with a stable key (not invalidated by unrelated Gradle changes)
-      # IDEs are stored by the IntelliJ Platform Gradle Plugin v2.x in ~/.gradle/caches/<gradle-version>/transforms/
+      # Cache extracted IDEs and their indices independently of the Gradle version.
+      # A new key per run saves newly resolved IDEs after restoring the latest cache.
       - name: Restore verifier IDEs cache
         uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
         with:
-          path: ~/.gradle/caches/*/transforms/
-          key: verifier-ides-${{ runner.os }}-LATEST-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
+          path: .intellijPlatform/ides
+          key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-LATEST-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            verifier-ides-${{ runner.os }}-LATEST-
-            verifier-ides-${{ runner.os }}-
+            verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-LATEST-
 
       - name: Cache Gradle
         uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
