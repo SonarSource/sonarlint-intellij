@@ -149,6 +149,12 @@ tasks.named<Test>("test") {
     }
 }
 
+val uiTestSubscriptionKey = layout.file(
+    providers.environmentVariable("IDEA_SUBSCRIPTION_KEY_FILE")
+        .filter { it.isNotBlank() }
+        .map { file(it).absoluteFile }
+).orElse(intellijPlatform.subscriptionKey)
+
 val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
     if (project.hasProperty("runIdeDirectory")) {
         localPath = file(runIdeDirectory)
@@ -205,6 +211,7 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
 
     prepareSandboxTask {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        subscriptionKey.set(uiTestSubscriptionKey)
     }
 }
 

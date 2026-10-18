@@ -599,41 +599,36 @@ jobs:
           mv downloaded-plugin/sonarlint-intellij downloaded-plugin/staged-plugin
           rm sonarlint-intellij.zip
           
-          # IntelliJ Platform Gradle Plugin 2.13+ introduced a sandbox layout change:
-          #   <sandboxContainer>/<project.name>/<productCode>-<productVersion>/config_<task>/
-          # The sandbox container lives at the *root* project's `.intellijPlatform/sandbox`
+          # IDEA licenses are installed by the sandbox task; other products use their own key filenames.
           IDE_CODE="${IDEA_VERSION%%-*}"
           case "$IDE_CODE" in
-            IC|IU) IDE_HOME="$IDEA_HOME" ;;
-            CL)    IDE_HOME="$CLION_HOME" ;;
-            RD)    IDE_HOME="$RIDER_HOME" ;;
-            PY|PC) IDE_HOME="$PYCHARM_HOME" ;;
-            PS)    IDE_HOME="$PHPSTORM_HOME" ;;
-            GO)    IDE_HOME="$GOLAND_HOME" ;;
+            IC|PC) KEY_VAR="" ; KEY_FILE="" ;;
+            IU)
+              umask 077
+              IDEA_SUBSCRIPTION_KEY_FILE=$(mktemp "${RUNNER_TEMP}/idea-subscription-key.XXXXXX")
+              printf '%s' "${IDEA_KEY}" | base64 -d > "${IDEA_SUBSCRIPTION_KEY_FILE}"
+              printf 'IDEA_SUBSCRIPTION_KEY_FILE=%s\n' "${IDEA_SUBSCRIPTION_KEY_FILE}" >> "$GITHUB_ENV"
+              KEY_VAR="" ; KEY_FILE=""
+              ;;
+            CL) IDE_HOME="$CLION_HOME"    ; KEY_VAR="CLION_KEY"    ; KEY_FILE="clion.key" ;;
+            RD) IDE_HOME="$RIDER_HOME"    ; KEY_VAR="RIDER_KEY"    ; KEY_FILE="rider.key" ;;
+            PY) IDE_HOME="$PYCHARM_HOME"  ; KEY_VAR="PYCHARM_KEY"  ; KEY_FILE="pycharm.key" ;;
+            PS) IDE_HOME="$PHPSTORM_HOME" ; KEY_VAR="PHPSTORM_KEY" ; KEY_FILE="phpstorm.key" ;;
+            GO) IDE_HOME="$GOLAND_HOME"   ; KEY_VAR="GOLAND_KEY"   ; KEY_FILE="goland.key" ;;
             *) echo "::error::Unknown IDE code: $IDE_CODE"; exit 1 ;;
           esac
-          PRODUCT_CODE=$(jq -r .productCode "${IDE_HOME}/product-info.json")
-          PRODUCT_VERSION=$(jq -r .version "${IDE_HOME}/product-info.json")
-          SANDBOX_CONFIG_DIR=".intellijPlatform/sandbox/its/${PRODUCT_CODE}-${PRODUCT_VERSION}/config_runIdeForUiTests"
-          mkdir -p "${SANDBOX_CONFIG_DIR}"
-          
-          # Decode the license key for the IDE under test only (community editions need none).
-          case "$IDE_CODE" in
-            IC|PC) KEY_VAR=""             ; KEY_FILE="" ;;
-            IU)    KEY_VAR="IDEA_KEY"     ; KEY_FILE="idea.key" ;;
-            CL)    KEY_VAR="CLION_KEY"    ; KEY_FILE="clion.key" ;;
-            RD)    KEY_VAR="RIDER_KEY"    ; KEY_FILE="rider.key" ;;
-            PY)    KEY_VAR="PYCHARM_KEY"  ; KEY_FILE="pycharm.key" ;;
-            PS)    KEY_VAR="PHPSTORM_KEY" ; KEY_FILE="phpstorm.key" ;;
-            GO)    KEY_VAR="GOLAND_KEY"   ; KEY_FILE="goland.key" ;;
-          esac
           if [ -n "$KEY_VAR" ]; then
+            # Other products still need the custom sandbox config path for their license file.
+            PRODUCT_CODE=$(jq -r .productCode "${IDE_HOME}/product-info.json")
+            PRODUCT_VERSION=$(jq -r .version "${IDE_HOME}/product-info.json")
+            SANDBOX_CONFIG_DIR=".intellijPlatform/sandbox/its/${PRODUCT_CODE}-${PRODUCT_VERSION}/config_runIdeForUiTests"
+            mkdir -p "${SANDBOX_CONFIG_DIR}"
             echo "Writing license key to ${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
-            echo "${!KEY_VAR}" | base64 -d > "${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
-          else
+            printf '%s' "${!KEY_VAR}" | base64 -d > "${SANDBOX_CONFIG_DIR}/${KEY_FILE}"
+          elif [ "$IDE_CODE" != IU ]; then
             echo "No license key required for $IDE_CODE"
           fi
-          
+
           # Start metacity
           metacity --sm-disable --replace &
           sleep 3
