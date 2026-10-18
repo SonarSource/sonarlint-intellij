@@ -1,5 +1,4 @@
 import java.net.URI
-import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.extensions.intellijPlatform
 
 pluginManagement {
@@ -71,48 +70,19 @@ dependencyResolutionManagement {
                         password = artifactoryPassword
                     }
                 }
-                ivy {
-                    name = "JetBrains IDE Installers"
+                jetbrainsIdeInstallers {
                     url = URI("$installerArtifactoryUrl/jetbrains-download")
                     credentials {
                         username = artifactoryUsername
                         password = artifactoryPassword
                     }
-                    patternLayout {
-                        artifact("[organization]/[module]-[revision](-[classifier]).[ext]")
-                        artifact("[organization]/[module]-[revision](.[classifier]).[ext]")
-                        artifact("[organization]/[revision]/[module]-[revision](-[classifier]).[ext]")
-                        artifact("[organization]/[revision]/[module]-[revision](.[classifier]).[ext]")
-                        artifact("[organization]/[module]-[revision]-[classifier].tar.gz")
-                    }
-                    content {
-                        IntelliJPlatformType.values()
-                            .filter { it != IntelliJPlatformType.AndroidStudio }
-                            .mapNotNull { it.installer }
-                            .forEach {
-                                includeModule(it.groupId, it.artifactId)
-                            }
-                    }
-                    metadataSources { artifact() }
                 }
-                ivy {
-                    name = "Android Studio Installers"
+                androidStudioInstallers {
                     url = URI("$installerArtifactoryUrl/android-studio")
                     credentials {
                         username = artifactoryUsername
                         password = artifactoryPassword
                     }
-                    patternLayout {
-                        artifact("/ide-zips/[revision]/[artifact]-[revision]-[classifier].[ext]")
-                        artifact("/install/[revision]/[artifact]-[revision]-[classifier].[ext]")
-                    }
-                    content {
-                        val coordinates = IntelliJPlatformType.AndroidStudio.installer
-                        requireNotNull(coordinates)
-
-                        includeModule(coordinates.groupId, coordinates.artifactId)
-                    }
-                    metadataSources { artifact() }
                 }
                 maven("$artifactoryUrl/intellij-releases") {
                     name = "IntelliJ Repository (Releases)"
