@@ -360,6 +360,8 @@ runs:
         ) &
         MEMORY_MONITOR_PID=$!
         trap 'kill $MEMORY_MONITOR_PID 2>/dev/null' EXIT
+        # :its:check + TEST_SUITE includeTags on src/test. Merge this before
+        # SLI-2914 / #1912 (integrationTest source set); that PR must rebase here.
         ./gradlew :its:check --stacktrace -i \
           "-Dorg.gradle.jvmargs=${QA_GRADLE_JVM_ARGS}" \
           -PijVersion=${IDEA_VERSION} \
