@@ -291,30 +291,30 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent, UnnamedConfigurable {
-    private final JCheckBox checkBox;
+    private final JCheckBox analysisCheckBox;
 
-    private MyRefreshableOnComponent(JCheckBox checkBox) {
-      this.checkBox = checkBox;
+    private MyRefreshableOnComponent(JCheckBox analysisCheckBox) {
+      this.analysisCheckBox = analysisCheckBox;
     }
 
     @Override
     public JComponent getComponent() {
       var panel = new JPanel(new BorderLayout());
-      panel.add(checkBox);
+      panel.add(analysisCheckBox);
       var dumb = DumbService.isDumb(project);
-      checkBox.setEnabled(!dumb);
-      checkBox.setToolTipText(dumb ? "SonarQube for IDE analysis is impossible until indices are up-to-date" : "");
+      analysisCheckBox.setEnabled(!dumb);
+      analysisCheckBox.setToolTipText(dumb ? "SonarQube for IDE analysis is impossible until indices are up-to-date" : "");
       return panel;
     }
 
     @Override
     public void saveState() {
-      PropertiesComponent.getInstance(project).setValue(ACTIVATED_OPTION_NAME, Boolean.toString(checkBox.isSelected()));
+      PropertiesComponent.getInstance(project).setValue(ACTIVATED_OPTION_NAME, Boolean.toString(analysisCheckBox.isSelected()));
     }
 
     @Override
     public void restoreState() {
-      checkBox.setSelected(getSavedStateOrDefault());
+      analysisCheckBox.setSelected(getSavedStateOrDefault());
     }
 
     private boolean getSavedStateOrDefault() {
@@ -329,7 +329,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     @Override
     public boolean isModified() {
-      return checkBox.isSelected() != getSavedStateOrDefault();
+      return analysisCheckBox.isSelected() != getSavedStateOrDefault();
     }
 
     @Override
