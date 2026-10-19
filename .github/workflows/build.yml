@@ -294,7 +294,7 @@ jobs:
         uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
         with:
           path: /home/runner/.gradle/caches/*/transforms/
-          key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
+          key: verifier-ides-${{ runner.os }}-minimum-${{ hashFiles('build.gradle.kts') }}
           restore-keys: |
             verifier-ides-${{ runner.os }}-
 
@@ -325,6 +325,9 @@ jobs:
             /home/runner/.gradle/caches
             !/home/runner/.gradle/caches/*/transforms/
             /home/runner/.gradle/wrapper
+
+      - name: Verify CLion APIs without exclusions
+        run: ./gradlew :verifyPlugin -PverifierEnv=CLION_CI
 
   qa:
     runs-on: warp-custom-ubuntu-24-04

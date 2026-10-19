@@ -13,7 +13,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
-import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -150,40 +149,49 @@ intellijPlatform {
             VerifyPluginTask.FailureLevel.INVALID_PLUGIN
         )
         
-        // Ignore expected compatibility problems for optional dependencies
-        freeArgs = listOf(
-            "-ignored-problems", "${project.rootDir}/.verifier-ignored-problems.txt"
-        )
+        val strictClionVerification = project.hasProperty("verifierEnv") &&
+            verifierEnv in listOf("CLION_CI", "CLION_LATEST")
+        if (!strictClionVerification) {
+            freeArgs = listOf(
+                "-ignored-problems", "${project.rootDir}/.verifier-ignored-problems.txt"
+            )
+        }
 
-        val ideTypes = listOf(
-            IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
-            IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.GoLand,
-            IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
-            IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity
-        )
-
-        ides {
-            create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
+        if (!strictClionVerification) {
+            ides {
+                create(IntelliJPlatformType.IntellijIdeaCommunity, "2024.2")
+            }
         }
 
         if (project.hasProperty("verifierEnv")) {
             when (verifierEnv) {
                 "CI" -> ides {
-                    select {
-                        types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
-                        channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "242.*"
-                        untilBuild = "242.*"
-                    }
+                    create(IntelliJPlatformType.IntellijIdeaUltimate, "2024.2")
+                    create(IntelliJPlatformType.Rider, "2024.2")
+                    create(IntelliJPlatformType.CLion, "2024.2")
+                    create(IntelliJPlatformType.WebStorm, "2024.2")
                 }
 
                 "LATEST" -> ides {
-                    select {
-                        types = ideTypes
-                        channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "252.*"
-                        untilBuild = "252.*"
-                    }
+                    create(IntelliJPlatformType.AndroidStudio, "2026.2.1.8")
+                    create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.3")
+                    create(IntelliJPlatformType.PyCharmCommunity, "2025.3")
+                    create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.2.3")
+                    create(IntelliJPlatformType.PyCharmProfessional, "2026.2.3")
+                    create(IntelliJPlatformType.RubyMine, "2026.2.3")
+                    create(IntelliJPlatformType.GoLand, "2026.2.3")
+                    create(IntelliJPlatformType.PhpStorm, "2026.2.3")
+                    create(IntelliJPlatformType.Rider, "2026.2.3.1")
+                    create(IntelliJPlatformType.CLion, "2026.2.3.1")
+                    create(IntelliJPlatformType.WebStorm, "2026.2.3")
+                }
+
+                "CLION_CI" -> ides {
+                    create(IntelliJPlatformType.CLion, "2024.2")
+                }
+
+                "CLION_LATEST" -> ides {
+                    create(IntelliJPlatformType.CLion, "2026.2.3.1")
                 }
             }
         }
