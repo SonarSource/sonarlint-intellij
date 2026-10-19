@@ -294,7 +294,7 @@ jobs:
         uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
         with:
           path: .intellijPlatform/ides
-          key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-CI-${{ github.run_id }}-${{ github.run_attempt }}
+          key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-CI-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
           restore-keys: |
             verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-CI-
 
