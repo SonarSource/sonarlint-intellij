@@ -32,7 +32,7 @@ class SonarLintMainToolWindowPage private constructor(
             val toolWindow = ensureMainSonarLintToolWindow(project)
             val panel = toolWindow.contentManager.findContent(FINDINGS_TAB_TITLE)?.component
             check(panel is FindingsPanel) { "Findings tab is not a FindingsPanel" }
-            return SonarLintMainToolWindowPage(FindingsTabPage(panel))
+            return SonarLintMainToolWindowPage(FindingsTabPage(project, panel))
         }
     }
 }

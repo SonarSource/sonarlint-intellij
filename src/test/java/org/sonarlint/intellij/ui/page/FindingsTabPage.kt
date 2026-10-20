@@ -19,28 +19,40 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.currentfile.TreeType
 import org.sonarlint.intellij.ui.tree.IssueTree
 
 class FindingsTabPage internal constructor(
+    private val project: Project,
     private val panel: FindingsPanel,
 ) {
 
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(panel)
 
     val findingsTree: FindingsTreePage
-        get() = FindingsTreePage(findingsIssueTree())
+        get() {
+            syncPanelWithSelectedEditorFile()
+            return FindingsTreePage(findingsIssueTree())
+        }
 
     val oldFindingsTree: FindingsTreePage
-        get() = FindingsTreePage(oldFindingsIssueTree())
+        get() {
+            syncPanelWithSelectedEditorFile()
+            return FindingsTreePage(oldFindingsIssueTree())
+        }
 
     val issues: List<FindingNodePage>
-        get() = findingsTree.issues + oldFindingsTree.issues
+        get() {
+            syncPanelWithSelectedEditorFile()
+            return FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
+        }
 
-    fun refreshForFile(file: VirtualFile) {
+    private fun syncPanelWithSelectedEditorFile() {
+        val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
         panel.update(file)
         UIUtil.dispatchAllInvocationEvents()
     }
