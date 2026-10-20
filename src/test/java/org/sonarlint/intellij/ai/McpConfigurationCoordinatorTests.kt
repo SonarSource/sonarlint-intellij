@@ -735,6 +735,10 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.setUp(project, snapshot.copy(connectionChoices = emptyList()), AiAgent.CURSOR)).isFalse()
         UIUtil.dispatchAllInvocationEvents()
         assertThat(ui.settingsOpened).isTrue()
+        assertThat(ui.messages).containsExactly(RecordingMcpUi.UiMessage(
+            "No SonarQube connection is available. Add a connection, then retry MCP setup.", NotificationType.ERROR
+        ))
+        assertSetupOutcome(AiIntegrationActionStatus.FAILED)
 
         globalSettings.serverConnections = listOf(
             connection,
@@ -789,11 +793,34 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `missing MCP configuration still records an accepted failed attempt`() {
+    fun `missing MCP configuration reports a refresh warning and a failed attempt`() {
         val origins = captureOrigins()
         assertThat(coordinator().setUp(project, baseSnapshot(), AiAgent.CURSOR)).isFalse()
         assertSetupOutcome(AiIntegrationActionStatus.FAILED)
         assertThat(origins).containsExactly(project)
+        UIUtil.dispatchAllInvocationEvents()
+        assertThat(ui.messages).containsExactly(RecordingMcpUi.UiMessage(
+            "MCP configuration details are unavailable. Refresh this view and try again.", NotificationType.WARNING
+        ))
+        assertThat(ui.settingsOpened).isFalse()
+    }
+
+    @Test
+    fun `connection removed during setup reports that the selected connection no longer exists`() {
+        val pending = mutableListOf<Runnable>()
+        val coordinator = coordinator(java.util.concurrent.Executor { pending += it })
+        assertThat(coordinator.setUp(project, setupSnapshot(), AiAgent.CURSOR)).isTrue()
+        globalSettings.serverConnections = emptyList()
+
+        pending.single().run()
+        UIUtil.dispatchAllInvocationEvents()
+
+        assertSetupOutcome(AiIntegrationActionStatus.FAILED)
+        assertThat(ui.messages).containsExactly(RecordingMcpUi.UiMessage(
+            "The selected SonarQube connection no longer exists. Add or select a connection, then retry.", NotificationType.ERROR
+        ))
+        assertThat(ui.settingsOpened).isTrue()
+        verify(backend, never()).generateMcpConfiguration(any(), any())
     }
 
     @Test

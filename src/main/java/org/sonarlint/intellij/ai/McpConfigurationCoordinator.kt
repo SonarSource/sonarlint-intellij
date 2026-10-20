@@ -99,7 +99,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         try {
             val configuration = snapshot.mcpConfigurations[agent]
             if (configuration == null) {
-                finishSetup(project, attempt, null, IllegalStateException())
+                finishSetup(project, attempt, McpTransactionResult.ConfigurationUnavailable, null)
                 return false
             }
             if (configuration.state != McpConfigurationState.NOT_CONFIGURED && configuration.state != McpConfigurationState.STANDALONE) {
@@ -113,7 +113,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 when (val selection = ConnectionSelector(ui::chooseConnection).select(project, connections, snapshot.recommendedConnectionId)) {
                     is ConnectionSelection.Selected -> selection.connectionId
                     ConnectionSelection.Missing -> {
-                        finishSetup(project, attempt, McpTransactionResult.MissingConnection, null)
+                        finishSetup(project, attempt, McpTransactionResult.NoConnections, null)
                         return false
                     }
                     ConnectionSelection.Cancelled -> {
@@ -379,6 +379,10 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 "The MCP configuration changed during setup. Review the file and retry so no edits are lost." to NotificationType.WARNING
             McpTransactionResult.Protected ->
                 "The MCP configuration was not changed because its current state cannot be updated safely. Open the file, resolve the issue, and retry." to NotificationType.WARNING
+            McpTransactionResult.ConfigurationUnavailable ->
+                "MCP configuration details are unavailable. Refresh this view and try again." to NotificationType.WARNING
+            McpTransactionResult.NoConnections ->
+                "No SonarQube connection is available. Add a connection, then retry MCP setup." to NotificationType.ERROR
             McpTransactionResult.MissingConnection ->
                 "The selected SonarQube connection no longer exists. Add or select a connection, then retry." to NotificationType.ERROR
             McpTransactionResult.Cancelled ->
@@ -387,7 +391,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 "MCP setup did not return a result. Refresh this view and retry." to NotificationType.WARNING
         }
         ui.showMessage(project, message, type)
-        if (result == McpTransactionResult.MissingConnection) {
+        if (result == McpTransactionResult.NoConnections || result == McpTransactionResult.MissingConnection) {
             ui.openConnectionSettings(project)
         }
     }
@@ -402,6 +406,8 @@ enum class McpTransactionResult {
     Unchanged,
     ConcurrentEdit,
     Protected,
+    ConfigurationUnavailable,
+    NoConnections,
     MissingConnection,
     Cancelled
 }
