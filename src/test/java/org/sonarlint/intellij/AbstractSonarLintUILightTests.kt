@@ -22,20 +22,21 @@ package org.sonarlint.intellij
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.sonarlint.intellij.ui.page.SonarLintMainToolWindowPage
+import org.sonarlint.intellij.ui.page.SonarLintUiTestContext
 
 abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
 
     protected lateinit var mainToolWindow: SonarLintMainToolWindowPage
+    private lateinit var uiContext: SonarLintUiTestContext
 
     @BeforeEach
     fun openMainToolWindow() {
-        mainToolWindow = SonarLintMainToolWindowPage.open(project)
+        uiContext = SonarLintUiTestContext(project)
+        mainToolWindow = SonarLintMainToolWindowPage.create(project)
     }
 
     @AfterEach
     fun closeMainToolWindow() {
-        if (::mainToolWindow.isInitialized) {
-            mainToolWindow.close()
-        }
+        uiContext.releaseEditorsAndToolWindows()
     }
 }
