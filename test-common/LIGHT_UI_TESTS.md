@@ -32,7 +32,7 @@ Example assertion:
 
 ```kotlin
 FileEditorManager.getInstance(project).openFile(file, true)
-// … run analysis …
+mainToolWindow.findings.toolbar.analyzeCurrentFile()
 assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
 assertThat(mainToolWindow.findings.issues).hasSize(1)
 ```

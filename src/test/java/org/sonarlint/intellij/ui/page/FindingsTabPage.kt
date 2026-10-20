@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.currentfile.TreeType
 import org.sonarlint.intellij.ui.tree.IssueTree
@@ -31,7 +29,7 @@ class FindingsTabPage internal constructor(
     private val panel: FindingsPanel,
 ) {
 
-    val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(panel)
+    val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(project, panel)
 
     val findingsTree: FindingsTreePage
         get() {
@@ -52,9 +50,7 @@ class FindingsTabPage internal constructor(
         }
 
     private fun syncPanelWithSelectedEditorFile() {
-        val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
-        panel.update(file)
-        UIUtil.dispatchAllInvocationEvents()
+        syncFindingsPanelWithSelectedEditor(project, panel)
     }
 
     private fun findingsIssueTree(): IssueTree =
