@@ -24,7 +24,7 @@ import com.intellij.openapi.wm.ToolWindowAnchor
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
 import org.sonarlint.intellij.ui.ToolWindowConstants.FINDINGS_TAB_TITLE
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
-import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
+import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.icons.SonarLintIcons
 
 class SonarLintMainToolWindowPage private constructor(
@@ -49,7 +49,7 @@ class SonarLintMainToolWindowPage private constructor(
                 },
             )
             val panel = toolWindow.contentManager.findContent(FINDINGS_TAB_TITLE)?.component
-            check(panel is CurrentFilePanel) { "Findings tab is not a CurrentFilePanel" }
+            check(panel is FindingsPanel) { "Findings tab is not a FindingsPanel" }
             return SonarLintMainToolWindowPage(FindingsTabPage(panel))
         }
     }

@@ -29,7 +29,7 @@ import org.sonarlint.intellij.editor.EditorHighlightRefresh.Companion.NONE
  *
  * This replaces the previous `(refreshEditorHighlights, highlightChangedFiles, highlightAllOpenFiles)` boolean triplet
  * that was threaded through several layers. The concrete set of files is resolved lazily by the Current File panel
- * because it depends on the active findings scope (see `CurrentFilePanel.resolveEditorHighlightFiles`):
+ * because it depends on the active findings scope (see `FindingsPanel.resolveEditorHighlightFiles`):
  *  - [enabled] `false` ([NONE]): editor highlights are left untouched (e.g. for intermediate analysis results).
  *  - [allOpenFiles] `true` ([ALL_OPEN_FILES]): every open editor is refreshed (e.g. when all findings are cleared).
  *  - [changedFiles]: hint of the files whose findings changed. It is only honored in the "all files" scope; the

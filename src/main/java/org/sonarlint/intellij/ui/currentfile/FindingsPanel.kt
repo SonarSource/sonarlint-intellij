@@ -98,7 +98,7 @@ private const val CHECKING_SUPPORT = "Checking support..."
  * - Tree Components:</strong> Multiple {@link SingleFileTreeModelBuilder} implementations for each finding type
  * - FindingDetailsPanel:</strong> Shows detailed information for selected findings
  */
-class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
+class FindingsPanel(project: Project) : CurrentFileFindingsPanel(project) {
 
     // UI Components
     private lateinit var issuesPanel: JBPanelWithEmptyText
@@ -286,7 +286,7 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
     }
 
     private fun setupLayout() {
-        val treePanel = JBPanel<CurrentFilePanel>(VerticalFlowLayout(0, 0)).apply {
+        val treePanel = JBPanel<FindingsPanel>(VerticalFlowLayout(0, 0)).apply {
             treeConfigs.values.forEach { add(it.tree) }
         }
 
@@ -301,12 +301,12 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
         disableEmptyDisplay()
 
         // Header with summary and filters
-        val headerPanel = JBPanel<CurrentFilePanel>(VerticalFlowLayout(0, 0)).apply {
+        val headerPanel = JBPanel<FindingsPanel>(VerticalFlowLayout(0, 0)).apply {
             add(summaryPanel)
             add(filtersPanel)
         }
 
-        val headerCardPanel = JBPanel<CurrentFilePanel>(BorderLayout()).apply {
+        val headerCardPanel = JBPanel<FindingsPanel>(BorderLayout()).apply {
             background = com.intellij.util.ui.UIUtil.getListBackground()
             border = JBUI.Borders.compound(
                 JBUI.Borders.customLine(JBUI.CurrentTheme.CustomFrameDecorations.separatorForeground(), 0, 0, 1, 0),
@@ -316,12 +316,12 @@ class CurrentFilePanel(project: Project) : CurrentFileFindingsPanel(project) {
             add(headerPanel, BorderLayout.CENTER)
         }
 
-        val verticalContainer = JBPanel<CurrentFilePanel>(BorderLayout()).apply {
+        val verticalContainer = JBPanel<FindingsPanel>(BorderLayout()).apply {
             add(headerCardPanel, BorderLayout.NORTH)
             add(issuesPanel, BorderLayout.CENTER)
         }
 
-        val mainPanel = JBPanel<CurrentFilePanel>(BorderLayout()).apply {
+        val mainPanel = JBPanel<FindingsPanel>(BorderLayout()).apply {
             add(verticalContainer, BorderLayout.CENTER)
             add(CurrentFileStatusPanel(project), BorderLayout.PAGE_END)
         }

@@ -27,7 +27,7 @@ import org.sonarlint.intellij.ui.filter.FilteredFindings
 
 /**
  * Thread-safe snapshot of filtered findings shown in the Current File tool window tab.
- * Updated on the EDT from [CurrentFilePanel]; readable from any thread (e.g. external annotator on a background thread).
+ * Updated on the EDT from [FindingsPanel]; readable from any thread (e.g. external annotator on a background thread).
  */
 @Service(Service.Level.PROJECT)
 class CurrentFileDisplayedFindingsStore(project: Project) {
