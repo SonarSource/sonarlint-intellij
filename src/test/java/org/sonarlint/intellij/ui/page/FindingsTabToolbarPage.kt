@@ -19,12 +19,20 @@
  */
 package org.sonarlint.intellij.ui.page
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.ActionButton
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.fixtures.findComponents
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
+import org.sonarlint.intellij.util.SonarLintActions
 
 class FindingsTabToolbarPage internal constructor(
     private val project: Project,
@@ -36,25 +44,57 @@ class FindingsTabToolbarPage internal constructor(
             .any { it.javaClass.simpleName.contains("ActionToolbar", ignoreCase = true) }
 
     val isAnalyzeCurrentFileEnabled: Boolean
-        get() {
-            UIUtil.dispatchAllInvocationEvents()
-            return analyzeCurrentFileButton()?.isEnabled == true
+        get() = readOnEdt {
+            syncFindingsPanelWithSelectedEditor(project, panel)
+            isAnalyzeCurrentFileActionEnabled()
         }
 
     fun analyzeCurrentFile() {
-        UIUtil.dispatchAllInvocationEvents()
-        val button = analyzeCurrentFileButton()
-            ?: error("Analyze Current File toolbar button not found on Findings tab")
-        check(button.isEnabled) { "Analyze Current File action is not enabled" }
-        button.click()
-        UIUtil.dispatchAllInvocationEvents()
+        readOnEdt {
+            syncFindingsPanelWithSelectedEditor(project, panel)
+            val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
+                ?: error("No file selected in editor")
+            val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
+            val dataContext = SimpleDataContext.builder()
+                .add(CommonDataKeys.PROJECT, project)
+                .add(CommonDataKeys.VIRTUAL_FILE_ARRAY, arrayOf(file))
+                .add(CommonDataKeys.VIRTUAL_FILE, file)
+                .build()
+            val event = AnActionEvent(
+                null,
+                dataContext,
+                ActionPlaces.TOOLBAR,
+                Presentation(),
+                ActionManager.getInstance(),
+                0,
+            )
+            analyzeAction.actionPerformed(event)
+        }
     }
 
-    private fun analyzeCurrentFileButton(): ActionButton? =
-        panel.findComponents<ActionButton>()
-            .firstOrNull { it.action.templatePresentation.text == ANALYZE_CURRENT_FILE_TEXT }
+    private fun isAnalyzeCurrentFileActionEnabled(): Boolean {
+        val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull() ?: return false
+        val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
+        val presentation = Presentation()
+        val dataContext = SimpleDataContext.builder()
+            .add(CommonDataKeys.PROJECT, project)
+            .add(CommonDataKeys.VIRTUAL_FILE_ARRAY, arrayOf(file))
+            .add(CommonDataKeys.VIRTUAL_FILE, file)
+            .build()
+        val event = AnActionEvent(
+            null,
+            dataContext,
+            ActionPlaces.TOOLBAR,
+            presentation,
+            ActionManager.getInstance(),
+            0,
+        )
+        analyzeAction.update(event)
+        return presentation.isEnabled && presentation.isVisible
+    }
 
-    private companion object {
-        private const val ANALYZE_CURRENT_FILE_TEXT = "Analyze Current File"
+    private fun analyzeCurrentFileButton(): ActionButton? {
+        val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
+        return panel.findComponents<ActionButton>().firstOrNull { it.action === analyzeAction }
     }
 }

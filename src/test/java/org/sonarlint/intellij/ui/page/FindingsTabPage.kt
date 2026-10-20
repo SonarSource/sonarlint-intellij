@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.project.Project
-import com.intellij.util.ui.UIUtil
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.currentfile.TreeType
 import org.sonarlint.intellij.ui.tree.IssueTree
@@ -33,21 +33,21 @@ class FindingsTabPage internal constructor(
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(project, panel)
 
     val findingsTree: FindingsTreePage
-        get() {
-            UIUtil.dispatchAllInvocationEvents()
-            return FindingsTreePage(findingsIssueTree())
+        get() = readOnEdt {
+            syncFindingsPanelWithSelectedEditor(project, panel)
+            FindingsTreePage(findingsIssueTree())
         }
 
     val oldFindingsTree: FindingsTreePage
-        get() {
-            UIUtil.dispatchAllInvocationEvents()
-            return FindingsTreePage(oldFindingsIssueTree())
+        get() = readOnEdt {
+            syncFindingsPanelWithSelectedEditor(project, panel)
+            FindingsTreePage(oldFindingsIssueTree())
         }
 
     val issues: List<FindingNodePage>
-        get() {
-            UIUtil.dispatchAllInvocationEvents()
-            return FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
+        get() = readOnEdt {
+            syncFindingsPanelWithSelectedEditor(project, panel)
+            FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
         }
 
     private fun findingsIssueTree(): IssueTree =
