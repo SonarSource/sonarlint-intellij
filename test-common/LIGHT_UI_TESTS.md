@@ -28,22 +28,17 @@ In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Pag
 
 Light UI tests interact with the product through **page objects** (e.g. `SonarLintMainToolWindowPage` → `findings` → `findingsTree` / `issues`), not raw Swing containers or production panel types returned to tests. Subclass [`AbstractSonarLintUILightTests`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) to obtain a wired main tool window and automatic teardown.
 
-Example assertion:
+Example assertion (see `FindingsTabAnalysisLightTests`):
 
 ```kotlin
-val file = LightTestProjectFiles.registerFromTestData(module, testDataPath, "src/file.xml", ::createTestPsiFile)
-FileEditorManager.getInstance(project).openFile(file, true)
-Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
-    assertThat(mainToolWindow.findings.toolbar.isAnalyzeCurrentFileEnabled).isTrue()
-}
-mainToolWindow.findings.toolbar.analyzeCurrentFile()
-Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
-    assertThat(mainToolWindow.findings.issues).hasSize(1)
-}
+val file = analysis.registerFileFromTestData("src/file.xml")
+readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
+analysis.runOnTheFlyAnalysis(file)
+assertThat(mainToolWindow.findings.issues).hasSize(1)
 assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
 ```
 
-Reading `findingsTree` / `issues` flushes the EDT queue so production listeners (e.g. editor selection → Findings tab refresh) can run before assertions.
+Reading `findingsTree` / `issues` uses [`readOnEdt { … }`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/UiTestEdt.kt) so Swing and file-editor state are read on the EDT, including from Awaitility poll threads.
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 

@@ -23,27 +23,43 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
-import org.sonarlint.intellij.fixtures.LightTestProjectFiles
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.analysis.LightTestAnalysis
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.fixtures.readOnEdt
+import org.sonarlint.intellij.ui.filter.FilterCriteria
+import org.sonarlint.intellij.ui.filter.FindingsFilter
 
 class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
 
+    private lateinit var analysis: LightTestAnalysis
+
+    @BeforeEach
+    fun waitForReadyAndAnalysisHelper() {
+        analysis = LightTestAnalysis(project, module, testDataPath, ::createTestPsiFile)
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
+            val readiness = getService(project, AnalysisReadinessCache::class.java)
+            assertThat(readiness.isModuleReady(module)).isTrue()
+            assertThat(readiness.isProjectReady).isTrue()
+        }
+    }
+
     @Test
     fun should_show_one_issue_in_findings_tab_after_analysis() {
-        val file = LightTestProjectFiles.registerFromTestData(module, testDataPath, "src/file.xml", ::createTestPsiFile)
-        FileEditorManager.getInstance(project).openFile(file, true)
+        val file = analysis.registerFileFromTestData("src/file.xml")
+        readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
+        val analyzed = analysis.runOnTheFlyAnalysis(file)
 
-        Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
-            assertThat(mainToolWindow.findings.toolbar.isAnalyzeCurrentFileEnabled).isTrue()
-        }
+        assertThat(getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder.getIssuesForFile(analyzed.file))
+            .hasSize(analyzed.issueCount)
+        assertThat(FindingsFilter(project).filterAllFindings(analyzed.file, FilterCriteria()).issues)
+            .hasSize(analyzed.issueCount)
 
-        mainToolWindow.findings.toolbar.analyzeCurrentFile()
-
-        Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
-            assertThat(mainToolWindow.findings.issues).hasSize(1)
-        }
-
+        assertThat(mainToolWindow.findings.issues).hasSize(analyzed.issueCount)
         assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
         assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
         assertThat(mainToolWindow.findings.toolbar.isVisible).isTrue()
