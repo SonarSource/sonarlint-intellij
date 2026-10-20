@@ -187,11 +187,17 @@ class CliOperationCoordinator @JvmOverloads constructor(
         prepareAndLaunch(lease, preparation)
     }
 
-    internal fun acquire(project: Project, attempt: AiIntegrationTelemetryAttempt? = null): Boolean {
+    internal fun acquire(project: Project): Boolean = acquire(project, null, cancelWithProject = true)
+
+    // Cancelling an RPC future does not establish that backend filesystem work has stopped.
+    internal fun acquireUninstall(project: Project, attempt: AiIntegrationTelemetryAttempt): Boolean =
+        acquire(project, attempt, cancelWithProject = false)
+
+    private fun acquire(project: Project, attempt: AiIntegrationTelemetryAttempt?, cancelWithProject: Boolean): Boolean {
         if (project.isDisposed) {
             return false
         }
-        val lease = OperationLease(project, attempt) { releaseOperation(it, CliOperationOutcome.Cancelled) }
+        val lease = OperationLease(project, attempt, cancelWithProject) { releaseOperation(it, CliOperationOutcome.Cancelled) }
         if (!active.compareAndSet(null, lease)) {
             active.get()?.terminalSession?.focus?.invoke()
             return false
@@ -213,7 +219,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
     }
 
     internal fun cancel(project: Project) {
-        active.get()?.takeIf { it.project === project && !it.uninstall }?.let { releaseOperation(it, CliOperationOutcome.Cancelled) }
+        active.get()?.takeIf { it.project === project && it.cancelWithProject }?.let { releaseOperation(it, CliOperationOutcome.Cancelled) }
     }
 
     private fun launch(lease: OperationLease, command: CliCommand) {
@@ -306,9 +312,12 @@ class CliOperationCoordinator @JvmOverloads constructor(
     }
 }
 
-private class OperationLease(val project: Project, var attempt: AiIntegrationTelemetryAttempt?, private val onDispose: (OperationLease) -> Unit) : Disposable {
-    // Cancelling an RPC future does not establish that backend filesystem work has stopped.
-    val uninstall = attempt != null
+private class OperationLease(
+    val project: Project,
+    var attempt: AiIntegrationTelemetryAttempt?,
+    val cancelWithProject: Boolean,
+    private val onDispose: (OperationLease) -> Unit
+) : Disposable {
     private val disposed = AtomicBoolean()
     @Volatile
     private var pending: CompletableFuture<*>? = null

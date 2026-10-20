@@ -396,9 +396,9 @@ class AiIntegrationsTelemetryTests : AbstractSonarLintLightTests() {
     }
 
     private fun assertDocumentationActions(outcome: AiIntegrationActionStatus) {
-        assertAction(AiIntegrationAction.OPEN_CLI_DOCUMENTATION, AiIntegrationActionStatus.STARTED, outcome)
+        assertAction(AiIntegrationAction.OPEN_CLI_DOCUMENTATION, AiIntegrationActionStatus.STARTED, outcome, AiIntegrationActionStatus.STARTED, outcome)
         assertAction(AiIntegrationAction.OPEN_MCP_DOCUMENTATION, AiIntegrationActionStatus.STARTED, outcome)
-        assertAction(AiIntegrationAction.OPEN_VORTEX_DOCUMENTATION, AiIntegrationActionStatus.STARTED, outcome, AiIntegrationActionStatus.STARTED, outcome)
+        assertAction(AiIntegrationAction.OPEN_VORTEX_DOCUMENTATION, AiIntegrationActionStatus.STARTED, outcome)
         verify(telemetry, times(8)).aiIntegrationAction(any(), any(), isNull())
     }
 

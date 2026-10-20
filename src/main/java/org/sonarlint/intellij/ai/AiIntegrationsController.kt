@@ -152,10 +152,10 @@ class AiIntegrationsController @JvmOverloads constructor(
     private fun handleIntent(intent: AiIntegrationsIntent) {
         if (isDisposed()) return
         val documentation = when (intent) {
-            AiIntegrationsIntent.OpenCliDocumentation -> AiIntegrationAction.OPEN_CLI_DOCUMENTATION to SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK
+            AiIntegrationsIntent.OpenCliDocumentation,
+            AiIntegrationsIntent.TroubleshootCli -> AiIntegrationAction.OPEN_CLI_DOCUMENTATION to SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK
             AiIntegrationsIntent.OpenMcpDocumentation -> AiIntegrationAction.OPEN_MCP_DOCUMENTATION to SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK
             AiIntegrationsIntent.OpenVortexDocumentation -> AiIntegrationAction.OPEN_VORTEX_DOCUMENTATION to SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK
-            AiIntegrationsIntent.TroubleshootCli -> AiIntegrationAction.OPEN_VORTEX_DOCUMENTATION to SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK
             else -> null
         }
         if (documentation != null) {
@@ -222,7 +222,7 @@ class AiIntegrationsController @JvmOverloads constructor(
             }
             val acquired = synchronized(uninstallLock) {
                 if (pendingUninstall !== attempt || isDisposed()) false
-                else cliCoordinator.acquire(project, attempt).also { if (it) { pendingUninstall = null; uninstallPreflight = null } }
+                else cliCoordinator.acquireUninstall(project, attempt).also { if (it) { pendingUninstall = null; uninstallPreflight = null } }
             }
             if (!acquired) {
                 finishPendingUninstall(attempt, if (isDisposed()) AiIntegrationActionStatus.CANCELLED else AiIntegrationActionStatus.FAILED)
