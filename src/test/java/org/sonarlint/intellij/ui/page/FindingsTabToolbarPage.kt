@@ -22,7 +22,7 @@ package org.sonarlint.intellij.ui.page
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
 
-class MainToolWindowToolbarPage internal constructor(
+class FindingsTabToolbarPage internal constructor(
     private val panel: CurrentFilePanel,
 ) {
 

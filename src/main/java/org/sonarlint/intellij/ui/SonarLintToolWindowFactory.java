@@ -80,7 +80,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
     var content = contentManager.getFactory()
       .createContent(
         panel,
-        ToolWindowConstants.CURRENT_FILE_TAB_TITLE,
+        ToolWindowConstants.FINDINGS_TAB_TITLE,
         false);
     content.setCloseable(false);
     contentManager.addDataProvider(panel);
