@@ -1,0 +1,5 @@
+<!-- Non compliant comment, prolog header should be first -->
+<?xml version="1.0" encoding="UTF-8"?>
+<firstNode>
+  content
+</firstNode>
