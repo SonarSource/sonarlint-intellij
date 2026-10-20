@@ -37,12 +37,12 @@ class FindingsTabToolbarPage internal constructor(
 
     val isAnalyzeCurrentFileEnabled: Boolean
         get() {
-            flushFindingsPanelEdt()
+            UIUtil.dispatchAllInvocationEvents()
             return analyzeCurrentFileButton()?.isEnabled == true
         }
 
     fun analyzeCurrentFile() {
-        flushFindingsPanelEdt()
+        UIUtil.dispatchAllInvocationEvents()
         val button = analyzeCurrentFileButton()
             ?: error("Analyze Current File toolbar button not found on Findings tab")
         check(button.isEnabled) { "Analyze Current File action is not enabled" }

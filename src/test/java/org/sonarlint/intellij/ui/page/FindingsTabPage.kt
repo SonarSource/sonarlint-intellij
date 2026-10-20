@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.project.Project
+import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.currentfile.TreeType
 import org.sonarlint.intellij.ui.tree.IssueTree
@@ -33,19 +34,19 @@ class FindingsTabPage internal constructor(
 
     val findingsTree: FindingsTreePage
         get() {
-            flushFindingsPanelEdt()
+            UIUtil.dispatchAllInvocationEvents()
             return FindingsTreePage(findingsIssueTree())
         }
 
     val oldFindingsTree: FindingsTreePage
         get() {
-            flushFindingsPanelEdt()
+            UIUtil.dispatchAllInvocationEvents()
             return FindingsTreePage(oldFindingsIssueTree())
         }
 
     val issues: List<FindingNodePage>
         get() {
-            flushFindingsPanelEdt()
+            UIUtil.dispatchAllInvocationEvents()
             return FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
         }
 
