@@ -12,24 +12,26 @@ UI behavior should be exercised through the same **extension points**, **platfor
 
 Light tests are **not parallel-safe within one JVM** (shared application, SLOOP, storage).
 
-## Headless seams
+## Headless tool windows
 
-In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Use [HeadlessToolWindowSupport](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/HeadlessToolWindowSupport.kt):
+In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Page objects register and drive production factories:
 
-1. `registerToolWindowIfAbsent` with the production `ToolWindowFactory`
-2. `ensureFactoryContentCreated` → `createToolWindowContent` (full tabs, listeners, gear menu—not manual tab wiring)
-3. `HeadlessToolWindowHarness.teardownLightUi` in `@AfterEach` (close editors, clear tool window contents, release editors)
+1. `SonarLintMainToolWindowPage.create(project)` or `SonarLintWalkthroughToolWindowPage.create(project)` — `registerToolWindowIfAbsent` + `ensureFactoryContentCreated` (see `HeadlessToolWindow.kt` in the page package)
+2. `@AfterEach` cleanup via `SonarLintUiTestContext.releaseEditorsAndToolWindows()` (used by `AbstractSonarLintUILightTests` and standalone UI light tests)
 
 ## Page objects
 
-Light UI tests interact with the product through **page objects** (e.g. `SonarLintMainToolWindowPage` → `currentFile` → `issues`), not production panel classes. Subclass [`AbstractSonarLintUILightTests`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) to obtain a wired main tool window and automatic teardown.
+Light UI tests interact with the product through **page objects** (e.g. `SonarLintMainToolWindowPage` → `currentFile` → `findingsTree` / `issues`), not raw Swing containers or production panel types returned to tests. Subclass [`AbstractSonarLintUILightTests`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) to obtain a wired main tool window and automatic teardown.
 
 Example assertion:
 
 ```kotlin
 mainToolWindow.currentFile.refreshForFile(file)
+assertThat(mainToolWindow.currentFile.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
 assertThat(mainToolWindow.currentFile.issues).hasSize(1)
 ```
+
+Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 
 ## Prefer extension points
 

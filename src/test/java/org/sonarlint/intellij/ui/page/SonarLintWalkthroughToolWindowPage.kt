@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowAnchor
-import org.sonarlint.intellij.fixtures.HeadlessToolWindowHarness
 import org.sonarlint.intellij.ui.icons.SonarLintIcons
 import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindowFactory
 import org.sonarlint.intellij.ui.walkthrough.WalkthroughPanel
@@ -29,35 +28,29 @@ import org.sonarlint.intellij.ui.walkthrough.WalkthroughPanel
 const val WALKTHROUGH_TOOL_WINDOW_ID: String = "Welcome to SonarQube for IDE"
 
 class SonarLintWalkthroughToolWindowPage private constructor(
-    private val harness: HeadlessToolWindowHarness,
+    val content: WalkthroughPanel,
 ) {
 
-    val hasWalkthroughPanel: Boolean
-        get() = harness.registerToolWindowIfAbsent(
-            WALKTHROUGH_TOOL_WINDOW_ID,
-            SonarLintWalkthroughToolWindowFactory(),
-            SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON,
-            ToolWindowAnchor.LEFT,
-        ).let { toolWindow ->
-            harness.ensureFactoryContentCreated(
+    companion object {
+        fun create(project: Project): SonarLintWalkthroughToolWindowPage {
+            val toolWindow = registerToolWindowIfAbsent(
+                project,
+                WALKTHROUGH_TOOL_WINDOW_ID,
+                SonarLintWalkthroughToolWindowFactory(),
+                SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON,
+                ToolWindowAnchor.LEFT,
+            )
+            ensureFactoryContentCreated(
+                project,
                 toolWindow,
                 SonarLintWalkthroughToolWindowFactory(),
-                hasContent = { tw -> tw.contentManager.contentCount > 0 },
+                contentReady = { tw ->
+                    tw.contentManager.contentCount > 0
+                },
             )
-            toolWindow.contentManager.contentCount == 1 &&
-                toolWindow.contentManager.contents[0].component is WalkthroughPanel
-        }
-
-    fun close() {
-        harness.teardownLightUi(WALKTHROUGH_TOOL_WINDOW_ID)
-    }
-
-    companion object {
-        fun open(project: Project): SonarLintWalkthroughToolWindowPage {
-            val harness = HeadlessToolWindowHarness(project)
-            val page = SonarLintWalkthroughToolWindowPage(harness)
-            page.hasWalkthroughPanel
-            return page
+            val component = toolWindow.contentManager.contents.single().component
+            check(component is WalkthroughPanel) { "Walkthrough tab is not a WalkthroughPanel" }
+            return SonarLintWalkthroughToolWindowPage(component)
         }
     }
 }

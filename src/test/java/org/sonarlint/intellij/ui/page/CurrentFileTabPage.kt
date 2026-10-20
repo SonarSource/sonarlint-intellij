@@ -22,54 +22,33 @@ package org.sonarlint.intellij.ui.page
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ui.UIUtil
 import javax.swing.tree.TreeNode
-import org.sonarlint.intellij.fixtures.SwingComponentTree
+import org.sonarlint.intellij.fixtures.findComponents
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.tree.IssueTree
 
 class CurrentFileTabPage internal constructor(
-    private val panelProvider: () -> CurrentFilePanel,
+    private val panel: CurrentFilePanel,
 ) {
 
+    val toolbar: MainToolWindowToolbarPage = MainToolWindowToolbarPage(panel)
+
+    val findingsTree: FindingsTreePage
+        get() = FindingsTreePage(findingsTree())
+
     val issues: List<IssueNodePage>
-        get() {
-            val tree = issueTreeWithFindings()
-            return collectIssueNodes(tree.model.root as TreeNode).map { node ->
-                IssueNodePage(node.issue().getRuleKey(), node.issue().getMessage())
-            }
-        }
+        get() = findingsTree.issues
 
     fun refreshForFile(file: VirtualFile) {
-        panelProvider().update(file)
+        panel.update(file)
         UIUtil.dispatchAllInvocationEvents()
     }
 
-    fun summaryText(): String {
-        val issueCount = issues.size
-        return if (issueCount == 1) "Found 1 issue" else "Found $issueCount issues"
-    }
-
-    private fun issueTreeWithFindings(): IssueTree {
-        val panel = panelProvider()
-        return SwingComponentTree.findComponents<IssueTree>(panel)
+    private fun findingsTree(): IssueTree {
+        return panel.findComponents<IssueTree>()
             .maxByOrNull { countIssueNodes(it.model.root as TreeNode) }
             ?.takeIf { countIssueNodes(it.model.root as TreeNode) > 0 }
             ?: error("No IssueTree with findings found under Findings tab")
-    }
-
-    private fun collectIssueNodes(node: TreeNode): List<IssueNode> {
-        val result = mutableListOf<IssueNode>()
-        collectIssueNodes(node, result)
-        return result
-    }
-
-    private fun collectIssueNodes(node: TreeNode, result: MutableList<IssueNode>) {
-        if (node is IssueNode) {
-            result.add(node)
-        }
-        for (i in 0 until node.childCount) {
-            collectIssueNodes(node.getChildAt(i), result)
-        }
     }
 
     private fun countIssueNodes(node: TreeNode): Int {
