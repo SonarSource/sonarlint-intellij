@@ -20,17 +20,25 @@
 package org.sonarlint.intellij.telemetry
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.Logger
 import java.util.concurrent.CompletableFuture
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.monitoring.MonitoringService
 import org.sonarlint.intellij.util.runOnPooledThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiIntegrationHost
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AddQuickFixAppliedForRuleParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationCliStateObservedParams
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiAgentIntegrationStateObservedParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingTriggeredParams
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AnalysisReportingType
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.DevNotificationsClickedParams
@@ -40,6 +48,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.HelpAndFeedb
 
 @Service(Service.Level.APP)
 class SonarLintTelemetry {
+    private val aiDispatchLock = Any()
+    private var aiDispatchTail = CompletableFuture.completedFuture<Void>(null)
 
     fun optOut(optOut: Boolean) {
         if (optOut) {
@@ -91,8 +101,31 @@ class SonarLintTelemetry {
         notifyTelemetry { it.supportedLanguagesPanelCtaClicked() }
     }
 
-    fun aiIntegrationAction(action: AiIntegrationAction, status: AiIntegrationActionStatus) {
-        notifyTelemetry { it.aiIntegrationAction(AiIntegrationActionParams(action, status, null, AiIntegrationHost.INTELLIJ)) }
+    fun aiIntegrationAction(action: AiIntegrationAction, status: AiIntegrationActionStatus, agent: AiAgent? = null) {
+        notifyAiTelemetry { it.aiIntegrationAction(AiIntegrationActionParams(action, status, agent, AiIntegrationHost.INTELLIJ)) }
+    }
+
+    fun aiIntegrationCliStateObserved(installation: CliInstallationStatus, authentication: CliAuthenticationStatus) {
+        notifyAiTelemetry { it.aiIntegrationCliStateObserved(AiIntegrationCliStateObservedParams(installation, authentication, AiIntegrationHost.INTELLIJ)) }
+    }
+
+    fun aiAgentIntegrationStateObserved(agent: AiAgent, sources: List<AiAgentDetectionSource>, state: McpConfigurationState) {
+        notifyAiTelemetry { it.aiAgentIntegrationStateObserved(AiAgentIntegrationStateObservedParams(agent, sources, state, AiIntegrationHost.INTELLIJ)) }
+    }
+
+    private fun notifyAiTelemetry(action: (TelemetryRpcService) -> Unit) {
+        synchronized(aiDispatchLock) {
+            try {
+                aiDispatchTail = aiDispatchTail.handle<Void> { _, _ -> null }
+                    .thenComposeAsync { getService(BackendService::class.java).notifyAiTelemetry(action) }
+                    .exceptionally {
+                        Logger.getInstance(SonarLintTelemetry::class.java).debug("Unable to dispatch AI integrations telemetry")
+                        null
+                    }
+            } catch (_: Exception) {
+                Logger.getInstance(SonarLintTelemetry::class.java).debug("Unable to schedule AI integrations telemetry")
+            }
+        }
     }
 
     companion object {

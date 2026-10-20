@@ -64,7 +64,7 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
         doAnswer {
             statuses.add(it.getArgument(1))
             null
-        }.whenever(telemetry).aiIntegrationAction(eq(AiIntegrationAction.UNINSTALL_CLI), any())
+        }.whenever(telemetry).aiIntegrationAction(eq(AiIntegrationAction.UNINSTALL_CLI), any(), eq(null))
         whenever(backend.uninstallCli()).thenReturn(uninstall)
         whenever(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture.completedFuture(
             AiIntegrationSnapshot(
@@ -161,7 +161,7 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
         doAnswer {
             statuses.add(it.getArgument(1))
             throw IllegalStateException("telemetry unavailable")
-        }.whenever(telemetry).aiIntegrationAction(eq(AiIntegrationAction.UNINSTALL_CLI), any())
+        }.whenever(telemetry).aiIntegrationAction(eq(AiIntegrationAction.UNINSTALL_CLI), any(), eq(null))
 
         clickUninstall()
         uninstall.complete(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null))
