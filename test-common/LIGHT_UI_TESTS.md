@@ -31,10 +31,13 @@ Light UI tests interact with the product through **page objects** (e.g. `SonarLi
 Example assertion:
 
 ```kotlin
-mainToolWindow.findings.refreshForFile(file)
+FileEditorManager.getInstance(project).openFile(file, true)
+// … run analysis …
 assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
 assertThat(mainToolWindow.findings.issues).hasSize(1)
 ```
+
+Reading `findingsTree` / `issues` syncs the panel from the selected editor file and flushes the EDT queue.
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 
