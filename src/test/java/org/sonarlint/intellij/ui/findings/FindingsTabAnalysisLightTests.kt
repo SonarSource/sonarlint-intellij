@@ -61,8 +61,6 @@ class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
         assertThat(FindingsFilter(project).filterAllFindings(analyzed.file, FilterCriteria()).issues)
             .hasSize(analyzed.issueCount)
 
-        mainToolWindow.findings.refreshForFile(analyzed.file)
-
         assertThat(mainToolWindow.findings.issues).hasSize(analyzed.issueCount)
         assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
         assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
