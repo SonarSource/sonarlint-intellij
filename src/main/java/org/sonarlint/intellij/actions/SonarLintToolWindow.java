@@ -44,7 +44,7 @@ import org.sonarlint.intellij.ui.report.ReportPanel;
 import org.sonarlint.intellij.ui.report.ReportTabManager;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.ui.ToolWindowConstants.CURRENT_FILE_TAB_TITLE;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.FINDINGS_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
@@ -75,7 +75,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     if (toolWindow != null) {
       runOnUiThread(project, () -> {
         var contentManager = toolWindow.getContentManager();
-        var content = contentManager.findContent(ToolWindowConstants.CURRENT_FILE_TAB_TITLE);
+        var content = contentManager.findContent(ToolWindowConstants.FINDINGS_TAB_TITLE);
         if (content != null) {
           var panel = (T) content.getComponent();
           tabPanelConsumer.accept(panel);
@@ -93,7 +93,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
    */
   public void openCurrentFileTab() {
     ApplicationManager.getApplication().assertIsDispatchThread();
-    openTab(CURRENT_FILE_TAB_TITLE);
+    openTab(FINDINGS_TAB_TITLE);
   }
 
   public void openOrCloseCurrentFileTab() {
@@ -101,7 +101,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
-      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
         if (content.getComponent().isShowing()) {
           toolWindow.hide();
@@ -170,9 +170,9 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void showFindingDescription(Finding liveIssue) {
     openCurrentFileTab();
-    selectTab(getToolWindow(), CURRENT_FILE_TAB_TITLE);
+    selectTab(getToolWindow(), FINDINGS_TAB_TITLE);
     var contentManager = getToolWindow().getContentManager();
-    var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+    var content = contentManager.findContent(FINDINGS_TAB_TITLE);
     var currentFilePanel = (CurrentFilePanel) content.getComponent();
     currentFilePanel.setSelectedFinding(liveIssue);
     currentFilePanel.selectRulesTab();
@@ -180,9 +180,9 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
 
   public void showFindingLocations(Finding liveIssue) {
     openCurrentFileTab();
-    selectTab(getToolWindow(), CURRENT_FILE_TAB_TITLE);
+    selectTab(getToolWindow(), FINDINGS_TAB_TITLE);
     var contentManager = getToolWindow().getContentManager();
-    var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+    var content = contentManager.findContent(FINDINGS_TAB_TITLE);
     var currentFilePanel = (CurrentFilePanel) content.getComponent();
     currentFilePanel.setSelectedFinding(liveIssue);
     currentFilePanel.selectLocationsTab();
@@ -192,7 +192,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
-      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
         var issue = currentFilePanel.getIssueFiltered(findingKey);
@@ -220,7 +220,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
-      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
         var issue = currentFilePanel.getIssueFiltered(showFinding.getFindingKey());
@@ -241,7 +241,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
-      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
         var taint = currentFilePanel.getTaintFiltered(showFinding.getFindingKey());
@@ -262,7 +262,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
-      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
         var taint = currentFilePanel.getTaintFiltered(findingKey);
@@ -290,7 +290,7 @@ public final class SonarLintToolWindow implements ContentManagerListener, Projec
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       var contentManager = toolWindow.getContentManager();
-      var content = contentManager.findContent(CURRENT_FILE_TAB_TITLE);
+      var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
         var currentFilePanel = (CurrentFilePanel) content.getComponent();
         var hotspot = currentFilePanel.getHotspotFiltered(showFinding.getFindingKey());
