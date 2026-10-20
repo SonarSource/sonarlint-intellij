@@ -20,10 +20,10 @@
 package org.sonarlint.intellij.ui.page
 
 import org.sonarlint.intellij.fixtures.walkComponents
-import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
+import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 
 class FindingsTabToolbarPage internal constructor(
-    private val panel: CurrentFilePanel,
+    private val panel: FindingsPanel,
 ) {
 
     val isVisible: Boolean

@@ -26,7 +26,7 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.wm.ToolWindowManager
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
+import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.report.ReportPanel
 
 /**
@@ -44,7 +44,7 @@ class ExpandAllTreesAction : AnAction("Expand All", "Expand all finding trees", 
             val selectedContent = toolWindow.contentManager.selectedContent ?: return@runOnUiThread
             
             when (val component = selectedContent.component) {
-                is CurrentFilePanel -> {
+                is FindingsPanel -> {
                     expandCurrentFileTrees(component)
                 }
                 is ReportPanel -> {
@@ -54,7 +54,7 @@ class ExpandAllTreesAction : AnAction("Expand All", "Expand all finding trees", 
         }
     }
     
-    private fun expandCurrentFileTrees(panel: CurrentFilePanel) {
+    private fun expandCurrentFileTrees(panel: FindingsPanel) {
         panel.expandAllTrees()
     }
     

@@ -20,23 +20,25 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowType;
-import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.ui.content.ContentManagerListener;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.ai.AiIntegrationsController;
 import org.sonarlint.intellij.ai.AiIntegrationsPanel;
-import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
+import org.sonarlint.intellij.ui.currentfile.FindingsPanel;
 
-import static org.sonarlint.intellij.ui.ToolWindowConstants.HELP_AND_FEEDBACK_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.AI_INTEGRATIONS_TAB_TITLE;
+import static org.sonarlint.intellij.ui.ToolWindowConstants.HELP_AND_FEEDBACK_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
 import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 
@@ -51,8 +53,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
     runOnUiThread(project, () -> {
       configureAdditionalGearActions(toolWindow);
       var contentManager = toolWindow.getContentManager();
-      var currentFilePanel = new CurrentFilePanel(project);
-      var findingsContent = addCurrentFileTab(currentFilePanel, contentManager);
+      var findingsPanel = new FindingsPanel(project);
+      var findingsContent = addCurrentFileTab(findingsPanel, contentManager);
       addAiIntegrationsTab(project, contentManager);
       addLogTab(project, toolWindow);
       addHelpAndFeedbackTab(project, toolWindow);
@@ -67,15 +69,15 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
     toolWindow.setAdditionalGearActions(gearActions);
   }
 
-  private static Content addCurrentFileTab(CurrentFilePanel currentFilePanel, ContentManager contentManager) {
+  private static Content addCurrentFileTab(FindingsPanel findingsPanel, ContentManager contentManager) {
     var content = contentManager.getFactory()
       .createContent(
-        currentFilePanel,
+        findingsPanel,
         ToolWindowConstants.FINDINGS_TAB_TITLE,
         false);
-    content.setDisposer(currentFilePanel);
+    content.setDisposer(findingsPanel);
     content.setCloseable(false);
-    contentManager.addDataProvider(currentFilePanel);
+    contentManager.addDataProvider(findingsPanel);
     contentManager.addContent(content);
     return content;
   }

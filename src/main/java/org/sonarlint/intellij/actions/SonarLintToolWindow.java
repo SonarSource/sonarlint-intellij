@@ -38,7 +38,7 @@ import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.IncludeResolvedIssueAction;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.ui.ToolWindowConstants;
-import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
+import org.sonarlint.intellij.ui.currentfile.FindingsPanel;
 import org.sonarlint.intellij.ui.report.ReportPanel;
 import org.sonarlint.intellij.ui.report.ReportTabManager;
 
@@ -84,7 +84,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
   }
 
   public void filterCurrentFileTab(boolean isResolved) {
-    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.allowResolvedFindings(isResolved));
+    this.<FindingsPanel>updateCurrentFileTab(panel -> panel.allowResolvedFindings(isResolved));
   }
 
   /**
@@ -120,7 +120,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
   }
 
   public void refreshViews(EditorHighlightRefresh highlightRefresh) {
-    this.<CurrentFilePanel>updateCurrentFileTab(panel -> panel.refreshView(highlightRefresh));
+    this.<FindingsPanel>updateCurrentFileTab(panel -> panel.refreshView(highlightRefresh));
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       runOnUiThread(project, () -> {
@@ -138,7 +138,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
   }
 
   public void setAnalysisReadyCurrentFile() {
-    this.updateCurrentFileTab(CurrentFilePanel::setAnalysisIsReady);
+    this.updateCurrentFileTab(FindingsPanel::setAnalysisIsReady);
   }
 
   private void openTab(String name) {
@@ -163,7 +163,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
   }
 
   public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, EditorHighlightRefresh highlightRefresh) {
-    this.<CurrentFilePanel>updateCurrentFileTab(
+    this.<FindingsPanel>updateCurrentFileTab(
       panel -> runOnUiThread(project, () -> panel.update(selectedFile, highlightRefresh)));
   }
 
@@ -172,7 +172,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
     selectTab(getToolWindow(), FINDINGS_TAB_TITLE);
     var contentManager = getToolWindow().getContentManager();
     var content = contentManager.findContent(FINDINGS_TAB_TITLE);
-    var currentFilePanel = (CurrentFilePanel) content.getComponent();
+    var currentFilePanel = (FindingsPanel) content.getComponent();
     currentFilePanel.setSelectedFinding(liveIssue);
     currentFilePanel.selectRulesTab();
   }
@@ -182,7 +182,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
     selectTab(getToolWindow(), FINDINGS_TAB_TITLE);
     var contentManager = getToolWindow().getContentManager();
     var content = contentManager.findContent(FINDINGS_TAB_TITLE);
-    var currentFilePanel = (CurrentFilePanel) content.getComponent();
+    var currentFilePanel = (FindingsPanel) content.getComponent();
     currentFilePanel.setSelectedFinding(liveIssue);
     currentFilePanel.selectLocationsTab();
   }
@@ -193,7 +193,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
       var contentManager = toolWindow.getContentManager();
       var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
-        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var currentFilePanel = (FindingsPanel) content.getComponent();
         var issue = currentFilePanel.getIssueFiltered(findingKey);
 
         if (issue == null) {
@@ -221,7 +221,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
       var contentManager = toolWindow.getContentManager();
       var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
-        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var currentFilePanel = (FindingsPanel) content.getComponent();
         var issue = currentFilePanel.getIssueFiltered(showFinding.getFindingKey());
 
         if (issue == null && currentFilePanel.doesIssueExist(showFinding.getFindingKey())) {
@@ -242,7 +242,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
       var contentManager = toolWindow.getContentManager();
       var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
-        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var currentFilePanel = (FindingsPanel) content.getComponent();
         var taint = currentFilePanel.getTaintFiltered(showFinding.getFindingKey());
 
         if (taint == null && currentFilePanel.doesTaintExist(showFinding.getFindingKey())) {
@@ -263,7 +263,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
       var contentManager = toolWindow.getContentManager();
       var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
-        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var currentFilePanel = (FindingsPanel) content.getComponent();
         var taint = currentFilePanel.getTaintFiltered(findingKey);
 
         if (taint == null) {
@@ -291,7 +291,7 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
       var contentManager = toolWindow.getContentManager();
       var content = contentManager.findContent(FINDINGS_TAB_TITLE);
       if (content != null) {
-        var currentFilePanel = (CurrentFilePanel) content.getComponent();
+        var currentFilePanel = (FindingsPanel) content.getComponent();
         var hotspot = currentFilePanel.getHotspotFiltered(showFinding.getFindingKey());
 
         if (hotspot == null && currentFilePanel.doesHotspotExist(showFinding.getFindingKey())) {

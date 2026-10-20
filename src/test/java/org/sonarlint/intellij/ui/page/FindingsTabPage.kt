@@ -23,12 +23,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.ui.UIUtil
 import javax.swing.tree.TreeNode
 import org.sonarlint.intellij.fixtures.findComponents
-import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
+import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.tree.IssueTree
 
 class FindingsTabPage internal constructor(
-    private val panel: CurrentFilePanel,
+    private val panel: FindingsPanel,
 ) {
 
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(panel)
