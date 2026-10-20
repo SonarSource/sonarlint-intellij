@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
@@ -46,7 +48,8 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val notifyUninstallResult: (CliUninstallFeedback.Finished) -> Unit = ::notifyCliUninstallResult,
     private val telemetry: SonarLintTelemetry = getService(SonarLintTelemetry::class.java),
     private val confirmUninstall: (Project) -> Boolean = ::confirmCliUninstall,
-    private val mcpCoordinator: McpConfigurationCoordinator = getService(McpConfigurationCoordinator::class.java)
+    private val mcpCoordinator: McpConfigurationCoordinator = getService(McpConfigurationCoordinator::class.java),
+    private val browse: (String) -> Unit = { BrowserUtil.browse(it) }
 ) : Disposable {
     private val generation = AtomicLong()
     private val started = AtomicBoolean()
@@ -123,6 +126,25 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     private fun handleIntent(intent: AiIntegrationsIntent) {
+        if (isDisposed()) return
+        val documentation = when (intent) {
+            AiIntegrationsIntent.OpenCliDocumentation,
+            AiIntegrationsIntent.TroubleshootCli -> AiIntegrationAction.OPEN_CLI_DOCUMENTATION to SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK
+            AiIntegrationsIntent.OpenMcpDocumentation -> AiIntegrationAction.OPEN_MCP_DOCUMENTATION to SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK
+            AiIntegrationsIntent.OpenVortexDocumentation -> AiIntegrationAction.OPEN_VORTEX_DOCUMENTATION to SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK
+            else -> null
+        }
+        if (documentation != null) {
+            val attempt = AiIntegrationTelemetryAttempt(telemetry, documentation.first)
+            val status = try {
+                browse(documentation.second)
+                AiIntegrationActionStatus.UNKNOWN
+            } catch (_: Exception) {
+                AiIntegrationActionStatus.FAILED
+            }
+            attempt.finish(status)
+            return
+        }
         val snapshot = latestSnapshot ?: return
         when (intent) {
             AiIntegrationsIntent.UninstallCli -> uninstallCli()
@@ -131,6 +153,7 @@ class AiIntegrationsController @JvmOverloads constructor(
             is AiIntegrationsIntent.IntegrateCli -> cliCoordinator.execute(project, snapshot, intent)
             is AiIntegrationsIntent.SetUpMcp -> mcpCoordinator.setUp(project, snapshot, intent.agent)
             is AiIntegrationsIntent.OpenMcpConfiguration -> mcpCoordinator.openConfiguration(project, intent.agent, snapshot)
+            else -> Unit
         }
     }
 

@@ -128,6 +128,10 @@ sealed interface AiIntegrationsPanelState {
     data class Error(val message: String) : AiIntegrationsPanelState
 }
 sealed interface AiIntegrationsIntent {
+    data object TroubleshootCli : AiIntegrationsIntent
+    data object OpenCliDocumentation : AiIntegrationsIntent
+    data object OpenVortexDocumentation : AiIntegrationsIntent
+    data object OpenMcpDocumentation : AiIntegrationsIntent
     data object InstallCli : AiIntegrationsIntent
     data object AuthenticateCli : AiIntegrationsIntent
     data class IntegrateCli(val agent: AiAgent) : AiIntegrationsIntent
