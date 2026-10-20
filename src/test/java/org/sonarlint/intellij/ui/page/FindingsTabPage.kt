@@ -36,7 +36,7 @@ class FindingsTabPage internal constructor(
     val findingsTree: FindingsTreePage
         get() = FindingsTreePage(findingsTree())
 
-    val issues: List<IssueNodePage>
+    val issues: List<FindingNodePage>
         get() = findingsTree.issues
 
     fun refreshForFile(file: VirtualFile) {

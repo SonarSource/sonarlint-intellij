@@ -27,9 +27,9 @@ class FindingsTreePage internal constructor(
     private val tree: IssueTree,
 ) {
 
-    val issues: List<IssueNodePage>
+    val issues: List<FindingNodePage>
         get() = collectIssueNodes(tree.model.root as TreeNode).map { node ->
-            IssueNodePage(node.issue().getRuleKey(), node.issue().getMessage())
+            FindingNodePage(node.issue().getRuleKey(), node.issue().getMessage())
         }
 
     val summaryLabelText: String
