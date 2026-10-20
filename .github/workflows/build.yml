@@ -293,10 +293,10 @@ jobs:
       - name: Restore verifier IDEs cache
         uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
         with:
-          path: /home/runner/.gradle/caches/*/transforms/
-          key: verifier-ides-${{ runner.os }}-IC-2025.2-IC-242
+          path: .intellijPlatform/ides
+          key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-CI-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
           restore-keys: |
-            verifier-ides-${{ runner.os }}-
+            verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-CI-
 
       - name: Configure Gradle
         uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
