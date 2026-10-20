@@ -36,7 +36,7 @@ class SonarLintUiTestContext(private val project: Project) {
         PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
         val editorFactory = EditorFactory.getInstance()
         editorFactory.allEditors
-            .filter { it.project == project }
+            .filter { it.project == null || it.project == project }
             .forEach { editorFactory.releaseEditor(it) }
         PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
     }
