@@ -20,9 +20,6 @@
 package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.ToolWindowAnchor
-import org.sonarlint.intellij.ui.icons.SonarLintIcons
-import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindowFactory
 import org.sonarlint.intellij.ui.walkthrough.WalkthroughPanel
 
 const val WALKTHROUGH_TOOL_WINDOW_ID: String = "Welcome to SonarQube for IDE"
@@ -33,21 +30,7 @@ class SonarLintWalkthroughToolWindowPage private constructor(
 
     companion object {
         fun create(project: Project): SonarLintWalkthroughToolWindowPage {
-            val toolWindow = registerToolWindowIfAbsent(
-                project,
-                WALKTHROUGH_TOOL_WINDOW_ID,
-                SonarLintWalkthroughToolWindowFactory(),
-                SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON,
-                ToolWindowAnchor.LEFT,
-            )
-            ensureFactoryContentCreated(
-                project,
-                toolWindow,
-                SonarLintWalkthroughToolWindowFactory(),
-                contentReady = { tw ->
-                    tw.contentManager.contentCount > 0
-                },
-            )
+            val toolWindow = ensureWalkthroughToolWindow(project)
             val component = toolWindow.contentManager.contents.single().component
             check(component is WalkthroughPanel) { "Walkthrough tab is not a WalkthroughPanel" }
             return SonarLintWalkthroughToolWindowPage(component)
