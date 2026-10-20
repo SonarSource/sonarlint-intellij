@@ -34,7 +34,7 @@ class FindingsTabPage internal constructor(
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(panel)
 
     val findingsTree: FindingsTreePage
-        get() = FindingsTreePage(findingsTree())
+        get() = FindingsTreePage(findingsIssueTree())
 
     val issues: List<FindingNodePage>
         get() = findingsTree.issues
@@ -44,11 +44,11 @@ class FindingsTabPage internal constructor(
         UIUtil.dispatchAllInvocationEvents()
     }
 
-    private fun findingsTree(): IssueTree {
-        return panel.findComponents<IssueTree>()
-            .maxByOrNull { countIssueNodes(it.model.root as TreeNode) }
-            ?.takeIf { countIssueNodes(it.model.root as TreeNode) > 0 }
-            ?: error("No IssueTree with findings found under Findings tab")
+    private fun findingsIssueTree(): IssueTree {
+        val trees = panel.findComponents<IssueTree>()
+        check(trees.isNotEmpty()) { "No IssueTree found under Findings tab" }
+        return trees.maxByOrNull { countIssueNodes(it.model.root as TreeNode) }
+            ?: error("No IssueTree found under Findings tab")
     }
 
     private fun countIssueNodes(node: TreeNode): Int {
