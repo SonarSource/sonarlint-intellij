@@ -19,14 +19,42 @@
  */
 package org.sonarlint.intellij.ui.page
 
+import com.intellij.openapi.actionSystem.impl.ActionButton
+import com.intellij.openapi.project.Project
+import com.intellij.util.ui.UIUtil
+import org.sonarlint.intellij.fixtures.findComponents
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 
 class FindingsTabToolbarPage internal constructor(
+    private val project: Project,
     private val panel: FindingsPanel,
 ) {
 
     val isVisible: Boolean
         get() = panel.walkComponents()
             .any { it.javaClass.simpleName.contains("ActionToolbar", ignoreCase = true) }
+
+    val isAnalyzeCurrentFileEnabled: Boolean
+        get() {
+            syncFindingsPanelWithSelectedEditor(project, panel)
+            return analyzeCurrentFileButton()?.isEnabled == true
+        }
+
+    fun analyzeCurrentFile() {
+        syncFindingsPanelWithSelectedEditor(project, panel)
+        val button = analyzeCurrentFileButton()
+            ?: error("Analyze Current File toolbar button not found on Findings tab")
+        check(button.isEnabled) { "Analyze Current File action is not enabled" }
+        button.click()
+        UIUtil.dispatchAllInvocationEvents()
+    }
+
+    private fun analyzeCurrentFileButton(): ActionButton? =
+        panel.findComponents<ActionButton>()
+            .firstOrNull { it.action.templatePresentation.text == ANALYZE_CURRENT_FILE_TEXT }
+
+    private companion object {
+        private const val ANALYZE_CURRENT_FILE_TEXT = "Analyze Current File"
+    }
 }
