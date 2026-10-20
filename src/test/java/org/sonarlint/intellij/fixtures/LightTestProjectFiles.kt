@@ -45,7 +45,6 @@ object LightTestProjectFiles {
             mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
             true,
         )
-        Thread.sleep(3000)
         return virtualFile
     }
 }

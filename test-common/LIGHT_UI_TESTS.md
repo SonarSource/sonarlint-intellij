@@ -31,10 +31,16 @@ Light UI tests interact with the product through **page objects** (e.g. `SonarLi
 Example assertion:
 
 ```kotlin
+val file = LightTestProjectFiles.registerFromTestData(module, testDataPath, "src/file.xml", ::createTestPsiFile)
 FileEditorManager.getInstance(project).openFile(file, true)
+Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
+    assertThat(mainToolWindow.findings.toolbar.isAnalyzeCurrentFileEnabled).isTrue()
+}
 mainToolWindow.findings.toolbar.analyzeCurrentFile()
+Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
+    assertThat(mainToolWindow.findings.issues).hasSize(1)
+}
 assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
-assertThat(mainToolWindow.findings.issues).hasSize(1)
 ```
 
 Reading `findingsTree` / `issues` flushes the EDT queue so production listeners (e.g. editor selection → Findings tab refresh) can run before assertions.
