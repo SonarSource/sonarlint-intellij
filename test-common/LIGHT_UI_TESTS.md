@@ -37,7 +37,7 @@ assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Fou
 assertThat(mainToolWindow.findings.issues).hasSize(1)
 ```
 
-Reading `findingsTree` / `issues` syncs the panel from the selected editor file and flushes the EDT queue.
+Reading `findingsTree` / `issues` flushes the EDT queue so production listeners (e.g. editor selection → Findings tab refresh) can run before assertions.
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 

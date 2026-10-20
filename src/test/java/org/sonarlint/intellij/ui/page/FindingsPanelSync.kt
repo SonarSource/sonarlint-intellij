@@ -19,13 +19,9 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.project.Project
 import com.intellij.util.ui.UIUtil
-import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 
-internal fun syncFindingsPanelWithSelectedEditor(project: Project, panel: FindingsPanel) {
-    val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
-    panel.update(file)
+/** Flushes async UI work (e.g. [org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder] editor selection → Findings tab refresh). */
+internal fun flushFindingsPanelEdt() {
     UIUtil.dispatchAllInvocationEvents()
 }
