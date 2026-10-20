@@ -339,7 +339,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         UIUtil.dispatchAllInvocationEvents()
 
         verify(backend, never()).uninstallCli()
-        assertThat(confirmationCount).isEqualTo(1)
+        assertThat(confirmationCount).isZero()
         assertThat(coordinator.activeOperation()).isTrue()
         assertThat(coordinator.lastOutcome()).isNull()
         coordinator.release()
@@ -413,6 +413,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         projectDisposed = true
         Disposer.dispose(closingProject)
+        Disposer.dispose(local)
 
         assertThat(localCoordinator.activeOperation()).isTrue()
         assertThat(localCoordinator.lastOutcome()).isNull()
@@ -431,7 +432,6 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         assertThat(results.single().resetOutput).isEqualTo("reset output")
         assertThat(results.single().cleanupWarnings).isEqualTo("cleanup warning")
         assertThat(localCoordinator.acquire(project)).isTrue()
-        Disposer.dispose(local)
     }
 
     @Test

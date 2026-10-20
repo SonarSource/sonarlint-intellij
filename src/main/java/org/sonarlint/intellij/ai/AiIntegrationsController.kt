@@ -23,10 +23,10 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
 import com.intellij.openapi.ui.Messages
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -54,16 +54,20 @@ class AiIntegrationsController @JvmOverloads constructor(
     private val generation = AtomicLong()
     private val started = AtomicBoolean()
     private val disposed = AtomicBoolean()
-    private val confirmingUninstall = AtomicBoolean()
+    private val uninstallLock = Any()
+    private var pendingUninstall: AiIntegrationTelemetryAttempt? = null
+    private var uninstallPreflight: CompletableFuture<*>? = null
     private var latestSnapshot: AiIntegrationSnapshot? = null
 
     init {
         panel.setRefreshListener(::refresh)
         panel.setIntentListener(::handleIntent)
         ApplicationManager.getApplication().messageBus.connect(this)
-            .subscribe(AiIntegrationListener.TOPIC, AiIntegrationListener { _ ->
+            .subscribe(AiIntegrationListener.TOPIC, AiIntegrationListener { origin ->
                 if (started.get() && !isDisposed()) runOnUiThread(ModalityState.defaultModalityState()) {
-                    refreshAfterOperation()
+                    if (origin === project || !panel.isCliUninstallBusy()) {
+                        reload(clearFeedback = false)
+                    }
                 }
             })
     }
@@ -79,13 +83,6 @@ class AiIntegrationsController @JvmOverloads constructor(
             return
         }
         reload(clearFeedback = true)
-    }
-
-    private fun refreshAfterOperation() {
-        if (panel.isCliUninstallBusy()) {
-            return
-        }
-        reload(clearFeedback = false)
     }
 
     private fun reload(clearFeedback: Boolean) {
@@ -158,105 +155,106 @@ class AiIntegrationsController @JvmOverloads constructor(
     }
 
     private fun uninstallCli() {
-        if (isDisposed() || panel.isCliUninstallBusy() || !confirmingUninstall.compareAndSet(false, true)) {
-            return
+        val attempt = synchronized(uninstallLock) {
+            if (isDisposed() || panel.isCliUninstallBusy() || pendingUninstall != null || cliCoordinator.activeOperation()) return
+            AiIntegrationTelemetryAttempt(telemetry, AiIntegrationAction.UNINSTALL_CLI).also { pendingUninstall = it }
         }
-        panel.setCliUninstallFeedback(CliUninstallFeedback.Checking)
         try {
-            backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
-                runOnUiThread(ModalityState.defaultModalityState()) {
-                    when {
-                        isDisposed() -> confirmingUninstall.set(false)
-                        error != null -> {
-                            confirmingUninstall.set(false)
-                            finishUninstall(uninstallFailure(error), releaseLease = false)
-                        }
-                        snapshot?.cli?.uninstallAvailable != true -> {
-                            confirmingUninstall.set(false)
-                            finishUninstall(uninstallUnavailableFeedback(), releaseLease = false)
-                        }
-                        else -> confirmAndUninstallCli()
+            panel.setCliUninstallFeedback(CliUninstallFeedback.Checking)
+            val preflight = backendService.getAiIntegrationState(project, registry.detectedIdeAgents())
+            synchronized(uninstallLock) {
+                if (pendingUninstall === attempt) uninstallPreflight = preflight else preflight.cancel(true)
+            }
+            preflight.whenComplete { snapshot, error ->
+                when {
+                    error != null -> finishPendingUninstall(attempt, failureStatus(error), uninstallFailure(error))
+                    snapshot?.cli?.uninstallAvailable != true -> finishPendingUninstall(attempt, AiIntegrationActionStatus.FAILED, uninstallUnavailableFeedback())
+                    else -> try {
+                        runOnUiThread(ModalityState.defaultModalityState()) { confirmAndUninstallCli(attempt) }
+                    } catch (error: Exception) {
+                        finishPendingUninstall(attempt, failureStatus(error), uninstallFailure(error))
                     }
                 }
             }
         } catch (error: Exception) {
-            confirmingUninstall.set(false)
-            finishUninstall(uninstallFailure(error), releaseLease = false)
+            finishPendingUninstall(attempt, failureStatus(error), uninstallFailure(error))
         }
     }
 
-    private fun confirmAndUninstallCli() {
+    private fun confirmAndUninstallCli(attempt: AiIntegrationTelemetryAttempt) {
+        if (synchronized(uninstallLock) { pendingUninstall !== attempt }) return
         try {
-            if (!isDisposed()) {
-                panel.setCliUninstallFeedback(null)
-            }
-            val confirmed = try {
-                confirmUninstall(project)
-            } catch (error: Exception) {
-                if (!isDisposed()) {
-                    finishUninstall(uninstallFailure(error), releaseLease = false)
-                }
+            if (isDisposed()) {
+                finishPendingUninstall(attempt, AiIntegrationActionStatus.CANCELLED)
                 return
             }
-            if (!confirmed || isDisposed()) {
-                if (!isDisposed()) {
-                    panel.setCliUninstallFeedback(null)
-                }
+            panel.setCliUninstallFeedback(null)
+            if (!confirmUninstall(project)) {
+                finishPendingUninstall(attempt, AiIntegrationActionStatus.CANCELLED)
                 return
             }
-            if (!cliCoordinator.acquire(project)) {
+            if (!acquireUninstall(attempt)) {
+                finishPendingUninstall(attempt, if (isDisposed()) AiIntegrationActionStatus.CANCELLED else AiIntegrationActionStatus.FAILED)
                 return
             }
-            reportUninstall(AiIntegrationActionStatus.STARTED)
-            try {
-                panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
-                backendService.uninstallCli().whenComplete { response, error ->
-                    val feedback = when {
-                        error != null -> uninstallFailure(error)
-                        response == null -> uninstallUnknownFeedback()
-                        else -> uninstallFeedback(response)
-                    }
-                    finishUninstall(feedback, releaseLease = true)
-                }
-            } catch (error: Exception) {
-                finishUninstall(uninstallFailure(error), releaseLease = true)
-            }
-        } finally {
-            confirmingUninstall.set(false)
-        }
-    }
-
-    private fun finishUninstall(feedback: CliUninstallFeedback.Finished, releaseLease: Boolean) {
-        if (releaseLease) {
-            reportUninstall(when (feedback.status) {
-                CliUninstallStatus.UNINSTALLED -> AiIntegrationActionStatus.SUCCEEDED
-                CliUninstallStatus.FAILED, CliUninstallStatus.NOT_AVAILABLE -> AiIntegrationActionStatus.FAILED
-                CliUninstallStatus.UNKNOWN -> AiIntegrationActionStatus.UNKNOWN
-            })
-        }
-        runOnUiThread(ModalityState.defaultModalityState()) {
-            try {
-                notifyUninstallResult(feedback)
-            } finally {
-                if (!isDisposed()) {
-                    panel.setCliUninstallFeedback(feedback)
-                }
-                if (releaseLease) {
-                    cliCoordinator.release()
-                } else if (!isDisposed()) {
-                    reload(clearFeedback = false)
-                }
-            }
-        }
-    }
-
-    private fun reportUninstall(status: AiIntegrationActionStatus) {
-        try {
-            telemetry.aiIntegrationAction(AiIntegrationAction.UNINSTALL_CLI, status)
+            performUninstall(attempt)
         } catch (error: Exception) {
-            Logger.getInstance(AiIntegrationsController::class.java).debug("Unable to report CLI uninstall telemetry", error)
+            finishPendingUninstall(attempt, failureStatus(error), uninstallFailure(error))
         }
     }
+
+    private fun acquireUninstall(attempt: AiIntegrationTelemetryAttempt): Boolean = synchronized(uninstallLock) {
+        val acquired = pendingUninstall === attempt && !isDisposed() && cliCoordinator.acquireUninstall(project, attempt)
+        if (acquired) {
+            pendingUninstall = null
+            uninstallPreflight = null
+        }
+        acquired
+    }
+
+    private fun performUninstall(attempt: AiIntegrationTelemetryAttempt) {
+        try {
+            panel.setCliUninstallFeedback(CliUninstallFeedback.InProgress)
+            val request = backendService.uninstallCli()
+            cliCoordinator.trackUninstall(attempt, request)
+            request.whenComplete { response, error ->
+                val feedback = when {
+                    error != null -> uninstallFailure(error)
+                    response == null -> uninstallUnknownFeedback()
+                    else -> uninstallFeedback(response)
+                }
+                val status = if (error != null) failureStatus(error) else when (feedback.status) {
+                    CliUninstallStatus.UNINSTALLED -> AiIntegrationActionStatus.SUCCEEDED
+                    CliUninstallStatus.UNKNOWN -> AiIntegrationActionStatus.UNKNOWN
+                    else -> AiIntegrationActionStatus.FAILED
+                }
+                if (cliCoordinator.completeUninstall(attempt, status)) showUninstallFeedback(feedback)
+            }
+        } catch (error: Exception) {
+            if (cliCoordinator.completeUninstall(attempt, failureStatus(error))) showUninstallFeedback(uninstallFailure(error))
+        }
+    }
+
+    private fun finishPendingUninstall(attempt: AiIntegrationTelemetryAttempt, status: AiIntegrationActionStatus, feedback: CliUninstallFeedback.Finished? = null) {
+        synchronized(uninstallLock) {
+            if (pendingUninstall !== attempt) return
+            pendingUninstall = null
+            uninstallPreflight = null
+        }
+        if (attempt.finish(status)) publishAiIntegrationChange(project)
+        showUninstallFeedback(feedback)
+    }
+
+    private fun showUninstallFeedback(feedback: CliUninstallFeedback.Finished?) {
+        runCatching {
+            runOnUiThread(ModalityState.defaultModalityState()) {
+                if (feedback != null) runCatching { notifyUninstallResult(feedback) }
+                if (!isDisposed()) panel.setCliUninstallFeedback(feedback)
+            }
+        }
+    }
+
+    private fun failureStatus(error: Throwable) = if (isAiIntegrationCancellation(error)) AiIntegrationActionStatus.CANCELLED else AiIntegrationActionStatus.FAILED
 
     private fun isDisposed() = disposed.get() || project.isDisposed || panel.isDisposed
 
@@ -268,6 +266,12 @@ class AiIntegrationsController @JvmOverloads constructor(
     override fun dispose() {
         disposed.set(true)
         generation.incrementAndGet()
+        synchronized(uninstallLock) {
+            val preflight = uninstallPreflight
+            pendingUninstall?.let { finishPendingUninstall(it, AiIntegrationActionStatus.CANCELLED) }
+            preflight?.cancel(true)
+        }
+        cliCoordinator.cancel(project)
         panel.dispose()
     }
 }
