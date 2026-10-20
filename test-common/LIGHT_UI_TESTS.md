@@ -21,14 +21,14 @@ In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Pag
 
 ## Page objects
 
-Light UI tests interact with the product through **page objects** (e.g. `SonarLintMainToolWindowPage` → `currentFile` → `findingsTree` / `issues`), not raw Swing containers or production panel types returned to tests. Subclass [`AbstractSonarLintUILightTests`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) to obtain a wired main tool window and automatic teardown.
+Light UI tests interact with the product through **page objects** (e.g. `SonarLintMainToolWindowPage` → `findings` → `findingsTree` / `issues`), not raw Swing containers or production panel types returned to tests. Subclass [`AbstractSonarLintUILightTests`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) to obtain a wired main tool window and automatic teardown.
 
 Example assertion:
 
 ```kotlin
-mainToolWindow.currentFile.refreshForFile(file)
-assertThat(mainToolWindow.currentFile.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
-assertThat(mainToolWindow.currentFile.issues).hasSize(1)
+mainToolWindow.findings.refreshForFile(file)
+assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
+assertThat(mainToolWindow.findings.issues).hasSize(1)
 ```
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).

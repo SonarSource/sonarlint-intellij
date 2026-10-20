@@ -23,7 +23,7 @@ object ToolWindowConstants {
 
     const val TOOL_WINDOW_ID: String = "SonarQube for IDE"
     const val LOG_TAB_TITLE: String = "Log"
-    const val CURRENT_FILE_TAB_TITLE: String = "Findings"
+    const val FINDINGS_TAB_TITLE: String = "Findings"
     const val AI_INTEGRATIONS_TAB_TITLE: String = "AI Integrations"
     const val HELP_AND_FEEDBACK_TAB_TITLE: String = "Help & Feedback"
 

@@ -22,13 +22,13 @@ package org.sonarlint.intellij.ui.page
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowAnchor
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
-import org.sonarlint.intellij.ui.ToolWindowConstants
+import org.sonarlint.intellij.ui.ToolWindowConstants.FINDINGS_TAB_TITLE
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
 import org.sonarlint.intellij.ui.icons.SonarLintIcons
 
 class SonarLintMainToolWindowPage private constructor(
-    val currentFile: CurrentFileTabPage,
+    val findings: FindingsTabPage,
 ) {
 
     companion object {
@@ -45,12 +45,12 @@ class SonarLintMainToolWindowPage private constructor(
                 toolWindow,
                 SonarLintToolWindowFactory(),
                 contentReady = { tw ->
-                    tw.contentManager.findContent(ToolWindowConstants.CURRENT_FILE_TAB_TITLE) != null
+                    tw.contentManager.findContent(FINDINGS_TAB_TITLE) != null
                 },
             )
-            val panel = toolWindow.contentManager.findContent(ToolWindowConstants.CURRENT_FILE_TAB_TITLE)?.component
+            val panel = toolWindow.contentManager.findContent(FINDINGS_TAB_TITLE)?.component
             check(panel is CurrentFilePanel) { "Findings tab is not a CurrentFilePanel" }
-            return SonarLintMainToolWindowPage(CurrentFileTabPage(panel))
+            return SonarLintMainToolWindowPage(FindingsTabPage(panel))
         }
     }
 }

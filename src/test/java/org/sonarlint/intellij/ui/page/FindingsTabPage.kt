@@ -27,11 +27,11 @@ import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
 import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.tree.IssueTree
 
-class CurrentFileTabPage internal constructor(
+class FindingsTabPage internal constructor(
     private val panel: CurrentFilePanel,
 ) {
 
-    val toolbar: MainToolWindowToolbarPage = MainToolWindowToolbarPage(panel)
+    val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(panel)
 
     val findingsTree: FindingsTreePage
         get() = FindingsTreePage(findingsTree())
