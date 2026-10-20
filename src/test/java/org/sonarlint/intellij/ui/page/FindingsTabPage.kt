@@ -33,25 +33,21 @@ class FindingsTabPage internal constructor(
 
     val findingsTree: FindingsTreePage
         get() {
-            syncPanelWithSelectedEditorFile()
+            flushFindingsPanelEdt()
             return FindingsTreePage(findingsIssueTree())
         }
 
     val oldFindingsTree: FindingsTreePage
         get() {
-            syncPanelWithSelectedEditorFile()
+            flushFindingsPanelEdt()
             return FindingsTreePage(oldFindingsIssueTree())
         }
 
     val issues: List<FindingNodePage>
         get() {
-            syncPanelWithSelectedEditorFile()
+            flushFindingsPanelEdt()
             return FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
         }
-
-    private fun syncPanelWithSelectedEditorFile() {
-        syncFindingsPanelWithSelectedEditor(project, panel)
-    }
 
     private fun findingsIssueTree(): IssueTree =
         panel.getTree(TreeType.ISSUES, isOld = false) as IssueTree
