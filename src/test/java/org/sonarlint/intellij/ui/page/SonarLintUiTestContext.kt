@@ -19,15 +19,23 @@
  */
 package org.sonarlint.intellij.ui.page
 
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.fixtures.HeadlessToolWindowHarness
+import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.testFramework.PlatformTestUtil
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 
-class SonarLintUiTestContext(project: Project) {
-
-    private val harness = HeadlessToolWindowHarness(project)
+class SonarLintUiTestContext(private val project: Project) {
 
     fun releaseEditorsAndToolWindows() {
-        harness.teardownLightUi(TOOL_WINDOW_ID, WALKTHROUGH_TOOL_WINDOW_ID)
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        fileEditorManager.openFiles.toList().forEach { fileEditorManager.closeFile(it) }
+        ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
+        ToolWindowManager.getInstance(project).getToolWindow(WALKTHROUGH_TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
+        PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        val editorFactory = EditorFactory.getInstance()
+        editorFactory.allEditors.forEach { editorFactory.releaseEditor(it) }
+        PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
     }
 }

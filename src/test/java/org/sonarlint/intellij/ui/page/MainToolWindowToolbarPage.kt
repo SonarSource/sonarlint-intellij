@@ -19,17 +19,14 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import java.awt.Container
-import org.sonarlint.intellij.fixtures.SwingComponentTree
+import org.sonarlint.intellij.fixtures.walkComponents
+import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
 
-/**
- * Toolbar inside a [com.intellij.openapi.ui.SimpleToolWindowPanel]-based tool window tab (e.g. Findings).
- */
 class MainToolWindowToolbarPage internal constructor(
-    private val rootProvider: () -> Container,
+    private val panel: CurrentFilePanel,
 ) {
 
     val isVisible: Boolean
-        get() = SwingComponentTree.walk(rootProvider())
+        get() = panel.walkComponents()
             .any { it.javaClass.simpleName.contains("ActionToolbar", ignoreCase = true) }
 }
