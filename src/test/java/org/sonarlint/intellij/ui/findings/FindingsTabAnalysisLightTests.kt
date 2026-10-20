@@ -24,12 +24,9 @@ import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledOnOs
-import org.junit.jupiter.api.condition.OS
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
 import org.sonarlint.intellij.fixtures.LightTestProjectFiles
 
-@DisabledOnOs(OS.WINDOWS)
 class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
 
     @Test
