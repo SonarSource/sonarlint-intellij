@@ -52,6 +52,6 @@ Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/or
 | --- | --- |
 | Findings tool window | `SonarLintToolWindowFactory` |
 | Walkthrough | `SonarLintWalkthroughToolWindowFactory` |
-| Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`) |
+| Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`); page object [`EditorTrafficLightPage`](../src/test/java/org/sonarlint/intellij/ui/page/EditorTrafficLightPage.kt) |
 | Notifications | `SonarLintProjectNotifications`, `NotificationGroup` EP, `Notifications.TOPIC` |
 | Settings | `applicationConfigurable` / `projectConfigurable` EP (`sonarlint` ids in `plugin.xml`) |
