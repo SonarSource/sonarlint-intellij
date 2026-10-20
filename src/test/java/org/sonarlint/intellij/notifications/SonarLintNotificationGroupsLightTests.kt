@@ -21,6 +21,7 @@ package org.sonarlint.intellij.notifications
 
 import com.google.common.collect.Lists
 import com.intellij.notification.Notification
+import com.intellij.notification.NotificationDisplayType
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.Notifications
 import com.intellij.util.messages.MessageBusConnection
@@ -54,15 +55,17 @@ class SonarLintNotificationGroupsLightTests : AbstractSonarLintLightTests() {
     @Test
     fun should_load_balloon_groups_from_plugin_extension_point() {
         val manager = NotificationGroupManager.getInstance()
-        assertThat(manager.getNotificationGroup("SonarQube for IDE")).isNotNull
-        assertThat(manager.getNotificationGroup("SonarQube for IDE: Secrets detection")).isNotNull
+        assertThat(manager.getNotificationGroup("SonarQube for IDE").displayType)
+            .isEqualTo(NotificationDisplayType.BALLOON)
+        assertThat(manager.getNotificationGroup("SonarQube for IDE: Secrets detection").displayType)
+            .isEqualTo(NotificationDisplayType.BALLOON)
     }
 
     @Test
     fun should_notify_secret_detection_through_production_service_and_group() {
-        SonarLintProjectNotifications(project).sendNotification()
+        SonarLintProjectNotifications.get(project).sendNotification()
 
         assertThat(notifications).hasSize(1)
-        assertThat(notifications[0].groupId).contains("Secrets detection")
+        assertThat(notifications[0].groupId).isEqualTo("SonarQube for IDE: Secrets detection")
     }
 }
