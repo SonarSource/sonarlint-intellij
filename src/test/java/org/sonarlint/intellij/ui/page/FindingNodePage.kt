@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.ui.page
 
-data class IssueNodePage(
+data class FindingNodePage(
     val ruleKey: String,
     val message: String,
 )
