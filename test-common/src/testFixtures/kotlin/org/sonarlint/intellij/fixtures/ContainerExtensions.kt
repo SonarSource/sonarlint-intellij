@@ -21,20 +21,18 @@ package org.sonarlint.intellij.fixtures
 
 import java.awt.Component
 import java.awt.Container
+import javax.swing.JComponent
 
-object SwingComponentTree {
-
-    fun walk(root: Container): Sequence<Component> = sequence {
-        yield(root)
-        for (child in root.components) {
-            if (child is Container) {
-                yieldAll(walk(child))
-            } else {
-                yield(child)
-            }
-        }
+fun Component.walkComponents(): Sequence<Component> = sequence {
+    yield(this@walkComponents)
+    val container = this@walkComponents as? Container ?: return@sequence
+    for (child in container.components) {
+        yieldAll(child.walkComponents())
     }
-
-    inline fun <reified T : Component> findComponents(root: Container): List<T> =
-        walk(root).filterIsInstance<T>().toList()
 }
+
+inline fun <reified T : Component> Component.findComponents(): List<T> =
+    walkComponents().filterIsInstance<T>().toList()
+
+inline fun <reified T : Component> JComponent.findComponents(): List<T> =
+    (this as Component).findComponents()
