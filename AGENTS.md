@@ -40,7 +40,7 @@ Services are accessed via `SonarLintUtils.getService(Class)` (app-level) or `Son
 | New backend RPC call | `core/BackendService.kt` |
 | New SLOOP callback | `SonarLintIntelliJClient.kt` |
 | Analysis trigger logic | `analysis/AnalysisSubmitter.kt`, `trigger/EditorOpenTrigger.kt` |
-| Current file findings display | `ui/currentfile/CurrentFilePanel.kt` |
+| Findings tab display | `ui/currentfile/FindingsPanel.kt` |
 | Full report display | `ui/report/ReportPanel.kt` |
 | SonarQube/SonarCloud connection | `core/ProjectBindingManager.java` |
 

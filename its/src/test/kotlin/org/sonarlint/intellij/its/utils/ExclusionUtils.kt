@@ -47,7 +47,7 @@ object ExclusionUtils {
             idea {
                 toolWindow {
                     tabTitleContains("Findings") { select() }
-                    content("CurrentFilePanel") {
+                    content("FindingsPanel") {
                         toolBarButton("Configure SonarQube for IDE").click()
                     }
                     selectExclusionTab()

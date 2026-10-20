@@ -82,7 +82,7 @@ class CurrentFileTabTests {
                 idea {
                     notification("The issue was successfully marked as resolved")
                     toolWindow {
-                        content("CurrentFilePanel") {
+                        content("FindingsPanel") {
                             hasText("No findings to display")
                         }
                     }
@@ -95,7 +95,7 @@ class CurrentFileTabTests {
                 idea {
                     toolWindow {
                         tabTitleContains("Findings") { select() }
-                        content("CurrentFilePanel") {
+                        content("FindingsPanel") {
                             val issueElement = findText(issueMessage)
                             // Select the issue first, otherwise the right click may not work on older versions
                             issueElement.click()
@@ -115,7 +115,7 @@ class CurrentFileTabTests {
                     waitBackgroundTasksFinished()
                     toolWindow {
                         tabTitleContains("Findings") { select() }
-                        content("CurrentFilePanel") {
+                        content("FindingsPanel") {
                             expectedMessages.forEach {
                                 // The synchronization might take a while
                                 waitFor(
@@ -136,7 +136,7 @@ class CurrentFileTabTests {
                 idea {
                     toolWindow {
                         tabTitleContains("Findings") { select() }
-                        content("CurrentFilePanel") {
+                        content("FindingsPanel") {
                             toolBarButton("Analyze Current File").click()
                         }
                     }
@@ -150,7 +150,7 @@ class CurrentFileTabTests {
                 idea {
                     toolWindow {
                         tabTitleContains("Findings") { select() }
-                        content("CurrentFilePanel") {
+                        content("FindingsPanel") {
                             findText(issueMessage).click()
                         }
                     }
@@ -158,11 +158,11 @@ class CurrentFileTabTests {
             }
         }
 
-        fun enableConnectedModeFromCurrentFilePanel(projectKey: String?, enabled: Boolean, connectionName: String, connectionType: ConnectionType) {
+        fun enableConnectedModeFromFindingsPanel(projectKey: String?, enabled: Boolean, connectionName: String, connectionType: ConnectionType) {
             optionalIdeaFrame()?.apply {
                 toolWindow {
                     tabTitleContains("Findings") { select() }
-                    content("CurrentFilePanel") {
+                    content("FindingsPanel") {
                         toolBarButton("Configure SonarQube for IDE").click()
                     }
                 }
@@ -178,7 +178,7 @@ class CurrentFileTabTests {
             with(remoteRobot) {
                 idea {
                     toolWindow {
-                        content("CurrentFilePanel") {
+                        content("FindingsPanel") {
                             waitFor(Duration.ofMinutes(1), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") {
                                 hasText(expectedMessage)
                             }

@@ -32,7 +32,7 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromFindingsPanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.ConnectionType
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -55,7 +55,7 @@ class PLSQLTest : BaseUiTest() {
         openFile("file.pkb")
         verifyCurrentFileTabContainsMessages("No findings to display")
 
-        enableConnectedModeFromCurrentFilePanel(PLSQL_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
+        enableConnectedModeFromFindingsPanel(PLSQL_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
 
         idea {
             waitBackgroundTasksFinished()
