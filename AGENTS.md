@@ -106,7 +106,7 @@ The sandbox (instance files, JDK config) is stored under `build/sonarlint-test`.
 
 ### Light UI tests
 
-Extension-driven UI coverage uses `AbstractSonarLintLightTests` with production extension points and headless tool-window registration. See [test-common/LIGHT_UI_TESTS.md](test-common/LIGHT_UI_TESTS.md).
+Extension-driven UI coverage uses `AbstractSonarLintLightTests` with production extension points and headless tool-window registration. See [test-common/LIGHT_UI_TESTS.md](test-common/LIGHT_UI_TESTS.md) and [its/UI_INTEGRATION_TEST_STRATEGY.md](its/UI_INTEGRATION_TEST_STRATEGY.md).
 
 ### Integration tests
 
