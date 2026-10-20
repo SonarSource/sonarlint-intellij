@@ -26,6 +26,7 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import java.nio.file.AccessDeniedException
 import java.nio.file.FileSystemLoopException
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.AclFileAttributeView
@@ -354,7 +355,11 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         refreshAll()
     }
 
-    private fun readConfig(path: Path): String? = if (Files.exists(path)) Files.readString(path) else null
+    private fun readConfig(path: Path): String? = try {
+        Files.readString(path)
+    } catch (_: NoSuchFileException) {
+        null
+    }
 
     internal fun reportSetupResult(project: Project, result: McpTransactionResult?, error: Throwable?) {
         if (error != null) {
