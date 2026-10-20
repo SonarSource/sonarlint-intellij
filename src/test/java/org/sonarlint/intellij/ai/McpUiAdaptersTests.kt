@@ -29,6 +29,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 
 class McpUiAdaptersTests : AbstractSonarLintLightTests() {
@@ -39,11 +43,22 @@ class McpUiAdaptersTests : AbstractSonarLintLightTests() {
     fun `open notifies when the configuration path cannot be resolved`() = ApplicationManager.getApplication().invokeAndWait {
         val missing = tempDir.resolve("missing-mcp.json")
 
-        IntellijMcpUiAdapter().openConfiguration(project, missing)
+        assertThat(IntellijMcpUiAdapter().openConfiguration(project, missing)).isFalse()
 
         val notifications = NotificationsManager.getNotificationsManager().getNotificationsOfType(Notification::class.java, project)
         assertThat(notifications.map { it.content }).anyMatch { it.contains("could not be resolved") }
         notifications.forEach { it.expire() }
+    }
+
+    @Test
+    fun `open reports failure when no text editor is created`() = ApplicationManager.getApplication().invokeAndWait {
+        val file = createTestFile("mcp.json", "{}")
+        val editorManager: FileEditorManager = mock()
+        replaceProjectService(FileEditorManager::class.java, editorManager)
+
+        assertThat(IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path))).isFalse()
+
+        verify(editorManager).openTextEditor(any(), eq(true))
     }
 
     @ParameterizedTest
@@ -62,7 +77,7 @@ class McpUiAdaptersTests : AbstractSonarLintLightTests() {
         """.trimIndent()
         val file = createTestFile(".claude.json", content)
 
-        IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path))
+        assertThat(IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path))).isTrue()
 
         val editor = FileEditorManager.getInstance(project).selectedTextEditor!!
         assertThat(editor.caretModel.offset).isEqualTo(editor.document.text.indexOf("\"sonarqube\": {\"command\""))
@@ -73,7 +88,7 @@ class McpUiAdaptersTests : AbstractSonarLintLightTests() {
     fun `open falls back to the beginning when no root SonarQube entry can be located`(content: String) = ApplicationManager.getApplication().invokeAndWait {
         val file = createTestFile(".claude.json", content)
 
-        IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path))
+        assertThat(IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path))).isTrue()
 
         assertThat(FileEditorManager.getInstance(project).selectedTextEditor!!.caretModel.offset).isZero()
     }

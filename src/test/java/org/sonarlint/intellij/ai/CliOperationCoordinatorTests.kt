@@ -32,16 +32,27 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.times
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
@@ -49,6 +60,13 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationS
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 
 class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
+    private val telemetry = mock<SonarLintTelemetry>()
+
+    @BeforeEach
+    fun mockTelemetry() {
+        replaceApplicationService(SonarLintTelemetry::class.java, telemetry)
+    }
+
     private val command = CliCommand("sonar", listOf("auth", ""), true)
     private val snapshot = AiIntegrationSnapshot(
         CliState(CliInstallationStatus.NOT_INSTALLED, CliAuthenticationStatus.UNKNOWN, null, null, null),
@@ -87,6 +105,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
             TerminalCompletion.ClosedWithoutExitStatus to CliOperationOutcome.Unknown
         )
         outcomes.forEach { (result, outcome) ->
+            clearInvocations(telemetry)
             val backend = mock<BackendService>()
             whenever(backend.authenticateCliWithConnection("saved")).thenReturn(CompletableFuture.completedFuture(AuthenticateCliWithConnectionResponse(Status.INTERACTIVE_LOGIN_REQUIRED, null)))
             whenever(backend.prepareAuthenticateCliCommand("saved")).thenReturn(CompletableFuture.completedFuture(command))
@@ -105,6 +124,12 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
             assertThat(coordinator.lastOutcome()).isEqualTo(outcome)
             assertThat(coordinator.activeOperation()).isFalse()
             assertThat(refreshes.get()).isEqualTo(1)
+            assertTelemetryOutcome(AiIntegrationAction.LOGIN_CLI, when (outcome) {
+                CliOperationOutcome.Cancelled -> AiIntegrationActionStatus.CANCELLED
+                CliOperationOutcome.ExitZero -> AiIntegrationActionStatus.SUCCEEDED
+                CliOperationOutcome.NonZero -> AiIntegrationActionStatus.FAILED
+                else -> AiIntegrationActionStatus.UNKNOWN
+            })
         }
     }
 
@@ -167,7 +192,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(request).isCancelled()
         assertThat(coordinator.activeOperation()).isFalse()
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Cancelled)
-        assertThat(refreshes.get()).isZero()
+        assertThat(refreshes.get()).isEqualTo(1)
         assertThat(notifications).isEmpty()
         verifyNoInteractions(terminal)
     }
@@ -190,7 +215,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)
 
         assertThat(coordinator.activeOperation()).isFalse()
-        assertThat(refreshes.get()).isZero()
+        assertThat(refreshes.get()).isEqualTo(1)
         assertThat(notifications).isEmpty()
         verify(backend, never()).prepareAuthenticateCliCommand(any())
         verifyNoInteractions(terminal)
@@ -242,9 +267,10 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
 
         assertThat(request).isCancelled()
         assertThat(coordinator.activeOperation()).isFalse()
-        assertThat(refreshes.get()).isZero()
+        assertThat(refreshes.get()).isEqualTo(1)
         assertThat(notifications).isEmpty()
         verifyNoInteractions(terminal)
+        assertTelemetryOutcome(AiIntegrationAction.LOGIN_CLI, AiIntegrationActionStatus.CANCELLED)
     }
 
     @Test
@@ -376,6 +402,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(refreshes.get()).isEqualTo(1)
         assertThat(notifications).isEmpty()
         verifyNoInteractions(terminal)
+        assertTelemetryOutcome(AiIntegrationAction.INSTALL_CLI, AiIntegrationActionStatus.CANCELLED)
     }
 
     @Test
@@ -396,6 +423,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.activeOperation()).isFalse()
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.Cancelled)
         assertThat(notifications).isEmpty()
+        assertTelemetryOutcome(AiIntegrationAction.INSTALL_CLI, AiIntegrationActionStatus.CANCELLED)
     }
 
     @Test
@@ -418,6 +446,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.ExitZero)
         assertThat(refreshes.get()).isEqualTo(1)
         assertThat(notifications).hasSize(1)
+        assertTelemetryOutcome(AiIntegrationAction.INSTALL_CLI, AiIntegrationActionStatus.SUCCEEDED)
     }
 
     @Test
@@ -617,6 +646,69 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.lastOutcome()).isEqualTo(CliOperationOutcome.ExitZero)
     }
 
+    @ParameterizedTest
+    @EnumSource(CliOperationOutcome::class)
+    fun `every CLI outcome finishes its accepted attempt exactly once`(outcome: CliOperationOutcome) = ApplicationManager.getApplication().invokeAndWait {
+        val backend = mock<BackendService>()
+        val terminal = mock<CliTerminalAdapter>()
+        val completion = CompletableFuture<TerminalCompletion>()
+        whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        whenever(terminal.launch(project, command)).thenReturn(TerminalLaunch.Started({}, completion))
+        val login = outcome in listOf(CliOperationOutcome.Authenticated, CliOperationOutcome.AuthenticationFailed)
+        if (login) whenever(backend.authenticateCliWithConnection("saved")).thenReturn(CompletableFuture.completedFuture(
+            AuthenticateCliWithConnectionResponse(if (outcome == CliOperationOutcome.Authenticated) Status.AUTHENTICATED else Status.FAILED, null)))
+        if (outcome == CliOperationOutcome.PreparationFailed) whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.failedFuture(IllegalStateException()))
+        if (outcome == CliOperationOutcome.LaunchFailed) whenever(terminal.launch(project, command)).thenReturn(TerminalLaunch.Unsupported)
+        var refreshes = 0
+        val coordinator = coordinator(backend, terminal, refresh = { refreshes++ })
+        coordinator.execute(project, if (login) connectedSnapshot else snapshot,
+            if (login) AiIntegrationsIntent.AuthenticateCli else AiIntegrationsIntent.InstallCli)
+        UIUtil.dispatchAllInvocationEvents()
+        when (outcome) {
+            CliOperationOutcome.Cancelled -> completion.complete(TerminalCompletion.Cancelled)
+            CliOperationOutcome.ExitZero -> completion.complete(TerminalCompletion.Exited(0))
+            CliOperationOutcome.NonZero -> completion.complete(TerminalCompletion.Exited(1))
+            CliOperationOutcome.Unknown -> completion.complete(TerminalCompletion.ClosedWithoutExitStatus)
+            else -> Unit
+        }
+        coordinator.cancel(project)
+        completion.complete(TerminalCompletion.Exited(0))
+        val status = when (outcome) {
+            CliOperationOutcome.Authenticated, CliOperationOutcome.ExitZero -> AiIntegrationActionStatus.SUCCEEDED
+            CliOperationOutcome.Cancelled -> AiIntegrationActionStatus.CANCELLED
+            CliOperationOutcome.Unknown -> AiIntegrationActionStatus.UNKNOWN
+            else -> AiIntegrationActionStatus.FAILED
+        }
+        val statuses = argumentCaptor<AiIntegrationActionStatus>()
+        verify(telemetry, times(2)).aiIntegrationAction(eq(if (login) AiIntegrationAction.LOGIN_CLI else AiIntegrationAction.INSTALL_CLI), statuses.capture(), eq(null))
+        assertThat(statuses.allValues).containsExactly(AiIntegrationActionStatus.STARTED, status)
+        assertThat(refreshes).isEqualTo(1)
+        assertThat(coordinator.lastOutcome()).isEqualTo(outcome)
+    }
+
+    @Test
+    fun `agent integration reports its target and rejects busy reentry without another attempt`() {
+        val backend = mock<BackendService>()
+        val terminal = mock<CliTerminalAdapter>()
+        val completion = CompletableFuture<TerminalCompletion>()
+        whenever(backend.prepareIntegrateCliCommand(AiAgent.CURSOR)).thenReturn(CompletableFuture.completedFuture(command))
+        whenever(terminal.launch(project, command)).thenReturn(TerminalLaunch.Started({}, completion))
+        val coordinator = coordinator(backend, terminal)
+        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.IntegrateCli(AiAgent.CURSOR))).isTrue()
+        assertThat(coordinator.execute(project, snapshot, AiIntegrationsIntent.IntegrateCli(AiAgent.CURSOR))).isFalse()
+        UIUtil.dispatchAllInvocationEvents()
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.INTEGRATE_AGENT, AiIntegrationActionStatus.STARTED, AiAgent.CURSOR)
+        completion.complete(TerminalCompletion.Exited(0))
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.INTEGRATE_AGENT, AiIntegrationActionStatus.SUCCEEDED, AiAgent.CURSOR)
+    }
+
+    private fun assertTelemetryOutcome(action: AiIntegrationAction, status: AiIntegrationActionStatus) {
+        val statuses = argumentCaptor<AiIntegrationActionStatus>()
+        verify(telemetry, times(2)).aiIntegrationAction(eq(action), statuses.capture(), eq(null))
+        assertThat(statuses.allValues).containsExactly(AiIntegrationActionStatus.STARTED, status)
+        verifyNoMoreInteractions(telemetry)
+    }
+
     private fun coordinator(
         backend: BackendService,
         terminal: CliTerminalAdapter,
@@ -630,7 +722,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         provider,
         selector,
         { _, message, type -> notifications += Notification(message, type) },
-        refresh,
+        { refresh() },
         authentication
     )
 

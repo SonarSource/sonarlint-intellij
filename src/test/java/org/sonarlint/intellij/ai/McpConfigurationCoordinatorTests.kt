@@ -20,11 +20,14 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.ui.UIUtil
 import com.fasterxml.jackson.databind.json.JsonMapper
 import java.io.IOException
 import java.nio.file.AccessDeniedException
-import java.nio.file.FileSystemLoopException
+import java.nio.file.FileSystemException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -46,6 +49,9 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
@@ -57,7 +63,11 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 import org.sonarsource.sonarlint.core.ai.ide.McpConfigurationService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
@@ -71,6 +81,13 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto
 
 class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
+    private val telemetry = mock<SonarLintTelemetry>()
+
+    @BeforeEach
+    fun mockTelemetry() {
+        replaceApplicationService(SonarLintTelemetry::class.java, telemetry)
+    }
+
     @TempDir
     lateinit var tempDir: Path
 
@@ -136,6 +153,23 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).state).isEqualTo(McpConfigurationState.UNKNOWN)
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).diagnostics).anyMatch { it.contains("access denied") }
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state).isEqualTo(McpConfigurationState.NOT_CONFIGURED)
+    }
+
+    @Test
+    fun `an unreadable symlink cycle is unknown while a missing file is not configured`() {
+        val link = tempDir.resolve("mcp.json")
+        val other = tempDir.resolve("alias.json")
+        Files.createSymbolicLink(link, other.fileName)
+        Files.createSymbolicLink(other, link.fileName)
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(link)
+        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(tempDir.resolve("missing.json"))
+
+        val inspected = coordinator().inspectSnapshot(baseSnapshot(listOf(capability(AiAgent.CURSOR), capability(AiAgent.CLAUDE_CODE)))).get()
+
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).state).isEqualTo(McpConfigurationState.UNKNOWN)
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state).isEqualTo(McpConfigurationState.NOT_CONFIGURED)
+        verify(backend, never()).inspectMcpConfiguration(eq(AiAgent.CURSOR), any())
+        verify(backend).inspectMcpConfiguration(AiAgent.CLAUDE_CODE, "")
     }
 
     @Test
@@ -672,7 +706,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         plan(McpConfigurationState.NOT_CONFIGURED, "created with token")
 
         assertThatThrownBy { coordinator().createConfiguration(project, AiAgent.CURSOR, link, "connection") }
-            .isInstanceOf(FileSystemLoopException::class.java)
+            .isInstanceOf(FileSystemException::class.java)
 
         assertThat(Files.readSymbolicLink(link)).isEqualTo(other.fileName)
         assertThat(Files.readSymbolicLink(other)).isEqualTo(link.fileName)
@@ -699,6 +733,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         val coordinator = coordinator()
         globalSettings.serverConnections = emptyList()
         assertThat(coordinator.setUp(project, snapshot.copy(connectionChoices = emptyList()), AiAgent.CURSOR)).isFalse()
+        UIUtil.dispatchAllInvocationEvents()
         assertThat(ui.settingsOpened).isTrue()
 
         globalSettings.serverConnections = listOf(
@@ -741,6 +776,106 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(ui.offeredConnections.last().organization).isEqualTo("organization")
         verify(backend).generateMcpConfiguration("connection", "test-token")
         assertThat(Files.readString(path)).isEqualTo("created")
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = McpConfigurationState::class, names = ["UNKNOWN", "MALFORMED", "CLI_MANAGED"])
+    fun `protected MCP setup reports failure and one origin invalidation`(state: McpConfigurationState) {
+        val origins = captureOrigins()
+        val snapshot = setupSnapshot(state)
+        assertThat(coordinator().setUp(project, snapshot, AiAgent.CURSOR)).isFalse()
+        assertSetupOutcome(AiIntegrationActionStatus.FAILED)
+        assertThat(origins).containsExactly(project)
+    }
+
+    @Test
+    fun `missing MCP configuration still records an accepted failed attempt`() {
+        val origins = captureOrigins()
+        assertThat(coordinator().setUp(project, baseSnapshot(), AiAgent.CURSOR)).isFalse()
+        assertSetupOutcome(AiIntegrationActionStatus.FAILED)
+        assertThat(origins).containsExactly(project)
+    }
+
+    @Test
+    fun `cancelled connection selection reports one cancelled MCP attempt`() {
+        val origins = captureOrigins()
+        globalSettings.serverConnections = listOf(connection,
+            ServerConnection.newBuilder().setName("other").setHostUrl("https://other.example").build())
+        assertThat(coordinator().setUp(project, setupSnapshot(), AiAgent.CURSOR)).isFalse()
+        assertSetupOutcome(AiIntegrationActionStatus.CANCELLED)
+        assertThat(origins).containsExactly(project)
+        verify(backend, never()).generateMcpConfiguration(any(), any())
+    }
+
+    @Test
+    fun `cancelled token confirmation finishes at the real transaction result`() {
+        val origins = captureOrigins()
+        whenever(credentials.getCredentials(connection)).thenReturn(Either.forLeft(TokenDto("")))
+        assertThat(coordinator().setUp(project, setupSnapshot(), AiAgent.CURSOR)).isTrue()
+        assertSetupOutcome(AiIntegrationActionStatus.CANCELLED)
+        assertThat(origins).containsExactly(project)
+    }
+
+    @Test
+    fun `queued MCP transaction reports success only after the file is written`() {
+        val origins = captureOrigins()
+        val pending = mutableListOf<Runnable>()
+        plan(McpConfigurationState.NOT_CONFIGURED, "created")
+        val snapshot = setupSnapshot()
+        val coordinator = coordinator(java.util.concurrent.Executor { pending += it })
+        assertThat(coordinator.setUp(project, snapshot, AiAgent.CURSOR)).isTrue()
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.CONFIGURE_MCP, AiIntegrationActionStatus.STARTED, AiAgent.CURSOR)
+        verify(telemetry, never()).aiIntegrationAction(eq(AiIntegrationAction.CONFIGURE_MCP), eq(AiIntegrationActionStatus.SUCCEEDED), any())
+        assertThat(origins).isEmpty()
+        pending.removeFirst().run()
+        assertSetupOutcome(AiIntegrationActionStatus.SUCCEEDED)
+        assertThat(Files.readString(snapshot.mcpConfigurations.getValue(AiAgent.CURSOR).path)).isEqualTo("created")
+        assertThat(origins.filterNotNull()).containsExactly(project)
+    }
+
+    @Test
+    fun `MCP transaction failure and executor rejection finish accepted attempts`() {
+        val origins = captureOrigins()
+        val coordinator = coordinator(java.util.concurrent.Executor { throw java.util.concurrent.RejectedExecutionException() })
+        assertThat(coordinator.setUp(project, setupSnapshot(), AiAgent.CURSOR)).isFalse()
+        assertSetupOutcome(AiIntegrationActionStatus.FAILED)
+        assertThat(origins).containsExactly(project)
+    }
+
+    @Test
+    fun `automatic port maintenance emits no action telemetry and only background invalidation`() {
+        val origins = captureOrigins()
+        coordinator().embeddedServerStarted(64121)
+        verifyNoInteractions(telemetry)
+        assertThat(origins).containsExactly(null)
+    }
+
+    @Test
+    fun `file opening reports observable editor results without state invalidation`() {
+        val origins = captureOrigins()
+        val coordinator = coordinator()
+        coordinator.openConfiguration(project, AiAgent.CURSOR, setupSnapshot())
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.OPEN_MCP_CONFIGURATION, AiIntegrationActionStatus.SUCCEEDED, AiAgent.CURSOR)
+        coordinator.openConfiguration(project, AiAgent.CLAUDE_CODE, baseSnapshot())
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.OPEN_MCP_CONFIGURATION, AiIntegrationActionStatus.FAILED, AiAgent.CLAUDE_CODE)
+        assertThat(origins).isEmpty()
+    }
+
+    private fun setupSnapshot(state: McpConfigurationState = McpConfigurationState.NOT_CONFIGURED) = baseSnapshot().copy(mcpConfigurations = mapOf(
+        AiAgent.CURSOR to McpAgentConfiguration(AiAgent.CURSOR, tempDir.resolve("telemetry-mcp.json"), state, emptyList())
+    ))
+
+    private fun captureOrigins(): MutableList<Project?> {
+        val origins = mutableListOf<Project?>()
+        ApplicationManager.getApplication().messageBus.connect(testRootDisposable)
+            .subscribe(AiIntegrationListener.TOPIC, AiIntegrationListener { origins += it })
+        return origins
+    }
+
+    private fun assertSetupOutcome(expected: AiIntegrationActionStatus) {
+        val statuses = argumentCaptor<AiIntegrationActionStatus>()
+        verify(telemetry, times(2)).aiIntegrationAction(eq(AiIntegrationAction.CONFIGURE_MCP), statuses.capture(), eq(AiAgent.CURSOR))
+        assertThat(statuses.allValues).containsExactly(AiIntegrationActionStatus.STARTED, expected)
     }
 
     private fun coordinator(
@@ -811,7 +946,7 @@ private class RecordingMcpUi : McpUiAdapter {
         return tokenConfirmation()
     }
 
-    override fun openConfiguration(project: com.intellij.openapi.project.Project, path: Path) = Unit
+    override fun openConfiguration(project: com.intellij.openapi.project.Project, path: Path) = true
 
     override fun openConnectionSettings(project: com.intellij.openapi.project.Project) {
         settingsOpened = true

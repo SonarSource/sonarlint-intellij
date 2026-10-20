@@ -20,9 +20,10 @@
 package org.sonarlint.intellij.messages
 
 import com.intellij.util.messages.Topic
+import com.intellij.openapi.project.Project
 
 fun interface AiIntegrationListener {
-    fun stateChanged()
+    fun stateChanged(origin: Project?)
 
     companion object {
         val TOPIC = Topic.create("SonarQube AI integration events", AiIntegrationListener::class.java)

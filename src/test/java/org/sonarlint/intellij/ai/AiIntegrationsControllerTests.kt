@@ -69,8 +69,8 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     @BeforeEach
     fun setUpController() {
         backend = mock(BackendService::class.java)
-        coordinator = createCoordinator()
         replaceApplicationService(SonarLintTelemetry::class.java, mock(SonarLintTelemetry::class.java))
+        coordinator = createCoordinator()
         panel = AiIntegrationsPanel(registry)
         `when`(backend.inspectMcpConfiguration(any(), any())).thenReturn(
             CompletableFuture.completedFuture(McpConfigurationInspectionResponse(McpConfigurationState.NOT_CONFIGURED, emptyList()))
@@ -107,18 +107,20 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         `when`(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture())
         val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC)
 
-        publisher.stateChanged()
+        publisher.stateChanged(null)
         verify(backend, never()).getAiIntegrationState(project, emptyList())
 
         controller.loadInitially()
-        publisher.stateChanged()
+        publisher.stateChanged(null)
+        UIUtil.dispatchAllInvocationEvents()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
 
         controller.loadInitially()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
 
         Disposer.dispose(controller)
-        publisher.stateChanged()
+        publisher.stateChanged(null)
+        UIUtil.dispatchAllInvocationEvents()
         verify(backend, times(2)).getAiIntegrationState(project, emptyList())
     }
 
@@ -337,7 +339,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         UIUtil.dispatchAllInvocationEvents()
 
         verify(backend, never()).uninstallCli()
-        assertThat(confirmationCount).isEqualTo(1)
+        assertThat(confirmationCount).isZero()
         assertThat(coordinator.activeOperation()).isTrue()
         assertThat(coordinator.lastOutcome()).isNull()
         coordinator.release()
@@ -442,7 +444,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         uninstallButton().click()
         refreshFromPanel()
-        ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
+        ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged(null)
         UIUtil.dispatchAllInvocationEvents()
 
         assertThat(texts(panel)).contains("Uninstalling SonarQube CLI…")
@@ -528,7 +530,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         assertThat(buttonTexts()).contains("Uninstall CLI…")
     }
 
-    private fun createCoordinator(refreshViews: () -> Unit = ::publishOperationFinished) =
+    private fun createCoordinator(refreshViews: (Project?) -> Unit = ::publishOperationFinished) =
         CliOperationCoordinator(backend, { error("terminal unused") }, ConnectionSelector(IntellijConnectionChoiceUi()), { _, _, _ -> }, refreshViews)
 
     private fun createController(
@@ -545,14 +547,14 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private fun useQueuedRefresh() {
         Disposer.dispose(controller)
         panel = AiIntegrationsPanel(registry)
-        coordinator = createCoordinator {
-            ApplicationManager.getApplication().invokeLater { publishOperationFinished() }
+        coordinator = createCoordinator { origin ->
+            ApplicationManager.getApplication().invokeLater { publishOperationFinished(origin) }
         }
         controller = createController()
     }
 
-    private fun publishOperationFinished() =
-        ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
+    private fun publishOperationFinished(origin: Project?) =
+        ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged(origin)
 
     private fun prepareUninstall(
         snapshot: AiIntegrationSnapshot = installedCli(),

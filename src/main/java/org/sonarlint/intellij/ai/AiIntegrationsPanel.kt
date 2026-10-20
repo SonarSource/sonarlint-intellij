@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.icons.AllIcons
-import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -99,8 +98,7 @@ private const val CHECKING_CLI_UNINSTALL_MESSAGE = "Checking SonarQube CLI unins
 private const val UNINSTALLING_CLI_MESSAGE = "Uninstalling SonarQube CLI…"
 
 class AiIntegrationsPanel(
-    private val registry: AiAgentRegistry = AiAgentRegistry(),
-    private val openLink: (String) -> Unit = { BrowserUtil.browse(it) }
+    private val registry: AiAgentRegistry = AiAgentRegistry()
 ) : JBPanel<AiIntegrationsPanel>(BorderLayout()), Disposable {
     companion object {
         internal const val WIDE_LAYOUT_THRESHOLD = 900
@@ -241,7 +239,7 @@ class AiIntegrationsPanel(
             }
             is AiIntegrationsPanelState.Ready -> addCliOverview(state.snapshot)
         }
-        addDocumentationLink(CLI_GUIDE_LABEL, SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
+        addDocumentationLink(CLI_GUIDE_LABEL, AiIntegrationsIntent.OpenCliDocumentation)
     }
 
     private fun createMcpCard(state: AiIntegrationsPanelState): JPanel = createCard(
@@ -255,7 +253,7 @@ class AiIntegrationsPanel(
             is AiIntegrationsPanelState.Error -> addMessage(MCP_ERROR_MESSAGE)
             is AiIntegrationsPanelState.Ready -> addMcpConfigurations(state.snapshot)
         }
-        addDocumentationLink(MCP_GUIDE_LABEL, SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK)
+        addDocumentationLink(MCP_GUIDE_LABEL, AiIntegrationsIntent.OpenMcpDocumentation)
     }
 
     private fun createCliDescription() = SwingHelper.createHtmlViewer(false, JBFont.label(), null, SECONDARY_TEXT).apply {
@@ -265,7 +263,7 @@ class AiIntegrationsPanel(
         alignmentX = Component.LEFT_ALIGNMENT
         addHyperlinkListener { event ->
             if (event.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-                event.description?.let(openLink)
+                intentListener(AiIntegrationsIntent.OpenVortexDocumentation)
             }
         }
     }
@@ -415,7 +413,7 @@ class AiIntegrationsPanel(
         when (snapshot.cli.installation) {
             CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli, enabled)
             CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot", enabled) {
-                openLink(SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK)
+                intentListener(AiIntegrationsIntent.TroubleshootCli)
             }
             CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
                 CliAuthenticationStatus.UNAUTHENTICATED,
@@ -578,9 +576,9 @@ class AiIntegrationsPanel(
             panel.add(verticalSpace(8))
         }
 
-        fun addDocumentationLink(label: String, url: String) {
+        fun addDocumentationLink(label: String, intent: AiIntegrationsIntent) {
             panel.add(verticalSpace(6))
-            panel.add(createLinkButton(label, url))
+            panel.add(createLinkButton(label, intent))
         }
 
         fun addAgentRow(name: String, status: CardStatus, integration: AgentCliIntegration? = null, diagnostic: String? = null, actions: List<RowAction> = emptyList(), guidance: String? = null, statusTooltip: String? = null) {
@@ -715,7 +713,7 @@ class AiIntegrationsPanel(
             }
         }
 
-    private fun createLinkButton(label: String, url: String): JButton = ActionLink(label, { openLink(url) }).apply {
+    private fun createLinkButton(label: String, intent: AiIntegrationsIntent): JButton = ActionLink(label, { intentListener(intent) }).apply {
         setExternalLinkIcon()
         alignmentX = Component.LEFT_ALIGNMENT
     }

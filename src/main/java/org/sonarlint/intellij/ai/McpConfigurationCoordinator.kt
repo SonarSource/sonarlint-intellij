@@ -20,14 +20,13 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
 import java.nio.file.AccessDeniedException
 import java.nio.file.FileSystemLoopException
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.AclFileAttributeView
@@ -42,9 +41,11 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
@@ -93,48 +94,69 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     fun setUp(project: Project, snapshot: AiIntegrationSnapshot, agent: AiAgent): Boolean {
-        val configuration = snapshot.mcpConfigurations[agent]
-        if (configuration == null) {
-            ui.showMessage(project, "MCP configuration details are unavailable. Refresh this view and try again.", NotificationType.WARNING)
+        if (project.isDisposed) return false
+        val attempt = AiIntegrationTelemetryAttempt(getService(SonarLintTelemetry::class.java), AiIntegrationAction.CONFIGURE_MCP, agent)
+        try {
+            val configuration = snapshot.mcpConfigurations[agent]
+            if (configuration == null) {
+                finishSetup(project, attempt, null, IllegalStateException())
+                return false
+            }
+            if (configuration.state != McpConfigurationState.NOT_CONFIGURED && configuration.state != McpConfigurationState.STANDALONE) {
+                finishSetup(project, attempt, McpTransactionResult.Protected, null)
+                return false
+            }
+            val connectionId = if (configuration.state == McpConfigurationState.NOT_CONFIGURED) {
+                val connections = getGlobalSettings().serverConnections.map { connection ->
+                    IntegrationConnection(connection.name, connection.hostUrl, connection.organizationKey)
+                }
+                when (val selection = ConnectionSelector(ui::chooseConnection).select(project, connections, snapshot.recommendedConnectionId)) {
+                    is ConnectionSelection.Selected -> selection.connectionId
+                    ConnectionSelection.Missing -> {
+                        finishSetup(project, attempt, McpTransactionResult.MissingConnection, null)
+                        return false
+                    }
+                    ConnectionSelection.Cancelled -> {
+                        finishSetup(project, attempt, McpTransactionResult.Cancelled, null)
+                        return false
+                    }
+                }
+            } else {
+                null
+            }
+            CompletableFuture.supplyAsync({
+                if (connectionId == null) refreshPort(agent, configuration.path) else createConfiguration(project, agent, configuration.path, connectionId)
+            }, executor).whenComplete { result, error -> finishSetup(project, attempt, result, error) }
+            return true
+        } catch (error: Exception) {
+            finishSetup(project, attempt, null, error)
             return false
         }
-        val path = configuration.path
-        if (configuration.state != McpConfigurationState.NOT_CONFIGURED && configuration.state != McpConfigurationState.STANDALONE) {
-            reportSetupResult(project, McpTransactionResult.Protected, null)
-            return false
+    }
+
+    private fun finishSetup(project: Project, attempt: AiIntegrationTelemetryAttempt, result: McpTransactionResult?, error: Throwable?) {
+        val status = when {
+            isAiIntegrationCancellation(error) || result == McpTransactionResult.Cancelled -> AiIntegrationActionStatus.CANCELLED
+            error != null -> AiIntegrationActionStatus.FAILED
+            result == McpTransactionResult.Updated || result == McpTransactionResult.Unchanged -> AiIntegrationActionStatus.SUCCEEDED
+            result == null -> AiIntegrationActionStatus.UNKNOWN
+            else -> AiIntegrationActionStatus.FAILED
         }
-        val connectionId = if (configuration.state == McpConfigurationState.NOT_CONFIGURED) {
-            val connections = getGlobalSettings().serverConnections.map { connection ->
-                IntegrationConnection(connection.name, connection.hostUrl, connection.organizationKey)
-            }
-            when (val selection = ConnectionSelector(ui::chooseConnection).select(project, connections, snapshot.recommendedConnectionId)) {
-                is ConnectionSelection.Selected -> selection.connectionId
-                ConnectionSelection.Missing -> {
-                    ui.showMessage(project, "No SonarQube connection is available. Add a connection, then retry MCP setup.", NotificationType.ERROR)
-                    ui.openConnectionSettings(project)
-                    return false
-                }
-                ConnectionSelection.Cancelled -> {
-                    reportSetupResult(project, McpTransactionResult.Cancelled, null)
-                    return false
-                }
-            }
-        } else {
-            null
-        }
-        CompletableFuture.supplyAsync({
-            if (connectionId == null) refreshPort(agent, path) else createConfiguration(project, agent, path, connectionId)
-        }, executor).whenComplete { result, error ->
-            runOnUiThread(project) {
-                reportSetupResult(project, result, error)
-                refreshAll()
-            }
-        }
-        return true
+        if (!attempt.finish(status)) return
+        publishAiIntegrationChange(project)
+        runCatching { runOnUiThread(project) { reportSetupResult(project, result, error) } }
     }
 
     fun openConfiguration(project: Project, agent: AiAgent, snapshot: AiIntegrationSnapshot) {
-        snapshot.mcpConfigurations[agent]?.path?.let { ui.openConfiguration(project, it) }
+        if (project.isDisposed) return
+        val attempt = AiIntegrationTelemetryAttempt(getService(SonarLintTelemetry::class.java), AiIntegrationAction.OPEN_MCP_CONFIGURATION, agent)
+        val status = try {
+            val path = snapshot.mcpConfigurations[agent]?.path
+            if (path != null && ui.openConfiguration(project, path)) AiIntegrationActionStatus.SUCCEEDED else AiIntegrationActionStatus.FAILED
+        } catch (_: Exception) {
+            AiIntegrationActionStatus.FAILED
+        }
+        attempt.finish(status)
     }
 
     fun embeddedServerStarted(port: Int) {
@@ -333,7 +355,11 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         refreshAll()
     }
 
-    private fun readConfig(path: Path): String? = if (Files.exists(path)) Files.readString(path) else null
+    private fun readConfig(path: Path): String? = try {
+        Files.readString(path)
+    } catch (_: NoSuchFileException) {
+        null
+    }
 
     internal fun reportSetupResult(project: Project, result: McpTransactionResult?, error: Throwable?) {
         if (error != null) {
@@ -367,9 +393,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     private fun refreshAll() {
-        runOnUiThread(ModalityState.defaultModalityState()) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
-        }
+        publishAiIntegrationChange(null)
     }
 }
 
