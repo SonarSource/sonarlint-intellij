@@ -37,6 +37,10 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 data class AnalyzedFile(val file: VirtualFile, val issueCount: Int)
 
+/**
+ * Runs real on-the-fly analysis in light UI tests (registers test files with SLOOP, awaits [AnalysisSubmitter] results).
+ * Tool-window wiring comes from SLI-2980 (`SonarLintMainToolWindowPage` / `HeadlessToolWindow.kt`).
+ */
 class LightTestAnalysis(
     private val project: Project,
     private val module: Module,
