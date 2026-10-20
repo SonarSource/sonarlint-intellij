@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.options.ShowSettingsUtil
@@ -40,7 +41,7 @@ interface McpUiAdapter {
 
     fun confirmWithoutToken(project: Project): Boolean
 
-    fun openConfiguration(project: Project, path: Path)
+    fun openConfiguration(project: Project, path: Path): Boolean
 
     fun openConnectionSettings(project: Project)
 
@@ -72,7 +73,7 @@ class IntellijMcpUiAdapter : McpUiAdapter {
         ) == Messages.YES
     }
 
-    override fun openConfiguration(project: Project, path: Path) {
+    override fun openConfiguration(project: Project, path: Path): Boolean {
         val file = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
         if (file == null) {
             showMessage(
@@ -80,10 +81,10 @@ class IntellijMcpUiAdapter : McpUiAdapter {
                 "Could not open the SonarQube MCP configuration file. The path could not be resolved.",
                 NotificationType.WARNING
             )
-            return
+            return false
         }
         val offset = FileDocumentManager.getInstance().getDocument(file)?.text?.let(::sonarQubeOffset) ?: 0
-        OpenFileDescriptor(project, file, offset).navigate(true)
+        return FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, file, offset), true) != null
     }
 
     private fun sonarQubeOffset(content: String): Int = runCatching {

@@ -42,6 +42,9 @@ import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 
@@ -90,48 +93,69 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     fun setUp(project: Project, snapshot: AiIntegrationSnapshot, agent: AiAgent): Boolean {
-        val configuration = snapshot.mcpConfigurations[agent]
-        if (configuration == null) {
-            ui.showMessage(project, "MCP configuration details are unavailable. Refresh this view and try again.", NotificationType.WARNING)
+        if (project.isDisposed) return false
+        val attempt = AiIntegrationTelemetryAttempt(getService(SonarLintTelemetry::class.java), AiIntegrationAction.CONFIGURE_MCP, agent)
+        try {
+            val configuration = snapshot.mcpConfigurations[agent]
+            if (configuration == null) {
+                finishSetup(project, attempt, McpTransactionResult.ConfigurationUnavailable, null)
+                return false
+            }
+            if (configuration.state != McpConfigurationState.NOT_CONFIGURED && configuration.state != McpConfigurationState.STANDALONE) {
+                finishSetup(project, attempt, McpTransactionResult.Protected, null)
+                return false
+            }
+            val connectionId = if (configuration.state == McpConfigurationState.NOT_CONFIGURED) {
+                val connections = getGlobalSettings().serverConnections.map { connection ->
+                    IntegrationConnection(connection.name, connection.hostUrl, connection.organizationKey)
+                }
+                when (val selection = ConnectionSelector(ui::chooseConnection).select(project, connections, snapshot.recommendedConnectionId)) {
+                    is ConnectionSelection.Selected -> selection.connectionId
+                    ConnectionSelection.Missing -> {
+                        finishSetup(project, attempt, McpTransactionResult.NoConnections, null)
+                        return false
+                    }
+                    ConnectionSelection.Cancelled -> {
+                        finishSetup(project, attempt, McpTransactionResult.Cancelled, null)
+                        return false
+                    }
+                }
+            } else {
+                null
+            }
+            CompletableFuture.supplyAsync({
+                if (connectionId == null) refreshPort(agent, configuration.path) else createConfiguration(project, agent, configuration.path, connectionId)
+            }, executor).whenComplete { result, error -> finishSetup(project, attempt, result, error) }
+            return true
+        } catch (error: Exception) {
+            finishSetup(project, attempt, null, error)
             return false
         }
-        val path = configuration.path
-        if (configuration.state != McpConfigurationState.NOT_CONFIGURED && configuration.state != McpConfigurationState.STANDALONE) {
-            reportSetupResult(project, McpTransactionResult.Protected, null)
-            return false
+    }
+
+    private fun finishSetup(project: Project, attempt: AiIntegrationTelemetryAttempt, result: McpTransactionResult?, error: Throwable?) {
+        val status = when {
+            isAiIntegrationCancellation(error) || result == McpTransactionResult.Cancelled -> AiIntegrationActionStatus.CANCELLED
+            error != null -> AiIntegrationActionStatus.FAILED
+            result == McpTransactionResult.Updated || result == McpTransactionResult.Unchanged -> AiIntegrationActionStatus.SUCCEEDED
+            result == null -> AiIntegrationActionStatus.UNKNOWN
+            else -> AiIntegrationActionStatus.FAILED
         }
-        val connectionId = if (configuration.state == McpConfigurationState.NOT_CONFIGURED) {
-            val connections = getGlobalSettings().serverConnections.map { connection ->
-                IntegrationConnection(connection.name, connection.hostUrl, connection.organizationKey)
-            }
-            when (val selection = ConnectionSelector(ui::chooseConnection).select(project, connections, snapshot.recommendedConnectionId)) {
-                is ConnectionSelection.Selected -> selection.connectionId
-                ConnectionSelection.Missing -> {
-                    ui.showMessage(project, "No SonarQube connection is available. Add a connection, then retry MCP setup.", NotificationType.ERROR)
-                    ui.openConnectionSettings(project)
-                    return false
-                }
-                ConnectionSelection.Cancelled -> {
-                    reportSetupResult(project, McpTransactionResult.Cancelled, null)
-                    return false
-                }
-            }
-        } else {
-            null
-        }
-        CompletableFuture.supplyAsync({
-            if (connectionId == null) refreshPort(agent, path) else createConfiguration(project, agent, path, connectionId)
-        }, executor).whenComplete { result, error ->
-            runOnUiThread(project) {
-                reportSetupResult(project, result, error)
-                publishAiIntegrationChange(project)
-            }
-        }
-        return true
+        if (!attempt.finish(status)) return
+        publishAiIntegrationChange(project)
+        runCatching { runOnUiThread(project) { reportSetupResult(project, result, error) } }
     }
 
     fun openConfiguration(project: Project, agent: AiAgent, snapshot: AiIntegrationSnapshot) {
-        snapshot.mcpConfigurations[agent]?.path?.let { ui.openConfiguration(project, it) }
+        if (project.isDisposed) return
+        val attempt = AiIntegrationTelemetryAttempt(getService(SonarLintTelemetry::class.java), AiIntegrationAction.OPEN_MCP_CONFIGURATION, agent)
+        val status = try {
+            val path = snapshot.mcpConfigurations[agent]?.path
+            if (path != null && ui.openConfiguration(project, path)) AiIntegrationActionStatus.SUCCEEDED else AiIntegrationActionStatus.FAILED
+        } catch (_: Exception) {
+            AiIntegrationActionStatus.FAILED
+        }
+        attempt.finish(status)
     }
 
     fun embeddedServerStarted(port: Int) {
@@ -350,6 +374,10 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 "The MCP configuration changed during setup. Review the file and retry so no edits are lost." to NotificationType.WARNING
             McpTransactionResult.Protected ->
                 "The MCP configuration was not changed because its current state cannot be updated safely. Open the file, resolve the issue, and retry." to NotificationType.WARNING
+            McpTransactionResult.ConfigurationUnavailable ->
+                "MCP configuration details are unavailable. Refresh this view and try again." to NotificationType.WARNING
+            McpTransactionResult.NoConnections ->
+                "No SonarQube connection is available. Add a connection, then retry MCP setup." to NotificationType.ERROR
             McpTransactionResult.MissingConnection ->
                 "The selected SonarQube connection no longer exists. Add or select a connection, then retry." to NotificationType.ERROR
             McpTransactionResult.Cancelled ->
@@ -358,7 +386,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
                 "MCP setup did not return a result. Refresh this view and retry." to NotificationType.WARNING
         }
         ui.showMessage(project, message, type)
-        if (result == McpTransactionResult.MissingConnection) {
+        if (result == McpTransactionResult.NoConnections || result == McpTransactionResult.MissingConnection) {
             ui.openConnectionSettings(project)
         }
     }
@@ -373,6 +401,8 @@ enum class McpTransactionResult {
     Unchanged,
     ConcurrentEdit,
     Protected,
+    ConfigurationUnavailable,
+    NoConnections,
     MissingConnection,
     Cancelled
 }
