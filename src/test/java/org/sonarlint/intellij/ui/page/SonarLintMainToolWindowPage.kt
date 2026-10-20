@@ -20,12 +20,8 @@
 package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.ToolWindowAnchor
-import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
 import org.sonarlint.intellij.ui.ToolWindowConstants.FINDINGS_TAB_TITLE
-import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
-import org.sonarlint.intellij.ui.icons.SonarLintIcons
 
 class SonarLintMainToolWindowPage private constructor(
     val findings: FindingsTabPage,
@@ -33,21 +29,7 @@ class SonarLintMainToolWindowPage private constructor(
 
     companion object {
         fun create(project: Project): SonarLintMainToolWindowPage {
-            val toolWindow = registerToolWindowIfAbsent(
-                project,
-                TOOL_WINDOW_ID,
-                SonarLintToolWindowFactory(),
-                SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW,
-                ToolWindowAnchor.BOTTOM,
-            )
-            ensureFactoryContentCreated(
-                project,
-                toolWindow,
-                SonarLintToolWindowFactory(),
-                contentReady = { tw ->
-                    tw.contentManager.findContent(FINDINGS_TAB_TITLE) != null
-                },
-            )
+            val toolWindow = ensureMainSonarLintToolWindow(project)
             val panel = toolWindow.contentManager.findContent(FINDINGS_TAB_TITLE)?.component
             check(panel is FindingsPanel) { "Findings tab is not a FindingsPanel" }
             return SonarLintMainToolWindowPage(FindingsTabPage(panel))

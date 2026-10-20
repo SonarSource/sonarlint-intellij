@@ -27,36 +27,58 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.util.ui.UIUtil
 import javax.swing.Icon
+import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
+import org.sonarlint.intellij.ui.ToolWindowConstants.FINDINGS_TAB_TITLE
+import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
+import org.sonarlint.intellij.ui.icons.SonarLintIcons
+import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindowFactory
 
-internal fun registerToolWindowIfAbsent(
-    project: Project,
-    toolWindowId: String,
-    factory: ToolWindowFactory,
-    icon: Icon,
-    anchor: ToolWindowAnchor = ToolWindowAnchor.BOTTOM,
-): ToolWindow {
-    val manager = ToolWindowManager.getInstance(project)
-    return manager.getToolWindow(toolWindowId)
-        ?: manager.registerToolWindow(
-            RegisterToolWindowTask.lazyAndClosable(toolWindowId, factory, icon, anchor),
-        )
+internal fun ensureMainSonarLintToolWindow(project: Project): ToolWindow {
+    val factory = SonarLintToolWindowFactory()
+    return ensureHeadlessToolWindow(
+        project,
+        TOOL_WINDOW_ID,
+        SonarLintIcons.SONARQUBE_FOR_INTELLIJ_EMPTY_TOOLWINDOW,
+        ToolWindowAnchor.BOTTOM,
+        factory,
+        contentReady = { tw -> tw.contentManager.findContent(FINDINGS_TAB_TITLE) != null },
+    )
 }
 
-internal fun ensureFactoryContentCreated(
+internal fun ensureWalkthroughToolWindow(project: Project): ToolWindow {
+    val factory = SonarLintWalkthroughToolWindowFactory()
+    return ensureHeadlessToolWindow(
+        project,
+        WALKTHROUGH_TOOL_WINDOW_ID,
+        SonarLintIcons.WALKTHROUGH_TOOLWINDOW_ICON,
+        ToolWindowAnchor.LEFT,
+        factory,
+        contentReady = { tw -> tw.contentManager.contentCount > 0 },
+    )
+}
+
+private fun ensureHeadlessToolWindow(
     project: Project,
-    toolWindow: ToolWindow,
+    toolWindowId: String,
+    icon: Icon,
+    anchor: ToolWindowAnchor,
     factory: ToolWindowFactory,
     contentReady: (ToolWindow) -> Boolean,
     maxEdtDispatches: Int = 200,
-) {
+): ToolWindow {
+    val manager = ToolWindowManager.getInstance(project)
+    val toolWindow = manager.getToolWindow(toolWindowId)
+        ?: manager.registerToolWindow(
+            RegisterToolWindowTask.lazyAndClosable(toolWindowId, factory, icon, anchor),
+        )
     if (contentReady(toolWindow)) {
-        return
+        return toolWindow
     }
     factory.createToolWindowContent(project, toolWindow)
     repeat(maxEdtDispatches) {
         UIUtil.dispatchAllInvocationEvents()
         if (contentReady(toolWindow)) {
-            return
+            return toolWindow
         }
     }
     error("ToolWindowFactory did not create expected content on EDT")
