@@ -104,6 +104,10 @@ This downloads IntelliJ Community 2024.2 on first run. To use a local IDE instal
 
 The sandbox (instance files, JDK config) is stored under `build/sonarlint-test`. Running `./gradlew clean` will wipe it.
 
+### Light UI tests
+
+Extension-driven UI coverage uses `AbstractSonarLintLightTests` with production extension points and headless tool-window registration. See [test-common/LIGHT_UI_TESTS.md](test-common/LIGHT_UI_TESTS.md) and [its/UI_INTEGRATION_TEST_STRATEGY.md](its/UI_INTEGRATION_TEST_STRATEGY.md).
+
 ### Integration tests
 
 ITs require a running display and `SONARCLOUD_IT_TOKEN`. Supported on **Windows and Linux only** — macOS is not supported due to native file dialog incompatibility with the UI test framework.
