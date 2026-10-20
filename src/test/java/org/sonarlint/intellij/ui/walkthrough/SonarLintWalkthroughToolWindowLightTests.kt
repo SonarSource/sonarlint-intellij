@@ -19,11 +19,13 @@
  */
 package org.sonarlint.intellij.ui.walkthrough
 
+import com.intellij.ui.components.JBLabel
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.page.SonarLintUiTestContext
 import org.sonarlint.intellij.ui.page.SonarLintWalkthroughToolWindowPage
 
@@ -44,6 +46,10 @@ class SonarLintWalkthroughToolWindowLightTests : AbstractSonarLintLightTests() {
     @Test
     fun should_create_walkthrough_content_via_production_factory() {
         val walkthroughToolWindow = SonarLintWalkthroughToolWindowPage.create(project)
-        assertThat(walkthroughToolWindow.content).isInstanceOf(WalkthroughPanel::class.java)
+        val labelTexts = walkthroughToolWindow.content.walkComponents()
+            .filterIsInstance<JBLabel>()
+            .mapNotNull { it.text }
+            .toList()
+        assertThat(labelTexts).contains("Get started")
     }
 }
