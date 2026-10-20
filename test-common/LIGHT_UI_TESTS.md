@@ -16,7 +16,12 @@ Light tests are **not parallel-safe within one JVM** (shared application, SLOOP,
 
 In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Page objects register and drive production factories:
 
-1. `SonarLintMainToolWindowPage.create(project)` or `SonarLintWalkthroughToolWindowPage.create(project)` — headless registration via `ensureMainSonarLintToolWindow` / `ensureWalkthroughToolWindow` in `HeadlessToolWindow.kt`
+| Piece | Location |
+| --- | --- |
+| Headless registration (`ensureMainSonarLintToolWindow`, `ensureWalkthroughToolWindow`) | [`HeadlessToolWindow.kt`](../src/test/java/org/sonarlint/intellij/ui/page/HeadlessToolWindow.kt) in `src/test` (not `test-common`) |
+| Component tree lookup (`walkComponents`, `findComponents`) | [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) in `test-common` |
+
+1. `SonarLintMainToolWindowPage.create(project)` or `SonarLintWalkthroughToolWindowPage.create(project)` — uses the helpers above
 2. `@AfterEach` cleanup via `SonarLintUiTestContext.releaseEditorsAndToolWindows()` (used by `AbstractSonarLintUILightTests` and standalone UI light tests)
 
 ## Page objects
