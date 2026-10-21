@@ -67,15 +67,6 @@ class FindingsTabPage internal constructor(
                 .emptyText.text
         }
 
-    /** Empty-state banner in the issues area (e.g. "No findings to display"). */
-    val emptyStateText: String
-        get() = readSynced {
-            panel.walkComponents()
-                .filterIsInstance<JBPanelWithEmptyText>()
-                .first()
-                .emptyText.text
-        }
-
     /** Refreshes the tab through [SonarLintToolWindow]; call only on the EDT. */
     internal fun refreshWithEditorSelection() {
         val selected = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()

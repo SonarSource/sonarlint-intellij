@@ -28,8 +28,10 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.HAS_WALKTHROUGH_RUN_ONCE
+import org.sonarlint.intellij.shouldAutoOpenWalkthrough
 import java.nio.file.Path
+import org.junit.jupiter.api.AfterEach
 
 /**
  * Light UI coverage for former Standalone UI IT scenarios (removed in SLI-2990).
@@ -39,6 +41,12 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
     @BeforeEach
     fun waitForReady() {
         waitUntilAnalysisReady()
+    }
+
+    @AfterEach
+    fun resetWalkthroughFlags() {
+        PropertiesComponent.getInstance().unsetValue(HAS_WALKTHROUGH_RUN_ONCE)
+        getGlobalSettings().setHasWalkthroughRunOnce(false)
     }
 
     @Test
@@ -134,14 +142,11 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
-    fun should_not_open_walkthrough_after_opened_once() {
-        getGlobalSettings().setHasWalkthroughRunOnce(true)
-        PropertiesComponent.getInstance().setValue(HAS_WALKTHROUGH_RUN_ONCE, true)
-
-        val walkthrough = com.intellij.openapi.wm.ToolWindowManager.getInstance(project)
-            .getToolWindow(org.sonarlint.intellij.ui.page.WALKTHROUGH_TOOL_WINDOW_ID)
-
-        assertThat(walkthrough == null || !walkthrough.isVisible).isTrue()
+    fun should_not_auto_open_walkthrough_when_run_once_flags_are_set() {
+        assertThat(shouldAutoOpenWalkthrough(propertiesHasRunOnce = false, globalHasRunOnce = false)).isTrue()
+        assertThat(shouldAutoOpenWalkthrough(propertiesHasRunOnce = true, globalHasRunOnce = false)).isFalse()
+        assertThat(shouldAutoOpenWalkthrough(propertiesHasRunOnce = false, globalHasRunOnce = true)).isFalse()
+        assertThat(shouldAutoOpenWalkthrough(propertiesHasRunOnce = true, globalHasRunOnce = true)).isFalse()
     }
 
     private fun setGlobalRuleActive(ruleKey: String, active: Boolean) {
@@ -157,7 +162,6 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
 
     private companion object {
         private const val RULE_S2094 = "java:S2094"
-        private const val HAS_WALKTHROUGH_RUN_ONCE = "hasWalkthroughRunOnce"
         private val NO_FINDINGS_EMPTY_STATES = listOf("No findings to display", "Nothing to show")
     }
 }
