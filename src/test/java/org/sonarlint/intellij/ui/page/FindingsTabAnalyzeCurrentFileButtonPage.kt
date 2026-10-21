@@ -19,18 +19,14 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.vfs.VirtualFile
-import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.fixtures.pumpEdt
+import org.sonarlint.intellij.ui.currentfile.CurrentFileFindingsPanel
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
@@ -46,28 +42,34 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
 
     val isEnabled: Boolean
         get() = readOnEdt {
-            val presentation = analyzeCurrentFileButton()
-            presentation.isEnabled && presentation.isVisible
+            ensureToolbarVisible()
+            val button = findToolbarButton() ?: return@readOnEdt false
+            button.isEnabled && button.isVisible
         }
 
     fun click(file: VirtualFile) {
         readOnEdt {
-            preparePanelForFile(file)
+            syncFindingsTabWithEditor()
+            ensureToolbarVisible()
             val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
-            val button = findToolbarButton()
-            if (button != null) {
-                ActionUtil.invokeAction(analyzeAction, button, TOOL_WINDOW_ID, null, null)
-            } else {
-                ActionUtil.invokeAction(analyzeAction, panel, TOOL_WINDOW_ID, null, null)
+            val button = checkNotNull(findToolbarButton()) {
+                "Analyze Current File button not found in Findings toolbar"
             }
+            ActionUtil.invokeAction(analyzeAction, button, TOOL_WINDOW_ID, null, null)
             repeat(20) { pumpEdt() }
         }
     }
 
-    private fun preparePanelForFile(file: VirtualFile) {
+    private fun syncFindingsTabWithEditor() {
         findingsTab.refreshWithEditorSelection()
-        panel.update(file, EditorHighlightRefresh.NONE)
         repeat(10) { pumpEdt() }
+    }
+
+    private fun ensureToolbarVisible() {
+        if (panel is SimpleToolWindowPanel) {
+            panel.getToolbar()?.isVisible = true
+        }
+        repeat(5) { pumpEdt() }
     }
 
     private fun findToolbarButton(): ActionButton? {
@@ -78,7 +80,9 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
     }
 
     private fun toolbarActionButtons(): List<ActionButton> {
+        findingsToolbar()?.updateActionsImmediately()
         val roots = buildList {
+            findingsToolbar()?.component?.let { add(it) }
             if (panel is SimpleToolWindowPanel) {
                 panel.getToolbar()?.let { add(it) }
             }
@@ -86,29 +90,15 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
         }
         return roots.flatMap { root ->
             root.walkComponents()
-                .filter { it.javaClass.simpleName == "ActionButton" }
+                .filter { it.javaClass.simpleName.contains("ActionButton") }
                 .mapNotNull { it as? ActionButton }
         }
     }
 
-    private fun analyzeCurrentFileButton(): Presentation {
-        val presentation = Presentation()
-        val event = AnActionEvent(
-            null,
-            { dataId ->
-                when {
-                    CommonDataKeys.PROJECT.`is`(dataId) -> project
-                    CommonDataKeys.VIRTUAL_FILE_ARRAY.`is`(dataId) -> panel.currentFile?.let { arrayOf(it) }
-                    CommonDataKeys.VIRTUAL_FILE.`is`(dataId) -> panel.currentFile
-                    else -> null
-                }
-            },
-            ActionPlaces.TOOLBAR,
-            presentation,
-            ActionManager.getInstance(),
-            0,
-        )
-        SonarLintActions.getInstance().analyzeCurrentFileAction().update(event)
-        return presentation
+    private fun findingsToolbar(): ActionToolbar? {
+        val field = CurrentFileFindingsPanel::class.java.getDeclaredField("mainToolbar")
+        field.isAccessible = true
+        return field.get(panel) as? ActionToolbar
     }
+
 }
