@@ -21,8 +21,6 @@ package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import java.util.concurrent.TimeUnit
-import org.awaitility.Awaitility
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import com.intellij.ui.components.JBLabel
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -42,53 +40,19 @@ class FindingsTabPage internal constructor(
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
     val findingsTree: FindingsTreePage
-        get() = if (skipRefreshBeforeRead.get()) {
-            FindingsTreePage(findingsIssueTree())
-        } else {
-            readSynced { FindingsTreePage(findingsIssueTree()) }
-        }
+        get() = readSynced { FindingsTreePage(findingsIssueTree()) }
 
     val oldFindingsTree: FindingsTreePage
-        get() = if (skipRefreshBeforeRead.get()) {
-            FindingsTreePage(oldFindingsIssueTree())
-        } else {
-            readSynced { FindingsTreePage(oldFindingsIssueTree()) }
-        }
+        get() = readSynced { FindingsTreePage(oldFindingsIssueTree()) }
 
     val issues: List<FindingNodePage>
-        get() = if (skipRefreshBeforeRead.get()) {
+        get() = readSynced {
             FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
-        } else {
-            readSynced {
-                FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
-            }
         }
 
     /** Text of the issues row in [org.sonarlint.intellij.ui.currentfile.CurrentFileSummaryPanel]. */
     val issuesSummaryButtonText: String
-        get() = if (skipRefreshBeforeRead.get()) {
-            readIssuesSummaryButtonText()
-        } else {
-            readSynced { readIssuesSummaryButtonText() }
-        }
-
-    fun awaitUntilAsserted(timeoutSeconds: Long = 60, assertions: FindingsTabPage.() -> Unit) {
-        Awaitility.await()
-            .pollInSameThread()
-            .atMost(timeoutSeconds, TimeUnit.SECONDS)
-            .untilAsserted {
-                readOnEdt {
-                    refreshWithEditorSelection()
-                    repeat(30) { pumpEdt() }
-                    skipRefreshBeforeRead.set(true)
-                    try {
-                        assertions()
-                    } finally {
-                        skipRefreshBeforeRead.set(false)
-                    }
-                }
-            }
-    }
+        get() = readSynced { readIssuesSummaryButtonText() }
 
     /** Refreshes the tab through [SonarLintToolWindow]; call only on the EDT. */
     internal fun refreshWithEditorSelection() {
@@ -119,7 +83,6 @@ class FindingsTabPage internal constructor(
         panel.getTree(TreeType.ISSUES, isOld = true) as IssueTree
 
     private companion object {
-        private val skipRefreshBeforeRead = ThreadLocal.withInitial { false }
         private val ISSUES_SUMMARY_COUNT = Regex("\\d+ Issues")
     }
 }

@@ -32,6 +32,8 @@ import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.fixtures.pumpEdt
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.ui.page.SonarLintMainToolWindowPage
 import org.sonarlint.intellij.ui.page.SonarLintUiTestContext
@@ -87,5 +89,18 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
             assertThat(readiness.isModuleReady(module)).isTrue()
             assertThat(readiness.isProjectReady).isTrue()
         }
+    }
+
+    /** Polls on the EDT until [assertions] pass ([Awaitility.pollInSameThread]). */
+    protected fun awaitUntilAsserted(timeoutSeconds: Long = 60, assertions: () -> Unit) {
+        Awaitility.await()
+            .pollInSameThread()
+            .atMost(timeoutSeconds, TimeUnit.SECONDS)
+            .untilAsserted {
+                readOnEdt {
+                    repeat(30) { pumpEdt() }
+                    assertions()
+                }
+            }
     }
 }

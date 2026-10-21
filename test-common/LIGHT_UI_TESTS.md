@@ -33,15 +33,13 @@ Example assertion (see `FindingsTabAnalysisLightTests`):
 ```kotlin
 val file = openFileFromTestData("src/file.xml")
 mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
-mainToolWindow.findings.awaitUntilAsserted {
-    assertThat(issuesSummaryButtonText).isEqualTo("1 Issue")
-    assertThat(issues.single().ruleKey).isEqualTo("xml:S1778")
+awaitUntilAsserted {
+    assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")
+    assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
 }
 ```
 
-Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button. Poll UI state with [`FindingsTabPage.awaitUntilAsserted`](src/test/java/org/sonarlint/intellij/ui/page/FindingsTabPage.kt) (same-thread polling for EDT-safe reads)—not `AnalysisSubmitter` or `AnalysisStatus`.
-
-Reading `findingsTree` / `issues` runs on the EDT via [`readOnEdt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/UiTestEdt.kt) and refreshes the tab through [`FindingsTabPage.refreshWithEditorSelection`](src/test/java/org/sonarlint/intellij/ui/page/FindingsTabPage.kt) before each read.
+Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button. Poll with [`awaitUntilAsserted`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt); page object getters refresh from the selected editor on each read—not `AnalysisSubmitter` or `AnalysisStatus`.
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 
