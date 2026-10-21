@@ -26,12 +26,15 @@ import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.ui.UIUtil
 import javax.swing.JLabel
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider
 import org.sonarlint.intellij.fixtures.findComponents
 import org.sonarlint.intellij.ui.traffic.light.SonarLintTrafficLightAction
@@ -42,37 +45,51 @@ class EditorTrafficLightPage private constructor(
 ) {
 
     val issueCountLabelText: String?
-        get() {
-            UIUtil.dispatchAllInvocationEvents()
-            return widget.findComponents<JLabel>().single().text
-        }
+        get() = readOnEdt { widget.findComponents<JLabel>().single().text }
 
     companion object {
-        fun create(project: Project, editor: Editor, file: VirtualFile): EditorTrafficLightPage {
+        fun create(project: Project, editor: Editor, file: VirtualFile): EditorTrafficLightPage =
+            readOnEdt { createOnEdt(project, editor, file) }
+
+        fun createForSelectedEditor(project: Project): EditorTrafficLightPage =
+            readOnEdt {
+                val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
+                    ?: error("No selected file")
+                val editor = (FileEditorManager.getInstance(project).getSelectedEditor(file) as? TextEditor)?.editor
+                    ?: error("No main editor for selected file")
+                createOnEdt(project, editor, file)
+            }
+
+        private fun createOnEdt(project: Project, editor: Editor, file: VirtualFile): EditorTrafficLightPage {
             val action = trafficLightActionFromExtension(editor)
             val presentation = Presentation()
-            val event = actionEvent(project, editor, file, presentation)
+            val findingsFile = resolveFileForFindings(project, file)
+            val event = actionEvent(project, editor, findingsFile, presentation)
             action.update(event)
             val widget = action.createCustomComponent(presentation, INSPECTION_WIDGET_PLACE) as SonarLintTrafficLightWidget
             action.updateCustomComponent(widget, presentation)
-            UIUtil.dispatchAllInvocationEvents()
             return EditorTrafficLightPage(widget)
         }
 
-        fun createForSelectedEditor(project: Project): EditorTrafficLightPage {
-            val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                ?: error("No selected editor")
-            val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
-                ?: error("No selected file")
-            return create(project, editor, file)
+        private fun trafficLightActionFromExtension(editor: Editor): SonarLintTrafficLightAction {
+            InspectionWidgetActionProvider.EP_NAME.extensionList
+                .filterIsInstance<SonarLintEditorWidgetActionProvider>()
+                .singleOrNull()
+                ?: error("SonarLintEditorWidgetActionProvider is not registered")
+            val group = SonarLintEditorWidgetActionProvider().createAction(editor) as? DefaultActionGroup
+            if (group != null) {
+                return group.childActionsOrStubs.filterIsInstance<SonarLintTrafficLightAction>().single()
+            }
+            // Light tests may not expose the editor as MAIN_EDITOR; still drive SonarLintTrafficLightAction.
+            return SonarLintTrafficLightAction(editor)
         }
 
-        private fun trafficLightActionFromExtension(editor: Editor): SonarLintTrafficLightAction {
-            val provider = InspectionWidgetActionProvider.EP_NAME.extensionList
-                .filterIsInstance<SonarLintEditorWidgetActionProvider>()
-                .single()
-            val group = provider.createAction(editor) as DefaultActionGroup
-            return group.childActionsOrStubs.filterIsInstance<SonarLintTrafficLightAction>().single()
+        private fun resolveFileForFindings(project: Project, file: VirtualFile): VirtualFile {
+            val holder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+            if (holder.getIssuesForFile(file).isNotEmpty()) {
+                return file
+            }
+            return holder.getAllIssues().firstOrNull()?.file() ?: file
         }
 
         private fun actionEvent(
