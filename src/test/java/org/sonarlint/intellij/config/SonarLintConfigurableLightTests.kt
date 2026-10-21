@@ -19,35 +19,22 @@
  */
 package org.sonarlint.intellij.config
 
-import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.options.Configurable
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
+
 class SonarLintConfigurableLightTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_resolve_global_settings_from_application_configurable_ep() {
-        val configurable = APPLICATION_CONFIGURABLE.extensions
-            .mapNotNull { instantiateApplicationConfigurable(it) }
-            .filterIsInstance<SonarLintGlobalConfigurable>()
-            .single()
+        val configurable = Configurable.APPLICATION_CONFIGURABLE.extensionList
+            .single { it.id == "sonarlint" }
+            .createConfigurable() as SonarLintGlobalConfigurable
 
         assertThat(configurable.displayName).isEqualTo("SonarQube for IDE")
         assertThat(configurable.createComponent()).isNotNull()
         configurable.disposeUIResources()
-    }
-
-    private fun instantiateApplicationConfigurable(extension: Any): Configurable? =
-        runCatching {
-            extension.javaClass.methods
-                .first { it.name == "createConfigurable" && it.parameterCount == 0 }
-                .invoke(extension) as Configurable
-        }.getOrNull()
-
-    private companion object {
-        private val APPLICATION_CONFIGURABLE =
-            ExtensionPointName.create<Any>("com.intellij.applicationConfigurable")
     }
 }
