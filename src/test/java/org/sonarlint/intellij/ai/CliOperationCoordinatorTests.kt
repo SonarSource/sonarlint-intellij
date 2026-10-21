@@ -310,22 +310,26 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `a released uninstall lease refreshes without notifying or recording an outcome`() {
+    fun `a completed uninstall lease refreshes once without notifying or recording a CLI outcome`() {
         val backend = mock<BackendService>()
         val notifications = mutableListOf<Notification>()
         var refreshes = 0
         val coordinator = coordinator(backend, mock(), notifications = notifications, refresh = { refreshes++ })
+        val attempt = AiIntegrationTelemetryAttempt(telemetry, AiIntegrationAction.UNINSTALL_CLI)
 
-        assertThat(coordinator.acquire(project)).isTrue()
+        assertThat(coordinator.acquireUninstall(project, attempt)).isTrue()
         assertThat(coordinator.acquire(project)).isFalse()
-        coordinator.release()
+        assertThat(coordinator.completeUninstall(attempt, AiIntegrationActionStatus.SUCCEEDED)).isTrue()
+        assertThat(coordinator.completeUninstall(attempt, AiIntegrationActionStatus.SUCCEEDED)).isFalse()
 
         assertThat(coordinator.activeOperation()).isFalse()
         assertThat(coordinator.lastOutcome()).isNull()
         assertThat(notifications).isEmpty()
         assertThat(refreshes).isEqualTo(1)
+        assertTelemetryOutcome(AiIntegrationAction.UNINSTALL_CLI, AiIntegrationActionStatus.SUCCEEDED)
         verifyNoInteractions(backend)
         assertThat(coordinator.acquire(project)).isTrue()
+        coordinator.cancel(project)
     }
 
     @Test

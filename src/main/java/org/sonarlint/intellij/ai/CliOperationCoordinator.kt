@@ -127,6 +127,10 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
     internal fun activeOperation(): Boolean = active.get() != null
 
+    internal fun focusActiveOperation() {
+        active.get()?.terminalSession?.focus?.invoke()
+    }
+
     internal fun lastOutcome(): CliOperationOutcome? = lastOutcome.get()
 
     private fun authenticateWithConnection(lease: OperationLease, connectionId: String) {
@@ -189,20 +193,29 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
     internal fun acquire(project: Project): Boolean = acquire(project, null, cancelWithProject = true)
 
+    // Cancelling an RPC future does not establish that backend filesystem work has stopped.
+    internal fun acquireUninstall(project: Project, attempt: AiIntegrationTelemetryAttempt): Boolean =
+        acquire(project, attempt, cancelWithProject = false)
+
     private fun acquire(project: Project, attempt: AiIntegrationTelemetryAttempt?, cancelWithProject: Boolean): Boolean {
         if (project.isDisposed) {
             return false
         }
         val lease = OperationLease(project, attempt, cancelWithProject) { releaseOperation(it, CliOperationOutcome.Cancelled) }
         if (!active.compareAndSet(null, lease)) {
-            active.get()?.terminalSession?.focus?.invoke()
+            focusActiveOperation()
             return false
         }
         return true
     }
 
-    internal fun release() {
-        active.get()?.let { releaseLease(it, AiIntegrationActionStatus.UNKNOWN) }
+    internal fun completeUninstall(attempt: AiIntegrationTelemetryAttempt, status: AiIntegrationActionStatus): Boolean {
+        val lease = active.get()?.takeIf { it.attempt === attempt } ?: return false
+        return releaseLease(lease, status)
+    }
+
+    internal fun trackUninstall(attempt: AiIntegrationTelemetryAttempt, request: CompletableFuture<*>) {
+        active.get()?.takeIf { it.attempt === attempt }?.track(request) ?: request.cancel(true)
     }
 
     internal fun cancel(project: Project) {

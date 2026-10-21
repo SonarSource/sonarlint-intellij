@@ -87,6 +87,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     fun disposeController() {
         Disposer.dispose(controller)
         extraController?.let { Disposer.dispose(it) }
+        UIUtil.dispatchAllInvocationEvents()
     }
 
     @Test
@@ -246,11 +247,11 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
             assertThat(refreshButton().isEnabled).isTrue()
             assertThat(coordinator.activeOperation()).isFalse()
             assertThat(coordinator.execute(project, installed, AiIntegrationsIntent.InstallCli)).isTrue()
-            coordinator.release()
+            coordinator.cancel(project)
             assertThat(coordinator.execute(project, installed, AiIntegrationsIntent.AuthenticateCli)).isTrue()
-            coordinator.release()
+            coordinator.cancel(project)
             assertThat(coordinator.execute(project, installed, AiIntegrationsIntent.IntegrateCli(AiAgent.CURSOR))).isTrue()
-            coordinator.release()
+            coordinator.cancel(project)
             assertThat(coordinator.activeOperation()).isFalse()
             verify(backend, never()).uninstallCli()
         }
@@ -331,18 +332,33 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `does not start uninstall while another CLI operation holds the lease`() {
+    fun `focuses the active terminal instead of starting uninstall`() {
+        Disposer.dispose(controller)
+        val command = CliCommand("sonar", emptyList(), false)
+        val completion = CompletableFuture<TerminalCompletion>()
+        val terminal = mock(CliTerminalAdapter::class.java)
+        var focuses = 0
+        `when`(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        `when`(terminal.launch(project, command)).thenReturn(TerminalLaunch.Started({ focuses++ }, completion))
+        coordinator = CliOperationCoordinator(backend, { terminal }, ConnectionSelector(IntellijConnectionChoiceUi()), { _, _, _ -> }, ::publishOperationFinished)
+        panel = AiIntegrationsPanel(registry)
+        controller = createController()
         load(installedCli())
-        assertThat(coordinator.acquire(project)).isTrue()
+        assertThat(coordinator.execute(project, installedCli(), AiIntegrationsIntent.InstallCli)).isTrue()
+        UIUtil.dispatchAllInvocationEvents()
+        verify(terminal).launch(project, command)
 
         uninstallButton().click()
         UIUtil.dispatchAllInvocationEvents()
 
+        assertThat(focuses).isEqualTo(1)
+        verify(backend, times(1)).getAiIntegrationState(project, emptyList())
         verify(backend, never()).uninstallCli()
-        assertThat(confirmationCount).isEqualTo(1)
+        assertThat(confirmationCount).isZero()
         assertThat(coordinator.activeOperation()).isTrue()
         assertThat(coordinator.lastOutcome()).isNull()
-        coordinator.release()
+        assertThat(completion).isNotDone()
+        completion.complete(TerminalCompletion.Exited(0))
         assertThat(coordinator.activeOperation()).isFalse()
     }
 
@@ -413,6 +429,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
         projectDisposed = true
         Disposer.dispose(closingProject)
+        Disposer.dispose(local)
 
         assertThat(localCoordinator.activeOperation()).isTrue()
         assertThat(localCoordinator.lastOutcome()).isNull()
@@ -431,7 +448,6 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         assertThat(results.single().resetOutput).isEqualTo("reset output")
         assertThat(results.single().cleanupWarnings).isEqualTo("cleanup warning")
         assertThat(localCoordinator.acquire(project)).isTrue()
-        Disposer.dispose(local)
     }
 
     @Test

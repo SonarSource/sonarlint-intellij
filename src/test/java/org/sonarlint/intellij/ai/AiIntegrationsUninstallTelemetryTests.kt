@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.util.ui.UIUtil
 import java.util.concurrent.CompletableFuture
@@ -36,7 +38,10 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
@@ -49,6 +54,12 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
     private val panel: AiIntegrationsPanel = mock()
     private val uninstall = CompletableFuture<UninstallCliResponse>()
     private val statuses = mutableListOf<AiIntegrationActionStatus>()
+    private val origins = mutableListOf<Project?>()
+    private val installed = AiIntegrationSnapshot(
+        CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null, uninstallAvailable = true),
+        listOf(AgentCapability(AiAgent.CURSOR, setOf(AiAgentDetectionSource.CLI), cliIntegrationSupported = true, standaloneMcpSupported = false)),
+        emptyList(), null
+    )
     private lateinit var controller: AiIntegrationsController
     private lateinit var coordinator: CliOperationCoordinator
     private lateinit var intentListener: (AiIntegrationsIntent) -> Unit
@@ -60,18 +71,16 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
             intentListener = it.getArgument(0)
             null
         }.whenever(panel).setIntentListener(any())
-        coordinator = CliOperationCoordinator(backend, { error("terminal unused") }, ConnectionSelector(IntellijConnectionChoiceUi()), { _, _, _ -> }, {})
+        replaceApplicationService(SonarLintTelemetry::class.java, telemetry)
+        coordinator = CliOperationCoordinator(backend, { error("terminal unused") }, ConnectionSelector(IntellijConnectionChoiceUi()), { _, _, _ -> }, ::publishAiIntegrationChange)
+        ApplicationManager.getApplication().messageBus.connect(testRootDisposable)
+            .subscribe(AiIntegrationListener.TOPIC, AiIntegrationListener { origins += it })
         doAnswer {
             statuses.add(it.getArgument(1))
             null
         }.whenever(telemetry).aiIntegrationAction(eq(AiIntegrationAction.UNINSTALL_CLI), any(), eq(null))
         whenever(backend.uninstallCli()).thenReturn(uninstall)
-        whenever(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture.completedFuture(
-            AiIntegrationSnapshot(
-                CliState(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED, "1.0", null, null, uninstallAvailable = true),
-                emptyList(), emptyList(), null
-            )
-        ))
+        whenever(backend.getAiIntegrationState(project, emptyList())).thenReturn(CompletableFuture.completedFuture(installed))
         val registry = AiAgentRegistry { false }
         controller = AiIntegrationsController(
             project, panel, backend, registry, coordinator,
@@ -99,12 +108,12 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `declining confirmation emits nothing`() {
+    fun `declining confirmation reports cancellation`() {
         confirmation = { false }
 
         clickUninstall()
 
-        assertThat(statuses).isEmpty()
+        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.CANCELLED)
         verify(backend, never()).uninstallCli()
         assertThat(coordinator.activeOperation()).isFalse()
     }
@@ -118,22 +127,23 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
         assertThat(statuses).isEmpty()
         verify(backend, never()).uninstallCli()
         assertThat(coordinator.activeOperation()).isTrue()
-        coordinator.release()
+        coordinator.cancel(project)
     }
 
     @Test
-    fun `confirmation exception before the lease emits nothing`() {
+    fun `confirmation exception before the lease finishes the attempt`() {
         confirmation = { throw IllegalStateException("confirmation unavailable") }
         clickUninstall()
-        assertThat(statuses).isEmpty()
+        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.FAILED)
         verify(backend, never()).uninstallCli()
+        statuses.clear()
 
         confirmation = {
             Disposer.dispose(controller)
             throw IllegalStateException("confirmation unavailable")
         }
         clickUninstall()
-        assertThat(statuses).isEmpty()
+        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.CANCELLED)
         verify(backend, never()).uninstallCli()
     }
 
@@ -146,6 +156,51 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
         assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.FAILED)
         verify(backend, never()).uninstallCli()
         assertThat(coordinator.activeOperation()).isFalse()
+    }
+
+    @Test
+    fun `failed uninstall preflight finishes and invalidates once`() {
+        whenever(backend.getAiIntegrationState(project, emptyList())).thenReturn(
+            CompletableFuture.failedFuture(IllegalStateException("preflight unavailable")),
+            CompletableFuture.completedFuture(installed)
+        )
+
+        clickUninstall()
+
+        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.FAILED)
+        assertThat(origins).containsExactly(project)
+        verify(backend, never()).uninstallCli()
+        assertThat(coordinator.activeOperation()).isFalse()
+    }
+
+    @Test
+    fun `unavailable uninstall preflight finishes and invalidates once`() {
+        whenever(backend.getAiIntegrationState(project, emptyList())).thenReturn(
+            CompletableFuture.completedFuture(installed.copy(cli = installed.cli.copy(uninstallAvailable = false)))
+        )
+
+        clickUninstall()
+
+        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.FAILED)
+        assertThat(origins).containsExactly(project)
+        verify(backend, never()).uninstallCli()
+        assertThat(coordinator.activeOperation()).isFalse()
+    }
+
+    @Test
+    fun `post confirmation contention fails the accepted attempt without releasing another lease`() {
+        confirmation = {
+            assertThat(coordinator.acquire(project)).isTrue()
+            true
+        }
+
+        clickUninstall()
+
+        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.FAILED)
+        assertThat(origins).containsExactly(project)
+        verify(backend, never()).uninstallCli()
+        assertThat(coordinator.activeOperation()).isTrue()
+        coordinator.cancel(project)
     }
 
     @Test
