@@ -23,28 +23,40 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
-import org.sonarlint.intellij.fixtures.LightTestProjectFiles
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache
+import org.sonarlint.intellij.analysis.LightTestAnalysis
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.page.EditorTrafficLightPage
 
 class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
 
+    private lateinit var analysis: LightTestAnalysis
+
+    @BeforeEach
+    fun waitForReadyAndAnalysisHelper() {
+        analysis = LightTestAnalysis(project, module, testDataPath, ::createTestPsiFile)
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
+            val readiness = getService(project, AnalysisReadinessCache::class.java)
+            assertThat(readiness.isModuleReady(module)).isTrue()
+            assertThat(readiness.isProjectReady).isTrue()
+        }
+    }
+
     @Test
     fun should_show_issue_count_on_traffic_light_after_analysis_via_inspection_widget_ep() {
-        val file = LightTestProjectFiles.registerFromTestData(module, testDataPath, "src/file.xml", ::createTestPsiFile)
-        FileEditorManager.getInstance(project).openFile(file, true)
+        val file = analysis.registerFileFromTestData("src/file.xml")
+        readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
+        val analyzed = analysis.runOnTheFlyAnalysis(file)
 
-        Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
-            assertThat(mainToolWindow.findings.toolbar.isAnalyzeCurrentFileEnabled).isTrue()
-        }
-        mainToolWindow.findings.toolbar.analyzeCurrentFile()
-        Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted {
-            assertThat(mainToolWindow.findings.issues).isNotEmpty()
-        }
-        val issueCount = mainToolWindow.findings.issues.size
+        assertThat(mainToolWindow.findings.issues).hasSize(analyzed.issueCount)
 
-        val trafficLight = EditorTrafficLightPage.createForSelectedEditor(project)
-        assertThat(trafficLight.issueCountLabelText).isEqualTo(issueCount.toString())
+        readOnEdt {
+            val trafficLight = EditorTrafficLightPage.createForSelectedEditor(project)
+            assertThat(trafficLight.issueCountLabelText).isEqualTo(analyzed.issueCount.toString())
+        }
     }
 }
