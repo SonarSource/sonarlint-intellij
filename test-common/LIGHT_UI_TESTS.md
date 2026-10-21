@@ -76,10 +76,12 @@ assertThat(getProjectSettings().fileExclusions).containsExactly("FILE:src/main/j
 | Findings filter bar (toggle + focus on new code) | [`FindingsTabFiltersPanelPage`](../src/test/java/org/sonarlint/intellij/ui/page/FindingsTabFiltersPanelPage.kt) via `mainToolWindow.findings.filters` |
 | Report tab assertions | [`ReportTabPage`](../src/test/java/org/sonarlint/intellij/ui/page/ReportTabPage.kt) via `mainToolWindow.reportTab()` |
 
+Former Standalone UI IT scenarios are covered by [`StandaloneIdeaLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/StandaloneIdeaLightTests.kt) (global rule toggle, project file exclusions, IaC finding, walkthrough auto-open policy via [`shouldAutoOpenWalkthrough`](../src/main/java/org/sonarlint/intellij/OpenWelcomePageOnceOneProjectOpened.kt)).
+
 Example (focus on new code, then report messages after a full analysis):
 
 ```kotlin
-mainToolWindow.findings.filters.setFocusOnNewCode(true)
+mainToolWindow.findings.filters.setFocusOnNewCode(true) // waits until CleanAsYouCodeService reflects the toggle
 // trigger analyze (e.g. editor or toolbar action) …
 awaitUntilAsserted {
     assertThat(mainToolWindow.reportTab().containsAllTexts(

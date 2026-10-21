@@ -20,13 +20,17 @@
 package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.project.Project
+import java.util.concurrent.TimeUnit
+import org.awaitility.Awaitility
+import org.sonarlint.intellij.cayc.CleanAsYouCodeService
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 
 /** Page object for a production [FiltersPanel] (Findings or Report tab). */
 class FiltersPanelPage internal constructor(
-    @Suppress("unused") private val project: Project,
+    private val project: Project,
     private val panel: FiltersPanel,
 ) {
 
@@ -43,6 +47,12 @@ class FiltersPanelPage internal constructor(
                 checkbox.doClick()
             }
         }
+        Awaitility.await()
+            .pollInSameThread()
+            .atMost(30, TimeUnit.SECONDS)
+            .until {
+                getService(project, CleanAsYouCodeService::class.java).shouldFocusOnNewCode() == enabled
+            }
         repeat(30) { pumpEdt() }
     }
 
