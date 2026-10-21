@@ -254,7 +254,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
         paths.forEach(source -> {
           try {
             var relative = sourceDirectory.relativize(source);
-            var target = targetRoot.resolve(relative);
+            var target = copiedTreeRoot.resolve(relative);
             if (Files.isDirectory(source)) {
               Files.createDirectories(target);
             } else {
@@ -267,16 +267,16 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
         });
       }
       moduleScopePathsToDelete.add(copiedTreeRoot);
-      var virtualDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(targetRoot);
-      var contentRootAlreadyRegistered = virtualDir != null && Arrays.stream(ModuleRootManager.getInstance(getModule()).getContentRoots())
-        .anyMatch(root -> root.equals(virtualDir));
-      if (virtualDir != null && !contentRootAlreadyRegistered) {
-        moduleScopeContentRootsToRemove.add(virtualDir);
+      var virtualCopiedDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(copiedTreeRoot);
+      var copiedDirNeedsContentRoot = virtualCopiedDir != null && Arrays.stream(ModuleRootManager.getInstance(getModule()).getContentRoots())
+        .noneMatch(root -> isSameOrAncestor(root, virtualCopiedDir));
+      if (copiedDirNeedsContentRoot) {
+        moduleScopeContentRootsToRemove.add(virtualCopiedDir);
         WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model ->
-          model.addContentEntry(virtualDir).addSourceFolder(virtualDir, false)));
+          model.addContentEntry(virtualCopiedDir).addSourceFolder(virtualCopiedDir, false)));
       }
-      VfsUtil.markDirtyAndRefresh(false, true, true, virtualDir);
-      notifyBackendOfCopiedTree(sourceDirectory, targetRoot);
+      VfsUtil.markDirtyAndRefresh(false, true, true, virtualCopiedDir);
+      notifyBackendOfCopiedTree(sourceDirectory, copiedTreeRoot);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -299,13 +299,13 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
     }
   }
 
-  private void notifyBackendOfCopiedTree(Path sourceDirectory, Path targetRoot) {
+  private void notifyBackendOfCopiedTree(Path sourceDirectory, Path copiedTreeRoot) {
     try {
       var events = new ArrayList<VirtualFileEvent>();
       try (var paths = Files.walk(sourceDirectory)) {
         paths.filter(Files::isRegularFile).forEach(source -> {
           var relative = sourceDirectory.relativize(source);
-          var target = targetRoot.resolve(relative);
+          var target = copiedTreeRoot.resolve(relative);
           var virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(target);
           if (virtualFile != null) {
             events.add(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile));
@@ -397,6 +397,17 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   protected String getProjectBackendId() {
     return getProject().getProjectFilePath();
+  }
+
+  private static boolean isSameOrAncestor(VirtualFile ancestor, VirtualFile file) {
+    var current = file;
+    while (current != null) {
+      if (current.equals(ancestor)) {
+        return true;
+      }
+      current = current.getParent();
+    }
+    return false;
   }
 
   private void cleanupModuleScopeArtifacts() {
