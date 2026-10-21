@@ -14,18 +14,19 @@ Keep a **small smoke layer** of UI integration tests (Remote Robot, real IDE fra
 | Focus on new code + rules | `StandaloneIdeaTests.should_exclude_rule_and_focus_on_new_code` | Multi-step UI with report tab |
 | File exclusions via project settings | `StandaloneIdeaTests.should_exclude_file_and_analyze_file_and_no_issues_found` | Project Settings > File Exclusions UI (distinct from exclude-file menu action) |
 | Helm/Kubernetes template in Findings tab | `StandaloneIdeaTests.should_analyze_ansible` | Real IDE + IaC analyzer on Helm chart project (no equivalent light UI test yet) |
+| On-the-fly XML in Findings tab | `IdeaUltimateTests.should_analyze_xml` | End-to-end smoke on flavor IT fixture (light test `FindingsTabAnalysisLightTests` covers toolbar analyze on `file.xml` / `xml:S1778`) |
 
-## Migrated to light tests (IT disabled or narrowed)
+## Covered by light tests (same scenarios, UI IT not removed yet)
 
 | UI IT scenario | Light test replacement |
 | --- | --- |
 | Exclude file menu action | `ExcludeFileActionLightTests` |
 | Editor traffic light | `SonarLintTrafficLightActionLightTests` |
-| On-the-fly XML issue in Findings tab | `FindingsTabAnalysisLightTests` (xml:S1778 on `file.xml`) |
+| On-the-fly XML issue in Findings tab | `FindingsTabAnalysisLightTests` (`xml:S1778` on `file.xml`; IT uses `sample-xml` / FIXME message) |
 | Notification groups / secrets balloon | `SonarLintNotificationGroupsLightTests`, `SonarLintProjectNotificationsTests` |
 | Settings panels | `SonarLintConfigurableLightTests`, existing panel unit tests |
 | Walkthrough factory content | `SonarLintWalkthroughToolWindowLightTests` |
 
 ## CI impact
 
-Track `:its:test` and `:its:check` duration before/after disabling redundant standalone scenarios. Light tests run under `:test` (faster, no display).
+Track `:its:test` and `:its:check` duration over time. Disabling or narrowing redundant standalone scenarios is follow-up work once light coverage is stable; light tests already run under `:test` (faster, no display).
