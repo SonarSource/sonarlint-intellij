@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
@@ -80,10 +81,13 @@ class EditorTrafficLightPage private constructor(
             if (group != null) {
                 return group.childActionsOrStubs.filterIsInstance<SonarLintTrafficLightAction>().single()
             }
-            check(editor.editorKind != EditorKind.MAIN_EDITOR) {
-                "SonarLintEditorWidgetActionProvider returned no action for MAIN_EDITOR"
+            check(
+                ApplicationManager.getApplication().isUnitTestMode &&
+                    editor.editorKind == EditorKind.UNTYPED,
+            ) {
+                "SonarLintEditorWidgetActionProvider returned no action for editor kind ${editor.editorKind}"
             }
-            // Light sandbox editors are often UNTYPED; production only registers the widget for MAIN_EDITOR.
+            // Light fixture editors are UNTYPED; production registers the widget only for MAIN_EDITOR.
             return SonarLintTrafficLightAction(editor)
         }
 
