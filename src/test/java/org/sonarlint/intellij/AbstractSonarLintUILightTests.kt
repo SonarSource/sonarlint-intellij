@@ -19,12 +19,23 @@
  */
 package org.sonarlint.intellij
 
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.vfs.VirtualFile
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.TimeUnit
+import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.ui.page.SonarLintMainToolWindowPage
 import org.sonarlint.intellij.ui.page.SonarLintUiTestContext
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
 
@@ -42,5 +53,26 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
     @AfterEach
     fun closeMainToolWindow() {
         uiContext.releaseEditorsAndToolWindows()
+    }
+
+    /** Copies a file from the test class `testData` tree into the module and notifies SLOOP. */
+    protected fun registerFileFromTestData(relativePath: String): VirtualFile {
+        val sourcePath = Path.of(testDataPath, relativePath).toAbsolutePath()
+        check(Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
+        val content = Files.readString(sourcePath)
+        val virtualFile = createTestPsiFile(relativePath, content).virtualFile
+        getService(BackendService::class.java).updateFileSystem(
+            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
+            true,
+        )
+        return virtualFile
+    }
+
+    protected fun waitUntilAnalysisReady(timeoutSeconds: Long = 30, module: Module = this.module) {
+        Awaitility.await().atMost(timeoutSeconds, TimeUnit.SECONDS).untilAsserted {
+            val readiness = getService(project, AnalysisReadinessCache::class.java)
+            assertThat(readiness.isModuleReady(module)).isTrue()
+            assertThat(readiness.isProjectReady).isTrue()
+        }
     }
 }

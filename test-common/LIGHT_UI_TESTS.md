@@ -31,12 +31,16 @@ Light UI tests interact with the product through **page objects** (e.g. `SonarLi
 Example assertion (see `FindingsTabAnalysisLightTests`):
 
 ```kotlin
-val file = analysis.registerFileFromTestData("src/file.xml")
+val file = registerFileFromTestData("src/file.xml")
 readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
-analysis.runOnTheFlyAnalysis(file)
+mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
+Awaitility.await().atMost(60, TimeUnit.SECONDS).until { !AnalysisStatus.get(project).isRunning }
+readOnEdt { syncFindingsTabWithEditorSelection(project) }
 assertThat(mainToolWindow.findings.issues).hasSize(1)
 assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
 ```
+
+Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button—not `AnalysisSubmitter` directly. After analysis finishes, refresh the tab with `syncFindingsTabWithEditorSelection` before asserting the tree.
 
 Reading `findingsTree` / `issues` uses [`readOnEdt { … }`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/UiTestEdt.kt) so Swing and file-editor state are read on the EDT, including from Awaitility poll threads.
 
