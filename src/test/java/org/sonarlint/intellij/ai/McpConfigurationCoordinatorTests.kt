@@ -844,12 +844,40 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `MCP transaction failure and executor rejection finish accepted attempts`() {
+    fun `MCP executor rejection finishes the accepted attempt as failed`() {
         val origins = captureOrigins()
         val coordinator = coordinator(java.util.concurrent.Executor { throw java.util.concurrent.RejectedExecutionException() })
         assertThat(coordinator.setUp(project, setupSnapshot(), AiAgent.CURSOR)).isFalse()
         assertSetupOutcome(AiIntegrationActionStatus.FAILED)
         assertThat(origins).containsExactly(project)
+    }
+
+    @Test
+    fun `queued MCP transaction failure finishes the accepted attempt as failed`() {
+        val origins = captureOrigins()
+        val pending = mutableListOf<Runnable>()
+        val snapshot = setupSnapshot()
+        val coordinator = coordinator(java.util.concurrent.Executor { pending += it })
+        whenever(backend.inspectMcpConfiguration(any(), any())).thenReturn(CompletableFuture.failedFuture(IOException("inspection failed")))
+
+        assertThat(coordinator.setUp(project, snapshot, AiAgent.CURSOR)).isTrue()
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.CONFIGURE_MCP, AiIntegrationActionStatus.STARTED, AiAgent.CURSOR)
+        verify(telemetry, never()).aiIntegrationAction(eq(AiIntegrationAction.CONFIGURE_MCP), eq(AiIntegrationActionStatus.FAILED), any())
+        assertThat(origins).isEmpty()
+        assertThat(ui.messages).isEmpty()
+        verify(backend, never()).inspectMcpConfiguration(any(), any())
+
+        pending.single().run()
+        UIUtil.dispatchAllInvocationEvents()
+
+        assertSetupOutcome(AiIntegrationActionStatus.FAILED)
+        assertThat(origins).containsExactly(project)
+        assertThat(ui.messages).containsExactly(RecordingMcpUi.UiMessage(
+            "MCP setup failed. Check the configuration file permissions and connection settings, then retry.", NotificationType.ERROR
+        ))
+        assertThat(Files.exists(snapshot.mcpConfigurations.getValue(AiAgent.CURSOR).path)).isFalse()
+        verify(backend).inspectMcpConfiguration(AiAgent.CURSOR, "")
+        verify(backend, never()).generateMcpConfiguration(any(), any())
     }
 
     @Test
