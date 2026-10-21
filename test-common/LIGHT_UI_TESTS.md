@@ -34,15 +34,15 @@ Example assertion (see `FindingsTabAnalysisLightTests`):
 val file = registerFileFromTestData("src/file.xml")
 readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
 mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
-Awaitility.await().atMost(60, TimeUnit.SECONDS).until { !AnalysisStatus.get(project).isRunning }
-readOnEdt { syncFindingsTabWithEditorSelection(project) }
-assertThat(mainToolWindow.findings.issues).hasSize(1)
-assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
+mainToolWindow.findings.awaitUntilAsserted {
+    assertThat(findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
+    assertThat(issues.single().ruleKey).isEqualTo("xml:S1778")
+}
 ```
 
-Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button—not `AnalysisSubmitter` directly. After analysis finishes, refresh the tab with `syncFindingsTabWithEditorSelection` before asserting the tree.
+Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button. Poll UI state with [`FindingsTabPage.awaitUntilAsserted`](src/test/java/org/sonarlint/intellij/ui/page/FindingsTabPage.kt) (same-thread polling for EDT-safe reads)—not `AnalysisSubmitter` or `AnalysisStatus`.
 
-Reading `findingsTree` / `issues` uses [`readOnEdt { … }`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/UiTestEdt.kt) so Swing and file-editor state are read on the EDT, including from Awaitility poll threads.
+Reading `findingsTree` / `issues` runs on the EDT via [`readOnEdt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/UiTestEdt.kt) and refreshes the tab through [`FindingsTabPage.refreshWithEditorSelection`](src/test/java/org/sonarlint/intellij/ui/page/FindingsTabPage.kt) before each read.
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 

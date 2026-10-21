@@ -19,7 +19,16 @@
  */
 package org.sonarlint.intellij.ui.page
 
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import java.util.concurrent.TimeUnit
+import org.awaitility.Awaitility
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
+import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.currentfile.TreeType
@@ -30,29 +39,82 @@ class FindingsTabPage internal constructor(
     private val panel: FindingsPanel,
 ) {
 
-    val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(project, panel)
+    val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
     val findingsTree: FindingsTreePage
-        get() = readOnEdt {
-            syncFindingsTabWithEditorSelection(project)
+        get() = if (skipRefreshBeforeRead.get()) {
             FindingsTreePage(findingsIssueTree())
+        } else {
+            readSynced { FindingsTreePage(findingsIssueTree()) }
         }
 
     val oldFindingsTree: FindingsTreePage
-        get() = readOnEdt {
-            syncFindingsTabWithEditorSelection(project)
+        get() = if (skipRefreshBeforeRead.get()) {
             FindingsTreePage(oldFindingsIssueTree())
+        } else {
+            readSynced { FindingsTreePage(oldFindingsIssueTree()) }
         }
 
     val issues: List<FindingNodePage>
-        get() = readOnEdt {
-            syncFindingsTabWithEditorSelection(project)
+        get() = if (skipRefreshBeforeRead.get()) {
             FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
+        } else {
+            readSynced {
+                FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
+            }
         }
+
+    fun awaitUntilAsserted(timeoutSeconds: Long = 60, assertions: FindingsTabPage.() -> Unit) {
+        Awaitility.await()
+            .pollInSameThread()
+            .atMost(timeoutSeconds, TimeUnit.SECONDS)
+            .untilAsserted {
+                readOnEdt {
+                    refreshWithEditorSelection()
+                    repeat(30) { pumpEdt() }
+                    skipRefreshBeforeRead.set(true)
+                    try {
+                        assertions()
+                    } finally {
+                        skipRefreshBeforeRead.set(false)
+                    }
+                }
+            }
+    }
+
+    /** Refreshes the tab through [SonarLintToolWindow]; call only on the EDT. */
+    internal fun refreshWithEditorSelection() {
+        val selected = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
+        val file = resolveFindingsFile(selected)
+        if (file != null) {
+            getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(file, EditorHighlightRefresh.NONE)
+        }
+        repeat(10) { pumpEdt() }
+    }
+
+    private fun <T> readSynced(read: () -> T): T =
+        readOnEdt {
+            refreshWithEditorSelection()
+            repeat(30) { pumpEdt() }
+            read()
+        }
+
+    private fun resolveFindingsFile(selected: VirtualFile?): VirtualFile? {
+        val holder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
+        val issueFile = holder.getAllIssues().firstOrNull()?.file()
+        if (issueFile != null) {
+            return issueFile
+        }
+        return selected
+    }
 
     private fun findingsIssueTree(): IssueTree =
         panel.getTree(TreeType.ISSUES, isOld = false) as IssueTree
 
     private fun oldFindingsIssueTree(): IssueTree =
         panel.getTree(TreeType.ISSUES, isOld = true) as IssueTree
+
+    private companion object {
+        private val skipRefreshBeforeRead = ThreadLocal.withInitial { false }
+    }
 }
