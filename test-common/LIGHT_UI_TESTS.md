@@ -60,7 +60,7 @@ Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/or
 
 Use [`openSqIdeSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Tools → SonarQube for IDE** (global configurable) and [`openSqIdeProjectSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Project Settings** (Findings toolbar configure action). Each opener returns a root page object with tab accessors; **File Exclusions** exposes `clickAddExclusion()` → dialog page object → `save()` on the root page persists via `Configurable.apply()`.
 
-Example (project file exclusion, see `SonarLintProjectSettingsLightTests`):
+Example (project file exclusion):
 
 ```kotlin
 val settings = openSqIdeProjectSettings()
