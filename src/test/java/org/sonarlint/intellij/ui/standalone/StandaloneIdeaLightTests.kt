@@ -14,7 +14,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this file; if not, write to the Free Software
+ * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 package org.sonarlint.intellij.ui.standalone
@@ -32,7 +32,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import java.nio.file.Path
 
 /**
- * Light UI coverage for former `@Tag("Standalone")` UI ITs in [org.sonarlint.intellij.its.tests.StandaloneIdeaTests].
+ * Light UI coverage for former Standalone UI IT scenarios (removed in SLI-2990).
  */
 class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
 
