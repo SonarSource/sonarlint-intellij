@@ -24,6 +24,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
@@ -33,8 +34,6 @@ import javax.swing.JLabel
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.sonarlint.intellij.analysis.AnalysisSubmitter
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider
 import org.sonarlint.intellij.fixtures.findComponents
 import org.sonarlint.intellij.ui.traffic.light.SonarLintTrafficLightAction
@@ -53,18 +52,19 @@ class EditorTrafficLightPage private constructor(
 
         fun createForSelectedEditor(project: Project): EditorTrafficLightPage =
             readOnEdt {
-                val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
+                val fileEditorManager = FileEditorManager.getInstance(project)
+                val file = fileEditorManager.selectedFiles.firstOrNull()
                     ?: error("No selected file")
-                val editor = (FileEditorManager.getInstance(project).getSelectedEditor(file) as? TextEditor)?.editor
-                    ?: error("No main editor for selected file")
+                val editor = fileEditorManager.selectedTextEditor
+                    ?: (fileEditorManager.getSelectedEditor(file) as? TextEditor)?.editor
+                    ?: error("No text editor for selected file")
                 createOnEdt(project, editor, file)
             }
 
         private fun createOnEdt(project: Project, editor: Editor, file: VirtualFile): EditorTrafficLightPage {
             val action = trafficLightActionFromExtension(editor)
             val presentation = Presentation()
-            val findingsFile = resolveFileForFindings(project, file)
-            val event = actionEvent(project, editor, findingsFile, presentation)
+            val event = actionEvent(project, editor, file, presentation)
             action.update(event)
             val widget = action.createCustomComponent(presentation, INSPECTION_WIDGET_PLACE) as SonarLintTrafficLightWidget
             action.updateCustomComponent(widget, presentation)
@@ -72,24 +72,19 @@ class EditorTrafficLightPage private constructor(
         }
 
         private fun trafficLightActionFromExtension(editor: Editor): SonarLintTrafficLightAction {
-            InspectionWidgetActionProvider.EP_NAME.extensionList
+            val provider = InspectionWidgetActionProvider.EP_NAME.extensionList
                 .filterIsInstance<SonarLintEditorWidgetActionProvider>()
                 .singleOrNull()
                 ?: error("SonarLintEditorWidgetActionProvider is not registered")
-            val group = SonarLintEditorWidgetActionProvider().createAction(editor) as? DefaultActionGroup
+            val group = provider.createAction(editor) as? DefaultActionGroup
             if (group != null) {
                 return group.childActionsOrStubs.filterIsInstance<SonarLintTrafficLightAction>().single()
             }
-            // Light tests may not expose the editor as MAIN_EDITOR; still drive SonarLintTrafficLightAction.
-            return SonarLintTrafficLightAction(editor)
-        }
-
-        private fun resolveFileForFindings(project: Project, file: VirtualFile): VirtualFile {
-            val holder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-            if (holder.getIssuesForFile(file).isNotEmpty()) {
-                return file
+            check(editor.editorKind != EditorKind.MAIN_EDITOR) {
+                "SonarLintEditorWidgetActionProvider returned no action for MAIN_EDITOR"
             }
-            return holder.getAllIssues().firstOrNull()?.file() ?: file
+            // Light sandbox editors are often UNTYPED; production only registers the widget for MAIN_EDITOR.
+            return SonarLintTrafficLightAction(editor)
         }
 
         private fun actionEvent(

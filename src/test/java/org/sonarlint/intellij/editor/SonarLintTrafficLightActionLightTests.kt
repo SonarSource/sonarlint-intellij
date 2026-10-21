@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.editor
 
-import com.intellij.openapi.fileEditor.FileEditorManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -36,8 +35,7 @@ class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_issue_count_on_traffic_light_after_analysis_via_inspection_widget_ep() {
-        val file = registerFileFromTestData("src/file.xml")
-        readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
+        val file = openFileFromTestData("src/file.xml")
 
         mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
 
