@@ -331,17 +331,32 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `does not start uninstall while another CLI operation holds the lease`() {
+    fun `focuses the active terminal instead of starting uninstall`() {
+        Disposer.dispose(controller)
+        val command = CliCommand("sonar", emptyList(), false)
+        val completion = CompletableFuture<TerminalCompletion>()
+        val terminal = mock(CliTerminalAdapter::class.java)
+        var focuses = 0
+        `when`(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
+        `when`(terminal.launch(project, command)).thenReturn(TerminalLaunch.Started({ focuses++ }, completion))
+        coordinator = CliOperationCoordinator(backend, { terminal }, ConnectionSelector(IntellijConnectionChoiceUi()), { _, _, _ -> }, ::publishOperationFinished)
+        panel = AiIntegrationsPanel(registry)
+        controller = createController()
         load(installedCli())
-        assertThat(coordinator.acquire(project)).isTrue()
+        assertThat(coordinator.execute(project, installedCli(), AiIntegrationsIntent.InstallCli)).isTrue()
+        UIUtil.dispatchAllInvocationEvents()
+        verify(terminal).launch(project, command)
 
         uninstallButton().click()
         UIUtil.dispatchAllInvocationEvents()
 
+        assertThat(focuses).isEqualTo(1)
+        verify(backend, times(1)).getAiIntegrationState(project, emptyList())
         verify(backend, never()).uninstallCli()
         assertThat(confirmationCount).isZero()
         assertThat(coordinator.activeOperation()).isTrue()
         assertThat(coordinator.lastOutcome()).isNull()
+        assertThat(completion).isNotDone()
         coordinator.release()
         assertThat(coordinator.activeOperation()).isFalse()
     }

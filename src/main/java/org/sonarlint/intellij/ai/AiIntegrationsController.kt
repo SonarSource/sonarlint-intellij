@@ -156,7 +156,11 @@ class AiIntegrationsController @JvmOverloads constructor(
 
     private fun uninstallCli() {
         val attempt = synchronized(uninstallLock) {
-            if (isDisposed() || panel.isCliUninstallBusy() || pendingUninstall != null || cliCoordinator.activeOperation()) return
+            if (isDisposed() || panel.isCliUninstallBusy() || pendingUninstall != null) return
+            if (cliCoordinator.activeOperation()) {
+                cliCoordinator.focusActiveOperation()
+                return
+            }
             AiIntegrationTelemetryAttempt(telemetry, AiIntegrationAction.UNINSTALL_CLI).also { pendingUninstall = it }
         }
         try {

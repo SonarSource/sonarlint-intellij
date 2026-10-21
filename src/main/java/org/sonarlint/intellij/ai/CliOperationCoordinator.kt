@@ -127,6 +127,10 @@ class CliOperationCoordinator @JvmOverloads constructor(
 
     internal fun activeOperation(): Boolean = active.get() != null
 
+    internal fun focusActiveOperation() {
+        active.get()?.terminalSession?.focus?.invoke()
+    }
+
     internal fun lastOutcome(): CliOperationOutcome? = lastOutcome.get()
 
     private fun authenticateWithConnection(lease: OperationLease, connectionId: String) {
@@ -199,7 +203,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
         }
         val lease = OperationLease(project, attempt, cancelWithProject) { releaseOperation(it, CliOperationOutcome.Cancelled) }
         if (!active.compareAndSet(null, lease)) {
-            active.get()?.terminalSession?.focus?.invoke()
+            focusActiveOperation()
             return false
         }
         return true
