@@ -24,11 +24,9 @@ import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.Presentation
-import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.fixtures.findComponents
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
@@ -45,13 +43,13 @@ class FindingsTabToolbarPage internal constructor(
 
     val isAnalyzeCurrentFileEnabled: Boolean
         get() = readOnEdt {
-            syncFindingsPanelWithSelectedEditor(project, panel)
+            syncFindingsTabWithEditorSelection(project)
             isAnalyzeCurrentFileActionEnabled()
         }
 
     fun analyzeCurrentFile() {
         readOnEdt {
-            syncFindingsPanelWithSelectedEditor(project, panel)
+            syncFindingsTabWithEditorSelection(project)
             val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
                 ?: error("No file selected in editor")
             val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
@@ -93,8 +91,4 @@ class FindingsTabToolbarPage internal constructor(
         return presentation.isEnabled && presentation.isVisible
     }
 
-    private fun analyzeCurrentFileButton(): ActionButton? {
-        val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
-        return panel.findComponents<ActionButton>().firstOrNull { it.action === analyzeAction }
-    }
 }

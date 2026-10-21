@@ -22,21 +22,22 @@ package org.sonarlint.intellij.ui.page
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
+import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
-import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 
-/** Keeps the Findings tab data context aligned with the selected editor file (toolbar actions, trees). */
-internal fun syncFindingsPanelWithSelectedEditor(project: Project, panel: FindingsPanel) {
+/** Refreshes the Findings tab through [SonarLintToolWindow], matching production updates. */
+internal fun syncFindingsTabWithEditorSelection(project: Project) {
     readOnEdt {
         val selected = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
         val file = resolveFindingsFile(project, selected)
-        panel.update(file, EditorHighlightRefresh.NONE)
         if (file != null) {
-            panel.refreshView(EditorHighlightRefresh.NONE)
+            getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(file, EditorHighlightRefresh.NONE)
         }
+        repeat(10) { pumpEdt() }
     }
 }
 

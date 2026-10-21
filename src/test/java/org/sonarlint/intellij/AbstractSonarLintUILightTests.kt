@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.trigger.EditorOpenTrigger
 import org.sonarlint.intellij.ui.page.SonarLintMainToolWindowPage
 import org.sonarlint.intellij.ui.page.SonarLintUiTestContext
 
@@ -36,7 +35,6 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
     fun openMainToolWindow() {
         // Unit test mode skips StartServicesOnProjectOpened; register editor listeners before tests open files.
         getService(project, AnalysisSubmitter::class.java)
-        getService(project, EditorOpenTrigger::class.java).onProjectOpened()
         uiContext = SonarLintUiTestContext(project)
         mainToolWindow = SonarLintMainToolWindowPage.create(project)
     }
