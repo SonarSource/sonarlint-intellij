@@ -28,9 +28,11 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.fs.VirtualFileEvent
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 import org.sonarlint.intellij.HAS_WALKTHROUGH_RUN_ONCE
 import org.sonarlint.intellij.shouldAutoOpenWalkthrough
-import java.nio.file.Path
 import org.junit.jupiter.api.AfterEach
 
 /**
@@ -102,13 +104,9 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_analyze_ansible() {
-        // Same fixture as UI IT (`its/projects/DuplicatedEnvsChart`). Helm evaluation does not resolve in light
-        // tests (SonarLint FS); materialize the template as IT would after rendering with values.yaml.
-        val chartRoot = Path.of("its/projects/DuplicatedEnvsChart").toAbsolutePath()
-        copyDirectoryIntoModuleScopeRoot(chartRoot)
-        waitUntilAnalysisReady()
-        writeModuleScopeFile(
-            // Not under `templates/` so IaC treats this as plain Kubernetes YAML (Helm dir resolution fails in light tests).
+        // Same finding as UI IT (`DuplicatedEnvsChart` / automount). Helm does not resolve in light tests;
+        // use plain Kubernetes YAML materialized on disk (as IT would after template rendering).
+        val yaml = createAndOpenTestVirtualFile(
             "memory_limit_pod2-evaluated.yml",
             """
             apiVersion: v1
@@ -130,7 +128,10 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
                       cpu: 200m
             """.trimIndent() + "\n",
         )
-        val yaml = openModuleScopeRelativeFile("memory_limit_pod2-evaluated.yml")
+        getService(BackendService::class.java).updateFileSystem(
+            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, yaml))),
+            true,
+        )
         mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(yaml)
 
         awaitUntilAsserted(timeoutSeconds = 60) {
