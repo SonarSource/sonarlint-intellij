@@ -253,8 +253,8 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
 
     @Test
     fun `opens the matching guide from each card`() {
-        val openedUrls = mutableListOf<String>()
-        val panel = AiIntegrationsPanel(openLink = { openedUrls += it })
+        val intents = mutableListOf<AiIntegrationsIntent>()
+        val panel = AiIntegrationsPanel().apply { setIntentListener { intents += it } }
 
         val vortexUrl = SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK
         val cliDescription = descendants(panel).filterIsInstance<JEditorPane>().first { it.text.contains(vortexUrl) }
@@ -265,10 +265,10 @@ class AiIntegrationsPanelTests : AbstractSonarLintLightTests() {
             descendants(panel).filterIsInstance<JButton>().first { it.text == label }.doClick()
         }
 
-        assertThat(openedUrls).containsExactly(
-            vortexUrl,
-            SonarLintDocumentation.Intellij.SONARQUBE_CLI_GUIDE_LINK,
-            SonarLintDocumentation.Intellij.MCP_CONFIGURATION_GUIDE_LINK
+        assertThat(intents).containsExactly(
+            AiIntegrationsIntent.OpenVortexDocumentation,
+            AiIntegrationsIntent.OpenCliDocumentation,
+            AiIntegrationsIntent.OpenMcpDocumentation
         )
     }
 

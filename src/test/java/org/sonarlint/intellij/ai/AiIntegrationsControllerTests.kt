@@ -69,8 +69,8 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     @BeforeEach
     fun setUpController() {
         backend = mock(BackendService::class.java)
-        coordinator = createCoordinator()
         replaceApplicationService(SonarLintTelemetry::class.java, mock(SonarLintTelemetry::class.java))
+        coordinator = createCoordinator()
         panel = AiIntegrationsPanel(registry)
         `when`(backend.inspectMcpConfiguration(any(), any())).thenReturn(
             CompletableFuture.completedFuture(McpConfigurationInspectionResponse(McpConfigurationState.NOT_CONFIGURED, emptyList()))

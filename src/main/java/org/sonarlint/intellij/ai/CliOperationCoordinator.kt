@@ -37,6 +37,9 @@ import java.util.concurrent.atomic.AtomicReference
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
 
@@ -49,20 +52,26 @@ class CliOperationCoordinator @JvmOverloads constructor(
         projectLessNotification("SonarQube CLI", message, type)
     },
     private val refreshViews: (Project?) -> Unit = ::publishAiIntegrationChange,
-    private val runAuthentication: (Task.Backgroundable) -> Unit = { it.queue() }
+    private val runAuthentication: (Task.Backgroundable) -> Unit = { it.queue() },
+    private val telemetry: SonarLintTelemetry = getService(SonarLintTelemetry::class.java)
 ) {
     private val active = AtomicReference<OperationLease?>()
     private val lastOutcome = AtomicReference<CliOperationOutcome?>()
     fun execute(project: Project, snapshot: AiIntegrationSnapshot, intent: AiIntegrationsIntent): Boolean {
-        if (project.isDisposed || intent is AiIntegrationsIntent.UninstallCli) {
-            return false
+        val action = when (intent) {
+            AiIntegrationsIntent.InstallCli -> AiIntegrationAction.INSTALL_CLI
+            AiIntegrationsIntent.AuthenticateCli -> AiIntegrationAction.LOGIN_CLI
+            is AiIntegrationsIntent.IntegrateCli -> AiIntegrationAction.INTEGRATE_AGENT
+            else -> return false
         }
         if (!acquire(project)) {
             return false
         }
         val lease = active.get() ?: return false
-        Disposer.register(project, lease)
+        lease.attempt = AiIntegrationTelemetryAttempt(telemetry, action, (intent as? AiIntegrationsIntent.IntegrateCli)?.agent)
         try {
+            Disposer.register(project, lease)
+            if (active.get() != lease) return false
             when (intent) {
                 AiIntegrationsIntent.InstallCli -> prepareAndLaunch(lease, backendService.prepareInstallCliCommand())
                 AiIntegrationsIntent.AuthenticateCli -> when (val selection = connectionSelector.select(project, snapshot.connectionChoices, snapshot.recommendedConnectionId)) {
@@ -86,8 +95,12 @@ class CliOperationCoordinator @JvmOverloads constructor(
     private fun prepareAndLaunch(lease: OperationLease, preparation: CompletableFuture<CliCommand>) {
         lease.track(preparation)
         preparation.whenComplete { command, preparationError ->
-            ModalityUiUtil.invokeLaterIfNeeded(ModalityState.defaultModalityState()) {
-                handlePreparation(lease, command, preparationError)
+            try {
+                ModalityUiUtil.invokeLaterIfNeeded(ModalityState.defaultModalityState()) {
+                    handlePreparation(lease, command, preparationError)
+                }
+            } catch (_: Exception) {
+                releaseOperation(lease, CliOperationOutcome.PreparationFailed)
             }
         }
     }
@@ -96,7 +109,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
         if (active.get() != lease) {
             return
         }
-        if (lease.project.isDisposed || lease.indicator?.isCanceled == true) {
+        if (lease.project.isDisposed || lease.indicator?.isCanceled == true || isAiIntegrationCancellation(preparationError)) {
             releaseOperation(lease, CliOperationOutcome.Cancelled)
             Disposer.dispose(lease)
         } else if (preparationError != null || command == null) {
@@ -117,7 +130,6 @@ class CliOperationCoordinator @JvmOverloads constructor(
     internal fun lastOutcome(): CliOperationOutcome? = lastOutcome.get()
 
     private fun authenticateWithConnection(lease: OperationLease, connectionId: String) {
-        lease.savedTokenAuthentication = true
         runAuthentication(object : Task.Backgroundable(lease.project, "Authenticating SonarQube CLI", true) {
             private lateinit var response: AuthenticateCliWithConnectionResponse
 
@@ -167,7 +179,6 @@ class CliOperationCoordinator @JvmOverloads constructor(
     }
 
     private fun prepareInteractiveAuthentication(lease: OperationLease, connectionId: String) {
-        lease.savedTokenAuthentication = false
         val preparation: CompletableFuture<CliCommand> = try {
             backendService.prepareAuthenticateCliCommand(connectionId)
         } catch (error: Exception) {
@@ -176,11 +187,13 @@ class CliOperationCoordinator @JvmOverloads constructor(
         prepareAndLaunch(lease, preparation)
     }
 
-    internal fun acquire(project: Project): Boolean {
+    internal fun acquire(project: Project): Boolean = acquire(project, null, cancelWithProject = true)
+
+    private fun acquire(project: Project, attempt: AiIntegrationTelemetryAttempt?, cancelWithProject: Boolean): Boolean {
         if (project.isDisposed) {
             return false
         }
-        val lease = OperationLease(project) { releaseOperation(it, CliOperationOutcome.Cancelled) }
+        val lease = OperationLease(project, attempt, cancelWithProject) { releaseOperation(it, CliOperationOutcome.Cancelled) }
         if (!active.compareAndSet(null, lease)) {
             active.get()?.terminalSession?.focus?.invoke()
             return false
@@ -189,16 +202,18 @@ class CliOperationCoordinator @JvmOverloads constructor(
     }
 
     internal fun release() {
-        val lease = active.get() ?: return
-        if (active.compareAndSet(lease, null)) {
-            refreshViews(lease.project)
-        }
+        active.get()?.let { releaseLease(it, AiIntegrationActionStatus.UNKNOWN) }
+    }
+
+    internal fun cancel(project: Project) {
+        active.get()?.takeIf { it.project === project && it.cancelWithProject }?.let { releaseOperation(it, CliOperationOutcome.Cancelled) }
     }
 
     private fun launch(lease: OperationLease, command: CliCommand) {
         when (val launch = terminalAdapterProvider().launch(lease.project, command)) {
             is TerminalLaunch.Started -> {
                 lease.terminalSession = launch
+                lease.track(launch.completion)
                 launch.completion.whenComplete { completion, error ->
                     handleTerminalCompletion(lease, completion, error)
                 }
@@ -216,6 +231,11 @@ class CliOperationCoordinator @JvmOverloads constructor(
         error: Throwable?
     ) {
         val (outcome, message, type) = when {
+            isAiIntegrationCancellation(error) -> Triple(
+                CliOperationOutcome.Cancelled,
+                "The CLI command was cancelled. Retry when ready.",
+                NotificationType.INFORMATION
+            )
             error != null -> Triple(
                 CliOperationOutcome.Unknown,
                 "The CLI command was launched, but its result could not be determined. Check the terminal output and refresh this view.",
@@ -246,29 +266,50 @@ class CliOperationCoordinator @JvmOverloads constructor(
     }
 
     private fun releaseOperation(lease: OperationLease, outcome: CliOperationOutcome): Boolean {
-        if (!active.compareAndSet(lease, null)) {
-            return false
+        val status = when (outcome) {
+            CliOperationOutcome.Authenticated, CliOperationOutcome.ExitZero -> AiIntegrationActionStatus.SUCCEEDED
+            CliOperationOutcome.Cancelled -> AiIntegrationActionStatus.CANCELLED
+            CliOperationOutcome.Unknown -> AiIntegrationActionStatus.UNKNOWN
+            else -> AiIntegrationActionStatus.FAILED
         }
-        lastOutcome.set(outcome)
-        if (outcome != CliOperationOutcome.Cancelled || !lease.savedTokenAuthentication) refreshViews(lease.project)
+        return releaseLease(lease, status, outcome)
+    }
+
+    private fun releaseLease(lease: OperationLease, status: AiIntegrationActionStatus, outcome: CliOperationOutcome? = null): Boolean {
+        if (!active.compareAndSet(lease, null)) return false
+        if (outcome != null) lastOutcome.set(outcome)
+        // Cleanup and telemetry never depend on project-bound UI callbacks or optional feedback.
+        try {
+            Disposer.dispose(lease)
+        } finally {
+            lease.attempt?.finish(status)
+            try {
+                refreshViews(lease.project)
+            } catch (_: Exception) {
+                com.intellij.openapi.diagnostic.Logger.getInstance(CliOperationCoordinator::class.java).debug("Unable to refresh AI integrations")
+            }
+        }
         return true
     }
 
     private fun releaseAndNotify(lease: OperationLease, outcome: CliOperationOutcome, message: String, type: NotificationType) {
-        if (releaseOperation(lease, outcome)) {
-            Disposer.dispose(lease)
-            notifyUser(lease.project, message, type)
+        if (releaseOperation(lease, outcome) && !lease.project.isDisposed) {
+            runCatching { notifyUser(lease.project, message, type) }
         }
     }
 }
 
-private class OperationLease(val project: Project, private val onDispose: (OperationLease) -> Unit) : Disposable {
+private class OperationLease(
+    val project: Project,
+    var attempt: AiIntegrationTelemetryAttempt?,
+    val cancelWithProject: Boolean,
+    private val onDispose: (OperationLease) -> Unit
+) : Disposable {
     private val disposed = AtomicBoolean()
     @Volatile
     private var pending: CompletableFuture<*>? = null
     @Volatile
     var indicator: ProgressIndicator? = null
-    var savedTokenAuthentication = false
     @Volatile
     var terminalSession: TerminalLaunch.Started? = null
 
@@ -278,10 +319,16 @@ private class OperationLease(val project: Project, private val onDispose: (Opera
     }
 
     override fun dispose() {
-        disposed.set(true)
-        indicator?.cancel()
-        onDispose(this)
-        pending?.cancel(true)
+        if (!disposed.compareAndSet(false, true)) return
+        try {
+            indicator?.cancel()
+        } finally {
+            try {
+                onDispose(this)
+            } finally {
+                pending?.cancel(true)
+            }
+        }
     }
 }
 
