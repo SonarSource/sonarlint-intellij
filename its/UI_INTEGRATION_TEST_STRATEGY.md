@@ -23,7 +23,6 @@ Keep a **small smoke layer** of UI integration tests (Remote Robot, real IDE fra
 | Exclude file menu action | `ExcludeFileActionLightTests` |
 | Editor traffic light | `SonarLintTrafficLightActionLightTests` |
 | On-the-fly XML issue in Findings tab | `FindingsTabAnalysisLightTests` (`xml:S1778` on `file.xml`; IT uses `sample-xml` / FIXME message) |
-| Walkthrough factory content | `SonarLintWalkthroughToolWindowLightTests` |
 
 ## CI impact
 
