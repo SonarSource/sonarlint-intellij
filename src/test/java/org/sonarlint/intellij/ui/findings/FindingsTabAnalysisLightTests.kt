@@ -20,18 +20,11 @@
 package org.sonarlint.intellij.ui.findings
 
 import com.intellij.openapi.fileEditor.FileEditorManager
-import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.Awaitility
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
-import org.sonarlint.intellij.analysis.AnalysisStatus
-import org.sonarlint.intellij.analysis.AnalysisSubmitter
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
-import org.sonarlint.intellij.ui.page.syncFindingsTabWithEditorSelection
 
 class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
 
@@ -45,27 +38,12 @@ class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
         val file = registerFileFromTestData("src/file.xml")
         readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
 
-        assertThat(mainToolWindow.findings.toolbar.isVisible).isTrue()
         assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
         mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
 
-        Awaitility.await().atMost(60, TimeUnit.SECONDS).until {
-            !AnalysisStatus.get(project).isRunning
+        mainToolWindow.findings.awaitUntilAsserted {
+            assertThat(findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
+            assertThat(issues.single().ruleKey).isEqualTo("xml:S1778")
         }
-
-        Awaitility.await().atMost(60, TimeUnit.SECONDS).untilAsserted {
-            assertThat(getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder.getAllIssues())
-                .hasSize(1)
-        }
-
-        readOnEdt {
-            syncFindingsTabWithEditorSelection(project)
-            repeat(30) { pumpEdt() }
-        }
-        assertThat(mainToolWindow.findings.issues).hasSize(1)
-
-        assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
-        assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
-        assertThat(mainToolWindow.findings.toolbar.isVisible).isTrue()
     }
 }

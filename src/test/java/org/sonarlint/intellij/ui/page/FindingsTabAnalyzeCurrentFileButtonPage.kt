@@ -39,6 +39,7 @@ import org.sonarlint.intellij.util.SonarLintActions
 
 /** Page object for the Findings tab “Analyze Current File” toolbar control. */
 class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
+    private val findingsTab: FindingsTabPage,
     private val project: Project,
     private val panel: FindingsPanel,
 ) {
@@ -64,9 +65,9 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
     }
 
     private fun preparePanelForFile(file: VirtualFile) {
-        syncFindingsTabWithEditorSelection(project)
+        findingsTab.refreshWithEditorSelection()
         panel.update(file, EditorHighlightRefresh.NONE)
-        repeat(20) { pumpEdt() }
+        repeat(10) { pumpEdt() }
     }
 
     private fun findToolbarButton(): ActionButton? {

@@ -24,12 +24,13 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 
 class FindingsTabToolbarPage internal constructor(
+    findingsTab: FindingsTabPage,
     project: Project,
     private val panel: FindingsPanel,
 ) {
 
     val analyzeCurrentFileButton: FindingsTabAnalyzeCurrentFileButtonPage =
-        FindingsTabAnalyzeCurrentFileButtonPage(project, panel)
+        FindingsTabAnalyzeCurrentFileButtonPage(findingsTab, project, panel)
 
     val isVisible: Boolean
         get() = panel is SimpleToolWindowPanel && panel.getToolbar() != null
