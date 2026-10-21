@@ -23,6 +23,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBPanelWithEmptyText
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
@@ -56,6 +57,15 @@ class FindingsTabPage internal constructor(
     /** Text of the issues row in [org.sonarlint.intellij.ui.currentfile.CurrentFileSummaryPanel]. */
     val issuesSummaryButtonText: String
         get() = readSynced { readIssuesSummaryButtonText() }
+
+    /** Empty-state banner in the issues area (e.g. "No findings to display"). */
+    val emptyStateText: String
+        get() = readSynced {
+            panel.walkComponents()
+                .filterIsInstance<JBPanelWithEmptyText>()
+                .first()
+                .emptyText.text
+        }
 
     /** Refreshes the tab through [SonarLintToolWindow]; call only on the EDT. */
     internal fun refreshWithEditorSelection() {

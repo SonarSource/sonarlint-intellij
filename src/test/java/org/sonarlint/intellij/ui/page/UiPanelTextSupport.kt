@@ -30,14 +30,9 @@ internal fun collectPanelDisplayTexts(root: Component): List<String> {
     root.walkComponents().forEach { component ->
         when (component) {
             is JBLabel -> {
-                if (component.isShowing) {
-                    component.text?.trim()?.takeIf { it.isNotEmpty() }?.let { texts.add(it) }
-                }
+                component.text?.trim()?.takeIf { it.isNotEmpty() }?.let { texts.add(it) }
             }
             is IssueTree -> {
-                if (!component.isShowing) {
-                    return@forEach
-                }
                 val treePage = FindingsTreePage(component)
                 texts.add(treePage.summaryLabelText)
                 treePage.issues.forEach { texts.add(it.message) }

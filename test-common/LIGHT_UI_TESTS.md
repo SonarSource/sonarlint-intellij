@@ -73,6 +73,8 @@ assertThat(getProjectSettings().fileExclusions).containsExactly("FILE:src/main/j
 | Findings filter bar (toggle + focus on new code) | [`FindingsTabFiltersPanelPage`](../src/test/java/org/sonarlint/intellij/ui/page/FindingsTabFiltersPanelPage.kt) via `mainToolWindow.findings.filters` |
 | Report tab assertions | [`ReportTabPage`](../src/test/java/org/sonarlint/intellij/ui/page/ReportTabPage.kt) via `mainToolWindow.reportTab()` |
 
+Standalone UI IT scenarios (`@Tag("Standalone")`) are covered by [`StandaloneIdeaLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/StandaloneIdeaLightTests.kt) (global rule toggle, project file exclusions, IaC finding, walkthrough flag).
+
 Example (focus on new code, then report messages after a full analysis):
 
 ```kotlin
