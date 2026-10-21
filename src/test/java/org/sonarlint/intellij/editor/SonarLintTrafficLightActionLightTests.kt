@@ -23,7 +23,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
-import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.page.EditorTrafficLightPage
 
 class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
@@ -41,11 +40,7 @@ class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
 
         awaitUntilAsserted {
             assertThat(mainToolWindow.findings.issues).hasSize(1)
-        }
-
-        readOnEdt {
-            val trafficLight = EditorTrafficLightPage.createForSelectedEditor(project)
-            assertThat(trafficLight.issueCountLabelText).isEqualTo("1")
+            assertThat(EditorTrafficLightPage.createForSelectedEditor(project).issueCountLabelText).isEqualTo("1")
         }
     }
 }
