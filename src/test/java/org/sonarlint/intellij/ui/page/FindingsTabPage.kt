@@ -39,6 +39,9 @@ class FindingsTabPage internal constructor(
 
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
+    val filters: FindingsTabFiltersPanelPage
+        get() = readSynced { FindingsTabFiltersPanelPage(project, panel) }
+
     val findingsTree: FindingsTreePage
         get() = readSynced { FindingsTreePage(findingsIssueTree()) }
 
