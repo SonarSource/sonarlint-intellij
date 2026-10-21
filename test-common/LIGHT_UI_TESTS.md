@@ -31,11 +31,10 @@ Light UI tests interact with the product through **page objects** (e.g. `SonarLi
 Example assertion (see `FindingsTabAnalysisLightTests`):
 
 ```kotlin
-val file = registerFileFromTestData("src/file.xml")
-readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
+val file = openFileFromTestData("src/file.xml")
 mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
 mainToolWindow.findings.awaitUntilAsserted {
-    assertThat(findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
+    assertThat(issuesSummaryButtonText).isEqualTo("1 Issue")
     assertThat(issues.single().ruleKey).isEqualTo("xml:S1778")
 }
 ```
@@ -52,6 +51,6 @@ Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/or
 | --- | --- |
 | Findings tool window | `SonarLintToolWindowFactory` |
 | Walkthrough | `SonarLintWalkthroughToolWindowFactory` |
-| Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`) |
+| Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`); page object [`EditorTrafficLightPage`](../src/test/java/org/sonarlint/intellij/ui/page/EditorTrafficLightPage.kt) |
 | Notifications | `SonarLintProjectNotifications`, `NotificationGroup` EP, `Notifications.TOPIC` |
 | Settings | `applicationConfigurable` / `projectConfigurable` EP (`sonarlint` ids in `plugin.xml`) |

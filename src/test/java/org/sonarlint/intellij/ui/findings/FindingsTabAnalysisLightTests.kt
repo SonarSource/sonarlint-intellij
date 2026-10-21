@@ -19,12 +19,10 @@
  */
 package org.sonarlint.intellij.ui.findings
 
-import com.intellij.openapi.fileEditor.FileEditorManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
-import org.sonarlint.intellij.fixtures.readOnEdt
 
 class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
 
@@ -35,14 +33,13 @@ class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_one_issue_in_findings_tab_after_toolbar_analyze_action() {
-        val file = registerFileFromTestData("src/file.xml")
-        readOnEdt { FileEditorManager.getInstance(project).openFile(file, true) }
+        val file = openFileFromTestData("src/file.xml")
 
         assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
         mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
 
         mainToolWindow.findings.awaitUntilAsserted {
-            assertThat(findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
+            assertThat(issuesSummaryButtonText).isEqualTo("1 Issue")
             assertThat(issues.single().ruleKey).isEqualTo("xml:S1778")
         }
     }

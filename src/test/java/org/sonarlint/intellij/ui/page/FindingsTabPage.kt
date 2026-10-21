@@ -21,12 +21,12 @@ package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
 import java.util.concurrent.TimeUnit
 import org.awaitility.Awaitility
 import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import com.intellij.ui.components.JBLabel
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
@@ -64,6 +64,14 @@ class FindingsTabPage internal constructor(
             }
         }
 
+    /** Text of the issues row in [org.sonarlint.intellij.ui.currentfile.CurrentFileSummaryPanel]. */
+    val issuesSummaryButtonText: String
+        get() = if (skipRefreshBeforeRead.get()) {
+            readIssuesSummaryButtonText()
+        } else {
+            readSynced { readIssuesSummaryButtonText() }
+        }
+
     fun awaitUntilAsserted(timeoutSeconds: Long = 60, assertions: FindingsTabPage.() -> Unit) {
         Awaitility.await()
             .pollInSameThread()
@@ -85,9 +93,8 @@ class FindingsTabPage internal constructor(
     /** Refreshes the tab through [SonarLintToolWindow]; call only on the EDT. */
     internal fun refreshWithEditorSelection() {
         val selected = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
-        val file = resolveFindingsFile(selected)
-        if (file != null) {
-            getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(file, EditorHighlightRefresh.NONE)
+        if (selected != null) {
+            getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(selected, EditorHighlightRefresh.NONE)
         }
         repeat(10) { pumpEdt() }
     }
@@ -99,14 +106,11 @@ class FindingsTabPage internal constructor(
             read()
         }
 
-    private fun resolveFindingsFile(selected: VirtualFile?): VirtualFile? {
-        val holder = getService(project, AnalysisSubmitter::class.java).onTheFlyFindingsHolder
-        val issueFile = holder.getAllIssues().firstOrNull()?.file()
-        if (issueFile != null) {
-            return issueFile
-        }
-        return selected
-    }
+    private fun readIssuesSummaryButtonText(): String =
+        panel.walkComponents()
+            .filterIsInstance<JBLabel>()
+            .map { it.text }
+            .first { text -> text == "1 Issue" || text == "No Issues" || text.matches(ISSUES_SUMMARY_COUNT) }
 
     private fun findingsIssueTree(): IssueTree =
         panel.getTree(TreeType.ISSUES, isOld = false) as IssueTree
@@ -116,5 +120,6 @@ class FindingsTabPage internal constructor(
 
     private companion object {
         private val skipRefreshBeforeRead = ThreadLocal.withInitial { false }
+        private val ISSUES_SUMMARY_COUNT = Regex("\\d+ Issues")
     }
 }
