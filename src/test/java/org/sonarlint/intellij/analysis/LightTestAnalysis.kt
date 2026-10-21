@@ -53,9 +53,6 @@ class LightTestAnalysis(
             mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
             true,
         )
-        Awaitility.await().atMost(30, TimeUnit.SECONDS).until {
-            getService(project, AnalysisReadinessCache::class.java).isModuleReady(module)
-        }
         return virtualFile
     }
 

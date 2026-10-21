@@ -34,19 +34,19 @@ class FindingsTabPage internal constructor(
 
     val findingsTree: FindingsTreePage
         get() = readOnEdt {
-            syncFindingsPanelWithSelectedEditor(project, panel)
+            syncFindingsTabWithEditorSelection(project)
             FindingsTreePage(findingsIssueTree())
         }
 
     val oldFindingsTree: FindingsTreePage
         get() = readOnEdt {
-            syncFindingsPanelWithSelectedEditor(project, panel)
+            syncFindingsTabWithEditorSelection(project)
             FindingsTreePage(oldFindingsIssueTree())
         }
 
     val issues: List<FindingNodePage>
         get() = readOnEdt {
-            syncFindingsPanelWithSelectedEditor(project, panel)
+            syncFindingsTabWithEditorSelection(project)
             FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
         }
 
