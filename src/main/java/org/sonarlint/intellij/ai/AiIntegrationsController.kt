@@ -58,7 +58,11 @@ class AiIntegrationsController @JvmOverloads constructor(
         panel.setRefreshListener(::refresh)
         panel.setIntentListener(::handleIntent)
         ApplicationManager.getApplication().messageBus.connect(this)
-            .subscribe(AiIntegrationListener.TOPIC, AiIntegrationListener { if (started.get()) refreshAfterOperation() })
+            .subscribe(AiIntegrationListener.TOPIC, AiIntegrationListener { _ ->
+                if (started.get() && !isDisposed()) runOnUiThread(ModalityState.defaultModalityState()) {
+                    refreshAfterOperation()
+                }
+            })
     }
 
     fun loadInitially() {

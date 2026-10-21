@@ -630,7 +630,7 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         provider,
         selector,
         { _, message, type -> notifications += Notification(message, type) },
-        refresh,
+        { refresh() },
         authentication
     )
 

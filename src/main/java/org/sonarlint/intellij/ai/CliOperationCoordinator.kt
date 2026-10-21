@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -38,8 +37,6 @@ import java.util.concurrent.atomic.AtomicReference
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.Companion.projectLessNotification
-import org.sonarlint.intellij.messages.AiIntegrationListener
-import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AuthenticateCliWithConnectionResponse.Status
 
@@ -51,11 +48,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
     private val notifyUser: (Project, String, NotificationType) -> Unit = { _, message, type ->
         projectLessNotification("SonarQube CLI", message, type)
     },
-    private val refreshViews: () -> Unit = {
-        runOnUiThread(ModalityState.defaultModalityState()) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
-        }
-    },
+    private val refreshViews: (Project?) -> Unit = ::publishAiIntegrationChange,
     private val runAuthentication: (Task.Backgroundable) -> Unit = { it.queue() }
 ) {
     private val active = AtomicReference<OperationLease?>()
@@ -198,7 +191,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
     internal fun release() {
         val lease = active.get() ?: return
         if (active.compareAndSet(lease, null)) {
-            refreshViews()
+            refreshViews(lease.project)
         }
     }
 
@@ -257,7 +250,7 @@ class CliOperationCoordinator @JvmOverloads constructor(
             return false
         }
         lastOutcome.set(outcome)
-        if (outcome != CliOperationOutcome.Cancelled || !lease.savedTokenAuthentication) refreshViews()
+        if (outcome != CliOperationOutcome.Cancelled || !lease.savedTokenAuthentication) refreshViews(lease.project)
         return true
     }
 

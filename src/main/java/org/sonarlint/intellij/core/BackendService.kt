@@ -550,6 +550,10 @@ class BackendService : Disposable {
         return notifyBackend { action(it.telemetryService) }
     }
 
+    /** Completes when the AI notification is dispatched to SLCORE, independently of ingestion. */
+    fun notifyAiTelemetry(action: (TelemetryRpcService) -> Unit): CompletableFuture<Void> =
+        ensureBackendInitialized().thenAcceptAsync { action(it.telemetryService) }
+
     fun isTelemetryEnabled(): CompletableFuture<Boolean> {
         return requestFromBackend { it.telemetryService.status }.thenApplyAsync { status -> status.isEnabled }
     }

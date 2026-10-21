@@ -20,8 +20,6 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
@@ -42,7 +40,6 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
@@ -127,7 +124,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
         }, executor).whenComplete { result, error ->
             runOnUiThread(project) {
                 reportSetupResult(project, result, error)
-                refreshAll()
+                publishAiIntegrationChange(project)
             }
         }
         return true
@@ -367,9 +364,7 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     }
 
     private fun refreshAll() {
-        runOnUiThread(ModalityState.defaultModalityState()) {
-            ApplicationManager.getApplication().messageBus.syncPublisher(AiIntegrationListener.TOPIC).stateChanged()
-        }
+        publishAiIntegrationChange(null)
     }
 }
 
