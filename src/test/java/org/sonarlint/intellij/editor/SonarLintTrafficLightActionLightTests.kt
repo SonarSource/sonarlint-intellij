@@ -39,8 +39,8 @@ class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
 
         mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
 
-        mainToolWindow.findings.awaitUntilAsserted {
-            assertThat(issues).hasSize(1)
+        awaitUntilAsserted {
+            assertThat(mainToolWindow.findings.issues).hasSize(1)
         }
 
         readOnEdt {
