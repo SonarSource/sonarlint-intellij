@@ -84,8 +84,15 @@ dependencyResolutionManagement {
                         password = artifactoryPassword
                     }
                 }
-                maven("$artifactoryUrl/intellij-releases") {
+                maven("$artifactoryUrl/jetbrains-intellij") {
                     name = "IntelliJ Repository (Releases)"
+                    credentials {
+                        username = artifactoryUsername
+                        password = artifactoryPassword
+                    }
+                }
+                maven("$artifactoryUrl/jetbrains-intellij-snapshots") {
+                    name = "IntelliJ Repository (EAP)"
                     credentials {
                         username = artifactoryUsername
                         password = artifactoryPassword

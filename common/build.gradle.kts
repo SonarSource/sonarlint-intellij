@@ -1,3 +1,4 @@
+val intellijBuildType: String by project
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
@@ -15,7 +16,7 @@ dependencies {
         if (!ideaHome.isNullOrBlank()) {
             local(ideaHome)
         } else {
-            intellijIdeaCommunity(intellijBuildVersion)
+            create(intellijBuildType, intellijBuildVersion)
         }
     }
     compileOnly(libs.findbugs.jsr305)

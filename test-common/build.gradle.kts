@@ -1,5 +1,6 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
+val intellijBuildType: String by project
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 
@@ -18,7 +19,7 @@ dependencies {
         if (!ideaHome.isNullOrBlank()) {
             local(ideaHome)
         } else {
-            intellijIdeaCommunity(intellijBuildVersion)
+            create(intellijBuildType, intellijBuildVersion)
         }
         pluginComposedModule(implementation(project(":common")))
         testFramework(TestFrameworkType.Platform)
