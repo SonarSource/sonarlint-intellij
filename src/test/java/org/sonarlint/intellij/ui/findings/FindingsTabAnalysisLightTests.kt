@@ -38,9 +38,9 @@ class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
         assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
         mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
 
-        mainToolWindow.findings.awaitUntilAsserted {
-            assertThat(issuesSummaryButtonText).isEqualTo("1 Issue")
-            assertThat(issues.single().ruleKey).isEqualTo("xml:S1778")
+        awaitUntilAsserted {
+            assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")
+            assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
         }
     }
 }
