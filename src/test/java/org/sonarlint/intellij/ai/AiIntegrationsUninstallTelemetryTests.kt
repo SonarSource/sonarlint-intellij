@@ -127,7 +127,7 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
         assertThat(statuses).isEmpty()
         verify(backend, never()).uninstallCli()
         assertThat(coordinator.activeOperation()).isTrue()
-        coordinator.release()
+        coordinator.cancel(project)
     }
 
     @Test
@@ -200,7 +200,7 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
         assertThat(origins).containsExactly(project)
         verify(backend, never()).uninstallCli()
         assertThat(coordinator.activeOperation()).isTrue()
-        coordinator.release()
+        coordinator.cancel(project)
     }
 
     @Test

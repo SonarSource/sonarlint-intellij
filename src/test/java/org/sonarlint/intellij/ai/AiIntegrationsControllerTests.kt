@@ -87,6 +87,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     fun disposeController() {
         Disposer.dispose(controller)
         extraController?.let { Disposer.dispose(it) }
+        UIUtil.dispatchAllInvocationEvents()
     }
 
     @Test
@@ -246,11 +247,11 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
             assertThat(refreshButton().isEnabled).isTrue()
             assertThat(coordinator.activeOperation()).isFalse()
             assertThat(coordinator.execute(project, installed, AiIntegrationsIntent.InstallCli)).isTrue()
-            coordinator.release()
+            coordinator.cancel(project)
             assertThat(coordinator.execute(project, installed, AiIntegrationsIntent.AuthenticateCli)).isTrue()
-            coordinator.release()
+            coordinator.cancel(project)
             assertThat(coordinator.execute(project, installed, AiIntegrationsIntent.IntegrateCli(AiAgent.CURSOR))).isTrue()
-            coordinator.release()
+            coordinator.cancel(project)
             assertThat(coordinator.activeOperation()).isFalse()
             verify(backend, never()).uninstallCli()
         }
@@ -357,7 +358,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         assertThat(coordinator.activeOperation()).isTrue()
         assertThat(coordinator.lastOutcome()).isNull()
         assertThat(completion).isNotDone()
-        coordinator.release()
+        completion.complete(TerminalCompletion.Exited(0))
         assertThat(coordinator.activeOperation()).isFalse()
     }
 

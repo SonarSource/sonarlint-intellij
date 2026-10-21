@@ -209,10 +209,6 @@ class CliOperationCoordinator @JvmOverloads constructor(
         return true
     }
 
-    internal fun release() {
-        active.get()?.let { releaseLease(it, AiIntegrationActionStatus.UNKNOWN) }
-    }
-
     internal fun completeUninstall(attempt: AiIntegrationTelemetryAttempt, status: AiIntegrationActionStatus): Boolean {
         val lease = active.get()?.takeIf { it.attempt === attempt } ?: return false
         return releaseLease(lease, status)
