@@ -68,6 +68,19 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         return virtualFile
     }
 
+    /** Registers a test-data file with SLOOP and opens it in the editor (MAIN_EDITOR via code insight fixture). */
+    protected fun openFileFromTestData(relativePath: String): VirtualFile {
+        val sourcePath = Path.of(testDataPath, relativePath).toAbsolutePath()
+        check(Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
+        val virtualFile = myFixture.copyFileToProject(relativePath, relativePath)
+        myFixture.configureFromExistingVirtualFile(virtualFile)
+        getService(BackendService::class.java).updateFileSystem(
+            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
+            true,
+        )
+        return virtualFile
+    }
+
     protected fun waitUntilAnalysisReady(timeoutSeconds: Long = 30, module: Module = this.module) {
         Awaitility.await().atMost(timeoutSeconds, TimeUnit.SECONDS).untilAsserted {
             val readiness = getService(project, AnalysisReadinessCache::class.java)
