@@ -28,6 +28,7 @@ import com.intellij.terminal.ui.TerminalWidget
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.jediterm.terminal.TtyConnector
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 import java.util.concurrent.CompletableFuture
 import org.jetbrains.plugins.terminal.AbstractTerminalRunner
 import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
@@ -64,13 +65,12 @@ class IntellijTerminalAdapter : CliTerminalAdapter {
         }
 }
 
-internal class CliTerminalRunner(project: Project, command: CliCommand) : AbstractTerminalRunner<Process>(project) {
-    // Use the stable Process signatures across Terminal plugin versions.
-    @Suppress("UNCHECKED_CAST")
-    private val delegate = object : LocalTerminalDirectRunner(project) {
-        override fun enableShellIntegration(): Boolean = false
-    } as AbstractTerminalRunner<Process>
-
+internal class CliTerminalRunner @JvmOverloads constructor(
+    project: Project,
+    command: CliCommand,
+    private val delegate: AbstractTerminalRunner<Process> = createDelegate(project),
+    private val connectorStartupMethod: Method? = discoveredConnectorStartupMethod
+) : AbstractTerminalRunner<Process>(project) {
     val completion = CompletableFuture<TerminalCompletion>()
     val tabState = TerminalTabState().apply {
         myTabName = "SonarQube CLI"
@@ -104,6 +104,7 @@ internal class CliTerminalRunner(project: Project, command: CliCommand) : Abstra
             createTtyConnector(createProcess(startupOptions))
         } else {
             try {
+                // The modern runner converts raw arguments internally, including Windows quoting.
                 method.invoke(delegate, startupOptions) as TtyConnector
             } catch (error: InvocationTargetException) {
                 throw error.targetException
@@ -121,7 +122,14 @@ internal class CliTerminalRunner(project: Project, command: CliCommand) : Abstra
     }
 
     companion object {
-        private val connectorStartupMethod = try {
+        // Use the stable Process signatures across Terminal plugin versions.
+        @Suppress("UNCHECKED_CAST")
+        private fun createDelegate(project: Project): AbstractTerminalRunner<Process> =
+            object : LocalTerminalDirectRunner(project) {
+                override fun enableShellIntegration(): Boolean = false
+            } as AbstractTerminalRunner<Process>
+
+        private val discoveredConnectorStartupMethod = try {
             LocalTerminalDirectRunner::class.java.getMethod("createTtyConnector", ShellStartupOptions::class.java)
         } catch (_: NoSuchMethodException) {
             null
