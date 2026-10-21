@@ -46,7 +46,7 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
 
     val isEnabled: Boolean
         get() = readOnEdt {
-            val presentation = analyzeCurrentFilePresentation()
+            val presentation = analyzeCurrentFileButton()
             presentation.isEnabled && presentation.isVisible
         }
 
@@ -91,7 +91,7 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
         }
     }
 
-    private fun analyzeCurrentFilePresentation(): Presentation {
+    private fun analyzeCurrentFileButton(): Presentation {
         val presentation = Presentation()
         val event = AnActionEvent(
             null,
