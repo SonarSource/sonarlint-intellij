@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ai
 
+import com.intellij.execution.CommandLineUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
@@ -40,8 +41,10 @@ import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
+import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.jetbrains.plugins.terminal.AbstractTerminalRunner
 import org.jetbrains.plugins.terminal.ShellStartupOptions
 import org.jetbrains.plugins.terminal.ShellTerminalWidget
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -188,6 +191,47 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
         assertThat(options.shellIntegration).isNull()
     }
 
+    @Test
+    fun `modern startup receives raw Windows arguments once`() {
+        val command = CliCommand("C:\\Program Files\\SonarQube\\sonar.exe", listOf("", "two words", "a\"b", "trailing\\", "C:\\path with spaces\\"), true)
+        val connector = mock<TtyConnector>()
+        val receivedOptions = mutableListOf<ShellStartupOptions>()
+        val delegate = StartupOptionsTerminalRunner(project) {
+            receivedOptions.add(it)
+            connector
+        }
+        val method = StartupOptionsTerminalRunner::class.java.getMethod("createTtyConnector", ShellStartupOptions::class.java)
+        val runner = CliTerminalRunner(project, command, delegate, method)
+        val options = ShellStartupOptions.Builder().shellCommand(runner.tabState.myShellCommand).build()
+
+        mockStatic(CommandLineUtil::class.java).use { commandLineUtil ->
+            assertThat(runner.createTtyConnector(options)).isSameAs(connector)
+            commandLineUtil.verifyNoInteractions()
+        }
+
+        assertThat(receivedOptions).containsExactly(options)
+        assertThat(receivedOptions.single().shellCommand).containsExactly(command.executable, *command.arguments.toTypedArray())
+    }
+
+    @Test
+    fun `modern startup failure preserves the original exception`() {
+        val failure = IllegalStateException("Process startup failed")
+        var calls = 0
+        val delegate = StartupOptionsTerminalRunner(project) {
+            calls++
+            throw failure
+        }
+        val method = StartupOptionsTerminalRunner::class.java.getMethod("createTtyConnector", ShellStartupOptions::class.java)
+        val runner = CliTerminalRunner(project, CliCommand("sonar", emptyList(), true), delegate, method)
+        val options = ShellStartupOptions.Builder().shellCommand(runner.tabState.myShellCommand).build()
+
+        assertThatThrownBy { runner.createTtyConnector(options) }.isSameAs(failure)
+
+        assertThat(calls).isEqualTo(1)
+        assertThat(runner.completion).isCompletedExceptionally()
+        assertThatThrownBy { runner.completion.join() }.cause().isSameAs(failure)
+    }
+
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `direct runner preserves arguments and interactive input`(useStartupOptions: Boolean, @TempDir directory: Path) {
@@ -233,5 +277,11 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
         } finally {
             connector.close()
         }
+    }
+
+    class StartupOptionsTerminalRunner(project: Project, private val start: (ShellStartupOptions) -> TtyConnector) : AbstractTerminalRunner<Process>(project) {
+        fun createTtyConnector(startupOptions: ShellStartupOptions): TtyConnector = start(startupOptions)
+
+        override fun createTtyConnector(process: Process): TtyConnector = error("Unexpected legacy connector call")
     }
 }
