@@ -26,8 +26,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.terminal.ui.TerminalWidget
 import com.intellij.util.concurrency.AppExecutorUtil
-import com.pty4j.PtyProcess
+import com.jediterm.terminal.TtyConnector
+import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.CompletableFuture
+import org.jetbrains.plugins.terminal.AbstractTerminalRunner
 import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 import org.jetbrains.plugins.terminal.ShellStartupOptions
 import org.jetbrains.plugins.terminal.ShellTerminalWidget
@@ -62,7 +64,13 @@ class IntellijTerminalAdapter : CliTerminalAdapter {
         }
 }
 
-internal class CliTerminalRunner(project: Project, command: CliCommand) : LocalTerminalDirectRunner(project) {
+internal class CliTerminalRunner(project: Project, command: CliCommand) : AbstractTerminalRunner<Process>(project) {
+    // Use the stable Process signatures across Terminal plugin versions.
+    @Suppress("UNCHECKED_CAST")
+    private val delegate = object : LocalTerminalDirectRunner(project) {
+        override fun enableShellIntegration(): Boolean = false
+    } as AbstractTerminalRunner<Process>
+
     val completion = CompletableFuture<TerminalCompletion>()
     val tabState = TerminalTabState().apply {
         myTabName = "SonarQube CLI"
@@ -75,18 +83,50 @@ internal class CliTerminalRunner(project: Project, command: CliCommand) : LocalT
     override fun createShellTerminalWidget(parent: Disposable, startupOptions: ShellStartupOptions): TerminalWidget =
         super.createShellTerminalWidget(parent, startupOptions).also { widget = it }
 
-    override fun createProcess(startupOptions: ShellStartupOptions): PtyProcess = try {
-        super.createProcess(startupOptions.builder()
+    override fun configureStartupOptions(startupOptions: ShellStartupOptions): ShellStartupOptions = completeOnFailure {
+        delegate.configureStartupOptions(startupOptions)
+    }
+
+    override fun createProcess(startupOptions: ShellStartupOptions): Process = completeOnFailure {
+        delegate.createProcess(startupOptions.builder()
             .shellCommand(CommandLineUtil.toCommandLine(requireNotNull(startupOptions.shellCommand)))
             .build())
+    }
+
+    override fun createTtyConnector(process: Process): TtyConnector = completeOnFailure {
+        delegate.createTtyConnector(process)
+    }
+
+    // Overrides the startup hook introduced after our 2024.2 compilation baseline.
+    fun createTtyConnector(startupOptions: ShellStartupOptions): TtyConnector = completeOnFailure {
+        val method = connectorStartupMethod
+        if (method == null) {
+            createTtyConnector(createProcess(startupOptions))
+        } else {
+            try {
+                method.invoke(delegate, startupOptions) as TtyConnector
+            } catch (error: InvocationTargetException) {
+                throw error.targetException
+            }
+        }
+    }
+
+    override fun isTerminalSessionPersistent(): Boolean = false
+
+    private inline fun <T> completeOnFailure(action: () -> T): T = try {
+        action()
     } catch (error: Exception) {
         completion.completeExceptionally(error)
         throw error
     }
 
-    override fun enableShellIntegration(): Boolean = false
-
-    override fun isTerminalSessionPersistent(): Boolean = false
+    companion object {
+        private val connectorStartupMethod = try {
+            LocalTerminalDirectRunner::class.java.getMethod("createTtyConnector", ShellStartupOptions::class.java)
+        } catch (_: NoSuchMethodException) {
+            null
+        }
+    }
 }
 
 internal fun observeTerminalCompletion(

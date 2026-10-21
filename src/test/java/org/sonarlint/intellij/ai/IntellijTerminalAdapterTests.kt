@@ -38,10 +38,12 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.jetbrains.plugins.terminal.ShellStartupOptions
+import org.jetbrains.plugins.terminal.ShellTerminalWidget
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 
 class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
@@ -100,8 +102,9 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
         assertThat(completion.join()).isEqualTo(TerminalCompletion.Exited(17))
     }
 
-    @Test
-    fun `process startup failure completes the operation without a terminal connector`(@TempDir directory: Path) {
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `process startup failure completes the operation without a terminal connector`(useStartupOptions: Boolean, @TempDir directory: Path) {
         val runner = CliTerminalRunner(project, CliCommand(directory.resolve("missing-executable").toString(), emptyList(), true))
         val widget = mock<TerminalWidget>()
         whenever(widget.ttyConnectorAccessor).thenReturn(TtyConnectorAccessor())
@@ -111,7 +114,9 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
             .workingDirectory(directory.toString())
             .build())
         try {
-            assertThatThrownBy { runner.createProcess(options) }.isInstanceOf(ExecutionException::class.java)
+            assertThatThrownBy {
+                if (useStartupOptions) runner.createTtyConnector(options) else runner.createProcess(options)
+            }.isInstanceOf(ExecutionException::class.java)
 
             assertThat(completion).isCompletedExceptionally()
         } finally {
@@ -120,8 +125,8 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = [0, 17])
-    fun `reports the actual exit code from the direct runner`(exitCode: Int, @TempDir directory: Path) {
+    @CsvSource("0, false", "0, true", "17, false", "17, true")
+    fun `reports the actual exit code from the direct runner`(exitCode: Int, useStartupOptions: Boolean, @TempDir directory: Path) {
         val source = directory.resolve("ExitProbe.java")
         Files.writeString(source, """
             class ExitProbe {
@@ -137,9 +142,10 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
             .shellCommand(runner.tabState.myShellCommand)
             .workingDirectory(directory.toString())
             .build())
-        val process = runner.createProcess(options)
+        val connector = if (useStartupOptions) runner.createTtyConnector(options) else runner.createTtyConnector(runner.createProcess(options))
+        val process = requireNotNull(ShellTerminalWidget.getProcessTtyConnector(connector)).process
         val widget = mock<TerminalWidget>()
-        val accessor = TtyConnectorAccessor().apply { ttyConnector = runner.createTtyConnector(process) }
+        val accessor = TtyConnectorAccessor().apply { ttyConnector = connector }
         whenever(widget.ttyConnectorAccessor).thenReturn(accessor)
         val completion = observeTerminalCompletion(widget)
         try {
@@ -152,7 +158,7 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
             Disposer.dispose(widget)
             assertThat(completion.join()).isEqualTo(TerminalCompletion.Exited(exitCode))
         } finally {
-            process.destroy()
+            connector.close()
             Disposer.dispose(widget)
         }
     }
@@ -182,8 +188,9 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
         assertThat(options.shellIntegration).isNull()
     }
 
-    @Test
-    fun `direct runner preserves arguments and interactive input`(@TempDir directory: Path) {
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `direct runner preserves arguments and interactive input`(useStartupOptions: Boolean, @TempDir directory: Path) {
         val source = Files.createDirectories(directory.resolve("path with spaces")).resolve("ArgvProbe.java")
         val result = source.parent.resolve("result.txt")
         Files.writeString(source, """
@@ -210,7 +217,8 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
             .shellCommand(runner.tabState.myShellCommand)
             .workingDirectory(directory.toString())
             .build())
-        val process = runner.createProcess(options)
+        val connector = if (useStartupOptions) runner.createTtyConnector(options) else runner.createTtyConnector(runner.createProcess(options))
+        val process = requireNotNull(ShellTerminalWidget.getProcessTtyConnector(connector)).process
         try {
             process.outputStream.write("ready".toByteArray(Charsets.UTF_8))
             process.outputStream.write(TerminalKeyEncoder().getCode(KeyEvent.VK_ENTER, 0))
@@ -223,7 +231,7 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
             }
             assertThat(Files.readAllLines(result)).containsExactly("arguments=$encodedArguments", "input=ready")
         } finally {
-            process.destroy()
+            connector.close()
         }
     }
 }
