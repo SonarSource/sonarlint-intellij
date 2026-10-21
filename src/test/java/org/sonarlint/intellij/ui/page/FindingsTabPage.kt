@@ -23,6 +23,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBPanelWithEmptyText
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
@@ -39,20 +40,32 @@ class FindingsTabPage internal constructor(
 
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
+    val filters: FindingsTabFiltersPanelPage
+        get() = readPanelState { FindingsTabFiltersPanelPage(project, panel) }
+
     val findingsTree: FindingsTreePage
-        get() = readSynced { FindingsTreePage(findingsIssueTree()) }
+        get() = readPanelState { FindingsTreePage(findingsIssueTree()) }
 
     val oldFindingsTree: FindingsTreePage
-        get() = readSynced { FindingsTreePage(oldFindingsIssueTree()) }
+        get() = readPanelState { FindingsTreePage(oldFindingsIssueTree()) }
 
     val issues: List<FindingNodePage>
-        get() = readSynced {
+        get() = readPanelState {
             FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
         }
 
     /** Text of the issues row in [org.sonarlint.intellij.ui.currentfile.CurrentFileSummaryPanel]. */
     val issuesSummaryButtonText: String
-        get() = readSynced { readIssuesSummaryButtonText() }
+        get() = readPanelState { readIssuesSummaryButtonText() }
+
+    /** Empty-state banner in the issues area (e.g. "No findings to display"). */
+    val emptyStateText: String
+        get() = readPanelState {
+            panel.walkComponents()
+                .filterIsInstance<JBPanelWithEmptyText>()
+                .first()
+                .emptyText.text
+        }
 
     /** Refreshes the tab through [SonarLintToolWindow]; call only on the EDT. */
     internal fun refreshWithEditorSelection() {
@@ -63,9 +76,8 @@ class FindingsTabPage internal constructor(
         repeat(10) { pumpEdt() }
     }
 
-    private fun <T> readSynced(read: () -> T): T =
+    private fun <T> readPanelState(read: () -> T): T =
         readOnEdt {
-            refreshWithEditorSelection()
             repeat(30) { pumpEdt() }
             read()
         }
