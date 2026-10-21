@@ -27,7 +27,7 @@ import com.intellij.util.ui.UIUtil
 import com.fasterxml.jackson.databind.json.JsonMapper
 import java.io.IOException
 import java.nio.file.AccessDeniedException
-import java.nio.file.FileSystemLoopException
+import java.nio.file.FileSystemException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -153,6 +153,23 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).state).isEqualTo(McpConfigurationState.UNKNOWN)
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).diagnostics).anyMatch { it.contains("access denied") }
         assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state).isEqualTo(McpConfigurationState.NOT_CONFIGURED)
+    }
+
+    @Test
+    fun `an unreadable symlink cycle is unknown while a missing file is not configured`() {
+        val link = tempDir.resolve("mcp.json")
+        val other = tempDir.resolve("alias.json")
+        Files.createSymbolicLink(link, other.fileName)
+        Files.createSymbolicLink(other, link.fileName)
+        whenever(registry.standaloneMcpPath(AiAgent.CURSOR)).thenReturn(link)
+        whenever(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE)).thenReturn(tempDir.resolve("missing.json"))
+
+        val inspected = coordinator().inspectSnapshot(baseSnapshot(listOf(capability(AiAgent.CURSOR), capability(AiAgent.CLAUDE_CODE)))).get()
+
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CURSOR).state).isEqualTo(McpConfigurationState.UNKNOWN)
+        assertThat(inspected.mcpConfigurations.getValue(AiAgent.CLAUDE_CODE).state).isEqualTo(McpConfigurationState.NOT_CONFIGURED)
+        verify(backend, never()).inspectMcpConfiguration(eq(AiAgent.CURSOR), any())
+        verify(backend).inspectMcpConfiguration(AiAgent.CLAUDE_CODE, "")
     }
 
     @Test
@@ -689,7 +706,7 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
         plan(McpConfigurationState.NOT_CONFIGURED, "created with token")
 
         assertThatThrownBy { coordinator().createConfiguration(project, AiAgent.CURSOR, link, "connection") }
-            .isInstanceOf(FileSystemLoopException::class.java)
+            .isInstanceOf(FileSystemException::class.java)
 
         assertThat(Files.readSymbolicLink(link)).isEqualTo(other.fileName)
         assertThat(Files.readSymbolicLink(other)).isEqualTo(link.fileName)

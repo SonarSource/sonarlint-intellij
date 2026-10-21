@@ -29,11 +29,13 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -44,6 +46,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliAuthenticationStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.CliInstallationStatus
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.UninstallCliResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
@@ -201,6 +204,32 @@ class AiIntegrationsUninstallTelemetryTests : AbstractSonarLintLightTests() {
         verify(backend, never()).uninstallCli()
         assertThat(coordinator.activeOperation()).isTrue()
         coordinator.cancel(project)
+    }
+
+    @Test
+    fun `completed uninstall observes state once before queued feedback clears busy presentation`() {
+        var feedback: CliUninstallFeedback? = null
+        doAnswer { feedback = it.getArgument(0); null }.whenever(panel).setCliUninstallFeedback(org.mockito.kotlin.anyOrNull())
+        whenever(panel.isCliUninstallBusy()).thenAnswer { feedback == CliUninstallFeedback.Checking || feedback == CliUninstallFeedback.InProgress }
+        clickUninstall()
+        assertThat(feedback).isEqualTo(CliUninstallFeedback.InProgress)
+        clearInvocations(backend, telemetry)
+        whenever(backend.getAiIntegrationState(project, emptyList())).thenAnswer {
+            assertThat(feedback).isEqualTo(CliUninstallFeedback.InProgress)
+            CompletableFuture.completedFuture(installed)
+        }
+
+        CompletableFuture.runAsync {
+            uninstall.complete(UninstallCliResponse(UninstallCliResponse.Status.UNINSTALLED, "", "", null))
+        }.join()
+        assertThat(coordinator.activeOperation()).isFalse()
+        UIUtil.dispatchAllInvocationEvents()
+
+        assertThat(statuses).containsExactly(AiIntegrationActionStatus.STARTED, AiIntegrationActionStatus.SUCCEEDED)
+        assertThat(origins).containsExactly(project)
+        verify(backend, times(1)).getAiIntegrationState(project, emptyList())
+        verify(telemetry, times(1)).aiIntegrationCliStateObserved(CliInstallationStatus.INSTALLED, CliAuthenticationStatus.AUTHENTICATED)
+        verify(telemetry, times(1)).aiAgentIntegrationStateObserved(AiAgent.CURSOR, listOf(AiAgentDetectionSource.CLI), McpConfigurationState.UNKNOWN)
     }
 
     @Test

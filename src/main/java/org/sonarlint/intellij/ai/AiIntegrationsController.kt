@@ -36,6 +36,8 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation
 import org.sonarlint.intellij.messages.AiIntegrationListener
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 
@@ -66,57 +68,82 @@ class AiIntegrationsController @JvmOverloads constructor(
             .subscribe(AiIntegrationListener.TOPIC, AiIntegrationListener { origin ->
                 if (started.get() && !isDisposed()) runOnUiThread(ModalityState.defaultModalityState()) {
                     if (origin === project || !panel.isCliUninstallBusy()) {
-                        reload(clearFeedback = false)
+                        reload(clearFeedback = false, observe = origin === project)
                     }
                 }
             })
     }
 
     fun loadInitially() {
-        if (started.compareAndSet(false, true)) {
-            refresh()
-        }
+        if (started.compareAndSet(false, true)) reload(clearFeedback = true, observe = true)
     }
 
     fun refresh() {
-        if (panel.isCliUninstallBusy()) {
-            return
-        }
-        reload(clearFeedback = true)
+        if (isDisposed() || panel.isCliUninstallBusy()) return
+        val attempt = AiIntegrationTelemetryAttempt(telemetry, AiIntegrationAction.REFRESH)
+        reload(clearFeedback = true, observe = true, attempt)
     }
 
-    private fun reload(clearFeedback: Boolean) {
+    private fun reload(clearFeedback: Boolean, observe: Boolean, attempt: AiIntegrationTelemetryAttempt? = null) {
         if (isDisposed()) {
+            attempt?.finish(AiIntegrationActionStatus.CANCELLED)
             return
         }
-        if (clearFeedback) {
-            panel.setCliUninstallFeedback(null)
-        }
         val requestedGeneration = generation.incrementAndGet()
-        publish(requestedGeneration, AiIntegrationsPanelState.Loading)
         try {
-            backendService.getAiIntegrationState(project, registry.detectedIdeAgents())
-                .thenCompose(mcpCoordinator::inspectSnapshot)
-                .whenComplete { snapshot, error ->
-                    val state = if (error != null) {
-                        AiIntegrationsPanelState.Error(userFacingMessage(error))
-                    } else {
-                        AiIntegrationsPanelState.Ready(snapshot)
+            if (clearFeedback) panel.setCliUninstallFeedback(null)
+            publish(requestedGeneration, AiIntegrationsPanelState.Loading)
+            backendService.getAiIntegrationState(project, registry.detectedIdeAgents()).whenComplete { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    finishLoad(requestedGeneration, null, error ?: IllegalStateException("Unable to load AI integrations."), attempt)
+                } else {
+                    if (observe && !isDisposed()) safelyReportAiTelemetry {
+                        telemetry.aiIntegrationCliStateObserved(snapshot.cli.installation, snapshot.cli.authentication)
                     }
-                    publish(requestedGeneration, state)
+                    inspectSnapshot(requestedGeneration, snapshot, observe, attempt)
                 }
+            }
         } catch (error: Exception) {
-            publish(requestedGeneration, AiIntegrationsPanelState.Error(userFacingMessage(error)))
+            finishLoad(requestedGeneration, null, error, attempt)
         }
+    }
+
+    private fun inspectSnapshot(generation: Long, snapshot: AiIntegrationSnapshot, observe: Boolean, attempt: AiIntegrationTelemetryAttempt?) {
+        try {
+            mcpCoordinator.inspectSnapshot(snapshot).whenComplete { inspected, error ->
+                if (observe) reportAgents(snapshot, inspected.takeIf { error == null })
+                finishLoad(generation, inspected, error ?: if (inspected == null) IllegalStateException("Unable to inspect AI integrations.") else null, attempt)
+            }
+        } catch (error: Exception) {
+            if (observe) reportAgents(snapshot, null)
+            finishLoad(generation, null, error, attempt)
+        }
+    }
+
+    private fun reportAgents(snapshot: AiIntegrationSnapshot, inspected: AiIntegrationSnapshot?) {
+        snapshot.agents.groupBy { it.agent }.forEach { (agent, capabilities) ->
+            if (!isDisposed()) safelyReportAiTelemetry {
+                val sources = listOf(AiAgentDetectionSource.IDE, AiAgentDetectionSource.CLI)
+                    .filter { source -> capabilities.any { source in it.detectionSources } }
+                telemetry.aiAgentIntegrationStateObserved(agent, sources, inspected?.mcpConfigurations?.get(agent)?.state ?: McpConfigurationState.UNKNOWN)
+            }
+        }
+    }
+
+    private fun finishLoad(generation: Long, snapshot: AiIntegrationSnapshot?, error: Throwable?, attempt: AiIntegrationTelemetryAttempt?) {
+        attempt?.finish(when {
+            isAiIntegrationCancellation(error) -> AiIntegrationActionStatus.CANCELLED
+            error != null -> AiIntegrationActionStatus.FAILED
+            else -> AiIntegrationActionStatus.SUCCEEDED
+        })
+        val state = if (error != null) AiIntegrationsPanelState.Error(userFacingMessage(error)) else AiIntegrationsPanelState.Ready(snapshot!!)
+        publish(generation, state)
     }
 
     private fun publish(requestedGeneration: Long, state: AiIntegrationsPanelState) {
         runOnUiThread(project) {
             if (!isDisposed() && generation.get() == requestedGeneration) {
-                latestSnapshot = when (state) {
-                    is AiIntegrationsPanelState.Ready -> state.snapshot
-                    else -> null
-                }
+                latestSnapshot = (state as? AiIntegrationsPanelState.Ready)?.snapshot
                 panel.render(state)
             }
         }
