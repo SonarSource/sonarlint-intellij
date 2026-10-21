@@ -121,7 +121,7 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         return virtualFile
     }
 
-    /** Registers a test-data file with SLOOP and opens it in the editor (MAIN_EDITOR via code insight fixture). */
+    /** Registers a test-data file with SLOOP and opens it in the editor. */
     protected fun openFileFromTestData(relativePath: String): VirtualFile {
         val sourcePath = Path.of(testDataPath, relativePath).toAbsolutePath()
         check(Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }

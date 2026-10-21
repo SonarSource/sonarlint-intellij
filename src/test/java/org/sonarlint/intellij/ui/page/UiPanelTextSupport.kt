@@ -28,6 +28,9 @@ import org.sonarlint.intellij.ui.tree.IssueTree
 internal fun collectPanelDisplayTexts(root: Component): List<String> {
     val texts = linkedSetOf<String>()
     root.walkComponents().forEach { component ->
+        if (!component.isEffectivelyVisible(root)) {
+            return@forEach
+        }
         when (component) {
             is JBLabel -> {
                 component.text?.trim()?.takeIf { it.isNotEmpty() }?.let { texts.add(it) }
@@ -40,4 +43,18 @@ internal fun collectPanelDisplayTexts(root: Component): List<String> {
         }
     }
     return texts.toList()
+}
+
+private fun Component.isEffectivelyVisible(root: Component): Boolean {
+    var current: Component? = this
+    while (current != null) {
+        if (!current.isVisible) {
+            return false
+        }
+        if (current === root) {
+            return true
+        }
+        current = current.parent
+    }
+    return true
 }

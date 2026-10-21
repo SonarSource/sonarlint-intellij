@@ -34,6 +34,7 @@ import com.intellij.ui.table.JBTable
 import java.awt.Component
 import java.awt.Window
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import javax.swing.JButton
 import javax.swing.JDialog
 import javax.swing.JEditorPane
@@ -45,8 +46,9 @@ import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fixtures.walkComponents
 
+/** Outermost tab strip (walk order is top-down from the settings root). */
 internal fun Component.findTabbedPane(): JBTabbedPane =
-    walkComponents().filterIsInstance<JBTabbedPane>().single()
+    walkComponents().filterIsInstance<JBTabbedPane>().first()
 
 internal fun JBTabbedPane.selectTab(title: String) {
     val index = (0 until tabCount).first { getTitleAt(it) == title }
@@ -172,9 +174,14 @@ internal fun JDialog.findTextInput(): JTextComponent =
 internal data class ModalDialogSession(
     val dialog: JDialog,
     private val openerThread: Thread,
+    private val openerError: AtomicReference<Throwable?>,
 ) {
     fun awaitClosed(timeoutMillis: Long = 120_000) {
         openerThread.join(timeoutMillis)
+        openerError.get()?.let { throw it }
+        check(!openerThread.isAlive) {
+            "Modal dialog did not close within ${timeoutMillis}ms"
+        }
     }
 }
 
@@ -184,9 +191,14 @@ internal fun openModalDialog(
     dialogTitleContains: String,
     timeoutSeconds: Long = 30,
 ): ModalDialogSession {
+    val openerError = AtomicReference<Throwable?>(null)
     val opener = Thread {
-        readOnEdt {
-            openModalAction()
+        try {
+            readOnEdt {
+                openModalAction()
+            }
+        } catch (t: Throwable) {
+            openerError.set(t)
         }
     }
     opener.isDaemon = true
@@ -200,7 +212,8 @@ internal fun openModalDialog(
     val dialog = readOnEdt {
         findShowingJDialog(dialogTitleContains) ?: error("Dialog '$dialogTitleContains' not found")
     }
-    return ModalDialogSession(dialog, opener)
+    openerError.get()?.let { throw it }
+    return ModalDialogSession(dialog, opener, openerError)
 }
 
 /**

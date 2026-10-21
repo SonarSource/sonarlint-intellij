@@ -79,6 +79,8 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   private BackendService realBackendService;
   protected static final Path storageRoot = Paths.get(PathManager.getSystemPath()).resolve("sonarlint").resolve("storage");
   private final List<Path> createdTempDirs = new ArrayList<>();
+  private final List<Path> moduleScopePathsToDelete = new ArrayList<>();
+  private final List<VirtualFile> moduleScopeContentRootsToRemove = new ArrayList<>();
 
   public @NotNull Disposable getApplicationLevelDisposable() {
     return getService(AnchorApplicationService.class);
@@ -145,6 +147,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
       }
     });
     createdTempDirs.clear();
+    cleanupModuleScopeArtifacts();
     realBackendService.projectClosed(getProject());
     if (!getProject().isDisposed()) {
       getService(getProject(), RunningAnalysesTracker.class).cancelAll();
@@ -246,24 +249,29 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   protected void copyDirectoryIntoModuleScopeRoot(Path sourceDirectory) {
     try {
       var targetRoot = moduleScopeRootOnDisk();
-      Files.walk(sourceDirectory).forEach(source -> {
-        try {
-          var relative = sourceDirectory.relativize(source);
-          var target = targetRoot.resolve(relative);
-          if (Files.isDirectory(source)) {
-            Files.createDirectories(target);
-          } else {
-            Files.createDirectories(target.getParent());
-            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+      var copiedTreeRoot = targetRoot.resolve(sourceDirectory.getFileName());
+      try (var paths = Files.walk(sourceDirectory)) {
+        paths.forEach(source -> {
+          try {
+            var relative = sourceDirectory.relativize(source);
+            var target = targetRoot.resolve(relative);
+            if (Files.isDirectory(source)) {
+              Files.createDirectories(target);
+            } else {
+              Files.createDirectories(target.getParent());
+              Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+          } catch (IOException e) {
+            throw new RuntimeException(e);
           }
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      });
+        });
+      }
+      moduleScopePathsToDelete.add(copiedTreeRoot);
       var virtualDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(targetRoot);
       var contentRootAlreadyRegistered = virtualDir != null && Arrays.stream(ModuleRootManager.getInstance(getModule()).getContentRoots())
         .anyMatch(root -> root.equals(virtualDir));
       if (virtualDir != null && !contentRootAlreadyRegistered) {
+        moduleScopeContentRootsToRemove.add(virtualDir);
         WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model ->
           model.addContentEntry(virtualDir).addSourceFolder(virtualDir, false)));
       }
@@ -277,6 +285,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   protected void writeModuleScopeFile(String relativePath, String content) {
     try {
       var path = moduleScopeRootOnDisk().resolve(relativePath);
+      moduleScopePathsToDelete.add(path);
       Files.createDirectories(path.getParent());
       Files.writeString(path, content);
       var virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path);
@@ -315,20 +324,22 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   protected void copyDirectoryIntoDiskContentRoot(Path sourceDirectory) {
     try {
       var targetRoot = ensureDiskContentRoot();
-      Files.walk(sourceDirectory).forEach(source -> {
-        try {
-          var relative = sourceDirectory.relativize(source);
-          var target = targetRoot.resolve(relative);
-          if (Files.isDirectory(source)) {
-            Files.createDirectories(target);
-          } else {
-            Files.createDirectories(target.getParent());
-            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+      try (var paths = Files.walk(sourceDirectory)) {
+        paths.forEach(source -> {
+          try {
+            var relative = sourceDirectory.relativize(source);
+            var target = targetRoot.resolve(relative);
+            if (Files.isDirectory(source)) {
+              Files.createDirectories(target);
+            } else {
+              Files.createDirectories(target.getParent());
+              Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+          } catch (IOException e) {
+            throw new RuntimeException(e);
           }
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      });
+        });
+      }
       var virtualDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(targetRoot);
       VfsUtil.markDirtyAndRefresh(false, true, true, virtualDir);
       notifyBackendOfFilesUnderDiskContentRoot();
@@ -386,5 +397,30 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   protected String getProjectBackendId() {
     return getProject().getProjectFilePath();
+  }
+
+  private void cleanupModuleScopeArtifacts() {
+    for (var path : moduleScopePathsToDelete) {
+      try {
+        if (Files.isDirectory(path)) {
+          PathUtils.deleteDirectory(path);
+        } else if (Files.exists(path)) {
+          Files.delete(path);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    moduleScopePathsToDelete.clear();
+    for (var contentRoot : moduleScopeContentRootsToRemove) {
+      WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model -> {
+        for (var entry : model.getContentEntries()) {
+          if (entry.getFile() != null && entry.getFile().equals(contentRoot)) {
+            model.removeContentEntry(entry);
+          }
+        }
+      }));
+    }
+    moduleScopeContentRootsToRemove.clear();
   }
 }

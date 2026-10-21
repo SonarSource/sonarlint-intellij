@@ -32,6 +32,9 @@ Example assertion (see `FindingsTabAnalysisLightTests`):
 
 ```kotlin
 val file = openFileFromTestData("src/file.xml")
+awaitUntilAsserted {
+    assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
+}
 mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
 awaitUntilAsserted {
     assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")
@@ -39,7 +42,7 @@ awaitUntilAsserted {
 }
 ```
 
-Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button. Poll with [`awaitUntilAsserted`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt); page object getters refresh from the selected editor on each read—not `AnalysisSubmitter` or `AnalysisStatus`.
+Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button. Wait until the button is enabled, then poll findings with [`awaitUntilAsserted`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt)—not direct `AnalysisSubmitter` / `AnalysisStatus` calls.
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 
@@ -73,12 +76,12 @@ assertThat(getProjectSettings().fileExclusions).containsExactly("FILE:src/main/j
 | Findings filter bar (toggle + focus on new code) | [`FindingsTabFiltersPanelPage`](../src/test/java/org/sonarlint/intellij/ui/page/FindingsTabFiltersPanelPage.kt) via `mainToolWindow.findings.filters` |
 | Report tab assertions | [`ReportTabPage`](../src/test/java/org/sonarlint/intellij/ui/page/ReportTabPage.kt) via `mainToolWindow.reportTab()` |
 
-Former Standalone UI IT scenarios are covered by [`StandaloneIdeaLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/StandaloneIdeaLightTests.kt) (global rule toggle, project file exclusions, IaC finding, walkthrough flag).
+Former Standalone UI IT scenarios are covered by [`StandaloneIdeaLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/StandaloneIdeaLightTests.kt) (global rule toggle, project file exclusions, IaC finding, walkthrough auto-open policy via [`shouldAutoOpenWalkthrough`](../src/main/java/org/sonarlint/intellij/OpenWelcomePageOnceOneProjectOpened.kt)).
 
 Example (focus on new code, then report messages after a full analysis):
 
 ```kotlin
-mainToolWindow.findings.filters.setFocusOnNewCode(true)
+mainToolWindow.findings.filters.setFocusOnNewCode(true) // waits until CleanAsYouCodeService reflects the toggle
 // trigger analyze (e.g. editor or toolbar action) …
 awaitUntilAsserted {
     assertThat(mainToolWindow.reportTab().containsAllTexts(
