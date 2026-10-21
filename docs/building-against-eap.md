@@ -15,23 +15,24 @@ Use exact numeric EAP build numbers from the JetBrains download pages for IDEA a
 Rider uses the Maven SDK archive, whose published version is an EAP snapshot such as `2026.3-EAP6-SNAPSHOT`.
 Modern unified IntelliJ IDEA EAPs use `IU`; the default `IC` selects Community.
 
-The following are illustrative build numbers, **not validated successful builds**. Replace them with the EAPs you need:
+This example selects IDEA and Node.js EAP SDKs, keeping the other products on the stable baseline:
 
 ```bash
 IDEA_EAP=263.7031.23
-CLION_EAP=263.7031.19
-RIDER_EAP=2026.3-EAP6-SNAPSHOT
 
 env -u IDEA_HOME -u ULTIMATE_HOME -u CLION_HOME -u RIDER_HOME \
   ./gradlew classes testClasses :buildPlugin \
   -PintellijBuildType=IU -PintellijBuildVersion="$IDEA_EAP" \
-  -PintellijUltimateBuildVersion="$IDEA_EAP" \
-  -PclionBuildVersion="$CLION_EAP" -PriderBuildVersion="$RIDER_EAP"
+  -PintellijUltimateBuildVersion="$IDEA_EAP"
 ```
 
 `intellijBuildVersion` selects IDEA for the plugin and shared modules; `intellijUltimateBuildVersion` selects the Node.js SDK.
-`clionBuildVersion` selects both CLion modules, and `riderBuildVersion` selects Rider.
-These properties are independent: keep products on the stable baseline when they are outside your investigation.
+For both CLion modules, append `-PclionBuildVersion=263.7031.19`; for Rider, append `-PriderBuildVersion=2026.3-EAP6-SNAPSHOT`.
+These selectors are independent: update only the products involved in your investigation.
+
+IDEA `263.7031.23` resolves dependencies but currently fails compilation at `GeneratedSourcesFilter.isGeneratedSourceByAnyFilter`.
+CLion `263.7031.19` removes the `com.intellij.cidr.lang` and `com.intellij.cidr.base` plugins and the `OCPsiFile` API, requiring a separate migration.
+Successful EAP packaging and sandbox launch remain unvalidated.
 
 ## Run and debug
 
@@ -41,8 +42,7 @@ Launch an IDEA sandbox with the same build flags used above:
 env -u IDEA_HOME -u ULTIMATE_HOME -u CLION_HOME -u RIDER_HOME \
   ./gradlew :runLocalIde \
   -PintellijBuildType=IU -PintellijBuildVersion="$IDEA_EAP" \
-  -PintellijUltimateBuildVersion="$IDEA_EAP" \
-  -PclionBuildVersion="$CLION_EAP" -PriderBuildVersion="$RIDER_EAP"
+  -PintellijUltimateBuildVersion="$IDEA_EAP"
 ```
 
 To launch an installed IDEA, CLion, or Rider EAP, append `-PrunIdeDirectory="/path/to/IDE"`.
