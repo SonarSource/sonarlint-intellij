@@ -54,40 +54,4 @@ Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/or
 | Walkthrough | `SonarLintWalkthroughToolWindowFactory` |
 | Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`); page object [`EditorTrafficLightPage`](../src/test/java/org/sonarlint/intellij/ui/page/EditorTrafficLightPage.kt) |
 | Notifications | `SonarLintProjectNotifications`, `NotificationGroup` EP, `Notifications.TOPIC` |
-| Settings | `applicationConfigurable` / `projectConfigurable` EP (`sonarlint` ids in `plugin.xml`); page objects under [`ui/page/settings/`](../src/test/java/org/sonarlint/intellij/ui/page/settings/) |
-
-## Settings page objects
-
-Use [`openSqIdeSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Tools → SonarQube for IDE** (global configurable) and [`openSqIdeProjectSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Project Settings** (Findings toolbar configure action). Each opener returns a root page object with tab accessors; **File Exclusions** exposes `clickAddExclusion()` → dialog page object → `save()` on the root page persists via `Configurable.apply()`.
-
-Example (project file exclusion):
-
-```kotlin
-val settings = openSqIdeProjectSettings()
-settings.fileExclusionsTab.addFileExclusion("src/main/java/foo/Bar.java")
-settings.save()
-assertThat(getProjectSettings().fileExclusions).containsExactly("FILE:src/main/java/foo/Bar.java")
-```
-
-## Findings filters and Report tab
-
-| Piece | Location |
-| --- | --- |
-| Findings filter bar (toggle + focus on new code) | [`FindingsTabFiltersPanelPage`](../src/test/java/org/sonarlint/intellij/ui/page/FindingsTabFiltersPanelPage.kt) via `mainToolWindow.findings.filters` |
-| Report tab assertions | [`ReportTabPage`](../src/test/java/org/sonarlint/intellij/ui/page/ReportTabPage.kt) via `mainToolWindow.reportTab()` |
-
-Former Standalone UI IT scenarios are covered by [`StandaloneIdeaLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/StandaloneIdeaLightTests.kt) (global rule toggle, project file exclusions, IaC finding, walkthrough auto-open policy via [`shouldAutoOpenWalkthrough`](../src/main/java/org/sonarlint/intellij/OpenWelcomePageOnceOneProjectOpened.kt)).
-
-Example (focus on new code, then report messages after a full analysis):
-
-```kotlin
-mainToolWindow.findings.filters.setFocusOnNewCode(true) // waits until CleanAsYouCodeService reflects the toggle
-// trigger analyze (e.g. editor or toolbar action) …
-awaitUntilAsserted {
-    assertThat(mainToolWindow.reportTab().containsAllTexts(
-        "Found 1 new issue from last 30 days",
-        "No older issues",
-    )).isTrue()
-}
-mainToolWindow.findings.filters.resetFocusOnNewCode()
-```
+| Settings | `applicationConfigurable` / `projectConfigurable` EP (`sonarlint` ids in `plugin.xml`) |
