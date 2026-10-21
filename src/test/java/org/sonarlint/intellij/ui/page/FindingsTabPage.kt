@@ -41,11 +41,7 @@ class FindingsTabPage internal constructor(
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
     val filters: FindingsTabFiltersPanelPage
-<<<<<<< HEAD
-        get() = readSynced { FindingsTabFiltersPanelPage(project, panel) }
-=======
         get() = readPanelState { FindingsTabFiltersPanelPage(project, panel) }
->>>>>>> origin/task/dam/SLI-2988-light-settings-page-objects
 
     val findingsTree: FindingsTreePage
         get() = readPanelState { FindingsTreePage(findingsIssueTree()) }
