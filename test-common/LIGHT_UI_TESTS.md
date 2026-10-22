@@ -76,7 +76,7 @@ assertThat(getProjectSettings().fileExclusions).containsExactly("FILE:src/main/j
 | Findings filter bar (toggle + focus on new code) | [`FindingsTabFiltersPanelPage`](../src/test/java/org/sonarlint/intellij/ui/page/FindingsTabFiltersPanelPage.kt) via `mainToolWindow.findings.filters` |
 | Report tab assertions | [`ReportTabPage`](../src/test/java/org/sonarlint/intellij/ui/page/ReportTabPage.kt) via `mainToolWindow.reportTab()` |
 
-Former Standalone UI IT scenarios are covered by [`StandaloneIdeaLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/StandaloneIdeaLightTests.kt) (global rule toggle, project file exclusions, IaC finding, walkthrough auto-open policy via [`shouldAutoOpenWalkthrough`](../src/main/java/org/sonarlint/intellij/OpenWelcomePageOnceOneProjectOpened.kt)).
+Former Standalone UI IT scenarios are covered by [`StandaloneIdeaLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/StandaloneIdeaLightTests.kt) (global rule toggle, project file exclusions, IaC finding, walkthrough auto-open policy via [`shouldAutoOpenWalkthrough`](../src/main/java/org/sonarlint/intellij/OpenWelcomePageOnceOneProjectOpened.kt)). Copy Fix Prompt coverage lives in [`CopyFixPromptLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/CopyFixPromptLightTests.kt) and runs when [SLI-2813 / #1844](https://github.com/SonarSource/sonarlint-intellij/pull/1844) is stacked on this branch.
 
 Example (focus on new code, then report messages after a full analysis):
 

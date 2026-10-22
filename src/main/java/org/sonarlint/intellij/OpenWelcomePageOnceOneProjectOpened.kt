@@ -28,7 +28,11 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.ui.walkthrough.SonarLintWalkthroughToolWindow
 import org.sonarlint.intellij.util.runOnPooledThread
 
-private const val HAS_WALKTHROUGH_RUN_ONCE: String = "hasWalkthroughRunOnce"
+const val HAS_WALKTHROUGH_RUN_ONCE: String = "hasWalkthroughRunOnce"
+
+/** Whether the walkthrough should auto-open on project open (mirrors [OpenWelcomePageOnceOneProjectOpened]). */
+fun shouldAutoOpenWalkthrough(propertiesHasRunOnce: Boolean, globalHasRunOnce: Boolean): Boolean =
+    !propertiesHasRunOnce && !globalHasRunOnce
 
 class OpenWelcomePageOnceOneProjectOpened : ProjectActivity {
 
@@ -38,8 +42,10 @@ class OpenWelcomePageOnceOneProjectOpened : ProjectActivity {
         }
         runOnPooledThread(project) {
             val properties = PropertiesComponent.getInstance()
+            val propertiesHasRunOnce = properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false)
+            val globalHasRunOnce = getGlobalSettings().hasWalkthroughRunOnce()
 
-            if (!properties.getBoolean(HAS_WALKTHROUGH_RUN_ONCE, false) && !getGlobalSettings().hasWalkthroughRunOnce()) {
+            if (shouldAutoOpenWalkthrough(propertiesHasRunOnce, globalHasRunOnce)) {
                 SonarLintUtils.getService(project, SonarLintWalkthroughToolWindow::class.java).openWelcomePage()
             }
 

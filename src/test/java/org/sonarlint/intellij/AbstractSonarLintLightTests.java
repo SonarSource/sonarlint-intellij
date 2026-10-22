@@ -26,9 +26,11 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
@@ -37,9 +39,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
@@ -58,6 +63,8 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.fs.VirtualFileEvent;
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
 import org.sonarlint.intellij.fixtures.AbstractLightTests;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
@@ -72,6 +79,8 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   private BackendService realBackendService;
   protected static final Path storageRoot = Paths.get(PathManager.getSystemPath()).resolve("sonarlint").resolve("storage");
   private final List<Path> createdTempDirs = new ArrayList<>();
+  private final List<Path> moduleScopePathsToDelete = new ArrayList<>();
+  private final List<VirtualFile> moduleScopeContentRootsToRemove = new ArrayList<>();
 
   public @NotNull Disposable getApplicationLevelDisposable() {
     return getService(AnchorApplicationService.class);
@@ -138,6 +147,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
       }
     });
     createdTempDirs.clear();
+    cleanupModuleScopeArtifacts();
     realBackendService.projectClosed(getProject());
     if (!getProject().isDisposed()) {
       getService(getProject(), RunningAnalysesTracker.class).cancelAll();
@@ -200,7 +210,11 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
     return file;
   }
 
-  protected PsiFile createTestPsiFile(String fileName, String text) {
+  /**
+   * Writable module content root on the local filesystem (not {@code temp://} VFS).
+   * Required for IaC Helm analysis in SLOOP.
+   */
+  protected Path ensureDiskContentRoot() {
     try {
       if (createdTempDirs.isEmpty()) {
         var tempDir = Files.createTempDirectory("sonarlint-light-test-src");
@@ -209,8 +223,152 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
         WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model ->
           model.addContentEntry(virtualDir).addSourceFolder(virtualDir, false)));
       }
+      return createdTempDirs.get(0);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
-      var root = createdTempDirs.get(0);
+  /**
+   * On-disk root of the light-test module (same tree as the UI IT project root when opening {@code its/projects/...}).
+   * Helm/IaC analysis resolves {@code Chart.yaml} relative to this scope, not a separate temp content root.
+   */
+  protected Path moduleScopeRootOnDisk() {
+    var basePath = getProject().getBasePath();
+    if (basePath != null) {
+      return Paths.get(basePath);
+    }
+    var projectFile = getProject().getProjectFilePath();
+    if (projectFile != null) {
+      return Paths.get(projectFile).getParent();
+    }
+    throw new IllegalStateException("Light test project has no on-disk root");
+  }
+
+  /** Copies a directory tree into {@link #moduleScopeRootOnDisk()} and refreshes the VFS. */
+  protected void copyDirectoryIntoModuleScopeRoot(Path sourceDirectory) {
+    try {
+      var targetRoot = moduleScopeRootOnDisk();
+      var copiedTreeRoot = targetRoot.resolve(sourceDirectory.getFileName());
+      try (var paths = Files.walk(sourceDirectory)) {
+        paths.forEach(source -> {
+          try {
+            var relative = sourceDirectory.relativize(source);
+            var target = copiedTreeRoot.resolve(relative);
+            if (Files.isDirectory(source)) {
+              Files.createDirectories(target);
+            } else {
+              Files.createDirectories(target.getParent());
+              Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
+      }
+      moduleScopePathsToDelete.add(copiedTreeRoot);
+      var virtualCopiedDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(copiedTreeRoot);
+      var copiedDirNeedsContentRoot = virtualCopiedDir != null && Arrays.stream(ModuleRootManager.getInstance(getModule()).getContentRoots())
+        .noneMatch(root -> isSameOrAncestor(root, virtualCopiedDir));
+      if (copiedDirNeedsContentRoot) {
+        moduleScopeContentRootsToRemove.add(virtualCopiedDir);
+        WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model ->
+          model.addContentEntry(virtualCopiedDir).addSourceFolder(virtualCopiedDir, false)));
+      }
+      VfsUtil.markDirtyAndRefresh(false, true, true, virtualCopiedDir);
+      notifyBackendOfCopiedTree(sourceDirectory, copiedTreeRoot);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected void writeModuleScopeFile(String relativePath, String content) {
+    try {
+      var path = moduleScopeRootOnDisk().resolve(relativePath);
+      moduleScopePathsToDelete.add(path);
+      Files.createDirectories(path.getParent());
+      Files.writeString(path, content);
+      var virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path);
+      if (virtualFile != null) {
+        getService(BackendService.class).updateFileSystem(
+          Map.of(getModule(), List.of(new VirtualFileEvent(ModuleFileEvent.Type.MODIFIED, virtualFile))),
+          true);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void notifyBackendOfCopiedTree(Path sourceDirectory, Path copiedTreeRoot) {
+    try {
+      var events = new ArrayList<VirtualFileEvent>();
+      try (var paths = Files.walk(sourceDirectory)) {
+        paths.filter(Files::isRegularFile).forEach(source -> {
+          var relative = sourceDirectory.relativize(source);
+          var target = copiedTreeRoot.resolve(relative);
+          var virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(target);
+          if (virtualFile != null) {
+            events.add(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile));
+          }
+        });
+      }
+      if (!events.isEmpty()) {
+        getService(BackendService.class).updateFileSystem(Map.of(getModule(), events), true);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /** Copies a directory tree into {@link #ensureDiskContentRoot()} and refreshes the VFS. */
+  protected void copyDirectoryIntoDiskContentRoot(Path sourceDirectory) {
+    try {
+      var targetRoot = ensureDiskContentRoot();
+      try (var paths = Files.walk(sourceDirectory)) {
+        paths.forEach(source -> {
+          try {
+            var relative = sourceDirectory.relativize(source);
+            var target = targetRoot.resolve(relative);
+            if (Files.isDirectory(source)) {
+              Files.createDirectories(target);
+            } else {
+              Files.createDirectories(target.getParent());
+              Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
+      }
+      var virtualDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(targetRoot);
+      VfsUtil.markDirtyAndRefresh(false, true, true, virtualDir);
+      notifyBackendOfFilesUnderDiskContentRoot();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected void notifyBackendOfFilesUnderDiskContentRoot() {
+    try {
+      var root = ensureDiskContentRoot();
+      var events = new ArrayList<VirtualFileEvent>();
+      try (var paths = Files.walk(root)) {
+        paths.filter(Files::isRegularFile).forEach(path -> {
+          var virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path);
+          if (virtualFile != null) {
+            events.add(new VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile));
+          }
+        });
+      }
+      getService(BackendService.class).updateFileSystem(Map.of(getModule(), events), true);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected PsiFile createTestPsiFile(String fileName, String text) {
+    try {
+      var root = ensureDiskContentRoot();
       var file = root.resolve(fileName);
       Files.createDirectories(file.getParent());
       Files.writeString(file, text);
@@ -239,5 +397,41 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   protected String getProjectBackendId() {
     return getProject().getProjectFilePath();
+  }
+
+  private static boolean isSameOrAncestor(VirtualFile ancestor, VirtualFile file) {
+    var current = file;
+    while (current != null) {
+      if (current.equals(ancestor)) {
+        return true;
+      }
+      current = current.getParent();
+    }
+    return false;
+  }
+
+  private void cleanupModuleScopeArtifacts() {
+    for (var path : moduleScopePathsToDelete) {
+      try {
+        if (Files.isDirectory(path)) {
+          PathUtils.deleteDirectory(path);
+        } else if (Files.exists(path)) {
+          Files.delete(path);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    moduleScopePathsToDelete.clear();
+    for (var contentRoot : moduleScopeContentRootsToRemove) {
+      WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model -> {
+        for (var entry : model.getContentEntries()) {
+          if (entry.getFile() != null && entry.getFile().equals(contentRoot)) {
+            model.removeContentEntry(entry);
+          }
+        }
+      }));
+    }
+    moduleScopeContentRootsToRemove.clear();
   }
 }

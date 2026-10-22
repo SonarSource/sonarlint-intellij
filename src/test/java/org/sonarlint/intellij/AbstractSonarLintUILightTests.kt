@@ -19,10 +19,17 @@
  */
 package org.sonarlint.intellij
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import java.nio.file.Files
 import java.nio.file.Path
+import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
@@ -89,7 +96,32 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         return virtualFile
     }
 
-    /** Registers a test-data file with SLOOP and opens it in the editor (MAIN_EDITOR via code insight fixture). */
+    /** Opens a file under {@link AbstractSonarLintLightTests#moduleScopeRootOnDisk()} in the editor and notifies SLOOP. */
+    protected fun openModuleScopeRelativeFile(relativePath: String): VirtualFile {
+        val file = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(
+            moduleScopeRootOnDisk().resolve(relativePath),
+        ) ?: error("Project file not found on disk: $relativePath")
+        myFixture.configureFromExistingVirtualFile(file)
+        getService(BackendService::class.java).updateFileSystem(
+            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, file))),
+            true,
+        )
+        return file
+    }
+
+    /** Copies a test-data file into the module and notifies SLOOP (does not open the editor). */
+    protected fun copyFileFromTestData(relativePath: String): VirtualFile {
+        val sourcePath = Path.of(testDataPath, relativePath).toAbsolutePath()
+        check(Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
+        val virtualFile = myFixture.copyFileToProject(relativePath, relativePath)
+        getService(BackendService::class.java).updateFileSystem(
+            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
+            true,
+        )
+        return virtualFile
+    }
+
+    /** Registers a test-data file with SLOOP and opens it in the editor. */
     protected fun openFileFromTestData(relativePath: String): VirtualFile {
         val sourcePath = Path.of(testDataPath, relativePath).toAbsolutePath()
         check(Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
@@ -107,6 +139,30 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
             val readiness = getService(project, AnalysisReadinessCache::class.java)
             assertThat(readiness.isModuleReady(module)).isTrue()
             assertThat(readiness.isProjectReady).isTrue()
+        }
+    }
+
+    /** Runs **Analyze with SonarQube for IDE** on [files] and opens a **Report** tab (editor context menu place). */
+    protected fun analyzeFilesForReport(vararg files: VirtualFile) {
+        readOnEdt {
+            val action = SonarAnalyzeFilesAction()
+            val presentation = Presentation()
+            val event = AnActionEvent(
+                null,
+                { dataId ->
+                    when {
+                        CommonDataKeys.PROJECT.`is`(dataId) -> project
+                        CommonDataKeys.VIRTUAL_FILE_ARRAY.`is`(dataId) -> files
+                        else -> null
+                    }
+                },
+                ActionPlaces.EDITOR_POPUP,
+                presentation,
+                ActionManager.getInstance(),
+                0,
+            )
+            action.actionPerformed(event)
+            repeat(20) { pumpEdt() }
         }
     }
 
