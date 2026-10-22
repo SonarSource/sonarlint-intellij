@@ -30,15 +30,3 @@ To launch an installed IDE, append `-PrunIdeDirectory="/path/to/IDE"`; this chan
 `IDEA_HOME`, `ULTIMATE_HOME`, `CLION_HOME`, and `RIDER_HOME` override the corresponding compilation SDK version properties.
 On macOS, local paths must point to `.app/Contents`. Use a runtime supported by the EAP.
 The sandbox is in `build/sonarlint-test`.
-
-## Current compatibility limits
-
-- IDEA `263.7031.23` resolves dependencies but fails compilation at `GeneratedSourcesFilter.isGeneratedSourceByAnyFilter`.
-- CLion `263.7031.19` removes the `com.intellij.cidr.lang` / `com.intellij.cidr.base` plugins and the `OCPsiFile` API, requiring a separate migration.
-
-Successful EAP packaging and sandbox launch remain unvalidated.
-
-## Dependency locks
-
-Try committed locks first. If EAP dependencies conflict, run the [lock update command](../gradle/README.md#updating-lock-files)
-in a disposable checkout with the same EAP flags and SDK environment. Do not commit experimental EAP locks.
