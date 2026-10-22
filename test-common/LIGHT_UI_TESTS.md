@@ -54,4 +54,17 @@ Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/or
 | Walkthrough | `SonarLintWalkthroughToolWindowFactory` |
 | Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`); page object [`EditorTrafficLightPage`](../src/test/java/org/sonarlint/intellij/ui/page/EditorTrafficLightPage.kt) |
 | Notifications | `SonarLintProjectNotifications`, `NotificationGroup` EP, `Notifications.TOPIC` |
-| Settings | `applicationConfigurable` / `projectConfigurable` EP (`sonarlint` ids in `plugin.xml`) |
+| Settings | `applicationConfigurable` / `projectConfigurable` EP (`sonarlint` ids in `plugin.xml`); page objects under [`ui/page/settings/`](../src/test/java/org/sonarlint/intellij/ui/page/settings/) |
+
+## Settings page objects
+
+Use [`openSqIdeSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Tools → SonarQube for IDE** (global configurable) and [`openSqIdeProjectSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Project Settings** (Findings toolbar configure action). Each opener returns a root page object with tab accessors; **File Exclusions** exposes `clickAddExclusion()` → dialog page object → `save()` on the root page persists via `Configurable.apply()`.
+
+Example (project file exclusion):
+
+```kotlin
+val settings = openSqIdeProjectSettings()
+settings.fileExclusionsTab.addFileExclusion("src/main/java/foo/Bar.java")
+settings.save()
+assertThat(getProjectSettings().fileExclusions).containsExactly("FILE:src/main/java/foo/Bar.java")
+```
