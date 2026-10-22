@@ -68,3 +68,26 @@ settings.fileExclusionsTab.addFileExclusion("src/main/java/foo/Bar.java")
 settings.save()
 assertThat(getProjectSettings().fileExclusions).containsExactly("FILE:src/main/java/foo/Bar.java")
 ```
+
+## Findings filters and Report tab
+
+| Piece | Location |
+| --- | --- |
+| Findings filter bar (toggle + focus on new code) | [`FindingsTabFiltersPanelPage`](../src/test/java/org/sonarlint/intellij/ui/page/FindingsTabFiltersPanelPage.kt) via `mainToolWindow.findings.filters` |
+| Report tab assertions | [`ReportTabPage`](../src/test/java/org/sonarlint/intellij/ui/page/ReportTabPage.kt) via `mainToolWindow.reportTab()` |
+
+Former Standalone UI IT scenarios are covered by [`StandaloneIdeaLightTests`](../src/test/java/org/sonarlint/intellij/ui/standalone/StandaloneIdeaLightTests.kt) (global rule toggle, project file exclusions, IaC finding, walkthrough auto-open policy via [`shouldAutoOpenWalkthrough`](../src/main/java/org/sonarlint/intellij/OpenWelcomePageOnceOneProjectOpened.kt)).
+
+Example (focus on new code, then report messages after a full analysis):
+
+```kotlin
+mainToolWindow.findings.filters.setFocusOnNewCode(true) // waits until CleanAsYouCodeService reflects the toggle
+// trigger analyze (e.g. editor or toolbar action) …
+awaitUntilAsserted {
+    assertThat(mainToolWindow.reportTab().containsAllTexts(
+        "Found 1 new issue from last 30 days",
+        "No older issues",
+    )).isTrue()
+}
+mainToolWindow.findings.filters.resetFocusOnNewCode()
+```

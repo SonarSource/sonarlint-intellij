@@ -63,9 +63,16 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
 
     private val openSettingsPages = mutableListOf<AutoCloseable>()
 
+    /**
+     * Opens **Settings → Tools → SonarQube for IDE** and returns a page object for that configurable.
+     * Call [SonarLintGlobalSettingsPage.save] to persist changes (equivalent to OK/Apply on the settings dialog).
+     */
     protected fun openSqIdeSettings(): SonarLintGlobalSettingsPage =
         SonarLintGlobalSettingsPage.open(project).also { openSettingsPages.add(it) }
 
+    /**
+     * Opens **SonarQube for IDE → Project Settings** (same entry as the Findings toolbar configure action).
+     */
     protected fun openSqIdeProjectSettings(): SonarLintProjectSettingsPage =
         SonarLintProjectSettingsPage.open(project).also { openSettingsPages.add(it) }
 
