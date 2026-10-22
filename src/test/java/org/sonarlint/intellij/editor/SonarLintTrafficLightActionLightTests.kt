@@ -19,10 +19,13 @@
  */
 package org.sonarlint.intellij.editor
 
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.page.EditorTrafficLightPage
 
 class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
@@ -33,14 +36,22 @@ class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
-    fun should_show_issue_count_on_traffic_light_after_analysis_via_inspection_widget_ep() {
+    fun should_show_issue_count_on_traffic_light_after_analysis() {
         val file = openFileFromTestData("src/file.xml")
+        val editor = readOnEdt {
+            val fileEditorManager = FileEditorManager.getInstance(project)
+            (fileEditorManager.getSelectedEditor(file) as? TextEditor)?.editor
+                ?: fileEditorManager.selectedTextEditor
+                ?: myFixture.editor
+        }
 
         mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
 
         awaitUntilAsserted {
             assertThat(mainToolWindow.findings.issues).hasSize(1)
-            assertThat(EditorTrafficLightPage.createForSelectedEditor(project).issueCountLabelText).isEqualTo("1")
+            assertThat(
+                EditorTrafficLightPage.createFromTrafficLightAction(project, editor, file).issueCountLabelText,
+            ).isEqualTo("1")
         }
     }
 }
