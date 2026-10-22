@@ -73,6 +73,8 @@ that all tests are passing.
 How to build
 ------------
 
+See [Building against EAP versions](docs/building-against-eap.md) to build and debug against an early access IDE.
+
 ```bash
 ./gradlew buildPlugin
 ```

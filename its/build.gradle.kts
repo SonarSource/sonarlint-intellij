@@ -15,6 +15,7 @@ dependencyLocking {
     lockMode.set(LockMode.LENIENT)
 }
 
+val intellijBuildType: String by project
 val intellijBuildVersion: String by project
 val ijVersion: String by project
 val runIdeDirectory: String by project
@@ -84,7 +85,7 @@ dependencies {
                 println("ITs: Using local IDE from IDEA_HOME=$ideaHome")
                 local(ideaHome)
             } else {
-                intellijIdeaCommunity(intellijBuildVersion)
+                create(intellijBuildType, intellijBuildVersion)
             }
         }
         testFramework(TestFrameworkType.Platform)
