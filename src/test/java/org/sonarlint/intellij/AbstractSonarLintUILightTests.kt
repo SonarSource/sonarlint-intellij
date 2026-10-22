@@ -37,6 +37,8 @@ import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.ui.page.SonarLintMainToolWindowPage
 import org.sonarlint.intellij.ui.page.SonarLintUiTestContext
+import org.sonarlint.intellij.ui.page.settings.global.SonarLintGlobalSettingsPage
+import org.sonarlint.intellij.ui.page.settings.project.SonarLintProjectSettingsPage
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
@@ -55,7 +57,17 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
     @AfterEach
     fun closeMainToolWindow() {
         uiContext.releaseEditorsAndToolWindows()
+        openSettingsPages.forEach { it.close() }
+        openSettingsPages.clear()
     }
+
+    private val openSettingsPages = mutableListOf<AutoCloseable>()
+
+    protected fun openSqIdeSettings(): SonarLintGlobalSettingsPage =
+        SonarLintGlobalSettingsPage.open(project).also { openSettingsPages.add(it) }
+
+    protected fun openSqIdeProjectSettings(): SonarLintProjectSettingsPage =
+        SonarLintProjectSettingsPage.open(project).also { openSettingsPages.add(it) }
 
     /** Copies a file from the test class `testData` tree into the module and notifies SLOOP. */
     protected fun registerFileFromTestData(relativePath: String): VirtualFile {
