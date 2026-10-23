@@ -25,6 +25,7 @@ import com.intellij.openapi.roots.LanguageLevelModuleExtension
 import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.pom.java.LanguageLevel
+import com.intellij.testFramework.IndexingTestUtil
 
 object IdeaJdkTestUtils {
 
@@ -37,6 +38,8 @@ object IdeaJdkTestUtils {
                 LanguageLevelModuleExtension::class.java
             ).languageLevel = level
         }
+        // Finish the language-level push before the test project can be disposed.
+        IndexingTestUtil.waitUntilIndexesAreReady(module.project)
         return prev
     }
 
