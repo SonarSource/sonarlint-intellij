@@ -30,7 +30,7 @@ One scheduled workflow, one plugin build:
 - IntelliJ **min** × 4 suites, CLion min+latest, Rider min+latest, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL)
 - IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion` (Rider uses `eapRiderIdeVersion` when set)
 
-Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change).
+Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change). After this workflow exists on `master`, run it on demand from Actions → Integration Tests Weekly → Run workflow (`workflow_dispatch`). GitHub only lists that control once the file is on the default branch.
 
 QA jobs run `./gradlew :its:check` with `TEST_SUITE` as JUnit `includeTags`. Standalone and flavor classes must stay in `src/test` with those tags.
 
@@ -41,11 +41,11 @@ QA jobs run `./gradlew :its:check` with `TEST_SUITE` as JUnit `includeTags`. Sta
 ```properties
 minSupportedIdeVersion=2024.2
 latestStableIdeVersion=2025.3.2   # bump when JetBrains ships a new stable
-eapIdeVersion=2026.1-EAP          # must match the Repox artifact name
+eapIdeVersion=2026.3-EAP          # must match the Repox artifact name
 # Optional per-product overrides when patch numbers diverge
 minRiderIdeVersion=2024.2.7
 latestRiderIdeVersion=2025.3.2
-eapRiderIdeVersion=2026.1-EAP
+eapRiderIdeVersion=2026.3-EAP
 latestPyCharmIdeVersion=2025.3.2.1
 ```
 
