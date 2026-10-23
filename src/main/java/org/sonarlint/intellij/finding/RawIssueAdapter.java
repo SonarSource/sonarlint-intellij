@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.finding;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -112,6 +113,8 @@ public class RawIssueAdapter {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
           SonarLintConsole.get(project)
             .debug("Failed to find secondary location of finding for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
+        } catch (ProcessCanceledException e) {
+          throw e;
         } catch (Exception e) {
           var textRange = loc.getTextRange();
           var detailString = String.join(",",
