@@ -21,10 +21,10 @@ package org.sonarlint.intellij.ui.report
 
 import javax.swing.DefaultComboBoxModel
 import org.sonarlint.intellij.ui.filter.FilterCriteria
-import org.sonarlint.intellij.ui.filter.FilteredFindings
 import org.sonarlint.intellij.ui.filter.FiltersPanel
 import org.sonarlint.intellij.ui.filter.MqrImpactFilter
 import org.sonarlint.intellij.ui.filter.SeverityFilter
+import org.sonarlint.intellij.ui.filter.SeverityImpactFilter
 
 /**
  * Manages display state, UI updates, and visual feedback for the Report panel.
@@ -47,11 +47,7 @@ class ReportDisplayManager(private val filtersPanel: FiltersPanel) {
         updateSeverityComboModel()
     }
 
-    fun updateMqrMode(findings: FilteredFindings) {
-        if (findings.issues.isEmpty() && findings.hotspots.isEmpty()) {
-            return
-        }
-        val newIsMqrMode = findings.issues.any { it.isMqrMode } || findings.hotspots.any { it.isMqrMode }
+    fun updateMqrMode(newIsMqrMode: Boolean) {
         if (newIsMqrMode != isMqrMode) {
             isMqrMode = newIsMqrMode
             updateSeverityComboModel()
@@ -60,6 +56,11 @@ class ReportDisplayManager(private val filtersPanel: FiltersPanel) {
 
     private fun updateSeverityComboModel() {
         val newOptions = if (isMqrMode) MqrImpactFilter.values() else SeverityFilter.values()
+        filtersPanel.filterSeverity = if (isMqrMode) {
+            SeverityImpactFilter.MqrImpact(MqrImpactFilter.NO_FILTER)
+        } else {
+            SeverityImpactFilter.Severity(SeverityFilter.NO_FILTER)
+        }
         filtersPanel.severityCombo.setModel(DefaultComboBoxModel(newOptions))
     }
 

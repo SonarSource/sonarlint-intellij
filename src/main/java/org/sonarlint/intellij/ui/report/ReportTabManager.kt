@@ -19,148 +19,79 @@
  */
 package org.sonarlint.intellij.ui.report
 
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Key
-import com.intellij.openapi.wm.ToolWindow
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.ui.content.ContentManagerEvent
+import com.intellij.ui.content.ContentManagerListener
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.ui.ToolWindowConstants
 
-/**
- * Service responsible for managing multiple report tabs in the SonarQube for IDE tool window.
- * 
- * <h3>Design & Architecture:</h3>
- * This service manages the lifecycle of dated report tabs, allowing multiple analysis results
- * to be displayed simultaneously. Each report tab is uniquely identified by a timestamp and
- * can be closed independently.
- * 
- * <h3>Key Features:</h3>
- * - Dynamic Tab Creation: Creates new report tabs on demand when analysis results are available
- * - Date-based Naming: Each tab includes a timestamp for easy identification
- * - Multi-tab Support: Supports multiple concurrent report tabs
- * - Tab Cleanup: Automatically manages tab lifecycle and cleanup
- */
+/** Creates dated report tabs. Each analysis callback keeps its own report handle. */
 @Service(Service.Level.PROJECT)
-class ReportTabManager(private val project: Project) {
-    
-    private val reportTabs = ConcurrentHashMap<String, ReportPanel>()
-    private val batchToTabTitle = ConcurrentHashMap<String, String>()
+class ReportTabManager(private val project: Project) : Disposable {
+
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm")
-    
-    /**
-     * Creates a report tab immediately with loading state for the given batch.
-     * This provides immediate feedback to the user that analysis has started.
-     */
-    @Synchronized
-    fun createLoadingReportTab(batchId: String, expectedModuleCount: Int = 1): String? {
-        val existingTabTitle = batchToTabTitle[batchId]
-        if (existingTabTitle != null) {
-            // Tab already exists, just return the title
-            return existingTabTitle
-        }
-        
-        val toolWindow = getToolWindow() ?: return null
+    @Volatile
+    private var disposed = false
+
+    fun createLoadingReportTab(expectedModuleCount: Int = 1): ReportTab? =
+        createReportTab { it.showLoadingState(expectedModuleCount) }
+
+    fun createReportTab(analysisResult: AnalysisResult): ReportTab? =
+        createReportTab { it.updateFindings(analysisResult) }
+
+    private fun createReportTab(initialize: (ReportPanel) -> Unit): ReportTab? {
+        ApplicationManager.getApplication().assertIsDispatchThread()
+        if (disposed || project.isDisposed) return null
+        val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID) ?: return null
         val contentManager = toolWindow.contentManager
-        
-        val timestamp = LocalDateTime.now()
-        val tabTitle = "Report - ${dateFormatter.format(timestamp)}"
-        
-        // Create new report panel in loading state
-        val reportPanel = ReportPanel(project)
-        reportPanel.showLoadingState(expectedModuleCount)
-        
-        // Create and add content to tool window
-        val content = contentManager.factory.createContent(reportPanel, tabTitle, false).apply {
-            isCloseable = true
-            putUserData(REPORT_TAB_KEY, tabTitle)
-        }
-        
-        contentManager.addContent(content)
-        contentManager.setSelectedContent(content)
-        
-        // Store reference to panel and batch mapping
-        reportTabs[tabTitle] = reportPanel
-        batchToTabTitle[batchId] = tabTitle
-
-        toolWindow.show()
-        
-        return tabTitle
-    }
-
-    /**
-     * Updates an existing report tab or creates a new one for the given batch.
-     * This allows incremental updates as analysis results become available.
-     */
-    @Synchronized
-    fun updateOrCreateReportTab(batchId: String, analysisResult: AnalysisResult, completedModules: Int = 1, expectedModules: Int = 1): String? {
-        val existingTabTitle = batchToTabTitle[batchId]
-        
-        return if (existingTabTitle != null) {
-            // Update existing tab
-            reportTabs[existingTabTitle]?.let { panel ->
-                // Update progress and merge new results with existing results
-                panel.updateAnalysisProgress(completedModules, expectedModules)
-                panel.mergeAnalysisResults(analysisResult)
-                existingTabTitle
+        val panel = ReportPanel(project)
+        Disposer.register(this, panel)
+        val report = ReportTab(panel)
+        val tabTitle = "Report - ${dateFormatter.format(LocalDateTime.now())}"
+        val content = contentManager.factory.createContent(panel, tabTitle, false).apply { isCloseable = true }
+        val listener = object : ContentManagerListener {
+            override fun contentRemoved(event: ContentManagerEvent) {
+                // Removal can happen without content disposal; either path ends the report.
+                if (event.content === content) Disposer.dispose(panel)
             }
-        } else {
-            // Create new tab (fallback if loading tab wasn't created)
-            createReportTab(analysisResult, batchId)
         }
-    }
-    
-    /**
-     * Creates a new report tab with the current timestamp and displays the analysis results.
-     */
-    fun createReportTab(analysisResult: AnalysisResult): String? {
-        return createReportTab(analysisResult, null)
-    }
-    
-    private fun createReportTab(analysisResult: AnalysisResult, batchId: String?): String? {
-        val toolWindow = getToolWindow() ?: return null
-        val contentManager = toolWindow.contentManager
-        
-        val timestamp = LocalDateTime.now()
-        val tabTitle = "Report - ${dateFormatter.format(timestamp)}"
-        
-        // Create new report panel
-        val reportPanel = ReportPanel(project)
-        reportPanel.updateFindings(analysisResult)
-        
-        // Create and add content to tool window
-        val content = contentManager.factory.createContent(reportPanel, tabTitle, false).apply {
-            isCloseable = true
-            putUserData(REPORT_TAB_KEY, tabTitle)
-        }
-        
+        contentManager.addContentManagerListener(listener)
+        Disposer.register(panel, Disposable { contentManager.removeContentManagerListener(listener) })
+        initialize(panel)
         contentManager.addContent(content)
-        contentManager.setSelectedContent(content)
-        
-        // Store reference to panel
-        reportTabs[tabTitle] = reportPanel
-        
-        // Store batch mapping if provided
-        batchId?.let { batchToTabTitle[it] = tabTitle }
-
-        toolWindow.show()
-        
-        return tabTitle
+        // Content listeners can close the report synchronously during add/select.
+        if (report.isOpen) contentManager.setSelectedContent(content)
+        if (report.isOpen) toolWindow.show()
+        return report
     }
 
-    fun getOpenReportTabs(): Set<String> {
-        return reportTabs.keys.toSet()
-    }
-    
-    private fun getToolWindow(): ToolWindow? {
-        return ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)
-    }
-    
-    companion object {
-        private val REPORT_TAB_KEY = Key.create<String>("SONARLINT_REPORT_TAB_KEY")
+    override fun dispose() {
+        disposed = true
     }
 
+    /** A closed handle retains no panel and ignores all later module completions. */
+    class ReportTab internal constructor(panel: ReportPanel) {
+        @Volatile
+        private var panel: ReportPanel? = panel
+        internal val isOpen: Boolean get() = panel != null
+
+        init {
+            Disposer.register(panel, Disposable { this.panel = null })
+        }
+
+        fun update(analysisResult: AnalysisResult, completedModules: Int = 1, expectedModules: Int = 1) {
+            ApplicationManager.getApplication().assertIsDispatchThread()
+            panel?.let {
+                it.updateAnalysisProgress(completedModules, expectedModules)
+                it.mergeAnalysisResults(analysisResult)
+            }
+        }
+    }
 }

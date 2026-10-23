@@ -19,7 +19,9 @@
  */
 package org.sonarlint.intellij.ui
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.util.ui.JBUI
 import java.awt.CardLayout
 import java.awt.GridBagConstraints
@@ -34,15 +36,19 @@ import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpText
 import org.sonarlint.intellij.util.HelpLabelUtils.Companion.createHelpTextNotConnected
 import org.sonarlint.intellij.util.runOnPooledThread
 
-class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
+class WhatsInThisViewPanel @JvmOverloads constructor(val project: Project, private var helpText: String, private val parent: Disposable = project) {
+    @Volatile
+    private var disposed = false
+
     var panel: JPanel
     var layout = CardLayout()
 
     init {
+        Disposer.register(parent, Disposable { disposed = true })
         panel = JPanel(layout)
         createPanel()
         switchCards()
-        subscribeToEventsThatAffectCurrentFile(project) { this.switchCards() }
+        subscribeToEventsThatAffectCurrentFile(project, parent) { this.switchCards() }
     }
 
     private fun createPanel() {
@@ -72,6 +78,7 @@ class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
     private fun switchCards() {
         // Checking connected mode state may take time, so lets move from EDT to pooled thread
         runOnPooledThread(project) {
+            if (disposed) return@runOnPooledThread
             val projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager::class.java)
             projectBindingManager.tryGetServerConnection().ifPresentOrElse({
                 switchCard(CONNECTED)
@@ -81,7 +88,9 @@ class WhatsInThisViewPanel(val project: Project, private var helpText: String) {
     }
 
     private fun switchCard(cardName: String) {
-        runOnUiThread(project) { layout.show(panel, cardName) }
+        runOnUiThread(project) {
+            if (!disposed) layout.show(panel, cardName)
+        }
     }
 
     companion object {
