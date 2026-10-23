@@ -38,6 +38,7 @@ import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.CopyFindingsAction;
 import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
+import org.sonarlint.intellij.actions.GenerateFixPromptAction;
 import org.sonarlint.intellij.actions.MarkAsResolvedAction;
 import org.sonarlint.intellij.actions.ReopenIssueAction;
 import org.sonarlint.intellij.actions.SuggestCodeFixIntentionAction;
@@ -85,6 +86,7 @@ public class IssueTree extends FindingTree implements DataProvider {
     group.add(new MarkAsResolvedAction());
     group.add(new ReopenIssueAction());
     group.add(new CopyFindingsAction());
+    group.add(new GenerateFixPromptAction());
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
     group.addSeparator();
