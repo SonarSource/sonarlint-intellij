@@ -19,6 +19,11 @@
  */
 package org.sonarlint.intellij.mediumtests
 
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.PrimaryModuleManager
+import com.intellij.openapi.project.Project
+import com.intellij.projectImport.ProjectAttachProcessor
+import com.intellij.testFramework.ExtensionTestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
@@ -29,6 +34,30 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ModuleBindingManager
 
 class MultiModuleMediumTests : AbstractSonarLintHeavyTests() {
+
+    @Test
+    fun `primary project cannot override its binding when projects can be attached`() {
+        createModule("attached")
+        configureProjectAttachment(true)
+
+        assertThat(SonarLintUtils.getService(module, ModuleBindingManager::class.java).isBindingOverrideAllowed).isFalse()
+    }
+
+    @Test
+    fun `attached project can override its binding`() {
+        val attachedModule = createModule("attached")
+        configureProjectAttachment(true)
+
+        assertThat(SonarLintUtils.getService(attachedModule, ModuleBindingManager::class.java).isBindingOverrideAllowed).isTrue()
+    }
+
+    @Test
+    fun `primary module can override its binding when project attachment is unavailable`() {
+        createModule("other")
+        configureProjectAttachment(false)
+
+        assertThat(SonarLintUtils.getService(module, ModuleBindingManager::class.java).isBindingOverrideAllowed).isTrue()
+    }
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
@@ -48,6 +77,14 @@ class MultiModuleMediumTests : AbstractSonarLintHeavyTests() {
         connectModuleTo("overriden")
 
         assertThat(SonarLintUtils.getService(module, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("overriden")
+    }
+
+    private fun configureProjectAttachment(available: Boolean) {
+        ExtensionTestUtil.maskExtensions(ProjectAttachProcessor.EP_NAME,
+            if (available) listOf(ProjectAttachProcessor()) else emptyList(), testRootDisposable)
+        ExtensionTestUtil.maskExtensions(PrimaryModuleManager.EP_NAME, listOf(object : PrimaryModuleManager() {
+            override fun getPrimaryModule(project: Project): Module = module
+        }), testRootDisposable)
     }
 
 }

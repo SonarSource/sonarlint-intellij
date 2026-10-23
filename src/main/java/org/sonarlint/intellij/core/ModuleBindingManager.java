@@ -21,7 +21,8 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
-import com.intellij.platform.ModuleAttachProcessor;
+import com.intellij.openapi.module.PrimaryModuleManager;
+import com.intellij.projectImport.ProjectAttachProcessor;
 import java.util.Arrays;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -81,7 +82,8 @@ public class ModuleBindingManager {
    * We only want to allow overriding the binding for attached projects.
    */
   private boolean isNotPrimaryProject() {
-    return !module.equals(ModuleAttachProcessor.getPrimaryModule(module.getProject()));
+    return !ProjectAttachProcessor.canAttachToProject()
+      || !module.equals(PrimaryModuleManager.findPrimaryModule(module.getProject()));
   }
 
   private boolean hasProjectMoreThanOneModule() {
