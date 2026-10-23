@@ -250,6 +250,8 @@ intellijPlatformTesting {
         register("runLocalIde") {
             if (project.hasProperty("runIdeDirectory")) {
                 localPath = file(runIdeDirectory)
+                // Avoid adding a cached IDE alongside the explicitly selected local installation.
+                useCache = false
             }
             sandboxDirectory = project.layout.buildDirectory.dir("sonarlint-test")
             prepareSandboxTask {
