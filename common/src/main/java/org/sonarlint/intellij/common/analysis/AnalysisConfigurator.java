@@ -23,24 +23,10 @@ import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 public interface AnalysisConfigurator {
   // Name is constructed from plugin-id.extension-point-name
   ExtensionPointName<AnalysisConfigurator> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.analysisConfiguration");
 
   AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze);
-
-  class AnalysisConfiguration {
-    /**
-     * Additional analysis properties that will be passed to analyzers
-     */
-    public final Map<String, String> extraProperties = new HashMap<>();
-
-    /**
-     * Force the language of a file, instead of relying on default language detection mechanism (based on file suffixes)
-     */
-    public final Map<VirtualFile, ForcedLanguage> forcedLanguages = new HashMap<>();
-  }
 }

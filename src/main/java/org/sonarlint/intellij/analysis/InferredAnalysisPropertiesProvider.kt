@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.module.Module
 import java.net.URI
+import org.sonarlint.intellij.common.analysis.AnalysisConfiguration
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.config.Settings
@@ -31,7 +32,7 @@ object InferredAnalysisPropertiesProvider {
     fun getConfigurationFromConfiguratorEP(
         module: Module, filesToAnalyze: List<URI>,
         console: SonarLintConsole
-    ): List<AnalysisConfigurator.AnalysisConfiguration> {
+    ): List<AnalysisConfiguration> {
         val files = filesToAnalyze.map { VirtualFileUtils.uriToVirtualFile(it) }
         return AnalysisConfigurator.EP_NAME.extensionList
             .map { config ->
@@ -42,7 +43,7 @@ object InferredAnalysisPropertiesProvider {
 
     fun collectContributedExtraProperties(
         module: Module, console: SonarLintConsole,
-        contributedConfigurations: List<AnalysisConfigurator.AnalysisConfiguration>
+        contributedConfigurations: List<AnalysisConfiguration>
     ): Map<String, String> {
         val contributedProperties = HashMap<String, String>()
         contributedConfigurations.forEach { config ->

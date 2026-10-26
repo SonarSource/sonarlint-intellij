@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.sonarlint.intellij.common.analysis.AnalysisConfiguration;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 

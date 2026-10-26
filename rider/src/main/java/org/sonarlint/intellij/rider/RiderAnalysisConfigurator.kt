@@ -30,8 +30,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.pathString
+import org.sonarlint.intellij.common.analysis.AnalysisConfiguration
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator
-import org.sonarlint.intellij.common.analysis.AnalysisConfigurator.AnalysisConfiguration
 
 class RiderAnalysisConfigurator : AnalysisConfigurator {
 

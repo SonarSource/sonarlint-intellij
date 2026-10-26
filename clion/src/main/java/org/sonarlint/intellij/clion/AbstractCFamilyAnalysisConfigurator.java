@@ -23,6 +23,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
+import org.sonarlint.intellij.common.analysis.AnalysisConfiguration;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
