@@ -1105,7 +1105,8 @@ class BackendService : Disposable {
                     val taintVulnerabilityMatcher = TaintVulnerabilityMatcher(project)
                     response.taintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
                 })
-                    .expireWith(project)
+                    // expireWith takes a synchronous read lock during submission on IntelliJ 2024.2.
+                    .expireWhen { project.isDisposed }
                     .finishOnUiThread(ModalityState.defaultModalityState()) { localTaintVulnerabilities ->
                         if (!project.isDisposed) {
                             if (cache.replaceIfUnchanged(revision, localTaintVulnerabilities)) {

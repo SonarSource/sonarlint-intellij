@@ -274,19 +274,26 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     }
 
     @Test
-    fun test_refresh_taint_does_not_block_common_pool_quiescence_under_edt_write_lock() {
+    fun test_refresh_taint_does_not_block_common_pool_when_background_response_arrives_under_edt_write_lock() {
         val response = prepareTaintRefresh(project)
+        val completing = CountDownLatch(1)
+        var responseCompletion: CompletableFuture<Void>? = null
         var quiescence: Future<Boolean>? = null
         try {
             ApplicationManager.getApplication().runWriteAction {
-                response.complete(ListAllResponse(emptyList()))
+                responseCompletion = CompletableFuture.runAsync {
+                    completing.countDown()
+                    response.complete(ListAllResponse(emptyList()))
+                }
+                assertThat(completing.await(5, TimeUnit.SECONDS)).isTrue()
                 quiescence = AppExecutorUtil.getAppExecutorService().submit<Boolean> {
                     ForkJoinPool.commonPool().awaitQuiescence(1, TimeUnit.SECONDS)
                 }
                 assertThat(quiescence!!.get(2, TimeUnit.SECONDS)).isTrue()
             }
         } finally {
-            // Release the EDT write lock before joining, even when the old implementation blocks.
+            // Release the EDT write lock before joining, even when submission blocks.
+            responseCompletion?.get(5, TimeUnit.SECONDS)
             quiescence?.get(5, TimeUnit.SECONDS)
             finishTaintRefresh()
         }
