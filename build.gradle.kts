@@ -166,13 +166,17 @@ intellijPlatform {
                 create(IntelliJPlatformType.Rider, minimumVersion)
                 create(IntelliJPlatformType.CLion, minimumVersion)
                 create(IntelliJPlatformType.WebStorm, minimumVersion)
-                latest {
-                    types = listOf(
-                        IntelliJPlatformType.IntellijIdea, IntelliJPlatformType.PyCharm, IntelliJPlatformType.AndroidStudio,
-                        IntelliJPlatformType.RubyMine, IntelliJPlatformType.GoLand, IntelliJPlatformType.PhpStorm,
-                        IntelliJPlatformType.Rider, IntelliJPlatformType.CLion, IntelliJPlatformType.WebStorm
-                    )
-                    channels = listOf(ProductRelease.Channel.RELEASE)
+                val ideTypes = listOf(
+                    IntelliJPlatformType.IntellijIdea, IntelliJPlatformType.PyCharm, IntelliJPlatformType.AndroidStudio,
+                    IntelliJPlatformType.RubyMine, IntelliJPlatformType.GoLand, IntelliJPlatformType.PhpStorm,
+                    IntelliJPlatformType.Rider, IntelliJPlatformType.CLion, IntelliJPlatformType.WebStorm
+                )
+                // Select each channel separately so EAPs do not replace stable targets.
+                for (channel in listOf(ProductRelease.Channel.RELEASE, ProductRelease.Channel.EAP)) {
+                    latest {
+                        types = ideTypes
+                        channels = listOf(channel)
+                    }
                 }
             }
         }

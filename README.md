@@ -178,7 +178,7 @@ Plugin Verification
 --------------------------
 
 Regular CI and local verification check the minimum supported IntelliJ IDEA Community version.
-The nightly workflow also checks minimum product versions and the latest stable releases across supported IDEs.
+The nightly workflow also checks minimum product versions and the latest stable and available EAP releases across supported IDEs.
 
 ```bash
 # Local / regular CI
