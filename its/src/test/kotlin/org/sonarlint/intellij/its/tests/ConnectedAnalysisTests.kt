@@ -37,7 +37,6 @@ import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.ena
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.utils.ConnectionType
-import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
@@ -54,7 +53,7 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import org.sonarqube.ws.client.usertokens.RevokeRequest
 
 @Tag("ConnectedAnalysisTests")
-@EnabledIf("isIdeaCommunity")
+@EnabledIf("isIntelliJIdea")
 class ConnectedAnalysisTests : BaseUiTest() {
 
     companion object {
@@ -163,7 +162,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
                 "Found 3 older issues",
                 "Found 1 older Taint Vulnerability"
             )
-            resetFocusOnNewCode()
         }
 
         @Test

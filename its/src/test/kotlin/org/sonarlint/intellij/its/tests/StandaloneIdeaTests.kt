@@ -30,7 +30,6 @@ import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.closeW
 import org.sonarlint.intellij.its.tests.domain.WalkthroughTests.Companion.verifyWalkthroughIsNotShowing
 import org.sonarlint.intellij.its.utils.ExclusionUtils.excludeFile
 import org.sonarlint.intellij.its.utils.ExclusionUtils.removeFileExclusion
-import org.sonarlint.intellij.its.utils.FiltersUtils.resetFocusOnNewCode
 import org.sonarlint.intellij.its.utils.FiltersUtils.setFocusOnNewCode
 import org.sonarlint.intellij.its.utils.OpeningUtils.closeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -39,7 +38,7 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.toggleRule
 import org.sonarlint.intellij.its.utils.optionalStep
 
 @Tag("Standalone")
-@EnabledIf("isIdeaCommunity")
+@EnabledIf("isIntelliJIdea")
 class StandaloneIdeaTests : BaseUiTest() {
 
     @Test
@@ -64,7 +63,6 @@ class StandaloneIdeaTests : BaseUiTest() {
             "Found 1 new issue from last 30 days",
         )
         verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
-        resetFocusOnNewCode()
     }
 
     @Test

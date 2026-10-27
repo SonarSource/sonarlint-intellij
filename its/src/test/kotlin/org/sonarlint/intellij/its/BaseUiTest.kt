@@ -25,8 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.isBuildCommunity
-import org.sonarlint.intellij.its.fixtures.isBuildUltimate
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isGoLand
 import org.sonarlint.intellij.its.fixtures.isGoPlugin
@@ -58,11 +56,12 @@ open class BaseUiTest {
             remoteRobot = RemoteRobot(robotUrl)
         }
 
+        /**
+         * IntelliJ IDEA in any edition, including the 2025.3+ unified distribution
+         * whose build string is no longer `IC`/`IU`.
+         */
         @JvmStatic
-        fun isIdeaCommunity() = remoteRobot.isIdea() && remoteRobot.isBuildCommunity()
-
-        @JvmStatic
-        fun isIdeaUltimate() = remoteRobot.isIdea() && remoteRobot.isBuildUltimate()
+        fun isIntelliJIdea() = remoteRobot.isIdea()
 
         @JvmStatic
         fun isCLion() = remoteRobot.isCLion()
@@ -93,8 +92,12 @@ open class BaseUiTest {
         @JvmStatic
         fun isGoPlugin() = remoteRobot.isGoPlugin()
 
+        /**
+         * Database plugin plus IntelliJ. Rider ships the Database plugin, so a
+         * plugin-only check would enable PLSQL ITs there.
+         */
         @JvmStatic
-        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIdeaUltimate()
+        fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIntelliJIdea()
 
         private fun closeAllDialogs() {
             remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach {
@@ -181,8 +184,17 @@ open class BaseUiTest {
 
     @AfterEach
     fun closeProjectAfterEach() {
-        optionalStep {
-            closeProject()
+        try {
+            // Reset application state synchronously, even if the test left no project open.
+            remoteRobot.runJs("""
+                const plugin = com.intellij.ide.plugins.PluginManagerCore.getPlugin(com.intellij.openapi.extensions.PluginId.getId("org.sonarlint.idea"))
+                const serviceClass = plugin.getPluginClassLoader().loadClass("org.sonarlint.intellij.cayc.CleanAsYouCodeService")
+                com.intellij.openapi.application.ApplicationManager.getApplication().getService(serviceClass).setFocusOnNewCode(false)
+            """)
+        } finally {
+            optionalStep {
+                closeProject()
+            }
         }
     }
 

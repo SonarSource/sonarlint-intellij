@@ -1,0 +1,171 @@
+name: Integration Tests Weekly
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Sundays at 02:00 UTC
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+
+env:
+  CACHE_BACKEND: s3
+
+jobs:
+  aws-auth:
+    runs-on: sonar-xs
+    permissions:
+      id-token: write
+    outputs:
+      docker_username: ${{ steps.login-ecr.outputs.docker_username_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
+      docker_password: ${{ steps.login-ecr.outputs.docker_password_275878209202_dkr_ecr_eu_central_1_amazonaws_com }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::275878209202:role/deploymentroles/DevInfraSquadDockerImagesAccessRole
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+        with:
+          mask-password: 'false'
+
+  build-plugin:
+    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
+    runs-on: warp-custom-ubuntu-24-04
+    container:
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
+      options: --user runner
+      credentials:
+        username: ${{ needs.aws-auth.outputs.docker_username }}
+        password: ${{ needs.aws-auth.outputs.docker_password }}
+    defaults:
+      run:
+        shell: bash
+    needs:
+      - aws-auth
+    name: Build Plugin
+    outputs:
+      PROJECT_VERSION: ${{ steps.set_version.outputs.project-version }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          version: 2025.9.12
+
+      - name: Export embedded IDE paths from container
+        run: |
+          echo "IDEA_HOME=${IDEA_2024_DIR}" >> $GITHUB_ENV
+          echo "CLION_HOME=${CLION_2024_DIR}" >> $GITHUB_ENV
+          echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
+          echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
+
+      - name: Configure Gradle
+        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        with:
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          cache-paths: |
+            /home/runner/.gradle/caches
+            /home/runner/.gradle/wrapper
+
+      - name: Point resolve at Edge
+        if: runner.environment != 'github-hosted'
+        uses: ./.github/actions/point-resolve-at-edge
+
+      - uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        id: build_plugin
+        with:
+          sonar-platform: none
+          deploy: false
+          use-develocity: true
+          develocity-url: https://develocity.sonar.build
+          artifactory-reader-role: private-reader
+          gradle-args: -x test -x :its:check :buildPlugin
+
+      - name: Set project version output
+        id: set_version
+        run: echo "project-version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Upload built plugin
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: weekly-plugin
+          path: |
+            build/distributions/sonarlint-intellij-*.zip
+            !build/distributions/*.blockmap.zip
+          if-no-files-found: error
+
+  setup-matrix:
+    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
+    runs-on: sonar-xs
+    name: Setup weekly matrix
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Build weekly QA matrix
+        id: set-matrix
+        run: python3 .github/scripts/qa-matrix.py weekly
+
+  qa:
+    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
+    runs-on: warp-custom-ubuntu-24-04
+    container:
+      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
+      options: --user runner
+      credentials:
+        username: ${{ needs.aws-auth.outputs.docker_username }}
+        password: ${{ needs.aws-auth.outputs.docker_password }}
+    defaults:
+      run:
+        shell: bash
+    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite }}
+    needs:
+      - aws-auth
+      - build-plugin
+      - setup-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
+    env:
+      DISPLAY: ':10'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Download built plugin
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: weekly-plugin
+          path: ${{ github.workspace }}/plugin-zip
+
+      - name: Resolve plugin zip path
+        id: plugin-zip
+        run: |
+          shopt -s nullglob
+          PLUGIN_ZIPS=()
+          for zip in "${GITHUB_WORKSPACE}/plugin-zip"/sonarlint-intellij-*.zip; do
+            if [[ "${zip}" != *.blockmap.zip ]]; then
+              PLUGIN_ZIPS+=("${zip}")
+            fi
+          done
+          if [[ ${#PLUGIN_ZIPS[@]} -ne 1 ]]; then
+            echo "::error::Expected one plugin archive, found ${#PLUGIN_ZIPS[@]}"
+            exit 1
+          fi
+          echo "path=${PLUGIN_ZIPS[0]}" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/run-qa-its
+        with:
+          ide_version: ${{ matrix.ide_version }}
+          project_version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
+          test_suite: ${{ matrix.test_suite }}
+          plugin_zip_path: ${{ steps.plugin-zip.outputs.path }}
