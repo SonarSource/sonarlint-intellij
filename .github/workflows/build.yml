@@ -326,57 +326,22 @@ jobs:
             !/home/runner/.gradle/caches/*/transforms/
             /home/runner/.gradle/wrapper
 
-  setup-qa-matrix:
+  test-qa-matrix:
     runs-on: sonar-xs
-    name: Setup QA matrix
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-      skip_its: ${{ steps.set-matrix.outputs.skip_its }}
+    name: Test QA matrix selection
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - name: Test QA matrix selection
         run: python3 .github/scripts/test_qa_matrix.py
 
-      - name: Build PR QA matrix
-        id: set-matrix
-        run: python3 .github/scripts/qa-matrix.py pr
-
   qa:
-    if: needs.setup-qa-matrix.outputs.skip_its != 'true'
-    runs-on: warp-custom-ubuntu-24-04
-    container:
-      image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
-      options: --user runner
-      credentials:
-        username: ${{ needs.aws-auth.outputs.docker_username }}
-        password: ${{ needs.aws-auth.outputs.docker_password }}
-    defaults:
-      run:
-        shell: bash
-    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite }}
-    needs:
-      - build-plugin
-      - build-number
-      - aws-auth
-      - setup-qa-matrix
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.setup-qa-matrix.outputs.matrix) }}
-    env:
-      DISPLAY: ':10'
-      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
-
-      - uses: ./.github/actions/run-qa-its
-        with:
-          ide_version: ${{ matrix.ide_version }}
-          project_version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
-          test_suite: ${{ matrix.test_suite }}
+    if: github.event_name != 'pull_request'
+    needs: build-plugin
+    uses: ./.github/workflows/qa-its.yml
+    with:
+      matrix_mode: pr
+      project_version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
 
   promote:
     runs-on: sonar-xs
@@ -386,17 +351,17 @@ jobs:
       - build-plugin
       - test-and-sonar
       - check_windows
-      - setup-qa-matrix
+      - test-qa-matrix
       - qa
     if: >
       !cancelled() &&
       needs.build-plugin.result == 'success' &&
       needs.test-and-sonar.result == 'success' &&
       needs.check_windows.result == 'success' &&
-      needs.setup-qa-matrix.result == 'success' &&
-      (needs.qa.result == 'success' ||
-       (needs.qa.result == 'skipped' && needs.setup-qa-matrix.outputs.skip_its == 'true')) &&
-      (github.event_name == 'pull_request' || github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-'))
+      needs.test-qa-matrix.result == 'success' &&
+      (github.event_name == 'pull_request' ||
+       ((needs.qa.result == 'success' || needs.qa.result == 'skipped') &&
+        (github.ref_name == github.event.repository.default_branch || startsWith(github.ref_name, 'branch-') || startsWith(github.ref_name, 'dogfood-on-'))))
     env:
       BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
