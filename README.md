@@ -177,40 +177,16 @@ so you will need to repeat some setup steps for that instance, such as configuri
 Plugin Verification
 --------------------------
 
-The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier.
-To run it locally:
+Regular CI and local verification check IntelliJ IDEA Community 2024.2, the minimum supported version.
+The nightly workflow checks current stable releases across all supported JetBrains IDEs, pinned in `build.gradle.kts`.
 
 ```bash
+# Local / regular CI
 ./gradlew :verifyPlugin
 
-# For regular CI builds, minimum releases with and without Java support
-./gradlew :verifyPlugin -PverifierEnv=CI
-./gradlew :verifyPlugin -PverifierEnv=JAVA_CI
-
-# For the latest stable releases covered by the nightly job
+# Full nightly matrix
 ./gradlew :verifyPlugin -PverifierEnv=LATEST
-./gradlew :verifyPlugin -PverifierEnv=JAVA_LATEST
-
-# For CLion API checks without CLion exclusions
-./gradlew :verifyPlugin -PverifierEnv=CLION_CI
-./gradlew :verifyPlugin -PverifierEnv=CLION_LATEST
 ```
-
-The CI and JAVA_CI verifiers target the 2024.2 release of IntelliJ IDEA Community and Ultimate,
-Rider, CLion, and WebStorm. This includes the minimum supported IntelliJ IDEA build
-242.20224.300. The LATEST and JAVA_LATEST verifiers target current stable releases across the
-product matrix. It includes Android Studio Rabbit 1 (2026.2.1.8), IntelliJ IDEA
-Community and PyCharm Community 2025.3. It also includes the 2026.2 releases of
-IntelliJ IDEA Ultimate, PyCharm Professional, RubyMine, GoLand, PhpStorm, Rider,
-and WebStorm, plus CLion 2026.2.4.
-Update these versions when the supported stable releases change. Community tests
-optional integrations without their product plugins. The other products test them with
-their plugins present. The mixed-product passes use four specific missing-package
-exclusions for optional CLion dependencies. Separate CLion passes omit these exclusions,
-so missing or changed CLion APIs fail verification. Products without Java support allow
-three missing Java packages and the missing LanguageLevelUtil class used by the optional
-Java configurator; JAVA_CI and JAVA_LATEST do not allow these missing APIs, so Java API
-breakage remains visible.
 
 License
 -------

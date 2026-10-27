@@ -154,52 +154,15 @@ intellijPlatform {
             VerifyPluginTask.FailureLevel.INVALID_PLUGIN
         )
         
-        val verifierEnv = providers.gradleProperty("verifierEnv").orNull
-        val strictClionVerification = verifierEnv in listOf("CLION_CI", "CLION_LATEST")
-        val ignoredProblemFiles = mutableListOf<File>()
-        if (!strictClionVerification) {
-            ignoredProblemFiles.add(rootProject.file(".verifier-ignored-problems.txt"))
-        }
-        if (verifierEnv in listOf("CI", "LATEST", "CLION_CI", "CLION_LATEST")) {
-            // These products do not load plugin-java.xml: com.intellij.modules.java is absent.
-            ignoredProblemFiles.add(rootProject.file(".verifier-ignored-java-problems.txt"))
-        }
-        val ignoredProblemsFile = layout.buildDirectory.file("tmp/pluginVerifier/ignored-problems-${verifierEnv ?: "default"}.txt")
-        val prepareVerifierIgnoredProblems = tasks.register("prepareVerifierIgnoredProblems") {
-            group = "verification"
-            description = "Prepares the optional dependency exclusions for the selected plugin verifier matrix."
-            inputs.files(ignoredProblemFiles)
-            outputs.file(ignoredProblemsFile)
-            doLast {
-                val output = ignoredProblemsFile.get().asFile
-                output.parentFile.mkdirs()
-                output.writeText(ignoredProblemFiles.joinToString("\n") { it.readText() })
-            }
-        }
-        freeArgs = listOf("-ignored-problems", ignoredProblemsFile.get().asFile.absolutePath)
-        tasks.named<VerifyPluginTask>("verifyPlugin") {
-            dependsOn(prepareVerifierIgnoredProblems)
-        }
+        val verifyLatest = providers.gradleProperty("verifierEnv").orNull == "LATEST"
+        val ignoredProblemsFile = if (verifyLatest) ".verifier-ignored-problems-latest.txt" else ".verifier-ignored-problems.txt"
+        freeArgs = listOf("-ignored-problems", rootProject.file(ignoredProblemsFile).absolutePath)
 
-        when (verifierEnv) {
-            "JAVA_CI" -> ides {
-                create(IntelliJPlatformType.IntellijIdeaCommunity, "2024.2")
-                create(IntelliJPlatformType.IntellijIdeaUltimate, "2024.2")
-            }
-
-            "CI" -> ides {
-                create(IntelliJPlatformType.Rider, "2024.2")
-                create(IntelliJPlatformType.CLion, "2024.2")
-                create(IntelliJPlatformType.WebStorm, "2024.2")
-            }
-
-            "JAVA_LATEST" -> ides {
+        ides {
+            if (verifyLatest) {
                 create(IntelliJPlatformType.AndroidStudio, "2026.2.1.8")
                 create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.3")
                 create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.2.3")
-            }
-
-            "LATEST" -> ides {
                 create(IntelliJPlatformType.PyCharmCommunity, "2025.3")
                 create(IntelliJPlatformType.PyCharmProfessional, "2026.2.3")
                 create(IntelliJPlatformType.RubyMine, "2026.2.3")
@@ -208,17 +171,7 @@ intellijPlatform {
                 create(IntelliJPlatformType.Rider, "2026.2.3.1")
                 create(IntelliJPlatformType.CLion, "2026.2.4")
                 create(IntelliJPlatformType.WebStorm, "2026.2.3")
-            }
-
-            "CLION_CI" -> ides {
-                create(IntelliJPlatformType.CLion, "2024.2")
-            }
-
-            "CLION_LATEST" -> ides {
-                create(IntelliJPlatformType.CLion, "2026.2.4")
-            }
-
-            else -> ides {
+            } else {
                 create(IntelliJPlatformType.IntellijIdeaCommunity, "2024.2")
             }
         }
