@@ -160,19 +160,21 @@ intellijPlatform {
 
         ides {
             if (verifyLatest) {
-                create(IntelliJPlatformType.AndroidStudio, "2026.2.1.8")
-                create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.3")
-                create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.2.3")
-                create(IntelliJPlatformType.PyCharmCommunity, "2025.3")
-                create(IntelliJPlatformType.PyCharmProfessional, "2026.2.3")
-                create(IntelliJPlatformType.RubyMine, "2026.2.3")
-                create(IntelliJPlatformType.GoLand, "2026.2.3")
-                create(IntelliJPlatformType.PhpStorm, "2026.2.3")
-                create(IntelliJPlatformType.Rider, "2026.2.3.1")
-                create(IntelliJPlatformType.CLion, "2026.2.4")
-                create(IntelliJPlatformType.WebStorm, "2026.2.3")
+                val latestVersion = providers.gradleProperty("verifierLatestIdeVersion").get()
+                val communityVersion = providers.gradleProperty("verifierCommunityIdeVersion").get()
+                create(IntelliJPlatformType.AndroidStudio, providers.gradleProperty("verifierAndroidStudioVersion").get())
+                create(IntelliJPlatformType.IntellijIdeaCommunity, communityVersion)
+                create(IntelliJPlatformType.IntellijIdeaUltimate, latestVersion)
+                create(IntelliJPlatformType.PyCharmCommunity, communityVersion)
+                create(IntelliJPlatformType.PyCharmProfessional, latestVersion)
+                create(IntelliJPlatformType.RubyMine, latestVersion)
+                create(IntelliJPlatformType.GoLand, latestVersion)
+                create(IntelliJPlatformType.PhpStorm, latestVersion)
+                create(IntelliJPlatformType.Rider, providers.gradleProperty("verifierRiderIdeVersion").get())
+                create(IntelliJPlatformType.CLion, providers.gradleProperty("verifierClionIdeVersion").get())
+                create(IntelliJPlatformType.WebStorm, latestVersion)
             } else {
-                create(IntelliJPlatformType.IntellijIdeaCommunity, "2024.2")
+                create(IntelliJPlatformType.IntellijIdeaCommunity, providers.gradleProperty("minSupportedIdeVersion").get())
             }
         }
     }

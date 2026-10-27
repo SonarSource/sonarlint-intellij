@@ -177,8 +177,8 @@ so you will need to repeat some setup steps for that instance, such as configuri
 Plugin Verification
 --------------------------
 
-Regular CI and local verification check IntelliJ IDEA Community 2024.2, the minimum supported version.
-The nightly workflow checks current stable releases across all supported JetBrains IDEs, pinned in `build.gradle.kts`.
+Regular CI and local verification check the minimum supported IntelliJ IDEA Community version.
+The nightly workflow checks current stable releases across all supported JetBrains IDEs, pinned in `gradle.properties`.
 
 ```bash
 # Local / regular CI
