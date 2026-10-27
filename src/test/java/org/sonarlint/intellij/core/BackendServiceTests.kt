@@ -392,6 +392,35 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         }
     }
 
+    @Test
+    fun test_refresh_taint_retries_older_snapshot_after_newer_refresh_publishes() {
+        val cache = project.getService(TaintVulnerabilitiesCache::class.java)
+        val older = prepareTaintRefresh(project)
+        val newer = prepareTaintRefresh(project)
+        val retry = CompletableFuture<ListAllResponse>()
+        `when`(taintService.listAll(any())).thenReturn(retry)
+        val current = ListAllResponse(listOf(taintVulnerability("current")))
+        try {
+            newer.complete(current)
+            finishTaintRefresh()
+            older.complete(ListAllResponse(listOf(taintVulnerability("stale"))))
+            finishTaintRefresh()
+
+            assertThat(cache.taintVulnerabilities.map { it.key() }).containsExactly("current")
+            await().atMost(Duration.ofSeconds(2)).until { retry.numberOfDependents > 0 }
+            verify(taintService, times(3)).listAll(any())
+            verify(toolWindow).refreshViews()
+
+            retry.complete(current)
+            finishTaintRefresh()
+            assertThat(cache.taintVulnerabilities.map { it.key() }).containsExactly("current")
+            verify(toolWindow, times(2)).refreshViews()
+        } finally {
+            retry.complete(current)
+            finishTaintRefresh()
+        }
+    }
+
     private fun prepareTaintRefresh(target: Project): CompletableFuture<ListAllResponse> {
         val response = CompletableFuture<ListAllResponse>()
         `when`(taintService.listAll(any())).thenReturn(response)

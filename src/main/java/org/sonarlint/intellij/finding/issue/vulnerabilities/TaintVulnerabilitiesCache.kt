@@ -50,6 +50,7 @@ class TaintVulnerabilitiesCache(val project: Project) {
     fun replaceIfUnchanged(expectedRevision: Long, findings: List<LocalTaintVulnerability>): Boolean {
         if (incrementalRevision != expectedRevision) return false
         taintVulnerabilities = findings
+        incrementalRevision++
         return true
     }
 
