@@ -13,6 +13,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -158,21 +159,22 @@ intellijPlatform {
         val ignoredProblemsFile = if (verifyLatest) ".verifier-ignored-problems-latest.txt" else ".verifier-ignored-problems.txt"
         freeArgs = listOf("-ignored-problems", rootProject.file(ignoredProblemsFile).absolutePath)
 
+        val ideTypes = listOf(
+            IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
+            IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.GoLand,
+            IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
+            IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity
+        )
+
         ides {
             if (verifyLatest) {
-                val latestVersion = providers.gradleProperty("verifierLatestIdeVersion").get()
-                val communityVersion = providers.gradleProperty("verifierCommunityIdeVersion").get()
-                create(IntelliJPlatformType.AndroidStudio, providers.gradleProperty("verifierAndroidStudioVersion").get())
-                create(IntelliJPlatformType.IntellijIdeaCommunity, communityVersion)
-                create(IntelliJPlatformType.IntellijIdeaUltimate, latestVersion)
-                create(IntelliJPlatformType.PyCharmCommunity, communityVersion)
-                create(IntelliJPlatformType.PyCharmProfessional, latestVersion)
-                create(IntelliJPlatformType.RubyMine, latestVersion)
-                create(IntelliJPlatformType.GoLand, latestVersion)
-                create(IntelliJPlatformType.PhpStorm, latestVersion)
-                create(IntelliJPlatformType.Rider, providers.gradleProperty("verifierRiderIdeVersion").get())
-                create(IntelliJPlatformType.CLion, providers.gradleProperty("verifierClionIdeVersion").get())
-                create(IntelliJPlatformType.WebStorm, latestVersion)
+                val verifierBuild = providers.gradleProperty("verifierIdeBuild").get()
+                select {
+                    types = ideTypes
+                    channels = listOf(ProductRelease.Channel.RELEASE)
+                    sinceBuild = verifierBuild
+                    untilBuild = verifierBuild
+                }
             } else {
                 create(IntelliJPlatformType.IntellijIdeaCommunity, providers.gradleProperty("minSupportedIdeVersion").get())
             }

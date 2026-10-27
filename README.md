@@ -178,7 +178,7 @@ Plugin Verification
 --------------------------
 
 Regular CI and local verification check the minimum supported IntelliJ IDEA Community version.
-The nightly workflow checks current stable releases across all supported JetBrains IDEs, pinned in `gradle.properties`.
+The nightly workflow checks stable IDE releases in the platform range configured in `gradle.properties`.
 
 ```bash
 # Local / regular CI
