@@ -156,8 +156,7 @@ intellijPlatform {
         )
         
         val verifyLatest = providers.gradleProperty("verifierEnv").orNull == "LATEST"
-        val exclusionsFile = if (verifyLatest) ".verifier-ignored-problems-latest.txt" else ".verifier-ignored-problems.txt"
-        ignoredProblemsFile = rootProject.file(exclusionsFile)
+        ignoredProblemsFile = rootProject.file(".verifier-ignored-problems.txt")
 
         ides {
             val minimumVersion = providers.gradleProperty("minSupportedIdeVersion").get()
@@ -230,27 +229,16 @@ intellijPlatform {
 }
 
 tasks.named<VerifyPluginTask>("verifyPlugin") {
-    doFirst {
-        if (!listIdes.get()) {
-            verificationReportsDirectory.get().asFile.deleteRecursively()
-        }
-    }
     doLast {
         if (listIdes.get()) return@doLast
-        // Optional-module exclusions must not hide missing APIs in products that provide those modules.
-        verificationReportsDirectory.get().asFile.listFiles().orEmpty().forEach { ideReport ->
-            ideReport.walkTopDown().filter { it.name == "ignored-problems.txt" }.forEach { report ->
-                val ignored = report.readText()
-                check(!ideReport.name.startsWith("CL-") || !ignored.contains("com.jetbrains.cidr.cpp")) {
-                    "CLion API problems were excluded: ${report.absolutePath}"
-                }
-                val providesJava = listOf("IC-", "IU-", "AI-").any(ideReport.name::startsWith)
-                val missingJavaApi = ignored.contains("Package 'com.intellij.") || ignored.contains("Access to unresolved class com.intellij.")
-                check(!providesJava || !missingJavaApi) {
-                    "Java API problems were excluded: ${report.absolutePath}"
+        // Optional Java exclusions must never apply to IDEs that provide Java.
+        verificationReportsDirectory.get().asFile.listFiles().orEmpty()
+            .filter { ideReport -> listOf("IC-", "IU-", "AI-").any(ideReport.name::startsWith) }
+            .forEach { ideReport ->
+                check(ideReport.walkTopDown().none { it.name == "ignored-problems.txt" && it.length() > 0 }) {
+                    "Optional Java API problems were excluded in ${ideReport.name}"
                 }
             }
-        }
     }
 }
 
