@@ -8,7 +8,12 @@ Versions come from [`gradle.properties`](../gradle.properties): `minSupportedIde
 
 ### Pull requests and `master` pushes
 
-Path-filtered matrix from [`.github/scripts/qa-matrix.py`](../.github/scripts/qa-matrix.py), using Python's standard library:
+All IT runs share the reusable workflow [`qa-its.yml`](../.github/workflows/qa-its.yml).
+
+- **Pull requests:** [`Integration Tests PR`](../.github/workflows/integration-tests-pr.yml) runs the ITs only when the PR has the `e2e-all` label. It runs again when the PR is updated or the label is added. It is separate from `Build`, so it does not block `promote`.
+- **Pushes to `master`, `branch-*` and `dogfood-*`:** `Build` runs the ITs against the plugin it deployed. They block `promote`.
+
+Pull requests and pushes use a path-filtered matrix from [`.github/scripts/qa-matrix.py`](../.github/scripts/qa-matrix.py), using Python's standard library:
 
 | When | Jobs |
 |------|------|

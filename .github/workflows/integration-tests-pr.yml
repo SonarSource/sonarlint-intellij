@@ -1,0 +1,23 @@
+name: Integration Tests PR
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}-${{ github.event.action == 'labeled' && github.event.label.name != 'e2e-all' && github.run_id || 'qa' }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+
+jobs:
+  qa:
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'e2e-all')
+      && (github.event.action != 'labeled' || github.event.label.name == 'e2e-all')
+    uses: ./.github/workflows/qa-its.yml
+    with:
+      matrix_mode: pr
