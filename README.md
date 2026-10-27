@@ -99,7 +99,6 @@ How to run UI tests
 
 CI coverage (what runs on PRs vs the weekly full/EAP sweep) is documented in [`its/README.md`](its/README.md).
 
-
 ```bash
 ./gradlew :its:runIdeForUiTests &
 ```

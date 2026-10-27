@@ -33,7 +33,6 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.analyzeCurrentFileFromToolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
@@ -159,10 +158,6 @@ class ConnectedAnalysisTests : BaseUiTest() {
                 "No new Security Hotspots from last 1 days",
                 "Found 3 older issues"
             )
-            // FIXME workaround: the Current File tab does not refresh after toggling the
-            // Focus On New Code filter, so trigger an explicit re-analysis. Unlike the
-            // StandaloneIdeaTests workaround (SLCORE-2533) this lag is not yet tracked.
-            analyzeCurrentFileFromToolWindow()
             verifyCurrentFileTabContainsMessages(
                 "Found 3 older issues",
                 "Found 1 older Taint Vulnerability"
