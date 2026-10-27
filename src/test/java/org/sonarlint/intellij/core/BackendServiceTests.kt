@@ -22,6 +22,7 @@ package org.sonarlint.intellij.core
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.impl.LaterInvocator
 import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
@@ -340,6 +341,57 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         verify(toolWindow, never()).refreshViews()
     }
 
+    @Test
+    fun test_refresh_taint_retries_snapshot_invalidated_by_incremental_updates_during_modality() {
+        val cache = project.getService(TaintVulnerabilitiesCache::class.java)
+        val matcher = TaintVulnerabilityMatcher(project)
+        val removed = taintVulnerability("removed")
+        val outdated = taintVulnerability("updated")
+        val updated = taintVulnerability("updated")
+        val added = taintVulnerability("added")
+        val unaffected = taintVulnerability("unaffected")
+        cache.taintVulnerabilities = listOf(removed, outdated).map(matcher::match)
+        val response = prepareTaintRefresh(project)
+        val fresh = CompletableFuture<ListAllResponse>()
+        `when`(taintService.listAll(any())).thenReturn(fresh)
+        val latest = ListAllResponse(listOf(added, updated, unaffected))
+        val matched = CountDownLatch(1)
+        val snapshot = listOf(removed, outdated, unaffected)
+        val modal = Any()
+        try {
+            LaterInvocator.enterModal(modal)
+            try {
+                AppExecutorUtil.getAppExecutorService().submit {
+                    response.complete(ListAllResponse(object : List<TaintVulnerabilityDto> by snapshot {
+                        override fun iterator() = sequence {
+                            yieldAll(snapshot)
+                            matched.countDown()
+                        }.iterator()
+                    }))
+                }.get(5, TimeUnit.SECONDS)
+                assertThat(matched.await(5, TimeUnit.SECONDS)).isTrue()
+                UIUtil.dispatchAllInvocationEvents()
+                verify(toolWindow, never()).refreshViews()
+                cache.update(setOf(removed.id), listOf(matcher.match(added)), listOf(matcher.match(updated)))
+            } finally {
+                LaterInvocator.leaveModal(modal)
+            }
+            finishTaintRefresh()
+            assertThat(cache.taintVulnerabilities.map { it.getId() }).containsExactly(added.id, updated.id)
+            await().atMost(Duration.ofSeconds(2)).until { fresh.numberOfDependents > 0 }
+            verify(taintService, times(2)).listAll(any())
+            verify(toolWindow, never()).refreshViews()
+
+            fresh.complete(latest)
+            finishTaintRefresh()
+            assertThat(cache.taintVulnerabilities.map { it.getId() }).containsExactly(added.id, updated.id, unaffected.id)
+            verify(toolWindow).refreshViews()
+        } finally {
+            fresh.complete(latest)
+            finishTaintRefresh()
+        }
+    }
+
     private fun prepareTaintRefresh(target: Project): CompletableFuture<ListAllResponse> {
         val response = CompletableFuture<ListAllResponse>()
         `when`(taintService.listAll(any())).thenReturn(response)
@@ -363,8 +415,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         ApplicationManager.getApplication().runWriteAction { Disposer.dispose(target) }
     }
 
-    private fun taintVulnerability() = TaintVulnerabilityDto(
-        UUID.randomUUID(), "taint", false, null, "rule", "message", Path.of("taint.txt"), Instant.EPOCH,
+    private fun taintVulnerability(key: String = "taint") = TaintVulnerabilityDto(
+        UUID.randomUUID(), key, false, null, "rule", "message", Path.of("taint.txt"), Instant.EPOCH,
         Either.forLeft(StandardModeDetails(IssueSeverity.MAJOR, RuleType.VULNERABILITY)), emptyList(),
         TextRangeWithHashDto(1, 0, 1, 5, "hash"), null, true, false
     )

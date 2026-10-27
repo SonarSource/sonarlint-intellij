@@ -1095,6 +1095,8 @@ class BackendService : Disposable {
     fun refreshTaintVulnerabilities(project: Project) {
         if (project.isDisposed) return
         val projectId = projectId(project)
+        val cache = getService(project, TaintVulnerabilitiesCache::class.java)
+        val revision = cache.incrementalRevision
         requestFromBackend { it.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId, true)) }
             .thenAccept { response ->
                 if (project.isDisposed) return@thenAccept
@@ -1106,8 +1108,11 @@ class BackendService : Disposable {
                     .expireWith(project)
                     .finishOnUiThread(ModalityState.defaultModalityState()) { localTaintVulnerabilities ->
                         if (!project.isDisposed) {
-                            getService(project, TaintVulnerabilitiesCache::class.java).taintVulnerabilities = localTaintVulnerabilities
-                            getService(project, SonarLintToolWindow::class.java).refreshViews()
+                            if (cache.replaceIfUnchanged(revision, localTaintVulnerabilities)) {
+                                getService(project, SonarLintToolWindow::class.java).refreshViews()
+                            } else {
+                                refreshTaintVulnerabilities(project)
+                            }
                         }
                     }
                     .submit(AppExecutorUtil.getAppExecutorService())
