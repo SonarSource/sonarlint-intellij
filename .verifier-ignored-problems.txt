@@ -1,4 +1,5 @@
-org.sonarlint.idea::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake' is not found.*
-org.sonarlint.idea::.*Package 'com\.jetbrains\.cidr\.cpp\.toolchains' is not found.*
-org.sonarlint.idea::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake\.model' is not found.*
-org.sonarlint.idea::.*Package 'com\.jetbrains\.cidr\.cpp\.cmake\.workspace' is not found.*
+// Expected only in products without the optional Java module.
+org.sonarlint.idea::.*Package 'com\.intellij\.openapi\.vfs\.jrt' is not found.*
+org.sonarlint.idea::.*Package 'com\.intellij\.pom\.java' is not found.*
+org.sonarlint.idea::.*Package 'com\.intellij\.compiler' is not found.*
+org.sonarlint.idea::Access to unresolved class com\.intellij\.openapi\.module\.LanguageLevelUtil
