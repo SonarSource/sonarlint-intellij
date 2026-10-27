@@ -35,6 +35,7 @@ class SonarLintUiTestContext(private val project: Project) {
         ToolWindowManager.getInstance(project).getToolWindow(WALKTHROUGH_TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
         PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
         val editorFactory = EditorFactory.getInstance()
+        // Release project editors and project-less viewers (e.g. CodeFixDiffView from the tool window).
         editorFactory.allEditors
             .filter { it.project == null || it.project == project }
             .forEach { editorFactory.releaseEditor(it) }
