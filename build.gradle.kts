@@ -156,27 +156,25 @@ intellijPlatform {
         )
         
         val verifyLatest = providers.gradleProperty("verifierEnv").orNull == "LATEST"
-        val ignoredProblemsFile = if (verifyLatest) ".verifier-ignored-problems-latest.txt" else ".verifier-ignored-problems.txt"
-        freeArgs = listOf("-ignored-problems", rootProject.file(ignoredProblemsFile).absolutePath)
-
-        val ideTypes = listOf(
-            IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
-            IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.GoLand,
-            IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
-            IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity
-        )
+        val exclusionsFile = if (verifyLatest) ".verifier-ignored-problems-latest.txt" else ".verifier-ignored-problems.txt"
+        ignoredProblemsFile = rootProject.file(exclusionsFile)
 
         ides {
+            val minimumVersion = providers.gradleProperty("minSupportedIdeVersion").get()
+            create(IntelliJPlatformType.IntellijIdeaCommunity, minimumVersion)
             if (verifyLatest) {
-                val verifierBuild = providers.gradleProperty("verifierIdeBuild").get()
-                select {
-                    types = ideTypes
+                create(IntelliJPlatformType.IntellijIdeaUltimate, minimumVersion)
+                create(IntelliJPlatformType.Rider, minimumVersion)
+                create(IntelliJPlatformType.CLion, minimumVersion)
+                create(IntelliJPlatformType.WebStorm, minimumVersion)
+                latest {
+                    types = listOf(
+                        IntelliJPlatformType.IntellijIdea, IntelliJPlatformType.PyCharm, IntelliJPlatformType.AndroidStudio,
+                        IntelliJPlatformType.RubyMine, IntelliJPlatformType.GoLand, IntelliJPlatformType.PhpStorm,
+                        IntelliJPlatformType.Rider, IntelliJPlatformType.CLion, IntelliJPlatformType.WebStorm
+                    )
                     channels = listOf(ProductRelease.Channel.RELEASE)
-                    sinceBuild = verifierBuild
-                    untilBuild = verifierBuild
                 }
-            } else {
-                create(IntelliJPlatformType.IntellijIdeaCommunity, providers.gradleProperty("minSupportedIdeVersion").get())
             }
         }
     }
@@ -226,6 +224,31 @@ intellijPlatform {
                 this.addDefaultArchiveConfigurations()
                 setPublishPom(false)
                 setPublishIvy(false)
+            }
+        }
+    }
+}
+
+tasks.named<VerifyPluginTask>("verifyPlugin") {
+    doFirst {
+        if (!listIdes.get()) {
+            verificationReportsDirectory.get().asFile.deleteRecursively()
+        }
+    }
+    doLast {
+        if (listIdes.get()) return@doLast
+        // Optional-module exclusions must not hide missing APIs in products that provide those modules.
+        verificationReportsDirectory.get().asFile.listFiles().orEmpty().forEach { ideReport ->
+            ideReport.walkTopDown().filter { it.name == "ignored-problems.txt" }.forEach { report ->
+                val ignored = report.readText()
+                check(!ideReport.name.startsWith("CL-") || !ignored.contains("com.jetbrains.cidr.cpp")) {
+                    "CLion API problems were excluded: ${report.absolutePath}"
+                }
+                val providesJava = listOf("IC-", "IU-", "AI-").any(ideReport.name::startsWith)
+                val missingJavaApi = ignored.contains("Package 'com.intellij.") || ignored.contains("Access to unresolved class com.intellij.")
+                check(!providesJava || !missingJavaApi) {
+                    "Java API problems were excluded: ${report.absolutePath}"
+                }
             }
         }
     }
