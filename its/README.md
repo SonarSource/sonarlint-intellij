@@ -8,7 +8,7 @@ Versions come from [`gradle.properties`](../gradle.properties): `minSupportedIde
 
 ### Pull requests and `master` pushes
 
-Path-filtered matrix from [`.github/scripts/qa-matrix.sh`](../.github/scripts/qa-matrix.sh):
+Path-filtered matrix from [`.github/scripts/qa-matrix.py`](../.github/scripts/qa-matrix.py), using Python's standard library:
 
 | When | Jobs |
 |------|------|

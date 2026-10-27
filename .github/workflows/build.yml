@@ -342,7 +342,7 @@ jobs:
 
       - name: Build PR QA matrix
         id: set-matrix
-        run: .github/scripts/qa-matrix.sh pr
+        run: python3 .github/scripts/qa-matrix.py pr
 
   qa:
     if: needs.setup-qa-matrix.outputs.skip_its != 'true'

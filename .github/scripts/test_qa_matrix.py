@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -19,7 +20,7 @@ class QaMatrixTest(unittest.TestCase):
         self.repo = Path(directory.name)
         scripts = self.repo / ".github/scripts"
         scripts.mkdir(parents=True)
-        shutil.copy2(ROOT / ".github/scripts/qa-matrix.sh", scripts)
+        shutil.copy2(ROOT / ".github/scripts/qa-matrix.py", scripts)
         shutil.copy2(ROOT / "gradle.properties", self.repo)
         self.git("init", "-b", "master")
         self.git("config", "user.name", "QA matrix test")
@@ -49,7 +50,7 @@ class QaMatrixTest(unittest.TestCase):
     def run_matrix(self, mode="pr", **env):
         output = Path(self.env["GITHUB_OUTPUT"])
         output.unlink(missing_ok=True)
-        result = subprocess.run(["bash", ".github/scripts/qa-matrix.sh", mode],
+        result = subprocess.run([sys.executable, ".github/scripts/qa-matrix.py", mode],
                                 cwd=self.repo, env=self.env | env,
                                 text=True, capture_output=True)
         values = {}
@@ -129,7 +130,7 @@ class QaMatrixTest(unittest.TestCase):
         self.commit("README.md")
         self.git("switch", "--orphan", "unrelated")
         self.git("restore", "--source", self.base, "--staged", "--worktree",
-                 ".github/scripts/qa-matrix.sh", "gradle.properties")
+                 ".github/scripts/qa-matrix.py", "gradle.properties")
         self.commit("OTHER.md")
         for env in [{"GITHUB_BASE_REF": "missing"}, {"GITHUB_BASE_REF": "master"}]:
             with self.subTest(env=env):
@@ -141,6 +142,59 @@ class QaMatrixTest(unittest.TestCase):
         result, values = self.run_matrix(**self.push_event("1" * 40))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("CLion", "Rider"))
+
+    def test_empty_pr_diff_runs_core_suites(self):
+        result, values = self.run_matrix(GITHUB_BASE_REF="master")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assert_suites(values)
+
+    def test_invalid_mode_fails_without_emitting_matrix(self):
+        result, values = self.run_matrix("unknown")
+        self.assertNotEqual(0, result.returncode)
+        self.assertEqual({}, values)
+
+    def test_malformed_push_event_fails_without_emitting_matrix(self):
+        env = self.push_event(self.base)
+        Path(env["GITHUB_EVENT_PATH"]).write_text("{")
+        result, values = self.run_matrix(**env)
+        self.assertNotEqual(0, result.returncode)
+        self.assertEqual({}, values)
+
+    def test_weekly_versions_respect_product_overrides(self):
+        (self.repo / "gradle.properties").write_text("""
+# Shared versions and per-product overrides
+minSupportedIdeVersion=2024.2
+latestStableIdeVersion=2025.3.2 # inline comments are allowed
+eapIdeVersion=2026.3-EAP
+minRiderIdeVersion=2024.2.7
+latestRiderIdeVersion=2025.3.3
+eapRiderIdeVersion=2026.3.1-EAP
+latestPyCharmIdeVersion=2025.3.2.1
+""")
+        result, values = self.run_matrix("weekly")
+        self.assertEqual(0, result.returncode, result.stderr)
+        jobs = json.loads(values["matrix"])
+        self.assertEqual(["RD-2024.2.7", "RD-2025.3.3", "RD-2026.3.1-EAP"],
+                         [job["ide_version"] for job in jobs if job["test_suite"] == "Rider"])
+        self.assertIn({"ide_version": "PY-2025.3.2.1", "test_suite": "PyCharm"}, jobs)
+        self.assertIn({"ide_version": "CL-2025.3.2", "test_suite": "CLion"}, jobs)
+
+    def test_blank_product_overrides_use_shared_versions(self):
+        (self.repo / "gradle.properties").write_text("""
+minSupportedIdeVersion=2024.2
+latestStableIdeVersion=2025.3.2
+eapIdeVersion=2026.3-EAP
+minRiderIdeVersion=
+latestRiderIdeVersion=
+eapRiderIdeVersion=
+latestPyCharmIdeVersion=
+""")
+        result, values = self.run_matrix("weekly")
+        self.assertEqual(0, result.returncode, result.stderr)
+        jobs = json.loads(values["matrix"])
+        self.assertEqual(["RD-2024.2", "RD-2025.3.2", "RD-2026.3-EAP"],
+                         [job["ide_version"] for job in jobs if job["test_suite"] == "Rider"])
+        self.assertIn({"ide_version": "PY-2025.3.2", "test_suite": "PyCharm"}, jobs)
 
     def test_weekly_matrix_keeps_minimum_flavor_and_eap_coverage(self):
         result, values = self.run_matrix("weekly")

@@ -113,7 +113,7 @@ jobs:
 
       - name: Build weekly QA matrix
         id: set-matrix
-        run: .github/scripts/qa-matrix.sh weekly
+        run: python3 .github/scripts/qa-matrix.py weekly
 
   qa:
     if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
