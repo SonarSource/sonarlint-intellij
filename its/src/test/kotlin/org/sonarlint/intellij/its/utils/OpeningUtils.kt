@@ -23,7 +23,6 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
-import java.awt.Point
 import java.io.File
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
@@ -33,9 +32,6 @@ import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isRider
-import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
-import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
-import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
 object OpeningUtils {
@@ -56,21 +52,6 @@ object OpeningUtils {
         """, true
                 )
                 waitBackgroundTasksFinished()
-            }
-        }
-    }
-
-    fun openFileSelector() {
-        with(remoteRobot) {
-            idea {
-                optionalStep {
-                    findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
-                }
-                actionMenu("File") {
-                    item("Open") {
-                        click(Point(10, 10)) // Force the click on the left
-                    }
-                }
             }
         }
     }
@@ -104,29 +85,17 @@ object OpeningUtils {
             copyProjectFiles(projectName)
         }
         with(remoteRobot) {
-            try {
-                welcomeFrame {
-                    // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
-                    openProjectButton().click(Point(10, 10))
-                }
-            } catch (e: Throwable) {
-                // Starting from 2025.2+ there's no welcome frame in any IDE flavor
-                try {
-                    openFileSelector()
-                } catch (fallbackFailure: Throwable) {
-                    e.addSuppressed(fallbackFailure)
-                    throw e
-                }
-            }
-            if (remoteRobot.isRider()) {
-                openSolutionBrowserDialog {
-                    selectProjectFile(projectName)
-                }
-            } else {
-                openProjectFileBrowserDialog {
-                    selectProjectFile(projectName)
-                }
-            }
+            // Open through the platform API rather than the Open dialog: the dialog differs per IDE and
+            // version (2026.2 replaced its path field with a breadcrumb bar), and no test is about it.
+            // The IDE's open processors still run, so the Trust/Rider/CLion prompts below still appear.
+            val projectDir = File("projects/$projectName-tmp").absoluteFile.normalize().path
+            runJs(
+                """
+                    const projectDir = new java.io.File("${projectDir.replace("\\", "\\\\")}").toPath();
+                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() =>
+                        com.intellij.ide.impl.ProjectUtil.openOrImport(projectDir, null, true));
+                """
+            )
             if (!remoteRobot.isCLion()) {
                 optionalStep {
                     dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
