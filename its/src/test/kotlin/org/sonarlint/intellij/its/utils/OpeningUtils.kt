@@ -127,7 +127,10 @@ object OpeningUtils {
                     waitBackgroundTasksFinished()
                 }
             } catch (e: Throwable) {
-                val openError = callJs<String>("""java.lang.System.getProperty("$OPEN_ERROR_PROPERTY", "")""")
+                // Best effort: if the IDE stopped answering, keep the original failure as the one thrown
+                val openError = runCatching {
+                    callJs<String>("""java.lang.System.getProperty("$OPEN_ERROR_PROPERTY", "")""")
+                }.onFailure { e.addSuppressed(it) }.getOrDefault("")
                 if (openError.isNotEmpty()) {
                     e.addSuppressed(IllegalStateException("Opening $projectName failed in the IDE: $openError"))
                 }
