@@ -88,17 +88,25 @@ object OpeningUtils {
             // Open through the platform API rather than the Open dialog: the dialog differs per IDE and
             // version (2026.2 replaced its path field with a breadcrumb bar), and no test is about it.
             // The IDE's open processors still run, so the Trust/Rider/CLion prompts below still appear.
-            val projectDir = File("projects/$projectName-tmp").absoluteFile.normalize()
-            // CLion only imports the CMake project (instead of a plain folder) when opened from CMakeLists.txt
-            val cmakeLists = projectDir.resolve("CMakeLists.txt")
-            val toOpen = if (isCLion() && cmakeLists.exists()) cmakeLists else projectDir
-            runJs(
+            val projectDir = File("projects/$projectName-tmp").absoluteFile.normalize().path.replace("\\", "\\\\")
+            // openOrImport opens a folder that has .idea as a plain project unless a "strong" open processor
+            // claims it. CLion's CMake processor is not strong, so CLion would skip the CMake import: open
+            // through the first matching import processor instead (CMake, registered with order="first").
+            val open = if (isCLion()) {
                 """
-                    const toOpen = new java.io.File("${toOpen.path.replace("\\", "\\\\")}").toPath();
+                    const dir = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByNioFile(projectDir);
+                    const processor = com.intellij.projectImport.ProjectOpenProcessor.getImportProvider(dir);
+                    if (!processor) throw "No project open processor for " + projectDir;
                     com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() =>
-                        com.intellij.ide.impl.ProjectUtil.openOrImport(toOpen, null, true));
+                        processor.doOpenProject(dir, null, true));
                 """
-            )
+            } else {
+                """
+                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() =>
+                        com.intellij.ide.impl.ProjectUtil.openOrImport(projectDir, null, true));
+                """
+            }
+            runJs("""const projectDir = new java.io.File("$projectDir").toPath();""" + open)
             if (!remoteRobot.isCLion()) {
                 optionalStep {
                     dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {

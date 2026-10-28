@@ -140,7 +140,9 @@ tasks.named<Test>("test") {
     // so tests must run on the IDE's bundled runtime: JBR 21 up to 2025.3, JBR 25 from 2026.1.
     val bundledJava = project.findProperty("ijVersion")?.toString()
         ?.let { qaIdeHome(it.substringBefore('-')) }
-        ?.let { home -> listOf("jbr/bin/java", "jbr/Contents/Home/bin/java").map { File(home, it) } }
+        ?.let { home ->
+            listOf("jbr/bin/java", "jbr/bin/java.exe", "jbr/Contents/Home/bin/java").map { File(home, it) }
+        }
         ?.firstOrNull { it.canExecute() }
     val java21 = javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -153,6 +155,10 @@ tasks.named<Test>("test") {
             listOf("-Dits.sonarqube.java.home=${java21.get().metadata.installationPath.asFile.absolutePath}")
         }
     } else {
+        if (project.hasProperty("ijVersion")) {
+            logger.warn("ITs: no bundled JBR found for ijVersion=$ijVersion (set the IDE *_HOME variable), " +
+                "running tests on Java 21. IDEs from 2026.1 need their bundled Java 25 runtime.")
+        }
         javaLauncher.set(java21)
     }
     // Keep Orchestrator on SaaS: Edge returns HTTP 404 for api/search/versions on
