@@ -48,7 +48,7 @@ Actions → Integration Tests Weekly → Run workflow, with an `ide_version` inp
 - `ide_version`: `<CODE>-<version>` (`IC`, `IU`, `CL`, `RD`, `PY`, `PC`, `PS`, `GO`). The version is the one in the download.jetbrains.com tarball name, which Repox mirrors: for example `IC-2026.2.3`, or `IU-263.7307.44` / `RD-2026.3-EAP8-263.7307.48.Checked` for EAPs (EAP tarballs are named by build number). The [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU&latest=true&type=eap) lists the current builds.
 - `test_suite`: `default` runs the 4 core suites on `IC`/`IU` and the product's suite elsewhere. Pick one suite to narrow the run, or `PLSQL` on `IU`.
 
-The matrix job rejects malformed versions and suites the product cannot run. A version that does not exist fails in the IDE download step with the download.jetbrains.com URL to check. These runs are named `Custom ITs - <ide_version> - <suite>` and do not notify Slack.
+The matrix job rejects malformed versions and suites the product cannot run. `IC`, `IU`, `CL` and `RD` 2024 versions always run on the 2024.2 IDE embedded in the CI container (including 2024.2.x patch versions), so other 2024 versions of these products are rejected rather than silently testing 2024.2. A version that does not exist fails in the IDE download step with the download.jetbrains.com URL to check. These runs are named `Custom ITs - <ide_version> - <suite>` and do not notify Slack.
 
 ## Version bumps
 

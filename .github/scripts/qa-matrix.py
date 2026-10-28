@@ -16,6 +16,7 @@ PRODUCT_SUITES = {"IC": IDEA_SUITES, "IU": IDEA_SUITES + ("PLSQL",), "CL": ("CLi
                   "RD": ("Rider",), "PY": ("PyCharm",), "PC": ("PyCharm",),
                   "PS": ("PhpStorm",), "GO": ("GoLand",)}
 DEFAULT_SUITE = "default"
+EMBEDDED_2024_IDES = ("IC", "IU", "CL", "RD")
 DOCS_PATHS = ("*.md", "HEADER", "LICENSE", "LICENSE.*", "docs/*",
               ".github/CODEOWNERS", ".github/renovate.json")
 HARNESS_PATHS = ("its/*", ".github/*", "gradle/*", "*.gradle.kts", "gradle.properties", "mise.toml")
@@ -118,6 +119,11 @@ def custom_matrix(ide_version, suite):
     if not found or found[1] not in PRODUCT_SUITES:
         raise SystemExit(f"Invalid IDE version '{ide_version}'. Expected <CODE>-<version> with CODE in "
                          f"{', '.join(PRODUCT_SUITES)}, e.g. IC-2026.2.3")
+    if (found[1] in EMBEDDED_2024_IDES and found[2].startswith("2024")
+            and not re.fullmatch(r"2024\.2(\.\d+)*", found[2])):
+        # setup-qa-ide.sh and run-qa-its use the container's 2024.2 IDE for any <CODE>-2024* of these products
+        raise SystemExit(f"'{ide_version}' would silently run on the container's embedded 2024.2 IDE. "
+                         f"For {found[1]}, only 2024.2 (the embedded build) is accepted among 2024 versions")
     suites = PRODUCT_SUITES[found[1]]
     if suite == DEFAULT_SUITE:
         return [job(ide_version, name) for name in suites if name != "PLSQL"]

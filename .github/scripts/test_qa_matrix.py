@@ -224,7 +224,8 @@ latestPyCharmIdeVersion=
                                      json.loads(values["matrix"]))
 
     def test_custom_single_suite(self):
-        for ide_version, suite in [("IC-2026.2.3", "ConfigurationTests"), ("IU-2024.2", "PLSQL")]:
+        for ide_version, suite in [("IC-2026.2.3", "ConfigurationTests"), ("IU-2024.2", "PLSQL"),
+                                   ("RD-2024.2.7", "Rider"), ("PS-2024.3.5", "PhpStorm")]:
             with self.subTest(suite=suite):
                 result, values = self.run_matrix("custom", IDE_VERSION=f" {ide_version} ", TEST_SUITE=suite)
                 self.assertEqual(0, result.returncode, result.stderr)
@@ -235,7 +236,10 @@ latestPyCharmIdeVersion=
         for ide_version, suite in [("", "default"), ("2026.2.3", "default"), ("XX-2026.2.3", "default"),
                                    ("IC-", "default"), ("IC-2026.2.3; rm -rf /", "default"),
                                    ("RD-2026.2.3.1", "OpenInIdeTests"), ("IC-2026.2.3", "PLSQL"),
-                                   ("IC-2026.2.3", "Unknown")]:
+                                   ("IC-2026.2.3", "Unknown"),
+                                   # would silently run on the container's embedded 2024.2 IDE
+                                   ("IC-2024.3.5", "default"), ("IU-2024.1.7", "PLSQL"),
+                                   ("CL-2024.3", "default"), ("RD-2024.3.6", "default")]:
             with self.subTest(ide_version=ide_version, suite=suite):
                 result, values = self.run_matrix("custom", IDE_VERSION=ide_version, TEST_SUITE=suite)
                 self.assertNotEqual(0, result.returncode)
