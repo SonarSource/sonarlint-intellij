@@ -455,14 +455,18 @@ class BackendService : Disposable {
                 LanguageSpecificRequirements(jsTsRequirements, false),
                 getGlobalSettings().isAutoTrigger,
                 null,
-                computeBackendLogLevel()
+                trackedProjectsLogLevel()
             )
         )
     }
 
     fun syncBackendLogLevel() {
-        notifyBackend { it.logService.setLogLevel(SetLogLevelParams(computeBackendLogLevel())) }
+        val level = trackedProjectsLogLevel()
+        notifyBackend { it.logService.setLogLevel(SetLogLevelParams(level)) }
     }
+
+    private fun trackedProjectsLogLevel(): LogLevel =
+        computeLogLevel(synchronized(projectsOpened) { projectsOpened.toList() })
 
     private fun generateBackendCapabilities(): Set<BackendCapability> {
         val capabilities = mutableSetOf(
@@ -1062,8 +1066,8 @@ class BackendService : Disposable {
 
     companion object {
         @JvmStatic
-        fun computeBackendLogLevel(): LogLevel {
-            val verboseEnabled = ProjectManager.getInstance().openProjects.any { getSettingsFor(it).isVerboseEnabled }
+        fun computeLogLevel(projects: Collection<Project>): LogLevel {
+            val verboseEnabled = projects.any { !it.isDisposed && getSettingsFor(it).isVerboseEnabled }
             return if (verboseEnabled) LogLevel.DEBUG else LogLevel.INFO
         }
 

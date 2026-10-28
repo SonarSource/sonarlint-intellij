@@ -62,9 +62,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
-import com.intellij.openapi.project.ProjectManager
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
-import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.eraseToken
@@ -501,12 +499,13 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     }
 
     @Test
-    fun test_compute_backend_log_level() {
-        ProjectManager.getInstance().openProjects.forEach { Settings.getSettingsFor(it).isVerboseEnabled = false }
-        assertThat(BackendService.computeBackendLogLevel()).isEqualTo(LogLevel.INFO)
+    fun test_compute_log_level_from_tracked_projects() {
+        projectSettings.isVerboseEnabled = false
+        assertThat(BackendService.computeLogLevel(listOf(project))).isEqualTo(LogLevel.INFO)
 
         projectSettings.isVerboseEnabled = true
-        assertThat(BackendService.computeBackendLogLevel()).isEqualTo(LogLevel.DEBUG)
+        assertThat(BackendService.computeLogLevel(listOf(project))).isEqualTo(LogLevel.DEBUG)
+        assertThat(BackendService.computeLogLevel(emptyList())).isEqualTo(LogLevel.INFO)
     }
 
     @Test
