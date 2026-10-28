@@ -36,6 +36,8 @@ import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
 object OpeningUtils {
 
+    private const val OPEN_ERROR_PROPERTY = "sonarlint.its.open.error"
+
     fun openFile(filePath: String, fileName: String = filePath) {
         with(remoteRobot) {
             idea {
@@ -89,24 +91,20 @@ object OpeningUtils {
             // version (2026.2 replaced its path field with a breadcrumb bar), and no test is about it.
             // The IDE's open processors still run, so the Trust/Rider/CLion prompts below still appear.
             val projectDir = File("projects/$projectName-tmp").absoluteFile.normalize().path.replace("\\", "\\\\")
-            // openOrImport opens a folder that has .idea as a plain project unless a "strong" open processor
-            // claims it. CLion's CMake processor is not strong, so CLion would skip the CMake import: open
-            // through the first matching import processor instead (CMake, registered with order="first").
-            val open = if (isCLion()) {
+            // Errors thrown inside invokeLater never reach Remote Robot, so keep them for the failure message
+            runJs(
                 """
-                    const dir = com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByNioFile(projectDir);
-                    const processor = com.intellij.projectImport.ProjectOpenProcessor.getImportProvider(dir);
-                    if (!processor) throw "No project open processor for " + projectDir;
-                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() =>
-                        processor.doOpenProject(dir, null, true));
+                    const projectDir = new java.io.File("$projectDir").toPath();
+                    java.lang.System.clearProperty("$OPEN_ERROR_PROPERTY");
+                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() => {
+                        try {
+                            com.intellij.ide.impl.ProjectUtil.openOrImport(projectDir, null, true);
+                        } catch (e) {
+                            java.lang.System.setProperty("$OPEN_ERROR_PROPERTY", String(e));
+                        }
+                    });
                 """
-            } else {
-                """
-                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() =>
-                        com.intellij.ide.impl.ProjectUtil.openOrImport(projectDir, null, true));
-                """
-            }
-            runJs("""const projectDir = new java.io.File("$projectDir").toPath();""" + open)
+            )
             if (!remoteRobot.isCLion()) {
                 optionalStep {
                     dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
@@ -124,8 +122,16 @@ object OpeningUtils {
                     }
                 }
             }
-            idea {
-                waitBackgroundTasksFinished()
+            try {
+                idea {
+                    waitBackgroundTasksFinished()
+                }
+            } catch (e: Throwable) {
+                val openError = callJs<String>("""java.lang.System.getProperty("$OPEN_ERROR_PROPERTY", "")""")
+                if (openError.isNotEmpty()) {
+                    e.addSuppressed(IllegalStateException("Opening $projectName failed in the IDE: $openError"))
+                }
+                throw e
             }
             if (remoteRobot.isCLion()) {
                 optionalStep {
