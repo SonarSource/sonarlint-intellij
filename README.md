@@ -74,6 +74,7 @@ How to build
 ------------
 
 See [Building against EAP versions](docs/building-against-eap.md) to build and debug against an early access IDE.
+See [Investigating Marketplace UI freezes](docs/ui-freeze-investigation.md) for the shared agent skill and report workflow.
 
 ```bash
 ./gradlew buildPlugin
