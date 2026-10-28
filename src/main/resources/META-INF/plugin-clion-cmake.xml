@@ -19,10 +19,10 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
 
 -->
-<!--
+<idea-plugin>
+    <!--
     Optional fragment merged when com.intellij.clion is present.
     Declares no extensions; exists so plugin.xml optional depends may specify config-file.
     Bridges classpath for com.jetbrains.cidr.cpp.cmake.* (e.g. CMakeWorkspace) used from the clion module.
--->
-<idea-plugin>
+    -->
 </idea-plugin>

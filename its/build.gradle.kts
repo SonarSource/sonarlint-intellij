@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("org.jetbrains.intellij.platform")
     alias(libs.plugins.cyclonedx)
-    alias(libs.plugins.license)
     alias(libs.plugins.kotlin)
 }
 
@@ -225,16 +224,3 @@ intellijPlatform {
     instrumentCode.set(false)
 }
 
-license {
-    header = rootProject.file("HEADER")
-    mapping(
-        mapOf(
-            "java" to "SLASHSTAR_STYLE",
-            "kt" to "SLASHSTAR_STYLE",
-            "svg" to "XML_STYLE",
-            "form" to "XML_STYLE"
-        )
-    )
-    excludes(listOf("**/*.jar", "**/*.png", "**/README", "**.xml"))
-    strictCheck = true
-}

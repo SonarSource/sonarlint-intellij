@@ -27,7 +27,7 @@ plugins {
     id("org.jetbrains.intellij.platform")
     alias(libs.plugins.sonarqube)
     jacoco
-    alias(libs.plugins.license)
+    alias(libs.plugins.spotless)
     alias(libs.plugins.artifactory)
     idea
     signing
@@ -117,21 +117,7 @@ dependencies {
 
 apply(from = "gradle/intellij-dependency-lock.gradle")
 
-license {
-    header = rootProject.file("HEADER")
-    mapping(
-        mapOf(
-            "java" to "SLASHSTAR_STYLE",
-            "kt" to "SLASHSTAR_STYLE",
-            "svg" to "XML_STYLE",
-            "form" to "XML_STYLE"
-        )
-    )
-    excludes(
-        listOf("**/*.jar", "**/*.png", "**/README")
-    )
-    strictCheck = true
-}
+apply(from = "gradle/spotless.gradle")
 
 intellijPlatform {
     caching {

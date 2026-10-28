@@ -1,0 +1,58 @@
+def headerLines = rootProject.file("HEADER").text.trim().readLines()
+
+def javaLicenseHeader = new StringBuilder("/*\n")
+headerLines.each { line ->
+    if (line.isEmpty()) {
+        javaLicenseHeader.append(" *\n")
+    } else {
+        javaLicenseHeader.append(" * ").append(line).append("\n")
+    }
+}
+javaLicenseHeader.append(" */")
+
+def xmlLicenseHeader = new StringBuilder("<!--\n\n")
+headerLines.each { line ->
+    if (line.isEmpty()) {
+        xmlLicenseHeader.append("\n")
+    } else {
+        xmlLicenseHeader.append("    ").append(line).append("\n")
+    }
+}
+xmlLicenseHeader.append("\n-->")
+
+spotless {
+    java {
+        target("**/src/**/*.java")
+        targetExclude("**/src/**/package-info.java", "its/projects/**", "**/testData/**")
+        licenseHeader(javaLicenseHeader.toString(), "package ")
+    }
+    format("packageInfo") {
+        target("**/src/**/package-info.java")
+        targetExclude("its/projects/**")
+        licenseHeader(javaLicenseHeader.toString(), "(package |@)")
+    }
+    kotlin {
+        target("**/src/**/*.kt")
+        targetExclude("its/projects/**", "**/testData/**")
+        licenseHeader(javaLicenseHeader.toString(), "package ")
+    }
+    format("svg") {
+        target("**/src/**/*.svg")
+        licenseHeader(xmlLicenseHeader.toString(), "<svg")
+    }
+    format("form") {
+        target("**/src/**/*.form")
+        def formLicenseHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n${xmlLicenseHeader}"
+        licenseHeader(formLicenseHeader, "<form")
+    }
+    format("xml") {
+        target("**/src/main/resources/**/*.xml")
+        targetExclude("its/**", "**/testData/**", "**/colorSchemes/**")
+        licenseHeader(xmlLicenseHeader.toString(), "<idea-plugin")
+    }
+    format("xmlWithDeclaration") {
+        target("**/src/main/resources/colorSchemes/**/*.xml")
+        def xmlResourceLicenseHeader = "<?xml version='1.0'?>\n${xmlLicenseHeader}"
+        licenseHeader(xmlResourceLicenseHeader, "<list")
+    }
+}

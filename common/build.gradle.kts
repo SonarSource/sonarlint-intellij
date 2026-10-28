@@ -5,7 +5,6 @@ val ideaHome: String? = System.getenv("IDEA_HOME")
 plugins {
     id("org.jetbrains.intellij.platform.module")
     alias(libs.plugins.cyclonedx)
-    alias(libs.plugins.license)
     alias(libs.plugins.kotlin)
 }
 

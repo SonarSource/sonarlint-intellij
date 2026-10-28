@@ -19,7 +19,7 @@ sonarqube = "7.3.0.8198"
 orchestrator = "6.4.4.4797"
 
 kotlin-plugin = "2.4.21"
-license-plugin = "0.16.1"
+spotless = "8.10.4"
 artifactory-plugin = "6.0.4"
 cyclonedx-plugin = "3.5.1"
 
@@ -84,7 +84,7 @@ its-remote = ["its-remote-robot", "its-remote-fixtures"]
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-plugin" }
-license = { id = "com.github.hierynomus.license", version.ref = "license-plugin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 artifactory = { id = "com.jfrog.artifactory", version.ref = "artifactory-plugin" }
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-plugin" }
 
