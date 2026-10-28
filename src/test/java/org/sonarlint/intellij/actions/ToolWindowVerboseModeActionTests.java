@@ -24,8 +24,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
+import org.sonarlint.intellij.core.BackendService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ToolWindowVerboseModeActionTests extends AbstractSonarLintLightTests {
@@ -52,6 +55,17 @@ class ToolWindowVerboseModeActionTests extends AbstractSonarLintLightTests {
     action.setSelected(event, true);
     
     assertThat(getProjectSettings().isVerboseEnabled()).isTrue();
+  }
+
+  @Test
+  void test_set_selected_syncs_backend_log_level() {
+    var backendService = mock(BackendService.class);
+    replaceApplicationService(BackendService.class, backendService);
+    getProjectSettings().setVerboseEnabled(false);
+
+    action.setSelected(event, true);
+
+    verify(backendService).syncBackendLogLevel();
   }
 
   @Test
