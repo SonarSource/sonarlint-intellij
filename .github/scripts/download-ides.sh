@@ -117,6 +117,7 @@ TEMP_FILE="${TEMP_DIR}/ide.tar.gz"
 echo "Downloading artifact..."
 if ! curl -fsSL -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_ACCESS_TOKEN}" -o "${TEMP_FILE}" "${DOWNLOAD_URL}"; then
     echo "::error::Failed to download ${IDE_NAME} ${IDE_VERSION} from ${DOWNLOAD_URL}"
+    echo "::error::Repox mirrors download.jetbrains.com: check that https://download.jetbrains.com/${ARTIFACT_PATH#jetbrains-download/} exists. EAP builds are named by build number (e.g. IU-263.7307.44), see https://data.services.jetbrains.com/products/releases?code=IIU&latest=true&type=eap" >&2
     exit 1
 fi
 
