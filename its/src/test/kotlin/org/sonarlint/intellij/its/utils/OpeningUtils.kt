@@ -88,12 +88,15 @@ object OpeningUtils {
             // Open through the platform API rather than the Open dialog: the dialog differs per IDE and
             // version (2026.2 replaced its path field with a breadcrumb bar), and no test is about it.
             // The IDE's open processors still run, so the Trust/Rider/CLion prompts below still appear.
-            val projectDir = File("projects/$projectName-tmp").absoluteFile.normalize().path
+            val projectDir = File("projects/$projectName-tmp").absoluteFile.normalize()
+            // CLion only imports the CMake project (instead of a plain folder) when opened from CMakeLists.txt
+            val cmakeLists = projectDir.resolve("CMakeLists.txt")
+            val toOpen = if (isCLion() && cmakeLists.exists()) cmakeLists else projectDir
             runJs(
                 """
-                    const projectDir = new java.io.File("${projectDir.replace("\\", "\\\\")}").toPath();
+                    const toOpen = new java.io.File("${toOpen.path.replace("\\", "\\\\")}").toPath();
                     com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() =>
-                        com.intellij.ide.impl.ProjectUtil.openOrImport(projectDir, null, true));
+                        com.intellij.ide.impl.ProjectUtil.openOrImport(toOpen, null, true));
                 """
             )
             if (!remoteRobot.isCLion()) {
