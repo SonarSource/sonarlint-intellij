@@ -45,4 +45,14 @@ spotless {
         def formLicenseHeader = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n${xmlLicenseHeader}"
         licenseHeader(formLicenseHeader, "<form")
     }
+    format("xml") {
+        target("**/src/main/resources/**/*.xml")
+        targetExclude("its/**", "**/testData/**", "**/colorSchemes/**")
+        licenseHeader(xmlLicenseHeader.toString(), "<idea-plugin")
+    }
+    format("xmlWithDeclaration") {
+        target("**/src/main/resources/colorSchemes/**/*.xml")
+        def xmlResourceLicenseHeader = "<?xml version='1.0'?>\n${xmlLicenseHeader}"
+        licenseHeader(xmlResourceLicenseHeader, "<list")
+    }
 }
