@@ -159,21 +159,21 @@ jobs:
         run: .\gradlew.bat :check
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@a9170d5795813c01ab4901ffb045b52bab4ab09d # v6.5.0
+        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/test-results/**/*.xml'
 
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-reports-windows
           path: "**/reports/**/**"
 
       - name: Upload JUnit test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: junit-results-windows
           path: "**/test-results/**/*.xml"
@@ -239,21 +239,21 @@ jobs:
             /home/runner/.gradle/wrapper
 
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@a9170d5795813c01ab4901ffb045b52bab4ab09d # v6.5.0
+        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
         if: ${{ !cancelled() }}
         with:
           report_paths: '**/test-results/**/*.xml'
 
       - name: Upload test reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-reports-linux
           path: "**/reports/**/**"
 
       - name: Upload JUnit test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: junit-results-linux
           path: "**/test-results/**/*.xml"
@@ -291,7 +291,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Restore verifier IDEs cache
-        uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
+        uses: SonarSource/gh-action_cache@141f879febb7781981b1e091927d8125cff2c145 # v1.7.4
         with:
           path: .intellijPlatform/ides
           key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-CI-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
