@@ -27,8 +27,14 @@ import java.util.UUID
 @Service(Service.Level.PROJECT)
 class TaintVulnerabilitiesCache(val project: Project) {
 
+    @Volatile
     var taintVulnerabilities: List<LocalTaintVulnerability> = emptyList()
 
+    @Volatile
+    var incrementalRevision = 0L
+        private set
+
+    @Synchronized
     fun update(taintVulnerabilityIdsToRemove: Set<UUID>, taintVulnerabilitiesToAdd: List<LocalTaintVulnerability>, taintVulnerabilitiesToUpdate: List<LocalTaintVulnerability>) {
         val currentTaintVulnerabilities = taintVulnerabilities.toMutableList()
         currentTaintVulnerabilities.removeAll { it.getId() in taintVulnerabilityIdsToRemove }
@@ -37,6 +43,15 @@ class TaintVulnerabilitiesCache(val project: Project) {
         currentTaintVulnerabilities.removeAll { it.getServerKey() in updatedTaintVulnerabilityKeys }
         currentTaintVulnerabilities.addAll(taintVulnerabilitiesToUpdate)
         taintVulnerabilities = currentTaintVulnerabilities
+        incrementalRevision++
+    }
+
+    @Synchronized
+    fun replaceIfUnchanged(expectedRevision: Long, findings: List<LocalTaintVulnerability>): Boolean {
+        if (incrementalRevision != expectedRevision) return false
+        taintVulnerabilities = findings
+        incrementalRevision++
+        return true
     }
 
     fun getTaintVulnerabilitiesForFile(file: VirtualFile) : List<LocalTaintVulnerability> {

@@ -24,7 +24,9 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -36,6 +38,7 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
+import com.intellij.util.concurrency.AppExecutorUtil
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
@@ -44,6 +47,7 @@ import java.nio.file.Paths
 import java.time.Duration
 import java.time.format.DateTimeParseException
 import java.util.UUID
+import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -1089,17 +1093,30 @@ class BackendService : Disposable {
     }
 
     fun refreshTaintVulnerabilities(project: Project) {
+        if (project.isDisposed) return
         val projectId = projectId(project)
+        val cache = getService(project, TaintVulnerabilitiesCache::class.java)
+        val revision = cache.incrementalRevision
         requestFromBackend { it.taintVulnerabilityTrackingService.listAll(ListAllParams(projectId, true)) }
-            .thenApplyAsync { response ->
-                val localTaintVulnerabilities = computeReadActionSafely(project) {
+            .thenAccept { response ->
+                if (project.isDisposed) return@thenAccept
+                // Waiting synchronously for a read lock in the common pool can deadlock project disposal.
+                ReadAction.nonBlocking(Callable {
                     val taintVulnerabilityMatcher = TaintVulnerabilityMatcher(project)
                     response.taintVulnerabilities.map { taintVulnerabilityMatcher.match(it) }
-                } ?: return@thenApplyAsync
-                getService(project, TaintVulnerabilitiesCache::class.java).taintVulnerabilities = localTaintVulnerabilities
-                runOnUiThread(project) {
-                    getService(project, SonarLintToolWindow::class.java).refreshViews()
-                }
+                })
+                    // expireWith takes a synchronous read lock during submission on IntelliJ 2024.2.
+                    .expireWhen { project.isDisposed }
+                    .finishOnUiThread(ModalityState.defaultModalityState()) { localTaintVulnerabilities ->
+                        if (!project.isDisposed) {
+                            if (cache.replaceIfUnchanged(revision, localTaintVulnerabilities)) {
+                                getService(project, SonarLintToolWindow::class.java).refreshViews()
+                            } else {
+                                refreshTaintVulnerabilities(project)
+                            }
+                        }
+                    }
+                    .submit(AppExecutorUtil.getAppExecutorService())
             }
     }
 

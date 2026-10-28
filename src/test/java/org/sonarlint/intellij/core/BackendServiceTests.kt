@@ -22,14 +22,25 @@ package org.sonarlint.intellij.core
 import com.intellij.ide.impl.OpenProjectTask
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.impl.LaterInvocator
+import com.intellij.openapi.application.impl.NonBlockingReadActionImpl
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSystem
+import com.intellij.testFramework.PlatformTestUtil
+import com.intellij.testFramework.replaceService
+import com.intellij.util.concurrency.AppExecutorUtil
+import com.intellij.util.ui.UIUtil
 import java.nio.file.Path
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -52,10 +63,13 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.refEq
 import org.mockito.kotlin.timeout
 import org.sonarlint.intellij.AbstractSonarLintHeavyTests
+import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.eraseToken
 import org.sonarlint.intellij.config.global.credentials.eraseUsernamePassword
 import org.sonarlint.intellij.config.global.credentials.setToken
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesCache
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilityMatcher
 import org.sonarlint.intellij.messages.CredentialsChangeListener
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarsource.sonarlint.core.client.utils.IssueResolutionStatus
@@ -123,9 +137,16 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.GetEffectiveRul
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.rules.RulesRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.telemetry.TelemetryRpcService
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllResponse
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.ListAllParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityDto
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TaintVulnerabilityTrackingRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.tracking.TextRangeWithHashDto
 import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AcceptedBindingSuggestionParams
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
+import org.sonarsource.sonarlint.core.rpc.protocol.common.IssueSeverity
+import org.sonarsource.sonarlint.core.rpc.protocol.common.RuleType
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion
+import org.sonarsource.sonarlint.core.rpc.protocol.common.StandardModeDetails
 
 private const val CONNECTION_NAME = "id"
 
@@ -143,6 +164,8 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     private lateinit var backendFileService: FileRpcService
     private lateinit var backendTelemetryService: TelemetryRpcService
     private lateinit var backendAiAgentService: AiAgentRpcService
+    private lateinit var taintService: TaintVulnerabilityTrackingRpcService
+    private lateinit var toolWindow: SonarLintToolWindow
     private lateinit var service: BackendService
     private var previousTelemetryDisabledValue: String = System.getProperty("sonarlint.telemetry.disabled")
     private var previousMonitoringDisabledValue: String = System.getProperty("sonarlint.monitoring.disabled")
@@ -169,7 +192,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         backendFileService = mock(FileRpcService::class.java)
         backendTelemetryService = mock(TelemetryRpcService::class.java)
         backendAiAgentService = mock(AiAgentRpcService::class.java)
-        val taintService = mock(TaintVulnerabilityTrackingRpcService::class.java)
+        taintService = mock(TaintVulnerabilityTrackingRpcService::class.java)
         `when`(taintService.listAll(any())).thenReturn(CompletableFuture.completedFuture(ListAllResponse(emptyList())))
         `when`(backend.fileService).thenReturn(backendFileService)
         `when`(backend.connectionService).thenReturn(backendConnectionService)
@@ -195,10 +218,16 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
 
     @BeforeEach
     fun resetMockBackend() {
+        toolWindow = mock(SonarLintToolWindow::class.java)
+        replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
+        val refreshed = CountDownLatch(1)
+        doAnswer { refreshed.countDown(); null }.`when`(toolWindow).refreshViews()
         service.projectOpened(project)
         service.modulesAdded(project, listOf(module))
 
         verify(backend, timeout(2000)).initialize(any())
+        PlatformTestUtil.waitWithEventsDispatching("Initial taint refresh", { refreshed.count == 0L }, 5000)
+        clearInvocations(taintService, toolWindow)
 
         // Ignore previous events caused by HeavyTestFramework opening a project
         reset(backendConfigurationService)
@@ -215,6 +244,218 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         System.setProperty("sonarlint.telemetry.disabled", previousTelemetryDisabledValue)
         System.setProperty("sonarlint.monitoring.disabled", previousMonitoringDisabledValue)
     }
+
+    @Test
+    fun test_refresh_taint_matches_under_read_access_then_publishes_and_clears_on_edt() {
+        val file = createChildData(orCreateProjectBaseDir, "taint.txt")
+        setFileText(file, "vulnerable")
+        val cache = project.getService(TaintVulnerabilitiesCache::class.java)
+        val response = prepareTaintRefresh(project)
+        val publishedIds = mutableListOf<List<UUID>>()
+        doAnswer {
+            assertThat(ApplicationManager.getApplication().isDispatchThread).isTrue()
+            publishedIds.add(cache.taintVulnerabilities.map { it.getId() })
+            null
+        }.`when`(toolWindow).refreshViews()
+        val taint = taintVulnerability()
+
+        response.complete(ListAllResponse(listOf(taint)))
+        finishTaintRefresh()
+
+        assertThat(publishedIds).containsExactly(listOf(taint.id))
+        assertThat(cache.taintVulnerabilities.single().file()).isEqualTo(file)
+        assertThat(cache.taintVulnerabilities.single().rangeMarker()!!.startOffset).isZero()
+        verify(taintService).listAll(refEq(ListAllParams(projectBackendId(project), true)))
+
+        prepareTaintRefresh(project).complete(ListAllResponse(emptyList()))
+        finishTaintRefresh()
+        assertThat(publishedIds).containsExactly(listOf(taint.id), emptyList())
+        assertThat(cache.taintVulnerabilities).isEmpty()
+    }
+
+    @Test
+    fun test_refresh_taint_does_not_block_common_pool_when_background_response_arrives_under_edt_write_lock() {
+        val response = prepareTaintRefresh(project)
+        val completing = CountDownLatch(1)
+        var responseCompletion: CompletableFuture<Void>? = null
+        var quiescence: Future<Boolean>? = null
+        try {
+            ApplicationManager.getApplication().runWriteAction {
+                responseCompletion = CompletableFuture.runAsync {
+                    completing.countDown()
+                    response.complete(ListAllResponse(emptyList()))
+                }
+                assertThat(completing.await(5, TimeUnit.SECONDS)).isTrue()
+                quiescence = AppExecutorUtil.getAppExecutorService().submit<Boolean> {
+                    ForkJoinPool.commonPool().awaitQuiescence(1, TimeUnit.SECONDS)
+                }
+                assertThat(quiescence!!.get(2, TimeUnit.SECONDS)).isTrue()
+            }
+        } finally {
+            // Release the EDT write lock before joining, even when submission blocks.
+            responseCompletion?.get(5, TimeUnit.SECONDS)
+            quiescence?.get(5, TimeUnit.SECONDS)
+            finishTaintRefresh()
+        }
+        verify(toolWindow).refreshViews()
+    }
+
+    @Test
+    fun test_refresh_taint_skips_disposed_project_and_response_after_disposal() {
+        val closingProject = newTaintProject()
+        val cache = closingProject.getService(TaintVulnerabilitiesCache::class.java)
+        val response = prepareTaintRefresh(closingProject)
+        disposeTaintProject(closingProject)
+
+        response.complete(ListAllResponse(listOf(taintVulnerability())))
+        finishTaintRefresh()
+        service.refreshTaintVulnerabilities(closingProject)
+        finishTaintRefresh()
+
+        verify(taintService, times(1)).listAll(any())
+        verify(toolWindow, never()).refreshViews()
+        assertThat(cache.taintVulnerabilities).isEmpty()
+    }
+
+    @Test
+    fun test_refresh_taint_expires_when_project_is_disposed_while_read_is_queued() {
+        val closingProject = newTaintProject()
+        val cache = closingProject.getService(TaintVulnerabilitiesCache::class.java)
+        val response = prepareTaintRefresh(closingProject)
+        try {
+            ApplicationManager.getApplication().runWriteAction {
+                response.complete(ListAllResponse(listOf(taintVulnerability())))
+                Disposer.dispose(closingProject)
+            }
+            finishTaintRefresh()
+            assertThat(cache.taintVulnerabilities).isEmpty()
+            verify(toolWindow, never()).refreshViews()
+        } finally {
+            if (!closingProject.isDisposed) disposeTaintProject(closingProject)
+        }
+    }
+
+    @Test
+    fun test_refresh_taint_preserves_cached_findings_when_rpc_fails() {
+        val cache = project.getService(TaintVulnerabilitiesCache::class.java)
+        val existing = listOf(TaintVulnerabilityMatcher(project).match(taintVulnerability()))
+        cache.taintVulnerabilities = existing
+
+        prepareTaintRefresh(project).completeExceptionally(IllegalStateException("RPC failed"))
+        finishTaintRefresh()
+
+        assertThat(cache.taintVulnerabilities).isSameAs(existing)
+        verify(toolWindow, never()).refreshViews()
+    }
+
+    @Test
+    fun test_refresh_taint_retries_snapshot_invalidated_by_incremental_updates_during_modality() {
+        val cache = project.getService(TaintVulnerabilitiesCache::class.java)
+        val matcher = TaintVulnerabilityMatcher(project)
+        val removed = taintVulnerability("removed")
+        val outdated = taintVulnerability("updated")
+        val updated = taintVulnerability("updated")
+        val added = taintVulnerability("added")
+        val unaffected = taintVulnerability("unaffected")
+        cache.taintVulnerabilities = listOf(removed, outdated).map(matcher::match)
+        val response = prepareTaintRefresh(project)
+        val fresh = CompletableFuture<ListAllResponse>()
+        `when`(taintService.listAll(any())).thenReturn(fresh)
+        val latest = ListAllResponse(listOf(added, updated, unaffected))
+        val matched = CountDownLatch(1)
+        val snapshot = listOf(removed, outdated, unaffected)
+        val modal = Any()
+        try {
+            LaterInvocator.enterModal(modal)
+            try {
+                AppExecutorUtil.getAppExecutorService().submit {
+                    response.complete(ListAllResponse(object : List<TaintVulnerabilityDto> by snapshot {
+                        override fun iterator() = sequence {
+                            yieldAll(snapshot)
+                            matched.countDown()
+                        }.iterator()
+                    }))
+                }.get(5, TimeUnit.SECONDS)
+                assertThat(matched.await(5, TimeUnit.SECONDS)).isTrue()
+                UIUtil.dispatchAllInvocationEvents()
+                verify(toolWindow, never()).refreshViews()
+                cache.update(setOf(removed.id), listOf(matcher.match(added)), listOf(matcher.match(updated)))
+            } finally {
+                LaterInvocator.leaveModal(modal)
+            }
+            finishTaintRefresh()
+            assertThat(cache.taintVulnerabilities.map { it.getId() }).containsExactly(added.id, updated.id)
+            await().atMost(Duration.ofSeconds(2)).until { fresh.numberOfDependents > 0 }
+            verify(taintService, times(2)).listAll(any())
+            verify(toolWindow, never()).refreshViews()
+
+            fresh.complete(latest)
+            finishTaintRefresh()
+            assertThat(cache.taintVulnerabilities.map { it.getId() }).containsExactly(added.id, updated.id, unaffected.id)
+            verify(toolWindow).refreshViews()
+        } finally {
+            fresh.complete(latest)
+            finishTaintRefresh()
+        }
+    }
+
+    @Test
+    fun test_refresh_taint_retries_older_snapshot_after_newer_refresh_publishes() {
+        val cache = project.getService(TaintVulnerabilitiesCache::class.java)
+        val older = prepareTaintRefresh(project)
+        val newer = prepareTaintRefresh(project)
+        val retry = CompletableFuture<ListAllResponse>()
+        `when`(taintService.listAll(any())).thenReturn(retry)
+        val current = ListAllResponse(listOf(taintVulnerability("current")))
+        try {
+            newer.complete(current)
+            finishTaintRefresh()
+            older.complete(ListAllResponse(listOf(taintVulnerability("stale"))))
+            finishTaintRefresh()
+
+            assertThat(cache.taintVulnerabilities.map { it.key() }).containsExactly("current")
+            await().atMost(Duration.ofSeconds(2)).until { retry.numberOfDependents > 0 }
+            verify(taintService, times(3)).listAll(any())
+            verify(toolWindow).refreshViews()
+
+            retry.complete(current)
+            finishTaintRefresh()
+            assertThat(cache.taintVulnerabilities.map { it.key() }).containsExactly("current")
+            verify(toolWindow, times(2)).refreshViews()
+        } finally {
+            retry.complete(current)
+            finishTaintRefresh()
+        }
+    }
+
+    private fun prepareTaintRefresh(target: Project): CompletableFuture<ListAllResponse> {
+        val response = CompletableFuture<ListAllResponse>()
+        `when`(taintService.listAll(any())).thenReturn(response)
+        service.refreshTaintVulnerabilities(target)
+        await().atMost(Duration.ofSeconds(2)).until { response.numberOfDependents > 0 }
+        return response
+    }
+
+    private fun finishTaintRefresh() {
+        assertThat(ForkJoinPool.commonPool().awaitQuiescence(5, TimeUnit.SECONDS)).isTrue()
+        NonBlockingReadActionImpl.waitForAsyncTaskCompletion()
+        UIUtil.dispatchAllInvocationEvents()
+    }
+
+    private fun newTaintProject(): Project = ProjectManagerEx.getInstanceEx()
+        .newProject(createTempDirectory().toPath(), OpenProjectTask.build().asNewProject())!!.also {
+            it.replaceService(SonarLintToolWindow::class.java, toolWindow, it)
+        }
+
+    private fun disposeTaintProject(target: Project) {
+        ApplicationManager.getApplication().runWriteAction { Disposer.dispose(target) }
+    }
+
+    private fun taintVulnerability(key: String = "taint") = TaintVulnerabilityDto(
+        UUID.randomUUID(), key, false, null, "rule", "message", Path.of("taint.txt"), Instant.EPOCH,
+        Either.forLeft(StandardModeDetails(IssueSeverity.MAJOR, RuleType.VULNERABILITY)), emptyList(),
+        TextRangeWithHashDto(1, 0, 1, 5, "hash"), null, true, false
+    )
 
     @Test
     fun test_initialize_with_existing_connections_when_starting() {
