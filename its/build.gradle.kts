@@ -142,14 +142,18 @@ tasks.named<Test>("test") {
         ?.let { qaIdeHome(it.substringBefore('-')) }
         ?.let { home -> listOf("jbr/bin/java", "jbr/Contents/Home/bin/java").map { File(home, it) } }
         ?.firstOrNull { it.canExecute() }
+    val java21 = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
     if (bundledJava != null) {
         executable = bundledJava.path
+        // The bundled JBR lacks modules SonarQube's Elasticsearch needs (jdk.jlink), so Orchestrator
+        // starts SonarQube with the full JDK instead (see SonarQubeConfiguration.kt).
+        jvmArgumentProviders += CommandLineArgumentProvider {
+            listOf("-Dits.sonarqube.java.home=${java21.get().metadata.installationPath.asFile.absolutePath}")
+        }
     } else {
-        javaLauncher.set(
-            javaToolchains.launcherFor {
-                languageVersion.set(JavaLanguageVersion.of(21))
-            }
-        )
+        javaLauncher.set(java21)
     }
     // Keep Orchestrator on SaaS: Edge returns HTTP 404 for api/search/versions on
     // sonarsource-releases, which Orchestrator uses to resolve SQ distributions.
