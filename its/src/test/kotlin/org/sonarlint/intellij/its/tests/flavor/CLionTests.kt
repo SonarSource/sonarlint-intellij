@@ -63,31 +63,23 @@ class CLionTests : BaseUiTest() {
         // 2026.2 opens the sample (it has .idea) as a plain project and offers no "Load CMake project" link,
         // so trigger the action directly. It is disabled, so a no-op, once the CMake project is loaded.
         idea {
+            // Runs from the CMakeLists.txt editor opened above, which gives the action its data context
             val outcome = callJs<String>(
                 """
-                    const dir = component.project.getBaseDir();
-                    const processors = [];
-                    const it = com.intellij.projectImport.ProjectOpenProcessor.EXTENSION_POINT_NAME.getExtensionList().iterator();
-                    while (it.hasNext()) {
-                        const p = it.next();
-                        if (p.canOpenProject(dir)) processors.push(p.getName() + (p.isStrongProjectInfoHolder() ? " (strong)" : ""));
-                    }
                     const am = com.intellij.openapi.actionSystem.ActionManager.getInstance();
                     const action = am.getAction("CMake.LoadCMakeProject");
-                    let result = "processors=[" + processors.join(", ") + "]";
+                    const editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(component.project).getSelectedTextEditor();
+                    let result;
                     if (!action) {
-                        result += "; CMake.LoadCMakeProject not found";
+                        result = "action not found";
                     } else {
-                        const editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(component.project).getSelectedTextEditor();
-                        const target = editor ? editor.getContentComponent() : component;
-                        const callback = am.tryToExecute(action, null, target, "SonarLintITs", true);
-                        result += "; editor=" + (editor ? editor.getVirtualFile().getName() : "none")
-                            + "; done=" + callback.isDone() + "; rejected=" + callback.isRejected();
+                        const callback = am.tryToExecute(action, null, editor ? editor.getContentComponent() : component, "SonarLintITs", true);
+                        result = "done=" + callback.isDone() + ", rejected=" + callback.isRejected();
                     }
                     result;
                 """, true
             )
-            println("ITs: CMake load attempt: $outcome")
+            println("ITs: CMake.LoadCMakeProject: $outcome")
         }
         optionalStep {
             dialog("Trust CMake Project?", Duration.ofSeconds(5)) {
