@@ -8,7 +8,6 @@ plugins {
     id("org.jetbrains.intellij.platform.module")
     alias(libs.plugins.kotlin)
     alias(libs.plugins.cyclonedx)
-    alias(libs.plugins.license)
     `java-test-fixtures`
 }
 

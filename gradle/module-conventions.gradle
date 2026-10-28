@@ -43,16 +43,6 @@ tasks {
   }
 }
 
-license {
-    header = rootProject.file("HEADER")
-    mapping(
-      Map.of(
-        "java", "SLASHSTAR_STYLE",
-        "kt", "SLASHSTAR_STYLE",
-        "svg", "XML_STYLE",
-        "form", "XML_STYLE"
-      )
-    )
-    excludes(List.of("**/*.jar", "**/*.png", "**/README"))
-    strictCheck = true
+tasks.named("check") {
+  dependsOn(rootProject.tasks.named("spotlessCheck"))
 }
