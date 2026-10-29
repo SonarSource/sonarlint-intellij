@@ -211,7 +211,11 @@ class CodeFixTabPanel(
     }
 
     private fun switchCard(cardName: String) {
-        runOnUiThread(project) { cardLayout.show(this, cardName) }
+        runOnUiThread(project) {
+            if (!Disposer.isDisposed(this)) {
+                cardLayout.show(this, cardName)
+            }
+        }
     }
 
     fun loadSuggestion() {
@@ -223,12 +227,17 @@ class CodeFixTabPanel(
         }
         getService(BackendService::class.java).suggestAiCodeFixSuggestion(module, issueId)
             .thenAcceptAsync { fixSuggestion ->
+                if (Disposer.isDisposed(this)) {
+                    return@thenAcceptAsync
+                }
                 getService(project, FixSuggestionInlayHolder::class.java).addFixSuggestion(issueId.toString(), fixSuggestion)
                 displaySuggestion(fixSuggestion, false)
             }
             .exceptionally { error ->
-                handleErrorMessage(error)
-                switchCard(CODEFIX_ERROR)
+                if (!Disposer.isDisposed(this)) {
+                    handleErrorMessage(error)
+                    switchCard(CODEFIX_ERROR)
+                }
                 null
             }
     }
@@ -262,6 +271,9 @@ class CodeFixTabPanel(
 
     private fun displaySuggestion(fixSuggestion: SuggestFixResponse, alreadySuggested: Boolean) {
         runOnUiThread(project, ModalityState.stateForComponent(this)) {
+            if (Disposer.isDisposed(this)) {
+                return@runOnUiThread
+            }
             ShowFixSuggestion(project, file).show(fixSuggestion, alreadySuggested)
 
             clearPresentationContent()
@@ -311,8 +323,13 @@ class CodeFixTabPanel(
                 error("The fix was not applicable, the file could have been modified")
             }
             val diffView = CodeFixDiffView(project, file, currentCode, change.newCode)
-            Disposer.tryRegister(presentationContentParent(), diffView)
-            panel.add(diffView, BorderLayout.CENTER)
+            if (Disposer.isDisposed(this)) {
+                Disposer.dispose(diffView)
+            } else if (!Disposer.tryRegister(presentationContentParent(), diffView)) {
+                Disposer.dispose(diffView)
+            } else {
+                panel.add(diffView, BorderLayout.CENTER)
+            }
         }
 
         val navigateButton = JButton("Navigate to line").apply {
