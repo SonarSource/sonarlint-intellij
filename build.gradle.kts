@@ -2,6 +2,7 @@
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.file.Files
@@ -342,6 +343,20 @@ tasks {
         systemProperty("sonarlint.monitoring.disabled", "true")
         // disable thread leak checker for now as it's raising FPs
         systemProperty("junit.jupiter.extensions.autodetection.exclude", "com.intellij.testFramework.junit5.impl.ThreadLeakTrackerExtension")
+        // Hide any SonarQube CLI installed on the machine from the backend, so tests decide whether a CLI is installed:
+        // it gets its own user home and a PATH without `sonar`, led by the directory the official installer adds to it.
+        // On macOS the backend reads the system paths (/etc/paths) instead of PATH, which cannot be controlled.
+        val sloopUserHome = layout.buildDirectory.dir("sloop-user-home").get().asFile
+        systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
+        environment("SONARLINT_JVM_OPTS", "-Duser.home=${sloopUserHome.absolutePath}")
+        val cliInstallDir = sloopUserHome.resolve(".local/share/sonarqube-cli/bin").absolutePath
+        environment("PATH", (listOf(cliInstallDir) + System.getenv("PATH").orEmpty().split(File.pathSeparator)
+            .filterNot { File(it, "sonar").exists() || File(it, "sonar.exe").exists() })
+            .joinToString(File.pathSeparator))
+        doFirst {
+            sloopUserHome.deleteRecursively()
+            sloopUserHome.mkdirs()
+        }
     }
 
     prepareSandbox {
