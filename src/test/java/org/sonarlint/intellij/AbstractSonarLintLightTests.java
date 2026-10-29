@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
@@ -58,6 +59,8 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
+import org.sonarlint.intellij.fs.VirtualFileEvent;
+import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent;
 import org.sonarlint.intellij.fixtures.AbstractLightTests;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
@@ -200,7 +203,11 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
     return file;
   }
 
-  protected PsiFile createTestPsiFile(String fileName, String text) {
+  /**
+   * Writable module content root on the local filesystem (not {@code temp://} VFS).
+   * Required for IaC Helm analysis in SLOOP.
+   */
+  protected Path ensureDiskContentRoot() {
     try {
       if (createdTempDirs.isEmpty()) {
         var tempDir = Files.createTempDirectory("sonarlint-light-test-src");
@@ -209,8 +216,15 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
         WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model ->
           model.addContentEntry(virtualDir).addSourceFolder(virtualDir, false)));
       }
+      return createdTempDirs.get(0);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
-      var root = createdTempDirs.get(0);
+  protected PsiFile createTestPsiFile(String fileName, String text) {
+    try {
+      var root = ensureDiskContentRoot();
       var file = root.resolve(fileName);
       Files.createDirectories(file.getParent());
       Files.writeString(file, text);
@@ -240,4 +254,5 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   protected String getProjectBackendId() {
     return getProject().getProjectFilePath();
   }
+
 }

@@ -68,7 +68,7 @@ class QaMatrixTest(unittest.TestCase):
     def assert_suites(self, values, flavors=()):
         self.assertEqual("false", values["skip_its"])
         suites = [job["test_suite"] for job in json.loads(values["matrix"])]
-        self.assertCountEqual(["OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone", *flavors], suites)
+        self.assertCountEqual(["OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "LanguageAnalysis", *flavors], suites)
 
     def test_pr_path_selection(self):
         for path, flavors in [("README.md", None), ("src/Main.kt", ()),

@@ -28,7 +28,7 @@ import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
 
 
-@Tag("Standalone")
+@Tag("LanguageAnalysis")
 @EnabledIf("isIntelliJIdea")
 class IdeaUltimateTests : BaseUiTest() {
 
