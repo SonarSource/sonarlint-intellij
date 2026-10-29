@@ -35,7 +35,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.ai.AiIntegrationsController;
 import org.sonarlint.intellij.ai.AiIntegrationsPanel;
-import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
+import org.sonarlint.intellij.ui.currentfile.FindingsPanel;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.HELP_AND_FEEDBACK_TAB_TITLE;
@@ -72,7 +72,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
   }
 
   private static Content addCurrentFileTab(Project project, ContentManager contentManager) {
-    var currentFilePanel = new CurrentFilePanel(project);
+    var currentFilePanel = new FindingsPanel(project);
     return addCurrentFileTab(currentFilePanel, contentManager);
   }
 
@@ -80,7 +80,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
     var content = contentManager.getFactory()
       .createContent(
         panel,
-        ToolWindowConstants.CURRENT_FILE_TAB_TITLE,
+        ToolWindowConstants.FINDINGS_TAB_TITLE,
         false);
     content.setCloseable(false);
     contentManager.addDataProvider(panel);

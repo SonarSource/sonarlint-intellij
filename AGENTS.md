@@ -40,7 +40,7 @@ Services are accessed via `SonarLintUtils.getService(Class)` (app-level) or `Son
 | New backend RPC call | `core/BackendService.kt` |
 | New SLOOP callback | `SonarLintIntelliJClient.kt` |
 | Analysis trigger logic | `analysis/AnalysisSubmitter.kt`, `trigger/EditorOpenTrigger.kt` |
-| Current file findings display | `ui/currentfile/CurrentFilePanel.kt` |
+| Findings tab display | `ui/currentfile/FindingsPanel.kt` |
 | Full report display | `ui/report/ReportPanel.kt` |
 | SonarQube/SonarCloud connection | `core/ProjectBindingManager.java` |
 
@@ -103,6 +103,10 @@ This downloads IntelliJ Community 2024.2 on first run. To use a local IDE instal
 > On macOS, `<path-to-ide>` must point to the `Contents` directory inside the `.app` bundle (e.g. `"/Applications/IntelliJ IDEA.app/Contents"`).
 
 The sandbox (instance files, JDK config) is stored under `build/sonarlint-test`. Running `./gradlew clean` will wipe it.
+
+### Light UI tests
+
+Extension-driven UI coverage uses `AbstractSonarLintLightTests` with production extension points and headless tool-window registration. See [test-common/LIGHT_UI_TESTS.md](test-common/LIGHT_UI_TESTS.md).
 
 ### Integration tests
 

@@ -36,7 +36,7 @@ object FiltersUtils {
         optionalIdeaFrame()?.apply {
             toolWindow {
                 tabTitleContains("Findings") { select() }
-                content("CurrentFilePanel") {
+                content("FindingsPanel") {
                     filterButton {
                         ensureOpen()
                     }
@@ -57,7 +57,7 @@ object FiltersUtils {
             idea {
                 toolWindow {
                     tabTitleContains("Findings") { select() }
-                    content("CurrentFilePanel") {
+                    content("FindingsPanel") {
                         filterButton {
                             ensureOpen()
                         }
@@ -78,7 +78,7 @@ object FiltersUtils {
             idea {
                 toolWindow {
                     tabTitleContains("Findings") { select() }
-                    content("CurrentFilePanel") {
+                    content("FindingsPanel") {
                         filterButton {
                             ensureOpen()
                         }
