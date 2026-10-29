@@ -27,7 +27,7 @@ import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 
 class SonarLintUiTestContext(private val project: Project) {
 
-    fun releaseEditorsAndToolWindows() {
+    fun closeOpenEditorsAndSonarLintToolWindows() {
         val fileEditorManager = FileEditorManager.getInstance(project)
         fileEditorManager.openFiles.toList().forEach { fileEditorManager.closeFile(it) }
         ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)

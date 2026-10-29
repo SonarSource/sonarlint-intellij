@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.util.ui.UIUtil
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.currentfile.TreeType
 import org.sonarlint.intellij.ui.tree.IssueTree
@@ -34,28 +32,13 @@ class FindingsTabPage internal constructor(
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(panel)
 
     val findingsTree: FindingsTreePage
-        get() {
-            syncPanelWithSelectedEditorFile()
-            return FindingsTreePage(findingsIssueTree())
-        }
+        get() = FindingsTreePage(findingsIssueTree())
 
     val oldFindingsTree: FindingsTreePage
-        get() {
-            syncPanelWithSelectedEditorFile()
-            return FindingsTreePage(oldFindingsIssueTree())
-        }
+        get() = FindingsTreePage(oldFindingsIssueTree())
 
     val issues: List<FindingNodePage>
-        get() {
-            syncPanelWithSelectedEditorFile()
-            return FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
-        }
-
-    private fun syncPanelWithSelectedEditorFile() {
-        val file = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
-        panel.update(file)
-        UIUtil.dispatchAllInvocationEvents()
-    }
+        get() = FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
 
     private fun findingsIssueTree(): IssueTree =
         panel.getTree(TreeType.ISSUES, isOld = false) as IssueTree

@@ -25,8 +25,8 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.util.ui.UIUtil
 import javax.swing.Icon
+import org.sonarlint.intellij.fixtures.pumpEdtUntil
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
 import org.sonarlint.intellij.ui.ToolWindowConstants.FINDINGS_TAB_TITLE
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
@@ -64,7 +64,6 @@ private fun ensureHeadlessToolWindow(
     anchor: ToolWindowAnchor,
     factory: ToolWindowFactory,
     contentReady: (ToolWindow) -> Boolean,
-    maxEdtDispatches: Int = 200,
 ): ToolWindow {
     val manager = ToolWindowManager.getInstance(project)
     val toolWindow = manager.getToolWindow(toolWindowId)
@@ -75,11 +74,6 @@ private fun ensureHeadlessToolWindow(
         return toolWindow
     }
     factory.createToolWindowContent(project, toolWindow)
-    repeat(maxEdtDispatches) {
-        UIUtil.dispatchAllInvocationEvents()
-        if (contentReady(toolWindow)) {
-            return toolWindow
-        }
-    }
-    error("ToolWindowFactory did not create expected content on EDT")
+    pumpEdtUntil { contentReady(toolWindow) }
+    return toolWindow
 }

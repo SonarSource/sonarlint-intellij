@@ -20,10 +20,8 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
