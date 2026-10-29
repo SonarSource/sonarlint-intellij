@@ -127,6 +127,9 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotRpcSer
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.HotspotStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.hotspot.OpenHotspotInBrowserParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.initialize.InitializeParams
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.log.LogLevel
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.log.LogRpcService
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.log.SetLogLevelParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.AddIssueCommentParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ChangeIssueStatusParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.GetEffectiveIssueDetailsParams
@@ -165,6 +168,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     private lateinit var backendTelemetryService: TelemetryRpcService
     private lateinit var backendAiAgentService: AiAgentRpcService
     private lateinit var taintService: TaintVulnerabilityTrackingRpcService
+    private lateinit var backendLogService: LogRpcService
     private lateinit var toolWindow: SonarLintToolWindow
     private lateinit var service: BackendService
     private var previousTelemetryDisabledValue: String = System.getProperty("sonarlint.telemetry.disabled")
@@ -193,6 +197,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         backendTelemetryService = mock(TelemetryRpcService::class.java)
         backendAiAgentService = mock(AiAgentRpcService::class.java)
         taintService = mock(TaintVulnerabilityTrackingRpcService::class.java)
+        backendLogService = mock(LogRpcService::class.java)
         `when`(taintService.listAll(any())).thenReturn(CompletableFuture.completedFuture(ListAllResponse(emptyList())))
         `when`(backend.fileService).thenReturn(backendFileService)
         `when`(backend.connectionService).thenReturn(backendConnectionService)
@@ -205,6 +210,7 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         `when`(backend.telemetryService).thenReturn(backendTelemetryService)
         `when`(backend.aiAgentService).thenReturn(backendAiAgentService)
         `when`(backend.taintVulnerabilityTrackingService).thenReturn(taintService)
+        `when`(backend.logService).thenReturn(backendLogService)
         sloop = mock(Sloop::class.java)
         `when`(sloop.rpcServer).thenReturn(backend)
         `when`(sloop.onExit()).thenReturn(CompletableFuture.completedFuture(null))
@@ -465,6 +471,41 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
             .containsExactly(tuple(CONNECTION_NAME, "url"))
         assertThat(paramsCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
             .containsExactly(tuple(CONNECTION_NAME, "org"))
+    }
+
+    @Test
+    fun test_initialize_log_level_matches_verbose_mode() {
+        val paramsCaptor = argumentCaptor<InitializeParams>()
+        verify(backend, timeout(500)).initialize(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue.logLevel).isEqualTo(LogLevel.INFO)
+
+        projectSettings.isVerboseEnabled = true
+        clearInvocations(backend)
+        service.restartBackendService()
+        verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
+        assertThat(paramsCaptor.secondValue.logLevel).isEqualTo(LogLevel.DEBUG)
+    }
+
+    @Test
+    fun test_sync_backend_log_level_when_verbose_enabled() {
+        verify(backendLogService, timeout(2000).atLeastOnce()).setLogLevel(any())
+        clearInvocations(backendLogService)
+
+        projectSettings.isVerboseEnabled = true
+        service.syncBackendLogLevel()
+        val logLevelCaptor = argumentCaptor<SetLogLevelParams>()
+        verify(backendLogService, timeout(2000)).setLogLevel(logLevelCaptor.capture())
+        assertThat(logLevelCaptor.firstValue.newLevel).isEqualTo(LogLevel.DEBUG)
+    }
+
+    @Test
+    fun test_compute_log_level_from_tracked_projects() {
+        projectSettings.isVerboseEnabled = false
+        assertThat(BackendService.computeLogLevel(listOf(project))).isEqualTo(LogLevel.INFO)
+
+        projectSettings.isVerboseEnabled = true
+        assertThat(BackendService.computeLogLevel(listOf(project))).isEqualTo(LogLevel.DEBUG)
+        assertThat(BackendService.computeLogLevel(emptyList())).isEqualTo(LogLevel.INFO)
     }
 
     @Test

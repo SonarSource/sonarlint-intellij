@@ -174,6 +174,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssuePara
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ReopenIssueResponse
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.issue.ResolutionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.log.LogLevel
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.log.SetLogLevelParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.newcode.GetNewCodeDefinitionParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.GetPluginStatusesParams
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.plugin.GetPluginStatusesResponse
@@ -454,10 +455,18 @@ class BackendService : Disposable {
                 LanguageSpecificRequirements(jsTsRequirements, false),
                 getGlobalSettings().isAutoTrigger,
                 null,
-                LogLevel.DEBUG
+                trackedProjectsLogLevel()
             )
         )
     }
+
+    fun syncBackendLogLevel() {
+        val level = trackedProjectsLogLevel()
+        notifyBackend { it.logService.setLogLevel(SetLogLevelParams(level)) }
+    }
+
+    private fun trackedProjectsLogLevel(): LogLevel =
+        computeLogLevel(synchronized(projectsOpened) { projectsOpened.toList() })
 
     private fun generateBackendCapabilities(): Set<BackendCapability> {
         val capabilities = mutableSetOf(
@@ -644,12 +653,14 @@ class BackendService : Disposable {
             return null
         }
         projectsOpened.add(project)
+        syncBackendLogLevel()
         val binding = getService(project, ProjectBindingManager::class.java).binding
         return toBackendConfigurationScope(project, binding)
     }
 
     fun projectClosed(project: Project) {
         projectsOpened.remove(project)
+        syncBackendLogLevel()
         ModuleManager.getInstance(project).modules.forEach { moduleRemoved(it) }
         val projectId = projectId(project)
         notifyBackend { it.configurationService.didRemoveConfigurationScope(DidRemoveConfigurationScopeParams(projectId)) }
@@ -1054,6 +1065,12 @@ class BackendService : Disposable {
     }
 
     companion object {
+        @JvmStatic
+        fun computeLogLevel(projects: Collection<Project>): LogLevel {
+            val verboseEnabled = projects.any { !it.isDisposed && getSettingsFor(it).isVerboseEnabled }
+            return if (verboseEnabled) LogLevel.DEBUG else LogLevel.INFO
+        }
+
         fun projectId(project: Project) = project.projectFilePath ?: "DEFAULT_PROJECT"
 
         fun moduleId(module: Module): String {
