@@ -306,9 +306,9 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     companion object {
         @JvmStatic
         @BeforeAll
-        fun installClaudeCode() {
+        fun requireIsolatedBackend() {
+            // The build also provides the fake Claude Code CLI there, see build.gradle.kts
             assumeTrue(isSloopUserHomeIsolated(), "The build could not isolate the backend's user home, see build.gradle.kts")
-            FakeClaudeCode.install()
         }
     }
 }

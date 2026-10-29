@@ -107,20 +107,6 @@ class FakeSonarQubeCli {
     }
 }
 
-/**
- * Stands in for the Claude Code CLI in `~/.local/bin` of the backend's user home, where the backend looks for agent CLIs.
- * The backend discovers agents once per process, so this must exist before the first AI Integrations request in the run.
- */
-object FakeClaudeCode {
-
-    fun install() {
-        val executable = sloopUserHome().resolve(".local/bin/claude")
-        Files.createDirectories(executable.parent)
-        Files.writeString(executable, "#!/bin/sh\necho \"2.0.0 (Claude Code)\"\n")
-        Files.setPosixFilePermissions(executable, PosixFilePermissions.fromString("rwxr-xr-x"))
-    }
-}
-
 private const val SLOOP_USER_HOME_PROPERTY = "sonarlint.test.sloop.user.home"
 
 /** False when the build could not give the backend its own user home, e.g. from a path with spaces. */
