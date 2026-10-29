@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.ai
 
+import com.intellij.openapi.util.SystemInfo
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
@@ -31,12 +32,19 @@ import kotlin.io.path.readLines
 /**
  * Stands in for a SonarQube CLI installed by the official script, in the user home the build gives to the backend
  * (see `sonarlint.test.sloop.user.home` in build.gradle.kts). The backend finds it and runs `sonar --version`,
- * `sonar system status` and `sonar system reset` for real. Its state lives in files next to the script.
+ * `sonar system status` and `sonar system reset` for real. Its state lives in files next to the script, a shell script,
+ * or a batch file on Windows.
  */
 class FakeSonarQubeCli {
 
-    private val installRoot = sloopUserHome().resolve(".local/share/sonarqube-cli")
+    // On Windows the build points %LOCALAPPDATA% into the backend's user home
+    private val installRoot = if (SystemInfo.isWindows) {
+        sloopUserHome().resolve("AppData/Local/sonarqube-cli")
+    } else {
+        sloopUserHome().resolve(".local/share/sonarqube-cli")
+    }
     private val binDirectory = installRoot.resolve("bin")
+    private val executable = binDirectory.resolve(if (SystemInfo.isWindows) "sonar.cmd" else "sonar")
     private val commandLog = sloopUserHome().resolve("fake-sonar-commands.log")
 
     /** Arguments of every command the backend ran, oldest first. */
@@ -44,12 +52,15 @@ class FakeSonarQubeCli {
         get() = if (commandLog.exists()) commandLog.readLines() else emptyList()
 
     val isInstalled: Boolean
-        get() = binDirectory.resolve("sonar").exists()
+        get() = executable.exists()
 
     fun install(authenticated: Boolean = false) {
         Files.createDirectories(binDirectory)
         writeStatus(authenticated, integratedAgentIds = emptyList())
-        val executable = binDirectory.resolve("sonar")
+        if (SystemInfo.isWindows) {
+            writeWindowsScript()
+            return
+        }
         Files.writeString(
             executable,
             """
@@ -65,6 +76,29 @@ class FakeSonarQubeCli {
             """.trimIndent() + "\n"
         )
         Files.setPosixFilePermissions(executable, PosixFilePermissions.fromString("rwxr-xr-x"))
+    }
+
+    private fun writeWindowsScript() {
+        Files.writeString(
+            executable,
+            """
+            @echo off
+            set "dir=%~dp0"
+            echo %*>>"$commandLog"
+            if "%~1"=="--version" (
+              if exist "%dir%broken" exit /b 1
+              echo $VERSION
+              exit /b 0
+            )
+            if "%~1 %~2"=="system status" (
+              type "%dir%status.json"
+              exit /b 0
+            )
+            if "%~1 %~2 %~3"=="system reset --force" exit /b 0
+            echo fake sonar: unsupported command %* 1>&2
+            exit /b 1
+            """.trimIndent().replace("\n", "\r\n") + "\r\n"
+        )
     }
 
     /** Makes `sonar --version` fail, as a damaged installation would. */
