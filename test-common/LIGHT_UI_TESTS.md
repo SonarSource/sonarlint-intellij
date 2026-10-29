@@ -28,14 +28,21 @@ In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Pag
 
 Light UI tests interact with the product through **page objects** (e.g. `SonarLintMainToolWindowPage` → `findings` → `findingsTree` / `issues`), not raw Swing containers or production panel types returned to tests. Subclass [`AbstractSonarLintUILightTests`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) to obtain a wired main tool window and automatic teardown.
 
-Example assertion:
+Example assertion (see `FindingsTabAnalysisLightTests`):
 
 ```kotlin
-FileEditorManager.getInstance(project).openFile(file, true)
-// … run analysis …
-assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
-assertThat(mainToolWindow.findings.issues).hasSize(1)
+val file = openFileFromTestData("src/file.xml")
+awaitUntilAsserted {
+    assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
+}
+mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
+awaitUntilAsserted {
+    assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")
+    assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
+}
 ```
+
+Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button. Wait until the button is enabled, then poll findings with [`awaitUntilAsserted`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt)—not direct `AnalysisSubmitter` / `AnalysisStatus` calls.
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 
@@ -45,6 +52,6 @@ Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/or
 | --- | --- |
 | Findings tool window | `SonarLintToolWindowFactory` |
 | Walkthrough | `SonarLintWalkthroughToolWindowFactory` |
-| Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`) |
+| Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`); page object [`EditorTrafficLightPage`](../src/test/java/org/sonarlint/intellij/ui/page/EditorTrafficLightPage.kt) |
 | Notifications | `SonarLintProjectNotifications`, `NotificationGroup` EP, `Notifications.TOPIC` |
 | Settings | `applicationConfigurable` / `projectConfigurable` EP (`sonarlint` ids in `plugin.xml`) |

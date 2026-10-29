@@ -19,7 +19,15 @@
  */
 package org.sonarlint.intellij.ui.page
 
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import com.intellij.ui.components.JBLabel
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.fixtures.walkComponents
+import org.sonarlint.intellij.editor.EditorHighlightRefresh
+import org.sonarlint.intellij.fixtures.pumpEdt
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.currentfile.TreeType
 import org.sonarlint.intellij.ui.tree.IssueTree
@@ -29,20 +37,47 @@ class FindingsTabPage internal constructor(
     private val panel: FindingsPanel,
 ) {
 
-    val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(panel)
+    val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
     val findingsTree: FindingsTreePage
-        get() = FindingsTreePage(findingsIssueTree())
+        get() = readPanelState { FindingsTreePage(findingsIssueTree()) }
 
     val oldFindingsTree: FindingsTreePage
-        get() = FindingsTreePage(oldFindingsIssueTree())
+        get() = readPanelState { FindingsTreePage(oldFindingsIssueTree()) }
 
     val issues: List<FindingNodePage>
-        get() = FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
+        get() = readPanelState {
+            FindingsTreePage(findingsIssueTree()).issues + FindingsTreePage(oldFindingsIssueTree()).issues
+        }
+
+    /** Text of the issues row in [org.sonarlint.intellij.ui.currentfile.CurrentFileSummaryPanel]. */
+    val issuesSummaryButtonText: String
+        get() = readPanelState { readIssuesSummaryButtonText() }
+
+    /** Refreshes the tab through [SonarLintToolWindow]; call only on the EDT. */
+    internal fun refreshWithEditorSelection() {
+        val selected = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
+        if (selected != null) {
+            getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(selected, EditorHighlightRefresh.NONE)
+        }
+        pumpEdt()
+    }
+
+    private fun <T> readPanelState(read: () -> T): T = readOnEdt(read)
+
+    private fun readIssuesSummaryButtonText(): String =
+        panel.walkComponents()
+            .filterIsInstance<JBLabel>()
+            .map { it.text }
+            .first { text -> text == "1 Issue" || text == "No Issues" || text.matches(ISSUES_SUMMARY_COUNT) }
 
     private fun findingsIssueTree(): IssueTree =
         panel.getTree(TreeType.ISSUES, isOld = false) as IssueTree
 
     private fun oldFindingsIssueTree(): IssueTree =
         panel.getTree(TreeType.ISSUES, isOld = true) as IssueTree
+
+    private companion object {
+        private val ISSUES_SUMMARY_COUNT = Regex("\\d+ Issues")
+    }
 }
