@@ -20,19 +20,35 @@
 package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.ToolWindow
+import org.sonarlint.intellij.fixtures.pumpEdt
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.ToolWindowConstants.FINDINGS_TAB_TITLE
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
+import org.sonarlint.intellij.ui.report.ReportPanel
 
 class SonarLintMainToolWindowPage private constructor(
     val findings: FindingsTabPage,
+    private val project: Project,
+    private val toolWindow: ToolWindow,
 ) {
+
+    /** Selects the first open **Report** tab and returns its page object. */
+    fun reportTab(): ReportTabPage = readOnEdt {
+        val reportContent = toolWindow.contentManager.contents
+            .firstOrNull { it.component is ReportPanel }
+            ?: error("No Report tab is open in the SonarLint tool window")
+        toolWindow.contentManager.setSelectedContent(reportContent, true)
+        repeat(10) { pumpEdt() }
+        ReportTabPage(project, reportContent.component as ReportPanel)
+    }
 
     companion object {
         fun create(project: Project): SonarLintMainToolWindowPage {
             val toolWindow = ensureMainSonarLintToolWindow(project)
             val panel = toolWindow.contentManager.findContent(FINDINGS_TAB_TITLE)?.component
             check(panel is FindingsPanel) { "Findings tab is not a FindingsPanel" }
-            return SonarLintMainToolWindowPage(FindingsTabPage(project, panel))
+            return SonarLintMainToolWindowPage(FindingsTabPage(project, panel), project, toolWindow)
         }
     }
 }
