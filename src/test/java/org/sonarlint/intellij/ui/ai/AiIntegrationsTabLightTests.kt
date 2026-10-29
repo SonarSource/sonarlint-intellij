@@ -70,7 +70,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     @Test
     fun should_show_cli_as_installed_after_installing_it_from_the_card() {
         val cliCard = mainToolWindow.openAiIntegrations().sonarQubeCliCard
-        awaitUntil { cliCard.buttons.contains(INSTALL_CLI_LABEL) || cliCard.tickedLabels.contains(INSTALLED_STATUS) }
+        awaitCliCheckFinished(cliCard)
         assumeNoRealCliDetected(cliCard)
         assertThat(cliCard.buttons).contains(INSTALL_CLI_LABEL)
 
@@ -91,7 +91,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     fun should_show_cli_as_installed_after_refreshing_when_installed_outside_the_ide() {
         val aiIntegrations = mainToolWindow.openAiIntegrations()
         val cliCard = aiIntegrations.sonarQubeCliCard
-        awaitUntil { cliCard.buttons.contains(INSTALL_CLI_LABEL) || cliCard.tickedLabels.contains(INSTALLED_STATUS) }
+        awaitCliCheckFinished(cliCard)
         assumeNoRealCliDetected(cliCard)
 
         cli.install()
@@ -112,6 +112,11 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         assumeNoRealCliDetected(cliCard)
         assertThat(cliCard.tickedLabels).contains(INSTALLED_STATUS)
         assertThat(cliCard.labels).anyMatch { it.endsWith("v${FakeSonarQubeCli.VERSION}") }
+    }
+
+    /** Waits until the CLI card has finished checking, whatever the result. */
+    private fun awaitCliCheckFinished(cliCard: AiIntegrationCardPage) {
+        awaitUntil { cliCard.buttons.contains(INSTALL_CLI_LABEL) || cliCard.tickedLabels.contains(INSTALLED_STATUS) }
     }
 
     /**
