@@ -87,6 +87,8 @@ class CodeFixTabPanel(
 
     private lateinit var codefixPresentationPanel: JBPanel<CodeFixTabPanel>
     private var presentationContentDisposable: Disposable? = null
+    @Volatile
+    private var tabDisposed = false
     private lateinit var errorLabel: JBLabel
     private val presentationImage = JBLabel()
     private val cardLayout = CardLayout()
@@ -212,7 +214,7 @@ class CodeFixTabPanel(
 
     private fun switchCard(cardName: String) {
         runOnUiThread(project) {
-            if (!Disposer.isDisposed(this)) {
+            if (!tabDisposed) {
                 cardLayout.show(this, cardName)
             }
         }
@@ -227,14 +229,14 @@ class CodeFixTabPanel(
         }
         getService(BackendService::class.java).suggestAiCodeFixSuggestion(module, issueId)
             .thenAcceptAsync { fixSuggestion ->
-                if (Disposer.isDisposed(this)) {
+                if (tabDisposed) {
                     return@thenAcceptAsync
                 }
                 getService(project, FixSuggestionInlayHolder::class.java).addFixSuggestion(issueId.toString(), fixSuggestion)
                 displaySuggestion(fixSuggestion, false)
             }
             .exceptionally { error ->
-                if (!Disposer.isDisposed(this)) {
+                if (!tabDisposed) {
                     handleErrorMessage(error)
                     switchCard(CODEFIX_ERROR)
                 }
@@ -271,7 +273,7 @@ class CodeFixTabPanel(
 
     private fun displaySuggestion(fixSuggestion: SuggestFixResponse, alreadySuggested: Boolean) {
         runOnUiThread(project, ModalityState.stateForComponent(this)) {
-            if (Disposer.isDisposed(this)) {
+            if (tabDisposed) {
                 return@runOnUiThread
             }
             ShowFixSuggestion(project, file).show(fixSuggestion, alreadySuggested)
@@ -323,7 +325,7 @@ class CodeFixTabPanel(
                 error("The fix was not applicable, the file could have been modified")
             }
             val diffView = CodeFixDiffView(project, file, currentCode, change.newCode)
-            if (Disposer.isDisposed(this)) {
+            if (tabDisposed) {
                 Disposer.dispose(diffView)
             } else if (!Disposer.tryRegister(presentationContentParent(), diffView)) {
                 Disposer.dispose(diffView)
@@ -391,6 +393,7 @@ class CodeFixTabPanel(
     }
 
     override fun dispose() {
+        tabDisposed = true
         clearPresentationContent()
     }
 
