@@ -23,6 +23,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBPanelWithEmptyText
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.editor.EditorHighlightRefresh
@@ -39,6 +40,9 @@ class FindingsTabPage internal constructor(
 
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
+    val filters: FindingsTabFiltersPanelPage
+        get() = readPanelState { FindingsTabFiltersPanelPage(project, panel) }
+
     val findingsTree: FindingsTreePage
         get() = readPanelState { FindingsTreePage(findingsIssueTree()) }
 
@@ -54,16 +58,29 @@ class FindingsTabPage internal constructor(
     val issuesSummaryButtonText: String
         get() = readPanelState { readIssuesSummaryButtonText() }
 
+    /** Empty-state banner in the issues area (e.g. "No findings to display"). */
+    val emptyStateText: String
+        get() = readPanelState {
+            panel.walkComponents()
+                .filterIsInstance<JBPanelWithEmptyText>()
+                .first()
+                .emptyText.text
+        }
+
     /** Refreshes the tab through [SonarLintToolWindow]; call only on the EDT. */
     internal fun refreshWithEditorSelection() {
         val selected = FileEditorManager.getInstance(project).selectedFiles.firstOrNull()
         if (selected != null) {
             getService(project, SonarLintToolWindow::class.java).updateCurrentFileTab(selected, EditorHighlightRefresh.NONE)
         }
-        pumpEdt()
+        repeat(10) { pumpEdt() }
     }
 
-    private fun <T> readPanelState(read: () -> T): T = readOnEdt(read)
+    private fun <T> readPanelState(read: () -> T): T =
+        readOnEdt {
+            repeat(30) { pumpEdt() }
+            read()
+        }
 
     private fun readIssuesSummaryButtonText(): String =
         panel.walkComponents()
