@@ -112,7 +112,7 @@ Extension-driven UI coverage uses `AbstractSonarLintLightTests` with production 
 
 **Use the real SLOOP, mock the outside world.** Light tests start the real SLOOP backend, so the feature is exercised end to end through the plugin and SLCORE. Do not replace `BackendService` with a mock. Instead, fake what lies outside the plugin and SLOOP: SonarQube Server/Cloud, downloaded binaries, tools installed on the machine, the user's terminal. For example, `AiIntegrationsTabLightTests` installs a fake SonarQube CLI (`FakeSonarQubeCli`) where SLOOP looks for it, and replaces the `CliTerminalAdapter` service so the install command is recorded instead of run.
 
-The `:test` task gives SLOOP its own user home (`build/sloop-user-home`) and a `PATH` without `sonar`, so tools installed on the machine do not leak into tests. On macOS SLOOP searches the system paths from `/etc/paths` instead of `PATH`, which the build cannot control: a test that depends on what is installed must check what SLOOP actually found, and skip when it is not the fake.
+The `:test` task gives SLOOP its own user home (`build/sloop-user-home`) and a `PATH` without `sonar`, so tools installed on the machine do not leak into tests. SLOOP splits its JVM options on spaces, so this only works from a checkout path without spaces; otherwise the tests that need it are skipped. On macOS SLOOP searches the system paths from `/etc/paths` instead of `PATH`, which the build cannot control: a test that depends on what is installed must check what SLOOP actually found, and skip when it is not the fake.
 
 ### Integration tests
 

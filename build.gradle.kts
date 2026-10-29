@@ -347,15 +347,24 @@ tasks {
         // it gets its own user home and a PATH without `sonar`, led by the directory the official installer adds to it.
         // On macOS the backend reads the system paths (/etc/paths) instead of PATH, which cannot be controlled.
         val sloopUserHome = layout.buildDirectory.dir("sloop-user-home").get().asFile
-        systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
-        environment("SONARLINT_JVM_OPTS", "-Duser.home=${sloopUserHome.absolutePath}")
-        val cliInstallDir = sloopUserHome.resolve(".local/share/sonarqube-cli/bin").absolutePath
-        environment("PATH", (listOf(cliInstallDir) + System.getenv("PATH").orEmpty().split(File.pathSeparator)
-            .filterNot { File(it, "sonar").exists() || File(it, "sonar.exe").exists() })
-            .joinToString(File.pathSeparator))
-        doFirst {
-            sloopUserHome.deleteRecursively()
-            sloopUserHome.mkdirs()
+        // The backend splits SONARLINT_JVM_OPTS on spaces, so the user home can only be passed from a path without spaces.
+        // Without it, the tests that need this isolation skip themselves.
+        if (sloopUserHome.absolutePath.contains(' ')) {
+            doFirst {
+                logger.warn("Tests needing an isolated SonarQube for IDE backend are skipped: the build path contains spaces (${sloopUserHome.absolutePath})")
+            }
+        } else {
+            systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
+            environment("SONARLINT_JVM_OPTS", listOfNotNull(System.getenv("SONARLINT_JVM_OPTS")?.takeIf { it.isNotBlank() },
+                "-Duser.home=${sloopUserHome.absolutePath}").joinToString(" "))
+            val cliInstallDir = sloopUserHome.resolve(".local/share/sonarqube-cli/bin").absolutePath
+            environment("PATH", (listOf(cliInstallDir) + System.getenv("PATH").orEmpty().split(File.pathSeparator)
+                .filterNot { File(it, "sonar").exists() || File(it, "sonar.exe").exists() })
+                .joinToString(File.pathSeparator))
+            doFirst {
+                sloopUserHome.deleteRecursively()
+                sloopUserHome.mkdirs()
+            }
         }
     }
 

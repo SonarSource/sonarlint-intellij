@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assumptions.assumeFalse
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
@@ -296,6 +297,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         @JvmStatic
         @BeforeAll
         fun installClaudeCode() {
+            assumeTrue(isSloopUserHomeIsolated(), "The build could not isolate the backend's user home, see build.gradle.kts")
             FakeClaudeCode.install()
         }
     }
