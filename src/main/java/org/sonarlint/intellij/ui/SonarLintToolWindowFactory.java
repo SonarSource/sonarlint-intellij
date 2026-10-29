@@ -23,7 +23,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowType;
@@ -73,17 +72,14 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
 
   private static Content addCurrentFileTab(Project project, ContentManager contentManager) {
     var currentFilePanel = new CurrentFilePanel(project);
-    return addCurrentFileTab(currentFilePanel, contentManager);
-  }
-
-  private static Content addCurrentFileTab(SimpleToolWindowPanel panel, ContentManager contentManager) {
     var content = contentManager.getFactory()
       .createContent(
-        panel,
+        currentFilePanel,
         ToolWindowConstants.CURRENT_FILE_TAB_TITLE,
         false);
+    content.setDisposer(currentFilePanel);
     content.setCloseable(false);
-    contentManager.addDataProvider(panel);
+    contentManager.addDataProvider(currentFilePanel);
     contentManager.addContent(content);
     return content;
   }

@@ -21,8 +21,10 @@ package org.sonarlint.intellij.ui.codefix
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -81,9 +83,12 @@ class CodeFixTabPanel(
     private val project: Project,
     private val file: VirtualFile,
     private val issueId: UUID
-) : JBPanel<CodeFixTabPanel>() {
+) : JBPanel<CodeFixTabPanel>(), Disposable {
 
     private lateinit var codefixPresentationPanel: JBPanel<CodeFixTabPanel>
+    private var presentationContentDisposable: Disposable? = null
+    @Volatile
+    private var tabDisposed = false
     private lateinit var errorLabel: JBLabel
     private val presentationImage = JBLabel()
     private val cardLayout = CardLayout()
@@ -208,7 +213,11 @@ class CodeFixTabPanel(
     }
 
     private fun switchCard(cardName: String) {
-        runOnUiThread(project) { cardLayout.show(this, cardName) }
+        runOnUiThread(project) {
+            if (!tabDisposed) {
+                cardLayout.show(this, cardName)
+            }
+        }
     }
 
     fun loadSuggestion() {
@@ -220,12 +229,17 @@ class CodeFixTabPanel(
         }
         getService(BackendService::class.java).suggestAiCodeFixSuggestion(module, issueId)
             .thenAcceptAsync { fixSuggestion ->
+                if (tabDisposed) {
+                    return@thenAcceptAsync
+                }
                 getService(project, FixSuggestionInlayHolder::class.java).addFixSuggestion(issueId.toString(), fixSuggestion)
                 displaySuggestion(fixSuggestion, false)
             }
             .exceptionally { error ->
-                handleErrorMessage(error)
-                switchCard(CODEFIX_ERROR)
+                if (!tabDisposed) {
+                    handleErrorMessage(error)
+                    switchCard(CODEFIX_ERROR)
+                }
                 null
             }
     }
@@ -259,9 +273,12 @@ class CodeFixTabPanel(
 
     private fun displaySuggestion(fixSuggestion: SuggestFixResponse, alreadySuggested: Boolean) {
         runOnUiThread(project, ModalityState.stateForComponent(this)) {
+            if (tabDisposed) {
+                return@runOnUiThread
+            }
             ShowFixSuggestion(project, file).show(fixSuggestion, alreadySuggested)
 
-            codefixPresentationPanel.removeAll()
+            clearPresentationContent()
             val explanationTitleLabel = JBLabel("Explanation").apply {
                 font = JBFont.label().asBold()
             }
@@ -307,7 +324,14 @@ class CodeFixTabPanel(
             } else {
                 error("The fix was not applicable, the file could have been modified")
             }
-            panel.add(CodeFixDiffView(project, file, currentCode, change.newCode), BorderLayout.CENTER)
+            val diffView = CodeFixDiffView(project, file, currentCode, change.newCode)
+            if (tabDisposed) {
+                Disposer.dispose(diffView)
+            } else if (!Disposer.tryRegister(presentationContentParent(), diffView)) {
+                Disposer.dispose(diffView)
+            } else {
+                panel.add(diffView, BorderLayout.CENTER)
+            }
         }
 
         val navigateButton = JButton("Navigate to line").apply {
@@ -353,6 +377,24 @@ class CodeFixTabPanel(
             viewport.isOpaque = false
             border = JBUI.Borders.empty()
         }
+    }
+
+    private fun presentationContentParent(): Disposable {
+        if (presentationContentDisposable == null) {
+            presentationContentDisposable = Disposer.newDisposable(this, "CodeFixTabPanel presentation")
+        }
+        return presentationContentDisposable!!
+    }
+
+    private fun clearPresentationContent() {
+        presentationContentDisposable?.let { Disposer.dispose(it) }
+        presentationContentDisposable = null
+        codefixPresentationPanel.removeAll()
+    }
+
+    override fun dispose() {
+        tabDisposed = true
+        clearPresentationContent()
     }
 
 }

@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.ruledescription
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBLabel
@@ -48,6 +49,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
 
     private var sectionsTabs: JBTabbedPane? = null
     private var codeFixTab: CodeFixTabPanel? = null
+    private var ruleContentDisposable: Disposable? = null
 
     companion object {
         private const val AI_CODEFIX_TITLE = "AI CodeFix"
@@ -64,9 +66,27 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     }
 
     override fun removeAll() {
+        disposeRuleContent()
+        disposeCodeFixTab()
         super.removeAll()
         sectionsTabs = null
+    }
+
+    private fun disposeRuleContent() {
+        ruleContentDisposable?.let { Disposer.dispose(it) }
+        ruleContentDisposable = null
+    }
+
+    private fun disposeCodeFixTab() {
+        codeFixTab?.let { Disposer.dispose(it) }
         codeFixTab = null
+    }
+
+    private fun ruleContentParent(): Disposable {
+        if (ruleContentDisposable == null) {
+            ruleContentDisposable = Disposer.newDisposable(parent, "RuleDescriptionPanel content")
+        }
+        return ruleContentDisposable!!
     }
 
     fun addMonolithWithCodeFix(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
@@ -74,7 +94,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
         sectionsTabs.insertTab("Description", null, createNonContextualTab(monolithDescription.htmlContent, fileType), null, 0)
-        codeFixTab = CodeFixTabPanel(project, file, issueId)
+        codeFixTab = CodeFixTabPanel(project, file, issueId).also { Disposer.tryRegister(ruleContentParent(), it) }
         sectionsTabs.insertTab(AI_CODEFIX_TITLE, SonarLintIcons.SPARKLE_GUTTER_ICON, codeFixTab, null, 1)
 
         add(sectionsTabs, BorderLayout.CENTER)
@@ -82,14 +102,14 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     }
 
     fun addMonolith(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType) {
-        val scrollPane = parseCodeExamples(project, parent, monolithDescription.htmlContent, fileType)
+        val scrollPane = parseCodeExamples(project, ruleContentParent(), monolithDescription.htmlContent, fileType)
         add(scrollPane, BorderLayout.CENTER)
     }
 
     fun addSectionsWithCodeFix(withSections: RuleSplitDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
         addSections(withSections, fileType)
         sectionsTabs?.let {
-            codeFixTab = CodeFixTabPanel(project, file, issueId)
+            codeFixTab = CodeFixTabPanel(project, file, issueId).also { tab -> Disposer.tryRegister(ruleContentParent(), tab) }
             it.insertTab(AI_CODEFIX_TITLE, SonarLintIcons.SPARKLE_GUTTER_ICON, codeFixTab, null, withSections.tabs.size)
         }
     }
@@ -123,7 +143,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
 
     private fun createNonContextualTab(htmlContent: String, fileType: FileType) : JBPanel<JBPanel<*>> {
         val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
-        val scrollPane = parseCodeExamples(project, parent, htmlContent, fileType)
+        val scrollPane = parseCodeExamples(project, ruleContentParent(), htmlContent, fileType)
         sectionPanel.add(scrollPane, BorderLayout.CENTER)
         return sectionPanel
     }
@@ -134,16 +154,21 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         fileType: FileType
     ): JBPanel<JBPanel<*>> {
         val sectionPanel = JBPanel<JBPanel<*>>(BorderLayout())
+        var contextualContentDisposable: Disposable? = null
         val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
         comboPanel.add(JBLabel("Which component or framework contains the issue?"))
         val contextCombo = ComboBox(DefaultComboBoxModel(contextualSections.toTypedArray()))
         contextCombo.renderer = textListCellRenderer<RuleContextualSectionDto> { it.displayName }
         contextCombo.addActionListener {
+            contextualContentDisposable?.let { Disposer.dispose(it) }
+            val contentParent = Disposer.newDisposable(ruleContentParent(), "RuleDescriptionPanel contextual section")
+            contextualContentDisposable = contentParent
+
             val layout = sectionPanel.layout as BorderLayout
             layout.getLayoutComponent(BorderLayout.CENTER)?.let { sectionPanel.remove(it) }
 
             val htmlContent = (contextCombo.selectedItem as RuleContextualSectionDto).htmlContent
-            val scrollPane = parseCodeExamples(project, parent, htmlContent, fileType)
+            val scrollPane = parseCodeExamples(project, contentParent, htmlContent, fileType)
             sectionPanel.add(scrollPane, BorderLayout.CENTER)
         }
         comboPanel.add(contextCombo)

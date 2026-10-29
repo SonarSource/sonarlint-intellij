@@ -23,6 +23,7 @@ import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.ex.util.EditorUtil
@@ -93,6 +94,7 @@ class FixSuggestionInlayPanel(
 
     private fun initCenterDiffPanel() {
         val splitter = CodeFixDiffView(project, file.virtualFile, suggestion.currentCode, suggestion.newCode).apply { border = JBUI.Borders.empty(5, 5, 0, 5) }
+        Disposer.tryRegister(this, splitter)
         centerPanel.add(splitter)
     }
 
