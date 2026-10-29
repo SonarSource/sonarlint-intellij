@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.page
 
+import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
@@ -33,5 +34,18 @@ class SonarLintUiTestContext(private val project: Project) {
         ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
         ToolWindowManager.getInstance(project).getToolWindow(WALKTHROUGH_TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
         PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        releaseEditorsOpenedDuringUiLightTest()
+        PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+    }
+
+    /**
+     * Light UI tests drive real tool windows and actions; the platform tearDown runs [checkEditorsReleased].
+     * Release editors still held after closing files and tool window contents (including project-less viewers).
+     */
+    private fun releaseEditorsOpenedDuringUiLightTest() {
+        val editorFactory = EditorFactory.getInstance()
+        editorFactory.allEditors
+            .filter { it.project == null || it.project == project }
+            .forEach { editorFactory.releaseEditor(it) }
     }
 }
