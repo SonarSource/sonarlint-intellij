@@ -363,7 +363,13 @@ tasks {
                 .joinToString(File.pathSeparator))
             doFirst {
                 sloopUserHome.deleteRecursively()
-                sloopUserHome.mkdirs()
+                // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so
+                // the fake Claude Code used by AiIntegrationsTabLightTests must exist before any test runs
+                val agentBinDirectory = sloopUserHome.resolve(".local/bin").apply { mkdirs() }
+                agentBinDirectory.resolve("claude").apply {
+                    writeText("#!/bin/sh\necho \"2.0.0 (Claude Code)\"\n")
+                    setExecutable(true)
+                }
             }
         }
     }
