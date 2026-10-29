@@ -1,9 +1,33 @@
 name: Integration Tests Weekly
+run-name: ${{ inputs.ide_version && format('Custom ITs - {0} - {1}', inputs.ide_version, inputs.test_suite) || 'Integration Tests Weekly' }}
 
 on:
   schedule:
     - cron: '0 2 * * 0'  # Sundays at 02:00 UTC
   workflow_dispatch:
+    inputs:
+      ide_version:
+        description: 'IDE to test once, e.g. IC-2026.2.3 or RD-2026.3-EAP8-263.7307.48.Checked (download.jetbrains.com name). Empty runs the full weekly matrix.'
+        required: false
+        default: ''
+        type: string
+      test_suite:
+        description: 'Suite for ide_version. default = 4 core suites on IC/IU, the flavor suite elsewhere'
+        required: false
+        default: default
+        type: choice
+        options:
+          - default
+          - OpenInIdeTests
+          - ConnectedAnalysisTests
+          - ConfigurationTests
+          - Standalone
+          - PLSQL
+          - CLion
+          - Rider
+          - PyCharm
+          - PhpStorm
+          - GoLand
 
 permissions:
   id-token: write
@@ -15,4 +39,6 @@ jobs:
     if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/qa-its.yml
     with:
-      matrix_mode: weekly
+      matrix_mode: ${{ inputs.ide_version && 'custom' || 'weekly' }}
+      ide_version: ${{ inputs.ide_version }}
+      test_suite: ${{ inputs.test_suite }}

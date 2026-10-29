@@ -208,6 +208,43 @@ latestPyCharmIdeVersion=
         self.assertCountEqual(["IU"] * 4 + ["RD", "CL"], eap_products)
         self.assertIn("PLSQL", [job["test_suite"] for job in jobs])
 
+    def test_custom_default_suites_per_product(self):
+        for ide_version, suites in [("IC-2026.2.3", ["OpenInIdeTests", "ConnectedAnalysisTests",
+                                                     "ConfigurationTests", "Standalone"]),
+                                    ("IU-263.7307.44", ["OpenInIdeTests", "ConnectedAnalysisTests",
+                                                        "ConfigurationTests", "Standalone"]),
+                                    ("RD-2026.3-EAP8-263.7307.48.Checked", ["Rider"]),
+                                    ("CL-2026.2.4", ["CLion"]), ("PC-2025.2.4", ["PyCharm"])]:
+            for suite in ["default", ""]:
+                with self.subTest(ide_version=ide_version, suite=suite):
+                    result, values = self.run_matrix("custom", IDE_VERSION=ide_version, TEST_SUITE=suite)
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assertEqual("false", values["skip_its"])
+                    self.assertEqual([{"ide_version": ide_version, "test_suite": name} for name in suites],
+                                     json.loads(values["matrix"]))
+
+    def test_custom_single_suite(self):
+        for ide_version, suite in [("IC-2026.2.3", "ConfigurationTests"), ("IU-2024.2", "PLSQL"),
+                                   ("RD-2024.2.7", "Rider"), ("PS-2024.3.5", "PhpStorm")]:
+            with self.subTest(suite=suite):
+                result, values = self.run_matrix("custom", IDE_VERSION=f" {ide_version} ", TEST_SUITE=suite)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual([{"ide_version": ide_version, "test_suite": suite}],
+                                 json.loads(values["matrix"]))
+
+    def test_custom_invalid_inputs_fail_without_emitting_matrix(self):
+        for ide_version, suite in [("", "default"), ("2026.2.3", "default"), ("XX-2026.2.3", "default"),
+                                   ("IC-", "default"), ("IC-2026.2.3; rm -rf /", "default"),
+                                   ("RD-2026.2.3.1", "OpenInIdeTests"), ("IC-2026.2.3", "PLSQL"),
+                                   ("IC-2026.2.3", "Unknown"),
+                                   # would silently run on the container's embedded 2024.2 IDE
+                                   ("IC-2024.3.5", "default"), ("IU-2024.1.7", "PLSQL"),
+                                   ("CL-2024.3", "default"), ("RD-2024.3.6", "default")]:
+            with self.subTest(ide_version=ide_version, suite=suite):
+                result, values = self.run_matrix("custom", IDE_VERSION=ide_version, TEST_SUITE=suite)
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual({}, values)
+
 
 if __name__ == "__main__":
     unittest.main()
