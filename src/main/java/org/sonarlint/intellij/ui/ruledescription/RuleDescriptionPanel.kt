@@ -161,13 +161,14 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         contextCombo.renderer = textListCellRenderer<RuleContextualSectionDto> { it.displayName }
         contextCombo.addActionListener {
             contextualContentDisposable?.let { Disposer.dispose(it) }
-            contextualContentDisposable = Disposer.newDisposable(ruleContentParent(), "RuleDescriptionPanel contextual section")
+            val contentParent = Disposer.newDisposable(ruleContentParent(), "RuleDescriptionPanel contextual section")
+            contextualContentDisposable = contentParent
 
             val layout = sectionPanel.layout as BorderLayout
             layout.getLayoutComponent(BorderLayout.CENTER)?.let { sectionPanel.remove(it) }
 
             val htmlContent = (contextCombo.selectedItem as RuleContextualSectionDto).htmlContent
-            val scrollPane = parseCodeExamples(project, contextualContentDisposable!!, htmlContent, fileType)
+            val scrollPane = parseCodeExamples(project, contentParent, htmlContent, fileType)
             sectionPanel.add(scrollPane, BorderLayout.CENTER)
         }
         comboPanel.add(contextCombo)
