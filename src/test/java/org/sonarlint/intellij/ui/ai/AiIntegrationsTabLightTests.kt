@@ -51,6 +51,7 @@ import org.sonarlint.intellij.ai.TROUBLESHOOT_LABEL
 import org.sonarlint.intellij.ai.TerminalCompletion
 import org.sonarlint.intellij.ai.TerminalLaunch
 import org.sonarlint.intellij.ai.UNAVAILABLE_STATUS
+import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.pumpEdtUntil
 import org.sonarlint.intellij.ui.page.AiIntegrationCardPage
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
@@ -114,6 +115,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         terminal.finish(TerminalCompletion.Exited(1))
 
         awaitUntil { notifications.isNotEmpty() }
+        awaitCardReloaded(cliCard)
         assertThat(notifications).anyMatch { it.content.contains("exited with code 1") }
         assertThat(cliCard.buttons).contains(INSTALL_CLI_LABEL)
         assertThat(cliCard.tickedLabels).doesNotContain(INSTALLED_STATUS)
@@ -126,6 +128,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         terminal.finish(TerminalCompletion.Cancelled)
 
         awaitUntil { notifications.isNotEmpty() }
+        awaitCardReloaded(cliCard)
         assertThat(notifications).anyMatch { it.content.contains("was cancelled") }
         assertThat(cliCard.buttons).contains(INSTALL_CLI_LABEL)
         assertThat(cliCard.tickedLabels).doesNotContain(INSTALLED_STATUS)
@@ -138,6 +141,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         terminal.finish(TerminalCompletion.ClosedWithoutExitStatus)
 
         awaitUntil { notifications.isNotEmpty() }
+        awaitCardReloaded(cliCard)
         assertThat(notifications).anyMatch { it.content.contains("exit status is unavailable") }
         assertThat(cliCard.buttons).contains(INSTALL_CLI_LABEL)
         assertThat(cliCard.tickedLabels).doesNotContain(INSTALLED_STATUS)
@@ -252,6 +256,12 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         awaitCliCheckFinished(cliCard)
         assumeNoRealCliDetected(cliCard)
         return cliCard
+    }
+
+    /** The card reloads after a CLI command finishes: let that reload start, then wait for its result. */
+    private fun awaitCardReloaded(cliCard: AiIntegrationCardPage) {
+        pumpEdt()
+        awaitCliCheckFinished(cliCard)
     }
 
     /** Waits until the CLI card has finished checking, whatever the result. */
