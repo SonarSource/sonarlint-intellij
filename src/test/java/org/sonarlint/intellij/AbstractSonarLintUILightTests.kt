@@ -32,7 +32,13 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
     @BeforeEach
     fun openMainToolWindow() {
         uiContext = SonarLintUiTestContext(project)
+        beforeMainToolWindowCreated()
         mainToolWindow = SonarLintMainToolWindowPage.create(project)
+    }
+
+    /** Tool window tabs resolve their services when created; replace services here so the tabs pick them up. */
+    protected open fun beforeMainToolWindowCreated() {
+        // no services replaced by default
     }
 
     @AfterEach

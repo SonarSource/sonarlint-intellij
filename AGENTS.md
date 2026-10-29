@@ -108,6 +108,12 @@ The sandbox (instance files, JDK config) is stored under `build/sonarlint-test`.
 
 Extension-driven UI coverage uses `AbstractSonarLintLightTests` with production extension points and headless tool-window registration. See [test-common/LIGHT_UI_TESTS.md](test-common/LIGHT_UI_TESTS.md).
 
+**Prefer light tests over heavy UI tests.** Cover new UI behavior with a light test in `src/test`: subclass `AbstractSonarLintUILightTests` and drive the UI through page objects (`ui/page`). Light tests run on every build, on all OSes, in seconds. Only add a Remote Robot test in `its/` for behavior that needs a full IDE instance, such as flavor-specific project import.
+
+**Use the real SLOOP, mock the outside world.** Light tests start the real SLOOP backend, so the feature is exercised end to end through the plugin and SLCORE. Do not replace `BackendService` with a mock. Instead, fake what lies outside the plugin and SLOOP: SonarQube Server/Cloud, downloaded binaries, tools installed on the machine, the user's terminal. For example, `AiIntegrationsTabLightTests` installs a fake SonarQube CLI (`FakeSonarQubeCli`) where SLOOP looks for it, and replaces the `CliTerminalAdapter` service so the install command is recorded instead of run.
+
+The `:test` task gives SLOOP its own user home (`build/sloop-user-home`) and a `PATH` without `sonar`, so tools installed on the machine do not leak into tests. On macOS SLOOP searches the system paths from `/etc/paths` instead of `PATH`, which the build cannot control: a test that depends on what is installed must check what SLOOP actually found, and skip when it is not the fake.
+
 ### Integration tests
 
 ITs require a running display and `SONARCLOUD_IT_TOKEN`. Supported on **Windows and Linux only** — macOS is not supported due to native file dialog incompatibility with the UI test framework.
