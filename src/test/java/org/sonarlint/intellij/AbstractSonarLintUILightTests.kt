@@ -37,6 +37,6 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
 
     @AfterEach
     fun closeMainToolWindow() {
-        uiContext.releaseEditorsAndToolWindows()
+        uiContext.closeOpenEditorsAndSonarLintToolWindows()
     }
 }

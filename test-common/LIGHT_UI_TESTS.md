@@ -22,7 +22,7 @@ In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Pag
 | Component tree lookup (`walkComponents`, `findComponents`) | [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) in `test-common` |
 
 1. `SonarLintMainToolWindowPage.create(project)` or `SonarLintWalkthroughToolWindowPage.create(project)` — uses the helpers above
-2. `@AfterEach` cleanup via `SonarLintUiTestContext.releaseEditorsAndToolWindows()` (used by `AbstractSonarLintUILightTests` and standalone UI light tests)
+2. `@AfterEach` cleanup via `SonarLintUiTestContext.closeOpenEditorsAndSonarLintToolWindows()` (used by `AbstractSonarLintUILightTests` and standalone UI light tests)
 
 ## Page objects
 
@@ -36,8 +36,6 @@ FileEditorManager.getInstance(project).openFile(file, true)
 assertThat(mainToolWindow.findings.findingsTree.summaryLabelText).isEqualTo("Found 1 issue")
 assertThat(mainToolWindow.findings.issues).hasSize(1)
 ```
-
-Reading `findingsTree` / `issues` syncs the panel from the selected editor file and flushes the EDT queue.
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 

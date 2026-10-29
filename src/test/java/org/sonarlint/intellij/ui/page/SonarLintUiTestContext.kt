@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
@@ -28,17 +27,11 @@ import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 
 class SonarLintUiTestContext(private val project: Project) {
 
-    fun releaseEditorsAndToolWindows() {
+    fun closeOpenEditorsAndSonarLintToolWindows() {
         val fileEditorManager = FileEditorManager.getInstance(project)
         fileEditorManager.openFiles.toList().forEach { fileEditorManager.closeFile(it) }
         ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
         ToolWindowManager.getInstance(project).getToolWindow(WALKTHROUGH_TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
-        PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
-        val editorFactory = EditorFactory.getInstance()
-        // Release project editors and project-less viewers (e.g. CodeFixDiffView from the tool window).
-        editorFactory.allEditors
-            .filter { it.project == null || it.project == project }
-            .forEach { editorFactory.releaseEditor(it) }
         PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
     }
 }
