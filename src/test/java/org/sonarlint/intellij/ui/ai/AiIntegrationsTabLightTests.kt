@@ -25,6 +25,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.Disposer
 import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
@@ -56,8 +57,6 @@ import org.sonarlint.intellij.fixtures.pumpEdtUntil
 import org.sonarlint.intellij.ui.page.AiIntegrationCardPage
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
-// The fake CLIs are shell scripts, while the backend only accepts sonar.exe on Windows
-@DisabledOnOs(OS.WINDOWS)
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     private val cli = FakeSonarQubeCli()
@@ -203,6 +202,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
+    @DisabledOnOs(OS.WINDOWS, disabledReason = "The backend only offers uninstall for sonar.exe, and the fake CLI is a batch file")
     fun should_show_cli_as_not_installed_after_uninstalling_it_from_the_card() {
         cli.install(authenticated = true)
         TestDialogManager.setTestDialog(TestDialog.OK)
@@ -246,7 +246,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
         cliCard.clickButton(INSTALL_CLI_LABEL)
         awaitUntil { terminal.launchedCommand != null }
-        assertThat(terminal.launchedCommand?.arguments.orEmpty().joinToString(" ")).contains("user-scripts/install.sh")
+        val installScript = if (SystemInfo.isWindows) "user-scripts/install.ps1" else "user-scripts/install.sh"
+        assertThat(terminal.launchedCommand?.arguments.orEmpty().joinToString(" ")).contains(installScript)
         return cliCard
     }
 

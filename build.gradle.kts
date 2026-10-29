@@ -357,18 +357,35 @@ tasks {
             systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
             environment("SONARLINT_JVM_OPTS", listOfNotNull(System.getenv("SONARLINT_JVM_OPTS")?.takeIf { it.isNotBlank() },
                 "-Duser.home=${sloopUserHome.absolutePath}").joinToString(" "))
-            val cliInstallDir = sloopUserHome.resolve(".local/share/sonarqube-cli/bin").absolutePath
-            environment("PATH", (listOf(cliInstallDir) + System.getenv("PATH").orEmpty().split(File.pathSeparator)
-                .filterNot { File(it, "sonar").exists() || File(it, "sonar.exe").exists() })
+            // On Windows the official installer uses %LOCALAPPDATA%, which the backend reads from its environment
+            val windows = System.getProperty("os.name").startsWith("Windows")
+            val cliInstallDir = if (windows) {
+                val localAppData = sloopUserHome.resolve("AppData/Local")
+                environment("LOCALAPPDATA", localAppData.absolutePath)
+                localAppData.resolve("sonarqube-cli/bin")
+            } else {
+                sloopUserHome.resolve(".local/share/sonarqube-cli/bin")
+            }
+            // Windows names it "Path"; a second "PATH" entry would make the one the backend sees unpredictable
+            val pathVariable = System.getenv().keys.firstOrNull { it.equals("PATH", ignoreCase = true) } ?: "PATH"
+            // Agent CLIs are searched in ~/.local/bin too, except on Windows where only the path counts
+            val agentBinDirectory = sloopUserHome.resolve(".local/bin")
+            val fakeToolDirectories = listOfNotNull(cliInstallDir.absolutePath, agentBinDirectory.absolutePath.takeIf { windows })
+            environment(pathVariable, (fakeToolDirectories + System.getenv(pathVariable).orEmpty().split(File.pathSeparator)
+                .filterNot { dir -> listOf("sonar", "sonar.exe", "sonar.cmd").any { File(dir, it).exists() } })
                 .joinToString(File.pathSeparator))
             doFirst {
                 sloopUserHome.deleteRecursively()
                 // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so
                 // the fake Claude Code used by AiIntegrationsTabLightTests must exist before any test runs
-                val agentBinDirectory = sloopUserHome.resolve(".local/bin").apply { mkdirs() }
-                agentBinDirectory.resolve("claude").apply {
-                    writeText("#!/bin/sh\necho \"2.0.0 (Claude Code)\"\n")
-                    setExecutable(true)
+                agentBinDirectory.mkdirs()
+                if (windows) {
+                    agentBinDirectory.resolve("claude.cmd").writeText("@echo off\r\necho 2.0.0 (Claude Code)\r\n")
+                } else {
+                    agentBinDirectory.resolve("claude").apply {
+                        writeText("#!/bin/sh\necho \"2.0.0 (Claude Code)\"\n")
+                        setExecutable(true)
+                    }
                 }
             }
         }
