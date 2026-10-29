@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
@@ -82,6 +83,9 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
         panel,
         ToolWindowConstants.CURRENT_FILE_TAB_TITLE,
         false);
+    if (panel instanceof Disposable disposablePanel) {
+      content.setDisposer(disposablePanel);
+    }
     content.setCloseable(false);
     contentManager.addDataProvider(panel);
     contentManager.addContent(content);
