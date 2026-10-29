@@ -19,6 +19,11 @@
  */
 package org.sonarlint.intellij
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
 import java.nio.file.Files

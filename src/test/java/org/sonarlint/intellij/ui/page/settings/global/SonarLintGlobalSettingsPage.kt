@@ -51,7 +51,7 @@ class SonarLintGlobalSettingsPage internal constructor(
     val rulesTab: GlobalRulesTabPage
         get() = readOnEdt {
             root.findTabbedPane().selectTab(TAB_RULES)
-            GlobalRulesTabPage(root.selectedTabContent())
+            GlobalRulesTabPage(configurable, root.selectedTabContent())
         }
 
     val aboutTab: GlobalAboutTabPage

@@ -17,7 +17,7 @@ Pull requests and pushes use a path-filtered matrix from [`.github/scripts/qa-ma
 
 | When | Jobs |
 |------|------|
-| Any non-docs change | IntelliJ **latest** × 4 suites (`OpenInIdeTests`, `ConnectedAnalysisTests`, `ConfigurationTests`, `Standalone`) |
+| Any non-docs change | IntelliJ **latest** × 4 suites (`OpenInIdeTests`, `ConnectedAnalysisTests`, `ConfigurationTests`, `LanguageAnalysis`) |
 | `clion/`, `clion-resharper/`, CLion plugin XMLs, or IT/CI harness | CLion **latest** (`TEST_SUITE=CLion`) |
 | `rider/`, Rider plugin XML / sources, or IT/CI harness | Rider **latest** (`TEST_SUITE=Rider`) |
 | Docs only (`*.md`, `docs/`, `HEADER`, …) | ITs skipped |
@@ -37,9 +37,9 @@ One scheduled workflow, one plugin build:
 
 Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change). After this workflow exists on `master`, run it on demand from Actions → Integration Tests Weekly → Run workflow (`workflow_dispatch`). GitHub only lists that control once the file is on the default branch.
 
-QA jobs run `./gradlew :its:check` with `TEST_SUITE` as JUnit `includeTags`. Standalone and flavor classes must stay in `src/test` with those tags.
+QA jobs run `./gradlew :its:check` with `TEST_SUITE` as JUnit `includeTags`. `LanguageAnalysis` and flavor classes must stay in `src/test` with those tags. Standalone scenarios are light tests in `src/test` of the plugin and run with the unit tests.
 
-**Merge order:** land this PR before any move of those classes to another source set (SLI-2914 / #1912). That follow-up must rebase onto this contract, keep the tags, and change `.github/actions/run-qa-its` to run the new Gradle task. Merging the two independently would make Standalone and flavor jobs select no tests.
+**Merge order:** land this PR before any move of those classes to another source set (SLI-2914 / #1912). That follow-up must rebase onto this contract, keep the tags, and change `.github/actions/run-qa-its` to run the new Gradle task. Merging the two independently would make `LanguageAnalysis` and flavor jobs select no tests.
 
 ## Version bumps
 
