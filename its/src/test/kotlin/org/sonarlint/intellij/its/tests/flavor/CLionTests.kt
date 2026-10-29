@@ -60,6 +60,38 @@ class CLionTests : BaseUiTest() {
             }
         }
 
+        // 2026.2 opens the sample (it has .idea) as a plain project and offers no "Load CMake project" link,
+        // so trigger the action directly. It is disabled, so a no-op, once the CMake project is loaded.
+        idea {
+            // Runs from the CMakeLists.txt editor opened above, which gives the action its data context
+            val outcome = callJs<String>(
+                """
+                    const am = com.intellij.openapi.actionSystem.ActionManager.getInstance();
+                    const action = am.getAction("CMake.LoadCMakeProject");
+                    const editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(component.project).getSelectedTextEditor();
+                    let result;
+                    if (!action) {
+                        result = "action not found";
+                    } else {
+                        const callback = am.tryToExecute(action, null, editor ? editor.getContentComponent() : component, "SonarLintITs", true);
+                        result = "done=" + callback.isDone() + ", rejected=" + callback.isRejected();
+                    }
+                    result;
+                """, true
+            )
+            println("ITs: CMake.LoadCMakeProject: $outcome")
+        }
+        optionalStep {
+            dialog("Trust CMake Project?", Duration.ofSeconds(5)) {
+                button("Trust Project").click()
+            }
+        }
+        optionalStep {
+            dialog("Open Project Wizard", Duration.ofSeconds(5)) {
+                button("OK").click()
+            }
+        }
+
         optionalStep {
             idea {
                 actionHyperLink("Fix\u2026") {

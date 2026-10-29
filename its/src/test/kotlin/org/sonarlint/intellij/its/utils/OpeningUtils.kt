@@ -23,7 +23,6 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
-import java.awt.Point
 import java.io.File
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.isRider
@@ -33,12 +32,11 @@ import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.isRider
-import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
-import org.sonarlint.intellij.its.fixtures.openSolutionBrowserDialog
-import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.SettingsUtils.optionalIdeaFrame
 
 object OpeningUtils {
+
+    private const val OPEN_ERROR_PROPERTY = "sonarlint.its.open.error"
 
     fun openFile(filePath: String, fileName: String = filePath) {
         with(remoteRobot) {
@@ -56,21 +54,6 @@ object OpeningUtils {
         """, true
                 )
                 waitBackgroundTasksFinished()
-            }
-        }
-    }
-
-    fun openFileSelector() {
-        with(remoteRobot) {
-            idea {
-                optionalStep {
-                    findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
-                }
-                actionMenu("File") {
-                    item("Open") {
-                        click(Point(10, 10)) // Force the click on the left
-                    }
-                }
             }
         }
     }
@@ -104,29 +87,24 @@ object OpeningUtils {
             copyProjectFiles(projectName)
         }
         with(remoteRobot) {
-            try {
-                welcomeFrame {
-                    // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
-                    openProjectButton().click(Point(10, 10))
-                }
-            } catch (e: Throwable) {
-                // Starting from 2025.2+ there's no welcome frame in any IDE flavor
-                try {
-                    openFileSelector()
-                } catch (fallbackFailure: Throwable) {
-                    e.addSuppressed(fallbackFailure)
-                    throw e
-                }
-            }
-            if (remoteRobot.isRider()) {
-                openSolutionBrowserDialog {
-                    selectProjectFile(projectName)
-                }
-            } else {
-                openProjectFileBrowserDialog {
-                    selectProjectFile(projectName)
-                }
-            }
+            // Open through the platform API rather than the Open dialog: the dialog differs per IDE and
+            // version (2026.2 replaced its path field with a breadcrumb bar), and no test is about it.
+            // The IDE's open processors still run, so the Trust/Rider/CLion prompts below still appear.
+            val projectDir = File("projects/$projectName-tmp").absoluteFile.normalize().path.replace("\\", "\\\\")
+            // Errors thrown inside invokeLater never reach Remote Robot, so keep them for the failure message
+            runJs(
+                """
+                    const projectDir = new java.io.File("$projectDir").toPath();
+                    java.lang.System.clearProperty("$OPEN_ERROR_PROPERTY");
+                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() => {
+                        try {
+                            com.intellij.ide.impl.ProjectUtil.openOrImport(projectDir, null, true);
+                        } catch (e) {
+                            java.lang.System.setProperty("$OPEN_ERROR_PROPERTY", String(e));
+                        }
+                    });
+                """
+            )
             if (!remoteRobot.isCLion()) {
                 optionalStep {
                     dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
@@ -144,8 +122,19 @@ object OpeningUtils {
                     }
                 }
             }
-            idea {
-                waitBackgroundTasksFinished()
+            try {
+                idea {
+                    waitBackgroundTasksFinished()
+                }
+            } catch (e: Throwable) {
+                // Best effort: if the IDE stopped answering, keep the original failure as the one thrown
+                val openError = runCatching {
+                    callJs<String>("""java.lang.System.getProperty("$OPEN_ERROR_PROPERTY", "")""")
+                }.onFailure { e.addSuppressed(it) }.getOrDefault("")
+                if (openError.isNotEmpty()) {
+                    e.addSuppressed(IllegalStateException("Opening $projectName failed in the IDE: $openError"))
+                }
+                throw e
             }
             if (remoteRobot.isCLion()) {
                 optionalStep {

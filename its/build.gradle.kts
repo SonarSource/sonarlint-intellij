@@ -26,6 +26,17 @@ java {
     }
 }
 
+// IDE installation provided by setup-qa-ide.sh on CI (or set manually), if any
+fun qaIdeHome(type: String): String? = when (type) {
+    "IC", "IU" -> System.getenv("IDEA_HOME")
+    "CL" -> System.getenv("CLION_HOME")
+    "RD" -> System.getenv("RIDER_HOME")
+    "PY", "PC" -> System.getenv("PYCHARM_HOME")
+    "PS" -> System.getenv("PHPSTORM_HOME")
+    "GO" -> System.getenv("GOLAND_HOME")
+    else -> null
+}
+
 intellijPlatform {
     projectName = "sonarlint-intellij"
     buildSearchableOptions = false
@@ -38,15 +49,7 @@ dependencies {
             val version = ijVersion.split('-')[1]
 
             // First check if setup-qa-ide.sh set an environment variable
-            val envVarPath = when (type) {
-                "IC", "IU" -> System.getenv("IDEA_HOME")
-                "CL" -> System.getenv("CLION_HOME")
-                "RD" -> System.getenv("RIDER_HOME")
-                "PY", "PC" -> System.getenv("PYCHARM_HOME")
-                "PS" -> System.getenv("PHPSTORM_HOME")
-                "GO" -> System.getenv("GOLAND_HOME")
-                else -> null
-            }
+            val envVarPath = qaIdeHome(type)
 
             if (envVarPath != null && File(envVarPath).exists()) {
                 println("ITs: Using IDE from setup-qa-ide.sh: $envVarPath (ijVersion=$ijVersion)")
@@ -132,11 +135,31 @@ tasks {
 }
 
 tasks.named<Test>("test") {
-    javaLauncher.set(
-        javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
+    // The platform test framework puts IDE jars on the test JVM boot classpath (e.g. lib/nio-fs.jar),
+    // so tests must run on the IDE's bundled runtime: JBR 21 up to 2025.3, JBR 25 from 2026.1.
+    val bundledJava = project.findProperty("ijVersion")?.toString()
+        ?.let { qaIdeHome(it.substringBefore('-')) }
+        ?.let { home ->
+            listOf("jbr/bin/java", "jbr/bin/java.exe", "jbr/Contents/Home/bin/java").map { File(home, it) }
         }
-    )
+        ?.firstOrNull { it.canExecute() }
+    val java21 = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+    if (bundledJava != null) {
+        executable = bundledJava.path
+        // The bundled JBR lacks modules SonarQube's Elasticsearch needs (jdk.jlink), so Orchestrator
+        // starts SonarQube with the full JDK instead (see SonarQubeConfiguration.kt).
+        jvmArgumentProviders += CommandLineArgumentProvider {
+            listOf("-Dits.sonarqube.java.home=${java21.get().metadata.installationPath.asFile.absolutePath}")
+        }
+    } else {
+        if (project.hasProperty("ijVersion")) {
+            logger.warn("ITs: no bundled JBR found for ijVersion=$ijVersion (set the IDE *_HOME variable), " +
+                "running tests on Java 21. IDEs from 2026.1 need their bundled Java 25 runtime.")
+        }
+        javaLauncher.set(java21)
+    }
     // Keep Orchestrator on SaaS: Edge returns HTTP 404 for api/search/versions on
     // sonarsource-releases, which Orchestrator uses to resolve SQ distributions.
     systemProperty("orchestrator.artifactory.url", "https://repox.jfrog.io/repox")

@@ -11,6 +11,25 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
+RELEASES = {"IIU": ("262.10968.63", "idea/idea-2026.2.3"),
+            "CL": ("262.11879.74", "cpp/CLion-2026.2.4"),
+            "RD": ("262.10968.170", "rider/JetBrains.Rider-2026.2.3.1"),
+            "PCP": ("262.10968.92", "python/pycharm-2026.2.3"),
+            "PS": ("262.10968.76", "webide/PhpStorm-2026.2.3"),
+            "GO": ("262.10968.67", "go/goland-2026.2.3")}
+EAPS = {"IIU": ("263.7307.44", "idea/idea-263.7307.44"),
+        "CL": ("263.7307.35", "cpp/CLion-263.7307.35"),
+        "RD": ("263.7307.48", "rider/JetBrains.Rider-2026.3-EAP8-263.7307.48.Checked"),
+        "PCP": ("263.7307.50", "python/pycharm-263.7307.50"),
+        "PS": ("263.7307.51", "webide/PhpStorm-263.7307.51"),
+        "GO": ("263.7307.43", "go/goland-263.7307.43")}
+
+
+def releases_json(products):
+    """Shape of data.services.jetbrains.com/products/releases?latest=true, reduced to used fields."""
+    return json.dumps({code: [{"build": build, "downloads": {"linux": {
+        "link": f"https://download.jetbrains.com/{path}.tar.gz"}}}]
+        for code, (build, path) in products.items()})
 
 
 class QaMatrixTest(unittest.TestCase):
@@ -31,8 +50,14 @@ class QaMatrixTest(unittest.TestCase):
         self.env = {key: value for key, value in os.environ.items()
                     if not key.startswith("GITHUB_") and not key.startswith("GIT_")}
         self.env["GITHUB_OUTPUT"] = str(self.repo / "output")
+        self.write_releases(RELEASES, EAPS)
+        self.env["JETBRAINS_RELEASES_URL"] = self.repo.as_uri() + "/releases-{kind}.json"
         # PR selection must use the fetched tracking ref, even offline.
         self.git("remote", "add", "origin", str(self.repo / "missing-remote"))
+
+    def write_releases(self, releases, eaps):
+        (self.repo / "releases-release.json").write_text(releases_json(releases))
+        (self.repo / "releases-eap.json").write_text(releases_json(eaps))
 
     def git(self, *args):
         return subprocess.run(["git", *args], cwd=self.repo, check=True,
@@ -160,41 +185,39 @@ class QaMatrixTest(unittest.TestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertEqual({}, values)
 
-    def test_weekly_versions_respect_product_overrides(self):
-        (self.repo / "gradle.properties").write_text("""
-# Shared versions and per-product overrides
-minSupportedIdeVersion=2024.2
-latestStableIdeVersion=2025.3.2 # inline comments are allowed
-eapIdeVersion=2026.3-EAP
-minRiderIdeVersion=2024.2.7
-latestRiderIdeVersion=2025.3.3
-eapRiderIdeVersion=2026.3.1-EAP
-latestPyCharmIdeVersion=2025.3.2.1
-""")
-        result, values = self.run_matrix("weekly")
+    def test_pr_uses_latest_release_of_each_product(self):
+        self.commit("its/src/Test.kt")
+        result, values = self.run_matrix(GITHUB_BASE_REF="master")
         self.assertEqual(0, result.returncode, result.stderr)
-        jobs = json.loads(values["matrix"])
-        self.assertEqual(["RD-2024.2.7", "RD-2025.3.3", "RD-2026.3.1-EAP"],
-                         [job["ide_version"] for job in jobs if job["test_suite"] == "Rider"])
-        self.assertIn({"ide_version": "PY-2025.3.2.1", "test_suite": "PyCharm"}, jobs)
-        self.assertIn({"ide_version": "CL-2025.3.2", "test_suite": "CLion"}, jobs)
+        self.assertCountEqual(["IC-2026.2.3", "CL-2026.2.4", "RD-2026.2.3.1"],
+                              {job["ide_version"] for job in json.loads(values["matrix"])})
 
-    def test_blank_product_overrides_use_shared_versions(self):
+    def test_docs_only_pr_does_not_query_releases(self):
+        self.commit("README.md")
+        result, values = self.run_matrix(GITHUB_BASE_REF="master",
+                                         JETBRAINS_RELEASES_URL=(self.repo / "missing").as_uri())
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
+
+    def test_weekly_versions_respect_minimum_overrides(self):
         (self.repo / "gradle.properties").write_text("""
-minSupportedIdeVersion=2024.2
-latestStableIdeVersion=2025.3.2
-eapIdeVersion=2026.3-EAP
-minRiderIdeVersion=
-latestRiderIdeVersion=
-eapRiderIdeVersion=
-latestPyCharmIdeVersion=
+minSupportedIdeVersion=2024.2 # inline comments are allowed
+minRiderIdeVersion=2024.2.7
 """)
         result, values = self.run_matrix("weekly")
         self.assertEqual(0, result.returncode, result.stderr)
         jobs = json.loads(values["matrix"])
-        self.assertEqual(["RD-2024.2", "RD-2025.3.2", "RD-2026.3-EAP"],
+        self.assertEqual(["RD-2024.2.7", "RD-2026.2.3.1", "RD-2026.3-EAP8-263.7307.48.Checked"],
                          [job["ide_version"] for job in jobs if job["test_suite"] == "Rider"])
-        self.assertIn({"ide_version": "PY-2025.3.2", "test_suite": "PyCharm"}, jobs)
+        self.assertEqual(["CL-2024.2", "CL-2026.2.4", "CL-263.7307.35"],
+                         [job["ide_version"] for job in jobs if job["test_suite"] == "CLion"])
+        self.assertIn({"ide_version": "PY-2026.2.3", "test_suite": "PyCharm"}, jobs)
+
+    def test_blank_minimum_override_uses_shared_minimum(self):
+        (self.repo / "gradle.properties").write_text("minSupportedIdeVersion=2024.2\nminRiderIdeVersion=\n")
+        result, values = self.run_matrix("weekly")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn({"ide_version": "RD-2024.2", "test_suite": "Rider"}, json.loads(values["matrix"]))
 
     def test_weekly_matrix_keeps_minimum_flavor_and_eap_coverage(self):
         result, values = self.run_matrix("weekly")
@@ -204,9 +227,30 @@ latestPyCharmIdeVersion=
         self.assertEqual(18, len({(job["ide_version"], job["test_suite"]) for job in jobs}))
         versions = [job["ide_version"] for job in jobs]
         self.assertEqual(4, sum(version.startswith("IC-") for version in versions))
-        eap_products = [version.split("-", 1)[0] for version in versions if version.endswith("-EAP")]
-        self.assertCountEqual(["IU"] * 4 + ["RD", "CL"], eap_products)
+        self.assertEqual(4, versions.count("IU-263.7307.44"))
         self.assertIn("PLSQL", [job["test_suite"] for job in jobs])
+
+    def test_weekly_skips_eap_older_than_release(self):
+        self.write_releases(RELEASES, {code: ("262.1.1", path) for code, (_, path) in EAPS.items()})
+        result, values = self.run_matrix("weekly")
+        self.assertEqual(0, result.returncode, result.stderr)
+        versions = [job["ide_version"] for job in json.loads(values["matrix"])]
+        self.assertEqual(12, len(versions))
+        self.assertFalse([version for version in versions if "263." in version])
+
+    def test_unusable_releases_fail_without_emitting_matrix(self):
+        renamed = RELEASES | {"CL": ("262.11879.74", "cpp/clion-2026.2.4")}
+        for name, releases in [("unreachable", None), ("unexpected tarball name", renamed),
+                               ("missing product", {"IIU": RELEASES["IIU"]})]:
+            with self.subTest(name):
+                env = {}
+                if releases is None:
+                    env["JETBRAINS_RELEASES_URL"] = (self.repo / "missing").as_uri()
+                else:
+                    self.write_releases(releases, EAPS)
+                result, values = self.run_matrix("weekly", **env)
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual({}, values)
 
 
 if __name__ == "__main__":
