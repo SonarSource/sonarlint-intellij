@@ -32,7 +32,6 @@ import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.ui.page.SonarLintMainToolWindowPage
