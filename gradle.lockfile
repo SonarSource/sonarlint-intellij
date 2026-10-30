@@ -206,7 +206,6 @@ org.sonarsource.java:java-jsp:8.44.0.48651=sqplugins_deps
 org.sonarsource.java:java-surefire:8.44.0.48651=sqplugins_deps
 org.sonarsource.java:jdt-package:1.9.0.1840=sqplugins_deps
 org.sonarsource.java:sonar-java-plugin:8.44.0.48651=sqplugins,sqplugins_deps
-org.sonarsource.java:sonar-java-symbolic-execution-plugin:8.16.4.1912=sqplugins,sqplugins_deps
 org.sonarsource.javascript:api:14.3.0.46350=sqplugins_deps
 org.sonarsource.javascript:bridge:14.3.0.46350=sqplugins_deps
 org.sonarsource.javascript:css:14.3.0.46350=sqplugins_deps
