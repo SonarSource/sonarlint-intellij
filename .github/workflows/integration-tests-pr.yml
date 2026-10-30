@@ -20,4 +20,4 @@ jobs:
       && (github.event.action != 'labeled' || github.event.label.name == 'e2e-all')
     uses: ./.github/workflows/qa-its.yml
     with:
-      matrix_mode: pr
+      matrix_mode: pr-all

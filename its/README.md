@@ -10,14 +10,15 @@ Versions come from [`gradle.properties`](../gradle.properties): `minSupportedIde
 
 All IT runs share the reusable workflow [`qa-its.yml`](../.github/workflows/qa-its.yml).
 
-- **Pull requests:** [`Integration Tests PR`](../.github/workflows/integration-tests-pr.yml) runs the ITs only when the PR has the `e2e-all` label. It runs again when the PR is updated or the label is added. It is separate from `Build`, so it does not block `promote`.
-- **Pushes to `master`, `branch-*` and `dogfood-*`:** `Build` runs the ITs against the plugin it deployed. They block `promote`.
+- **Pull requests:** `Build` runs the `pr-minimal` matrix against the plugin it deployed: one IntelliJ smoke test (`SmokeIdea`), plus CLion and Rider when their files change. These jobs block `promote`.
+- **Pull requests with the `e2e-all` label:** [`Integration Tests PR`](../.github/workflows/integration-tests-pr.yml) also runs the full `pr-all` matrix. It runs again when the PR is updated or the label is added. It is separate from `Build`, so it does not block `promote`, and it does not change the `pr-minimal` run in `Build`.
+- **Pushes to `master`, `branch-*` and `dogfood-*`:** `Build` runs the `pr-all` matrix against the plugin it deployed. These jobs block `promote`.
 
-Pull requests and pushes use a path-filtered matrix from [`.github/scripts/qa-matrix.py`](../.github/scripts/qa-matrix.py), using Python's standard library:
+Pull requests and pushes use a path-filtered matrix from [`.github/scripts/qa-matrix.py`](../.github/scripts/qa-matrix.py), using Python's standard library. The modes `pr-all` and `pr-minimal` differ only in the IntelliJ suites:
 
 | When | Jobs |
 |------|------|
-| Any non-docs change | IntelliJ **latest** × 4 suites (`OpenInIdeTests`, `ConnectedAnalysisTests`, `ConfigurationTests`, `Standalone`) |
+| Any non-docs change | IntelliJ **latest**: `pr-all` runs 4 suites (`OpenInIdeTests`, `ConnectedAnalysisTests`, `ConfigurationTests`, `Standalone`). `pr-minimal` runs only `SmokeIdea` (open a Java file, check that the issue is found). |
 | `clion/`, `clion-resharper/`, CLion plugin XMLs, or IT/CI harness | CLion **latest** (`TEST_SUITE=CLion`) |
 | `rider/`, Rider plugin XML / sources, or IT/CI harness | Rider **latest** (`TEST_SUITE=Rider`) |
 | Docs only (`*.md`, `docs/`, `HEADER`, …) | ITs skipped |
@@ -35,7 +36,7 @@ One scheduled workflow, one plugin build:
 - IntelliJ **min** × 4 suites, CLion min+latest, Rider min+latest, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL)
 - IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion` (Rider uses `eapRiderIdeVersion` when set)
 
-Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change). After this workflow exists on `master`, run it on demand from Actions → Integration Tests Weekly → Run workflow (`workflow_dispatch`). GitHub only lists that control once the file is on the default branch.
+Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already run a smoke test on latest IntelliJ (and the CLion/Rider suites when those modules change). After this workflow exists on `master`, run it on demand from Actions → Integration Tests Weekly → Run workflow (`workflow_dispatch`). GitHub only lists that control once the file is on the default branch.
 
 QA jobs run `./gradlew :its:check` with `TEST_SUITE` as JUnit `includeTags`. Standalone and flavor classes must stay in `src/test` with those tags.
 
