@@ -83,7 +83,7 @@ Services are accessed via `SonarLintUtils.getService(Class)` (app-level) or `Son
 
 **Plugin compatibility verification** (local, minimal):
 ```bash
-./gradlew :verifyPlugin -PverifierEnv=CI
+./gradlew :verifyPlugin
 ```
 
 ### Running the plugin locally

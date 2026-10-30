@@ -178,14 +178,15 @@ so you will need to repeat some setup steps for that instance, such as configuri
 Plugin Verification
 --------------------------
 
-The project includes automated plugin verification across multiple JetBrains IDEs using the IntelliJ Platform Plugin Verifier.
-To run it locally:
+Regular CI and local verification check the minimum supported IntelliJ IDEA Community version.
+The nightly workflow also checks minimum product versions and the latest stable and available EAP releases across supported IDEs.
 
 ```bash
+# Local / regular CI
 ./gradlew :verifyPlugin
 
-# For regular CI builds, only minimal version of IC
-./gradlew :verifyPlugin -PverifierEnv=CI
+# Full nightly matrix
+./gradlew :verifyPlugin -PverifierEnv=LATEST
 ```
 
 License

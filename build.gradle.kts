@@ -47,7 +47,6 @@ val intellijBuildType: String by project
 val intellijBuildVersion: String by project
 val ideaHome: String? = System.getenv("IDEA_HOME")
 val runIdeDirectory: String by project
-val verifierEnv: String by project
 
 // The environment variables ARTIFACTORY_USERNAME and ARTIFACTORY_ACCESS_TOKEN are used on CI
 // On local box, please add artifactoryUrl, artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
@@ -142,39 +141,27 @@ intellijPlatform {
             VerifyPluginTask.FailureLevel.INVALID_PLUGIN
         )
         
-        // Ignore expected compatibility problems for optional dependencies
-        freeArgs = listOf(
-            "-ignored-problems", "${project.rootDir}/.verifier-ignored-problems.txt"
-        )
-
-        val ideTypes = listOf(
-            IntelliJPlatformType.AndroidStudio, IntelliJPlatformType.PyCharmCommunity, IntelliJPlatformType.PyCharmProfessional,
-            IntelliJPlatformType.RubyMine, IntelliJPlatformType.CLion, IntelliJPlatformType.GoLand,
-            IntelliJPlatformType.WebStorm, IntelliJPlatformType.PhpStorm, IntelliJPlatformType.Rider,
-            IntelliJPlatformType.IntellijIdeaUltimate, IntelliJPlatformType.IntellijIdeaCommunity
-        )
+        val verifyLatest = providers.gradleProperty("verifierEnv").orNull == "LATEST"
+        ignoredProblemsFile = rootProject.file(".verifier-ignored-problems.txt")
 
         ides {
-            create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
-        }
-
-        if (project.hasProperty("verifierEnv")) {
-            when (verifierEnv) {
-                "CI" -> ides {
-                    select {
-                        types = listOf(IntelliJPlatformType.IntellijIdeaCommunity)
-                        channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "242.*"
-                        untilBuild = "242.*"
-                    }
-                }
-
-                "LATEST" -> ides {
-                    select {
+            val minimumVersion = providers.gradleProperty("minSupportedIdeVersion").get()
+            create(IntelliJPlatformType.IntellijIdeaCommunity, minimumVersion)
+            if (verifyLatest) {
+                create(IntelliJPlatformType.IntellijIdeaUltimate, minimumVersion)
+                create(IntelliJPlatformType.Rider, minimumVersion)
+                create(IntelliJPlatformType.CLion, minimumVersion)
+                create(IntelliJPlatformType.WebStorm, minimumVersion)
+                val ideTypes = listOf(
+                    IntelliJPlatformType.IntellijIdea, IntelliJPlatformType.PyCharm, IntelliJPlatformType.AndroidStudio,
+                    IntelliJPlatformType.RubyMine, IntelliJPlatformType.GoLand, IntelliJPlatformType.PhpStorm,
+                    IntelliJPlatformType.Rider, IntelliJPlatformType.CLion, IntelliJPlatformType.WebStorm
+                )
+                // Select each channel separately so EAPs do not replace stable targets.
+                for (channel in listOf(ProductRelease.Channel.RELEASE, ProductRelease.Channel.EAP)) {
+                    latest {
                         types = ideTypes
-                        channels = listOf(ProductRelease.Channel.RELEASE)
-                        sinceBuild = "252.*"
-                        untilBuild = "252.*"
+                        channels = listOf(channel)
                     }
                 }
             }
@@ -228,6 +215,20 @@ intellijPlatform {
                 setPublishIvy(false)
             }
         }
+    }
+}
+
+tasks.named<VerifyPluginTask>("verifyPlugin") {
+    doLast {
+        if (listIdes.get()) return@doLast
+        // Optional Java exclusions must never apply to IDEs that provide Java.
+        verificationReportsDirectory.get().asFile.listFiles().orEmpty()
+            .filter { ideReport -> listOf("IC-", "IU-", "AI-").any(ideReport.name::startsWith) }
+            .forEach { ideReport ->
+                check(ideReport.walkTopDown().none { it.name == "ignored-problems.txt" && it.length() > 0 }) {
+                    "Optional Java API problems were excluded in ${ideReport.name}"
+                }
+            }
     }
 }
 
