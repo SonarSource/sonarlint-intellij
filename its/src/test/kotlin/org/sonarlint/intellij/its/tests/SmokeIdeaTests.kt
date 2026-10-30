@@ -36,7 +36,7 @@ class SmokeIdeaTests : BaseUiTest() {
         openExistingProject("sli-java-issues")
         openFile("src/main/java/foo/Foo.java", "Foo.java")
         verifyCurrentFileTabContainsMessages(
-            "Found 1 issue",
+            "Found 2 issues",
             "Remove this empty class, write its code or make it an \"interface\"."
         )
     }
