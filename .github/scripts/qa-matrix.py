@@ -17,6 +17,8 @@ PRODUCT_SUITES = {"IC": IDEA_SUITES, "IU": IDEA_SUITES + ("PLSQL",), "CL": ("CLi
                   "PS": ("PhpStorm",), "GO": ("GoLand",)}
 DEFAULT_SUITE = "default"
 EMBEDDED_2024_IDES = ("IC", "IU", "CL", "RD")
+SMOKE_SUITES = ("SmokeIdea",)
+PR_SUITES = {"pr-all": IDEA_SUITES, "pr-minimal": SMOKE_SUITES}
 DOCS_PATHS = ("*.md", "HEADER", "LICENSE", "LICENSE.*", "docs/*",
               ".github/CODEOWNERS", ".github/renovate.json")
 HARNESS_PATHS = ("its/*", ".github/*", "gradle/*", "*.gradle.kts", "gradle.properties", "mise.toml")
@@ -68,17 +70,17 @@ def job(ide_version, suite):
     return {"ide_version": ide_version, "test_suite": suite}
 
 
-def idea_suites(ide_version):
-    return [job(ide_version, suite) for suite in IDEA_SUITES]
+def idea_suites(ide_version, suites=IDEA_SUITES):
+    return [job(ide_version, suite) for suite in suites]
 
 
-def pr_matrix(versions, paths):
+def pr_matrix(versions, paths, suites):
     code_paths = [path for path in paths if not matches(path, DOCS_PATHS)]
     if paths and not code_paths:
         return []
 
     latest = versions["latestStableIdeVersion"]
-    matrix = idea_suites(f"IC-{latest}")
+    matrix = idea_suites(f"IC-{latest}", suites)
     harness_changed = any(matches(path, HARNESS_PATHS) for path in code_paths)
     if harness_changed or any(matches(path, CLION_PATHS) for path in code_paths):
         matrix.append(job(f"CL-{latest}", "CLion"))
@@ -136,16 +138,16 @@ def custom_matrix(ide_version, suite):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("pr", "weekly", "custom"))
+    parser.add_argument("mode", choices=(*PR_SUITES, "weekly", "custom"))
     mode = parser.parse_args().mode
     versions = read_versions()
     if mode == "custom":
         matrix = custom_matrix(os.environ.get("IDE_VERSION", "").strip(),
                                os.environ.get("TEST_SUITE", "").strip() or DEFAULT_SUITE)
-    elif mode == "pr":
-        matrix = pr_matrix(versions, changed_files())
-    else:
+    elif mode == "weekly":
         matrix = weekly_matrix(versions)
+    else:
+        matrix = pr_matrix(versions, changed_files(), PR_SUITES[mode])
     matrix_json = json.dumps(matrix, separators=(",", ":"))
     output = f"matrix={matrix_json}\nskip_its={str(not matrix).lower()}\n"
     if output_path := os.environ.get("GITHUB_OUTPUT"):
