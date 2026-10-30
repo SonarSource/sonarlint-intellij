@@ -10,6 +10,8 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 IDEA_SUITES = ("OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone")
+SMOKE_SUITES = ("SmokeIdea",)
+PR_SUITES = {"pr-all": IDEA_SUITES, "pr-minimal": SMOKE_SUITES}
 DOCS_PATHS = ("*.md", "HEADER", "LICENSE", "LICENSE.*", "docs/*",
               ".github/CODEOWNERS", ".github/renovate.json")
 HARNESS_PATHS = ("its/*", ".github/*", "gradle/*", "*.gradle.kts", "gradle.properties", "mise.toml")
@@ -61,17 +63,17 @@ def job(ide_version, suite):
     return {"ide_version": ide_version, "test_suite": suite}
 
 
-def idea_suites(ide_version):
-    return [job(ide_version, suite) for suite in IDEA_SUITES]
+def idea_suites(ide_version, suites=IDEA_SUITES):
+    return [job(ide_version, suite) for suite in suites]
 
 
-def pr_matrix(versions, paths):
+def pr_matrix(versions, paths, suites):
     code_paths = [path for path in paths if not matches(path, DOCS_PATHS)]
     if paths and not code_paths:
         return []
 
     latest = versions["latestStableIdeVersion"]
-    matrix = idea_suites(f"IC-{latest}")
+    matrix = idea_suites(f"IC-{latest}", suites)
     harness_changed = any(matches(path, HARNESS_PATHS) for path in code_paths)
     if harness_changed or any(matches(path, CLION_PATHS) for path in code_paths):
         matrix.append(job(f"CL-{latest}", "CLion"))
@@ -108,10 +110,10 @@ def weekly_matrix(versions):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("pr", "weekly"))
+    parser.add_argument("mode", choices=(*PR_SUITES, "weekly"))
     mode = parser.parse_args().mode
     versions = read_versions()
-    matrix = pr_matrix(versions, changed_files()) if mode == "pr" else weekly_matrix(versions)
+    matrix = weekly_matrix(versions) if mode == "weekly" else pr_matrix(versions, changed_files(), PR_SUITES[mode])
     matrix_json = json.dumps(matrix, separators=(",", ":"))
     output = f"matrix={matrix_json}\nskip_its={str(not matrix).lower()}\n"
     if output_path := os.environ.get("GITHUB_OUTPUT"):

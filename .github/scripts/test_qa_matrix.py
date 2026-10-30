@@ -11,6 +11,9 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
+ALL_SUITES = ["OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone"]
+SMOKE_SUITES = ["SmokeIdea"]
+PR_MODES = {"pr-all": ALL_SUITES, "pr-minimal": SMOKE_SUITES}
 
 
 class QaMatrixTest(unittest.TestCase):
@@ -47,7 +50,7 @@ class QaMatrixTest(unittest.TestCase):
         self.git("commit", "-m", "Test fixture")
         return self.git("rev-parse", "HEAD")
 
-    def run_matrix(self, mode="pr", **env):
+    def run_matrix(self, mode, **env):
         output = Path(self.env["GITHUB_OUTPUT"])
         output.unlink(missing_ok=True)
         result = subprocess.run([sys.executable, ".github/scripts/qa-matrix.py", mode],
@@ -65,64 +68,71 @@ class QaMatrixTest(unittest.TestCase):
         event.write_text(json.dumps({"before": before}))
         return {"GITHUB_EVENT_NAME": "push", "GITHUB_EVENT_PATH": str(event)}
 
-    def assert_suites(self, values, flavors=()):
+    def assert_suites(self, values, flavors=(), core=ALL_SUITES):
         self.assertEqual("false", values["skip_its"])
         suites = [job["test_suite"] for job in json.loads(values["matrix"])]
-        self.assertCountEqual(["OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone", *flavors], suites)
+        self.assertCountEqual([*core, *flavors], suites)
 
     def test_pr_path_selection(self):
-        for path, flavors in [("README.md", None), ("src/Main.kt", ()),
-                              ("rider/src/Main.kt", ("Rider",)), ("clion/src/Main.kt", ("CLion",)),
-                              ("clion-resharper/src/Main.kt", ("CLion",)),
-                              ("src/main/resources/META-INF/plugin-clion.xml", ("CLion",)),
-                              ("src/main/resources/META-INF/plugin-rider.xml", ("Rider",)),
-                              ("src/main/RiderSupport.kt", ("Rider",)),
-                              ("src/main/rider/Support.kt", ("Rider",)),
-                              ("its/src/Test.kt", ("CLion", "Rider"))]:
-            with self.subTest(path=path):
-                self.git("reset", "--hard", self.base)
-                self.commit(path)
-                result, values = self.run_matrix(GITHUB_BASE_REF="master")
-                self.assertEqual(0, result.returncode, result.stderr)
-                if flavors is None:
-                    self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
-                else:
-                    self.assert_suites(values, flavors)
+        for mode, core in PR_MODES.items():
+            for path, flavors in [("README.md", None), ("src/Main.kt", ()),
+                                  ("rider/src/Main.kt", ("Rider",)), ("clion/src/Main.kt", ("CLion",)),
+                                  ("clion-resharper/src/Main.kt", ("CLion",)),
+                                  ("src/main/resources/META-INF/plugin-clion.xml", ("CLion",)),
+                                  ("src/main/resources/META-INF/plugin-rider.xml", ("Rider",)),
+                                  ("src/main/RiderSupport.kt", ("Rider",)),
+                                  ("src/main/rider/Support.kt", ("Rider",)),
+                                  ("its/src/Test.kt", ("CLion", "Rider"))]:
+                with self.subTest(mode=mode, path=path):
+                    self.git("reset", "--hard", self.base)
+                    self.commit(path)
+                    result, values = self.run_matrix(mode, GITHUB_BASE_REF="master")
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    if flavors is None:
+                        self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
+                    else:
+                        self.assert_suites(values, flavors, core)
 
     def test_documentation_does_not_add_flavors_to_source_changes(self):
-        for path in ["rider/README.md", "clion/README.md", "its/README.md",
-                     ".github/ISSUE_TEMPLATE/bug_report.md", ".github/CODEOWNERS",
-                     "docs/rider/setup.md"]:
-            with self.subTest(path=path):
-                self.git("reset", "--hard", self.base)
-                self.commit("src/Main.kt")
-                self.commit(path)
-                result, values = self.run_matrix(GITHUB_BASE_REF="master")
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assert_suites(values)
+        for mode, core in PR_MODES.items():
+            for path in ["rider/README.md", "clion/README.md", "its/README.md",
+                         ".github/ISSUE_TEMPLATE/bug_report.md", ".github/CODEOWNERS",
+                         "docs/rider/setup.md"]:
+                with self.subTest(mode=mode, path=path):
+                    self.git("reset", "--hard", self.base)
+                    self.commit("src/Main.kt")
+                    self.commit(path)
+                    result, values = self.run_matrix(mode, GITHUB_BASE_REF="master")
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assert_suites(values, core=core)
 
     def test_push_includes_source_changes_before_final_docs_commit(self):
         self.commit("rider/src/Main.kt")
         self.commit("README.md")
-        result, values = self.run_matrix(**self.push_event(self.base))
+        result, values = self.run_matrix("pr-all", **self.push_event(self.base))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("Rider",))
 
     def test_docs_only_push_skips_its(self):
         self.commit("README.md")
         self.commit("docs/setup.md")
-        result, values = self.run_matrix(**self.push_event(self.base))
+        result, values = self.run_matrix("pr-all", **self.push_event(self.base))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
 
     def test_new_branch_runs_all_flavors(self):
-        result, values = self.run_matrix(**self.push_event("0" * 40))
+        result, values = self.run_matrix("pr-all", **self.push_event("0" * 40))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("CLion", "Rider"))
 
+    def test_minimal_new_branch_runs_smoke_and_all_flavors(self):
+        result, values = self.run_matrix("pr-minimal", **self.push_event("0" * 40))
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assert_suites(values, ("CLion", "Rider"), SMOKE_SUITES)
+
     def test_manual_run_covers_all_flavors_after_docs_commit(self):
         self.commit("README.md")
-        result, values = self.run_matrix(GITHUB_EVENT_NAME="workflow_dispatch")
+        result, values = self.run_matrix("pr-all", GITHUB_EVENT_NAME="workflow_dispatch")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("CLion", "Rider"))
 
@@ -134,29 +144,31 @@ class QaMatrixTest(unittest.TestCase):
         self.commit("OTHER.md")
         for env in [{"GITHUB_BASE_REF": "missing"}, {"GITHUB_BASE_REF": "master"}]:
             with self.subTest(env=env):
-                result, values = self.run_matrix(**env)
+                result, values = self.run_matrix("pr-all", **env)
                 self.assertNotEqual(0, result.returncode)
                 self.assertEqual({}, values)
 
     def test_force_push_missing_before_runs_all_flavors(self):
-        result, values = self.run_matrix(**self.push_event("1" * 40))
+        result, values = self.run_matrix("pr-all", **self.push_event("1" * 40))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("CLion", "Rider"))
 
     def test_empty_pr_diff_runs_core_suites(self):
-        result, values = self.run_matrix(GITHUB_BASE_REF="master")
+        result, values = self.run_matrix("pr-all", GITHUB_BASE_REF="master")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values)
 
     def test_invalid_mode_fails_without_emitting_matrix(self):
-        result, values = self.run_matrix("unknown")
-        self.assertNotEqual(0, result.returncode)
-        self.assertEqual({}, values)
+        for mode in ["unknown", "pr"]:
+            with self.subTest(mode=mode):
+                result, values = self.run_matrix(mode)
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual({}, values)
 
     def test_malformed_push_event_fails_without_emitting_matrix(self):
         env = self.push_event(self.base)
         Path(env["GITHUB_EVENT_PATH"]).write_text("{")
-        result, values = self.run_matrix(**env)
+        result, values = self.run_matrix("pr-all", **env)
         self.assertNotEqual(0, result.returncode)
         self.assertEqual({}, values)
 

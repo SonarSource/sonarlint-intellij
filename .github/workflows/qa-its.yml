@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       matrix_mode:
-        description: Mode passed to .github/scripts/qa-matrix.py (pr or weekly)
+        description: Mode passed to .github/scripts/qa-matrix.py (pr-all, pr-minimal or weekly)
         type: string
         required: true
       project_version:
