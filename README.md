@@ -1,3 +1,4 @@
+<!-- NO-JIRA test: docs-only change -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://assets-eu-01.kc-usercontent.com/ef593040-b591-0198-9506-ed88b30bc023/a23fc7ba-23f0-489a-829d-ed88c0748521/Sonar_Logo_Dark%20Backgrounds.svg">
