@@ -21,7 +21,7 @@ runs:
   steps:
     - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
       with:
-        version: 2025.9.12
+        version: 2026.10.21
 
     - name: Configure Gradle
       uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
