@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.analyzeCurrentFileFromToolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.utils.CLionUtils.loadCMakeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
@@ -45,6 +46,8 @@ class CLionTests : BaseUiTest() {
         }
 
         openFile("main.cpp")
+        // The analysis triggered when the file opens can run before CLion has set up the new project, and is not retried
+        analyzeCurrentFileFromToolWindow()
 
         verifyCurrentFileTabContainsMessages(
             "Found 4 issues",
