@@ -137,11 +137,7 @@ object OpeningUtils {
                 throw e
             }
             if (remoteRobot.isCLion()) {
-                optionalStep {
-                    dialog("Open Project Wizard") {
-                        button("OK").click()
-                    }
-                }
+                CLionUtils.confirmCMakeProjectDialogs()
             }
         }
     }

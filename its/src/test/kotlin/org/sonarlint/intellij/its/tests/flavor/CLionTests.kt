@@ -19,21 +19,15 @@
  */
 package org.sonarlint.intellij.its.tests.flavor
 
-import com.intellij.remoterobot.fixtures.ComponentFixture
-import com.intellij.remoterobot.search.locators.byXpath
-import java.awt.Point
-import java.time.Duration
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.utils.CLionUtils.loadCMakeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
-import org.sonarlint.intellij.its.utils.optionalStep
 
 @Tag("CLion")
 @EnabledIf("isCLion")
@@ -44,62 +38,7 @@ class CLionTests : BaseUiTest() {
         openExistingProject("sample-cpp")
 
         openFile("CMakeLists.txt")
-
-        optionalStep {
-            idea {
-                actionHyperLink("Load CMake project") {
-                    click()
-                }
-                // from 2021.1+
-                dialog("Trust CMake Project?", Duration.ofSeconds(5)) {
-                    button("Trust Project").click()
-                }
-                dialog("Open Project Wizard", Duration.ofSeconds(5)) {
-                    button("OK").click()
-                }
-            }
-        }
-
-        // 2026.2 opens the sample (it has .idea) as a plain project and offers no "Load CMake project" link,
-        // so trigger the action directly. It is disabled, so a no-op, once the CMake project is loaded.
-        idea {
-            // Runs from the CMakeLists.txt editor opened above, which gives the action its data context
-            val outcome = callJs<String>(
-                """
-                    const am = com.intellij.openapi.actionSystem.ActionManager.getInstance();
-                    const action = am.getAction("CMake.LoadCMakeProject");
-                    const editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(component.project).getSelectedTextEditor();
-                    let result;
-                    if (!action) {
-                        result = "action not found";
-                    } else {
-                        const callback = am.tryToExecute(action, null, editor ? editor.getContentComponent() : component, "SonarLintITs", true);
-                        result = "done=" + callback.isDone() + ", rejected=" + callback.isRejected();
-                    }
-                    result;
-                """, true
-            )
-            println("ITs: CMake.LoadCMakeProject: $outcome")
-        }
-        optionalStep {
-            dialog("Trust CMake Project?", Duration.ofSeconds(5)) {
-                button("Trust Project").click()
-            }
-        }
-        optionalStep {
-            dialog("Open Project Wizard", Duration.ofSeconds(5)) {
-                button("OK").click()
-            }
-        }
-
-        optionalStep {
-            idea {
-                actionHyperLink("Fix\u2026") {
-                    click()
-                }
-                findElement<ComponentFixture>(byXpath("//div[@class='MyList']")).click(Point(10, 10))
-            }
-        }
+        loadCMakeProject()
 
         idea {
             waitBackgroundTasksFinished()
