@@ -51,9 +51,9 @@ class QaMatrixTest(unittest.TestCase):
         """EAP versions pinned in the copied gradle.properties; EAPs are named by build number, not "-EAP"."""
         lines = [line for line in (self.repo / "gradle.properties").read_text().splitlines()
                  if "=" in line and not line.lstrip().startswith("#")]
-        properties = {key: value for key, value in (line.split("=", 1) for line in lines)}
-        return {properties[key].split("#")[0].strip() for key in ("eapIdeVersion", "eapRiderIdeVersion", "eapCLionIdeVersion")
-                if properties.get(key, "").strip()}
+        # Values may carry an inline comment, as qa-matrix.py allows
+        properties = {key.strip(): value.split("#")[0].strip() for key, value in (line.split("=", 1) for line in lines)}
+        return {properties[key] for key in ("eapIdeVersion", "eapRiderIdeVersion", "eapCLionIdeVersion") if properties.get(key)}
 
     def run_matrix(self, mode="pr", **env):
         output = Path(self.env["GITHUB_OUTPUT"])
