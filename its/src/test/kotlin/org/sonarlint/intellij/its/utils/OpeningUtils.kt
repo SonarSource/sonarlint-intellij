@@ -90,6 +90,7 @@ object OpeningUtils {
             // Open through the platform API rather than the Open dialog: the dialog differs per IDE and
             // version (2026.2 replaced its path field with a breadcrumb bar), and no test is about it.
             // The IDE's open processors still run, so the Trust/Rider/CLion prompts below still appear.
+            OpenDialogInvestigation.captureOnce(File("projects/$projectName-tmp").absoluteFile.normalize().path)
             val projectDir = File("projects/$projectName-tmp").absoluteFile.normalize().path.replace("\\", "\\\\")
             // Errors thrown inside invokeLater never reach Remote Robot, so keep them for the failure message
             runJs(
