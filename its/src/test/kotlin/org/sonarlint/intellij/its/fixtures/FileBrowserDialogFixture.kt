@@ -60,8 +60,13 @@ class FileBrowserDialogFixture(
   private fun classicPathField(): JTextFieldFixture? =
     findAll<JTextFieldFixture>(byXpath("//div[(@class='BorderlessTextField' or @class='JTextField')]")).firstOrNull()
 
-  /** From 2026.2 it shows a breadcrumb bar instead, which turns into a path field when its empty end is clicked. */
+  /**
+   * From 2026.2 it shows a breadcrumb bar instead, which turns into a path field when its empty end is clicked. The dialog
+   * reopens in the last folder, whose crumbs can fill the bar, so go to the short home folder first.
+   */
   private fun breadcrumbPathField(): JTextFieldFixture {
+    findElement<ComponentFixture>(byXpath("//div[@accessiblename='Home Directory' and @class='ActionButton']")).click()
+    Thread.sleep(1000)
     val breadcrumbs = find<ComponentFixture>(byXpath("//div[@class='Breadcrumbs']"))
     breadcrumbs.click(Point(breadcrumbs.remoteComponent.width - 5, breadcrumbs.remoteComponent.height / 2))
     return find(byXpath("//div[@class='NioPathTextField']"), Duration.ofSeconds(5))
