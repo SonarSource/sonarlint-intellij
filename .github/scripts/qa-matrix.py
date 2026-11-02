@@ -2,22 +2,13 @@
 
 import argparse
 from fnmatch import fnmatchcase
-from functools import cache
 import json
 import os
 from pathlib import Path
 import subprocess
-from urllib.request import urlopen
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RELEASES_URL = os.environ.get(
-    "JETBRAINS_RELEASES_URL",
-    "https://data.services.jetbrains.com/products/releases?code={codes}&latest=true&type={kind}")
-# Matrix IDE code -> JetBrains product code and the tarball prefix download-ides.sh expects.
-PRODUCTS = {"IC": ("IIU", "idea-"), "IU": ("IIU", "idea-"), "CL": ("CL", "CLion-"),
-            "RD": ("RD", "JetBrains.Rider-"), "PY": ("PCP", "pycharm-"),
-            "PS": ("PS", "PhpStorm-"), "GO": ("GO", "goland-")}
 IDEA_SUITES = ("OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone")
 DOCS_PATHS = ("*.md", "HEADER", "LICENSE", "LICENSE.*", "docs/*",
               ".github/CODEOWNERS", ".github/renovate.json")
@@ -34,31 +25,6 @@ def read_versions():
             key, value = setting.split("=", 1)
             versions[key.strip()] = value.strip()
     return versions
-
-
-@cache
-def releases(kind):
-    codes = ",".join(sorted({code for code, _ in PRODUCTS.values()}))
-    with urlopen(RELEASES_URL.format(codes=codes, kind=kind), timeout=30) as response:
-        return json.load(response)
-
-
-def build_number(release):
-    return tuple(int(part) for part in release["build"].split("."))
-
-
-def resolve(ide, kind):
-    """Newest JetBrains `kind` ("release" or "eap") of `ide`, named as download-ides.sh expects."""
-    code, prefix = PRODUCTS[ide]
-    newest = releases(kind)[code][0]
-    if kind == "eap" and build_number(newest) <= build_number(releases("release")[code][0]):
-        # Between release cycles the newest EAP predates the current stable release.
-        print(f"::notice::No {code} EAP newer than the current release; skipping {ide} EAP jobs")
-        return None
-    tarball = newest["downloads"]["linux"]["link"].rsplit("/", 1)[-1]
-    if not (tarball.startswith(prefix) and tarball.endswith(".tar.gz")):
-        raise ValueError(f"Unexpected {code} {kind} download name: {tarball}")
-    return f"{ide}-{tarball[len(prefix):-len('.tar.gz')]}"
 
 
 def git(*args, check=True):
@@ -99,46 +65,54 @@ def idea_suites(ide_version):
     return [job(ide_version, suite) for suite in IDEA_SUITES]
 
 
-def pr_matrix(paths):
+def pr_matrix(versions, paths):
     code_paths = [path for path in paths if not matches(path, DOCS_PATHS)]
     if paths and not code_paths:
         return []
 
-    matrix = idea_suites(resolve("IC", "release"))
+    latest = versions["latestStableIdeVersion"]
+    matrix = idea_suites(f"IC-{latest}")
     harness_changed = any(matches(path, HARNESS_PATHS) for path in code_paths)
     if harness_changed or any(matches(path, CLION_PATHS) for path in code_paths):
-        matrix.append(job(resolve("CL", "release"), "CLion"))
+        matrix.append(job(f"CL-{latest}", "CLion"))
     if harness_changed or any(matches(path, RIDER_PATHS) for path in code_paths):
-        matrix.append(job(resolve("RD", "release"), "Rider"))
+        rider = versions.get("latestRiderIdeVersion") or latest
+        matrix.append(job(f"RD-{rider}", "Rider"))
     return matrix
 
 
 def weekly_matrix(versions):
     minimum = versions["minSupportedIdeVersion"]
+    latest = versions["latestStableIdeVersion"]
+    eap = versions["eapIdeVersion"]
     rider_min = versions.get("minRiderIdeVersion") or minimum
-    idea_eap = resolve("IU", "eap")
+    rider_latest = versions.get("latestRiderIdeVersion") or latest
+    rider_eap = versions.get("eapRiderIdeVersion") or eap
+    clion_eap = versions.get("eapCLionIdeVersion") or eap
+    pycharm = versions.get("latestPyCharmIdeVersion") or latest
 
     flavors = [
         (f"CL-{minimum}", "CLion"),
-        (resolve("CL", "release"), "CLion"),
-        (resolve("CL", "eap"), "CLion"),
+        (f"CL-{latest}", "CLion"),
+        (f"CL-{clion_eap}", "CLion"),
         (f"RD-{rider_min}", "Rider"),
-        (resolve("RD", "release"), "Rider"),
-        (resolve("RD", "eap"), "Rider"),
-        (resolve("PS", "release"), "PhpStorm"),
-        (resolve("PY", "release"), "PyCharm"),
-        (resolve("GO", "release"), "GoLand"),
+        (f"RD-{rider_latest}", "Rider"),
+        (f"RD-{rider_eap}", "Rider"),
+        (f"PS-{latest}", "PhpStorm"),
+        (f"PY-{pycharm}", "PyCharm"),
+        (f"GO-{latest}", "GoLand"),
         (f"IU-{minimum}", "PLSQL"),
     ]
-    return (idea_suites(f"IC-{minimum}") + (idea_suites(idea_eap) if idea_eap else [])
-            + [job(version, suite) for version, suite in flavors if version])
+    return (idea_suites(f"IC-{minimum}") + idea_suites(f"IU-{eap}")
+            + [job(version, suite) for version, suite in flavors])
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("pr", "weekly"))
     mode = parser.parse_args().mode
-    matrix = pr_matrix(changed_files()) if mode == "pr" else weekly_matrix(read_versions())
+    versions = read_versions()
+    matrix = pr_matrix(versions, changed_files()) if mode == "pr" else weekly_matrix(versions)
     matrix_json = json.dumps(matrix, separators=(",", ":"))
     output = f"matrix={matrix_json}\nskip_its={str(not matrix).lower()}\n"
     if output_path := os.environ.get("GITHUB_OUTPUT"):

@@ -4,7 +4,7 @@ UI integration tests for SonarQube for IntelliJ using [IntelliJ Remote Robot](ht
 
 ## CI coverage
 
-Minimum versions come from [`gradle.properties`](../gradle.properties). **Latest** and **EAP** are resolved at run time; see [IDE versions](#ide-versions).
+Versions come from [`gradle.properties`](../gradle.properties): `minSupportedIdeVersion`, `latestStableIdeVersion`, `eapIdeVersion`.
 
 ### Pull requests and `master` pushes
 
@@ -28,7 +28,7 @@ Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet O
 One scheduled workflow, one plugin build:
 
 - IntelliJ **min** × 4 suites, CLion min+latest, Rider min+latest, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL)
-- IntelliJ Ultimate × 4 suites, CLion, and Rider against the newest **EAP** build (skipped for a product while no EAP newer than its stable release exists)
+- IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion` (Rider and CLion use `eapRiderIdeVersion` and `eapCLionIdeVersion` when set)
 
 Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change). After this workflow exists on `master`, run it on demand from Actions → Integration Tests Weekly → Run workflow (`workflow_dispatch`). GitHub only lists that control once the file is on the default branch.
 
@@ -36,17 +36,19 @@ QA jobs run `./gradlew :its:check` with `TEST_SUITE` as JUnit `includeTags`. Sta
 
 **Merge order:** land this PR before any move of those classes to another source set (SLI-2914 / #1912). That follow-up must rebase onto this contract, keep the tags, and change `.github/actions/run-qa-its` to run the new Gradle task. Merging the two independently would make Standalone and flavor jobs select no tests.
 
-## IDE versions
-
-`qa-matrix.py` asks the [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU&latest=true&type=release) for the newest release and EAP of each product on every run. It derives each version from the Linux tarball name, so it matches the `jetbrains-download` path that [`download-ides.sh`](../.github/scripts/download-ides.sh) fetches from Repox (for example `IU-263.7307.44` or `RD-2026.3-EAP8-263.7307.48.Checked` for EAPs). If the API is unreachable or returns an unexpected tarball name, the matrix job fails instead of falling back to stale versions.
-
-Only the minimum versions are pinned. Bump them when the supported range changes:
+## Version bumps
 
 ```properties
 minSupportedIdeVersion=2024.2
-# Optional per-product override when patch numbers diverge
+latestStableIdeVersion=2026.2.4   # bump when JetBrains ships a new stable
+eapIdeVersion=263.7307.44         # EAPs are named by build number
+# Per-product overrides when versions diverge (latestRiderIdeVersion and latestPyCharmIdeVersion also exist)
 minRiderIdeVersion=2024.2.7
+eapRiderIdeVersion=2026.3-EAP9-263.7307.100.Checked
+eapCLionIdeVersion=263.7307.35
 ```
+
+Each value must match the Linux tarball name on download.jetbrains.com, which Repox mirrors as `jetbrains-download`. For EAPs, take it from the [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU,CL,RD&latest=true&type=eap): for example `idea-263.7307.44.tar.gz` gives `263.7307.44`, and `JetBrains.Rider-2026.3-EAP9-263.7307.100.Checked.tar.gz` gives `2026.3-EAP9-263.7307.100.Checked`.
 
 ## Local run
 
