@@ -34,7 +34,7 @@ import org.sonarlint.intellij.its.robotUrl
 /**
  * TEMPORARY (SLI-3028 review, remove before merge): captures the Open dialog of the IDE under test, to find out
  * whether ITs can open projects through it again instead of the platform API. Runs once per test JVM, never fails
- * the test, and writes the component trees to build/reports/open-dialog-investigation (uploaded with the CI reports).
+ * the test (but leaves the dialog open if it cannot close it), and writes the component trees to build/reports/open-dialog-investigation (uploaded with the CI reports).
  */
 object OpenDialogInvestigation {
 
@@ -52,6 +52,16 @@ object OpenDialogInvestigation {
             remoteRobot.keyboard { enterText(projectPath) }
             Thread.sleep(2_000)
             dump("2-path-typed")
+            // Typing only searches the tree. Does clicking the empty end of the breadcrumb bar make it an editable path?
+            // (Enter is not tried: it would open the selected tree node, which can be "/")
+            remoteRobot.keyboard { escape() }
+            val breadcrumbs = remoteRobot.find<ComponentFixture>(byXpath("//div[@class='MyDialog']//div[@class='Breadcrumbs']"))
+            breadcrumbs.click(Point(breadcrumbs.remoteComponent.width - 5, breadcrumbs.remoteComponent.height / 2))
+            Thread.sleep(2_000)
+            dump("3-breadcrumbs-clicked")
+            remoteRobot.keyboard { enterText(projectPath) }
+            Thread.sleep(2_000)
+            dump("4-path-typed-after-breadcrumbs-click")
         }.onFailure { println("ITs: open dialog capture failed: $it") }
         closeDialogs()
     }
