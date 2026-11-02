@@ -41,7 +41,7 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
 
   public ConfigurationResult getConfiguration(VirtualFile file) {
     var configuration = computeReadActionSafelyInSmartMode(file, project, () -> getConfigurationAction(file));
-    return configuration != null ? configuration : ConfigurationResult.skip("The file is invalid or the project is being closed");
+    return configuration != null ? configuration : AnalyzerConfiguration.noConfigurationComputed(project, file);
   }
 
   /**

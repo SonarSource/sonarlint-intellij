@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.clion;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.CUDALanguageKind;
@@ -45,6 +46,45 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class AnalyzerConfigurationTests {
+
+  @Test
+  void noConfigurationComputed_skips_when_project_is_disposed() {
+    var project = mock(Project.class);
+    when(project.isDisposed()).thenReturn(true);
+    var file = mock(VirtualFile.class);
+    when(file.isValid()).thenReturn(true);
+
+    var result = AnalyzerConfiguration.noConfigurationComputed(project, file);
+
+    assertFalse(result.hasConfiguration());
+    assertFalse(result.isTemporarilyUnavailable());
+    assertEquals("The file is invalid or the project is being closed", result.getSkipReason());
+  }
+
+  @Test
+  void noConfigurationComputed_skips_when_file_is_invalid() {
+    var project = mock(Project.class);
+    var file = mock(VirtualFile.class);
+    when(file.isValid()).thenReturn(false);
+
+    var result = AnalyzerConfiguration.noConfigurationComputed(project, file);
+
+    assertFalse(result.isTemporarilyUnavailable());
+    assertEquals("The file is invalid or the project is being closed", result.getSkipReason());
+  }
+
+  @Test
+  void noConfigurationComputed_is_temporary_when_project_and_file_are_still_valid() {
+    var project = mock(Project.class);
+    var file = mock(VirtualFile.class);
+    when(file.isValid()).thenReturn(true);
+
+    var result = AnalyzerConfiguration.noConfigurationComputed(project, file);
+
+    assertFalse(result.hasConfiguration());
+    assertTrue(result.isTemporarilyUnavailable());
+    assertTrue(result.getSkipReason().startsWith("The configuration could not be computed yet"));
+  }
 
   @Test
   void testPreprocessorDefines() {

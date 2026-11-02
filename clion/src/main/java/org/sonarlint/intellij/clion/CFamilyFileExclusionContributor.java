@@ -35,7 +35,7 @@ public class CFamilyFileExclusionContributor implements FileExclusionContributor
       return ExcludeResult.notExcluded();
     }
     var configurationResult = new CLionAnalyzerConfiguration(project).getConfiguration(fileToAnalyze);
-    if (configurationResult.hasConfiguration()) {
+    if (configurationResult.hasConfiguration() || configurationResult.isTemporarilyUnavailable()) {
       return ExcludeResult.notExcluded();
     }
     return ExcludeResult.excluded(configurationResult.getSkipReason());
