@@ -25,12 +25,15 @@ import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import java.awt.Point
 import java.awt.event.KeyEvent
+import java.io.File
+import java.net.URL
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editorComponent
 import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.robotUrl
 
 object CLionUtils {
 
@@ -85,11 +88,27 @@ object CLionUtils {
                     ).isNotEmpty()
                 }
             }.isSuccess
+            if (!offered) {
+                saveVisualTree("find-action-${actionName.replace(' ', '-')}")
+            }
             keyboard {
                 if (offered) enter() else escape()
             }
             return offered
         }
+    }
+
+    /** Keeps the component tree with the CI reports, to see what the popup offered instead. */
+    private fun saveVisualTree(name: String) {
+        runCatching {
+            val file = File("build/reports/its-diagnostics/$name.html").apply { parentFile.mkdirs() }
+            val connection = URL(robotUrl).openConnection().apply {
+                connectTimeout = 1_000
+                readTimeout = 10_000
+            }
+            file.writeText(connection.getInputStream().reader().use { it.readText() })
+            println("ITs: component tree written to ${file.absolutePath}")
+        }.onFailure { println("ITs: could not save the component tree: $it") }
     }
 
     /** Confirms the dialogs CLion may show when it opens or loads a CMake project; usually neither shows. */
