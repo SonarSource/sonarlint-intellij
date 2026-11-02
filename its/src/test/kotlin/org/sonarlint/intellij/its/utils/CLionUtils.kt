@@ -22,7 +22,9 @@ package org.sonarlint.intellij.its.utils
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
+import com.intellij.remoterobot.utils.waitFor
 import java.awt.Point
+import java.awt.event.KeyEvent
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -32,9 +34,12 @@ import org.sonarlint.intellij.its.fixtures.idea
 
 object CLionUtils {
 
+    private const val LOAD_CMAKE_PROJECT_ACTION = "Load CMake Project"
+
     /**
      * Loads the CMake project of the CMakeLists.txt open in the editor. Older CLion versions offer an editor link for it;
-     * from 2026.2 the sample (it has `.idea`) opens as a plain project without that link, so use the editor context menu.
+     * from 2026.2 the sample (it has `.idea`) opens as a plain project without that link, and the editor context menu has
+     * no such item, so run the action through Find Action.
      */
     fun loadCMakeProject() {
         with(remoteRobot) {
@@ -45,20 +50,9 @@ object CLionUtils {
                     }
                 }
             }.isSuccess
-            if (!loadedFromLink) {
-                val loadedFromMenu = runCatching {
-                    idea {
-                        editorComponent().rightClick()
-                        actionMenuItem("Load CMake Project") {
-                            click()
-                        }
-                    }
-                }.isSuccess
-                if (!loadedFromMenu) {
-                    // Neither is offered once the CMake project is loaded, e.g. by the Open Project Wizard on older versions
-                    keyboard { escape() }
-                    println("ITs: no 'Load CMake project' link or menu item, assuming the CMake project is already loaded")
-                }
+            if (!loadedFromLink && !runFromFindAction(LOAD_CMAKE_PROJECT_ACTION)) {
+                // Neither is offered once the CMake project is loaded, e.g. by the Open Project Wizard on older versions
+                println("ITs: no 'Load CMake project' link or action, assuming the CMake project is already loaded")
             }
         }
         confirmCMakeProjectDialogs(trustTimeout = Duration.ofSeconds(5), wizardTimeout = Duration.ofSeconds(5))
@@ -70,6 +64,31 @@ object CLionUtils {
                 }
                 findElement<ComponentFixture>(byXpath("//div[@class='MyList']")).click(Point(10, 10))
             }
+        }
+    }
+
+    /** Runs an enabled action by name through Find Action, from the focused editor; false if it is not offered. */
+    private fun runFromFindAction(actionName: String): Boolean {
+        with(remoteRobot) {
+            idea {
+                editorComponent().click()
+            }
+            keyboard {
+                hotKey(KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT, KeyEvent.VK_A)
+                enterText(actionName)
+            }
+            val offered = runCatching {
+                waitFor(Duration.ofSeconds(10), Duration.ofMillis(500), "'$actionName' in Find Action") {
+                    findAll<ComponentFixture>(
+                        // The results list, not the search field, which also shows the typed text
+                        byXpath("//div[@class='SearchEverywhereUI']//div[@class='JBList' and contains(@visible_text, '$actionName')]")
+                    ).isNotEmpty()
+                }
+            }.isSuccess
+            keyboard {
+                if (offered) enter() else escape()
+            }
+            return offered
         }
     }
 
