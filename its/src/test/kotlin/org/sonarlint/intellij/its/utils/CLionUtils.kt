@@ -21,6 +21,7 @@ package org.sonarlint.intellij.its.utils
 
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.utils.keyboard
 import java.awt.Point
 import java.time.Duration
 import org.sonarlint.intellij.its.BaseUiTest.Companion.remoteRobot
@@ -45,15 +46,22 @@ object CLionUtils {
                 }
             }.isSuccess
             if (!loadedFromLink) {
-                idea {
-                    editorComponent().rightClick()
-                    actionMenuItem("Load CMake Project") {
-                        click()
+                val loadedFromMenu = runCatching {
+                    idea {
+                        editorComponent().rightClick()
+                        actionMenuItem("Load CMake Project") {
+                            click()
+                        }
                     }
+                }.isSuccess
+                if (!loadedFromMenu) {
+                    // Neither is offered once the CMake project is loaded, e.g. by the Open Project Wizard on older versions
+                    keyboard { escape() }
+                    println("ITs: no 'Load CMake project' link or menu item, assuming the CMake project is already loaded")
                 }
             }
         }
-        confirmCMakeProjectDialogs(Duration.ofSeconds(5))
+        confirmCMakeProjectDialogs(trustTimeout = Duration.ofSeconds(5), wizardTimeout = Duration.ofSeconds(5))
         optionalStep {
             // The toolchain may need fixing on CI machines
             remoteRobot.idea {
@@ -65,16 +73,16 @@ object CLionUtils {
         }
     }
 
-    /** Confirms the dialogs CLion may show when it opens or loads a CMake project. */
-    fun confirmCMakeProjectDialogs(timeout: Duration = Duration.ofSeconds(20)) {
+    /** Confirms the dialogs CLion may show when it opens or loads a CMake project; usually neither shows. */
+    fun confirmCMakeProjectDialogs(trustTimeout: Duration = Duration.ofSeconds(5), wizardTimeout: Duration = Duration.ofSeconds(20)) {
         with(remoteRobot) {
             optionalStep {
-                dialog("Trust CMake Project?", timeout) {
+                dialog("Trust CMake Project?", trustTimeout) {
                     button("Trust Project").click()
                 }
             }
             optionalStep {
-                dialog("Open Project Wizard", timeout) {
+                dialog("Open Project Wizard", wizardTimeout) {
                     button("OK").click()
                 }
             }
