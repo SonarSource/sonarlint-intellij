@@ -27,7 +27,6 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -113,7 +112,7 @@ public class GlobalExclusionsPanel implements ConfigurationPanel<SonarLintGlobal
       if (inputString.isEmpty()) {
         return false;
       }
-      FileSystem fs = FileSystems.getDefault();
+      var fs = FileSystems.getDefault();
       try {
         fs.getPathMatcher("glob:" + inputString);
         return true;
