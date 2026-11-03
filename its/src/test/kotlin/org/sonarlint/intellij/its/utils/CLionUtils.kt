@@ -30,6 +30,8 @@ import org.sonarlint.intellij.its.fixtures.idea
 
 object CLionUtils {
 
+    private const val ACTION_NOT_FOUND = "action not found"
+
     /**
      * Loads the CMake project of the CMakeLists.txt open in the editor. Older CLion versions offer an editor link for it;
      * from 2026.2 the sample (it has `.idea`) opens as a plain project without that link, so run the action directly.
@@ -44,7 +46,10 @@ object CLionUtils {
                 }
             }.isSuccess
             if (!loadedFromLink) {
-                println("ITs: Load CMake Project action: ${runLoadCMakeProjectAction()}")
+                val outcome = runLoadCMakeProjectAction()
+                println("ITs: Load CMake Project action: $outcome")
+                // A rejected run is fine, the action is disabled once the project is loaded; a missing action is not
+                check(outcome != ACTION_NOT_FOUND) { "CMake.LoadCMakeProject is not registered in this CLion version" }
             }
         }
         confirmCMakeProjectDialogs(trustTimeout = Duration.ofSeconds(5), wizardTimeout = Duration.ofSeconds(5))
@@ -74,7 +79,7 @@ object CLionUtils {
                     const editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(component.project).getSelectedTextEditor();
                     let result;
                     if (!action) {
-                        result = "action not found";
+                        result = "$ACTION_NOT_FOUND";
                     } else {
                         const callback = actionManager.tryToExecute(action, null, editor ? editor.getContentComponent() : component, "SonarLintITs", true);
                         result = "done=" + callback.isDone() + ", rejected=" + callback.isRejected();
