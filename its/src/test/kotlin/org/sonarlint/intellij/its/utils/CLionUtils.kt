@@ -30,11 +30,10 @@ import org.sonarlint.intellij.its.fixtures.idea
 
 object CLionUtils {
 
-    private const val ACTION_NOT_FOUND = "action not found"
-
     /**
-     * Loads the CMake project of the CMakeLists.txt open in the editor. Older CLion versions offer an editor link for it;
-     * from 2026.2 the sample (it has `.idea`) opens as a plain project without that link, so run the action directly.
+     * Loads the CMake project of the CMakeLists.txt open in the editor, if CLion offers an editor link for it. Samples with
+     * a `.idea` folder declare themselves CMake projects there (`CMakeWorkspace` in misc.xml), so recent versions load
+     * them on open and show no link.
      */
     fun loadCMakeProject() {
         with(remoteRobot) {
@@ -46,10 +45,7 @@ object CLionUtils {
                 }
             }.isSuccess
             if (!loadedFromLink) {
-                val outcome = runLoadCMakeProjectAction()
-                println("ITs: Load CMake Project action: $outcome")
-                // A rejected run is fine, the action is disabled once the project is loaded; a missing action is not
-                check(outcome != ACTION_NOT_FOUND) { "CMake.LoadCMakeProject is not registered in this CLion version" }
+                println("ITs: no 'Load CMake project' link, the CMake project is loaded on open")
             }
         }
         confirmCMakeProjectDialogs(trustTimeout = Duration.ofSeconds(5), wizardTimeout = Duration.ofSeconds(5))
@@ -62,33 +58,6 @@ object CLionUtils {
                 findElement<ComponentFixture>(byXpath("//div[@class='MyList']")).click(Point(10, 10))
             }
         }
-    }
-
-    /**
-     * Runs CLion's Load CMake Project action from the CMakeLists.txt editor, which gives it its data context.
-     * Last resort JavaScript: on 2026.2 no editor link or menu item offers it, and running it through Find Action left
-     * main.cpp outside the files SonarQube for IDE analyzes. The action is disabled, so a no-op, once the project is loaded.
-     */
-    private fun runLoadCMakeProjectAction(): String {
-        var outcome = ""
-        remoteRobot.idea {
-            outcome = callJs<String>(
-                """
-                    const actionManager = com.intellij.openapi.actionSystem.ActionManager.getInstance();
-                    const action = actionManager.getAction("CMake.LoadCMakeProject");
-                    const editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(component.project).getSelectedTextEditor();
-                    let result;
-                    if (!action) {
-                        result = "$ACTION_NOT_FOUND";
-                    } else {
-                        const callback = actionManager.tryToExecute(action, null, editor ? editor.getContentComponent() : component, "SonarLintITs", true);
-                        result = "done=" + callback.isDone() + ", rejected=" + callback.isRejected();
-                    }
-                    result;
-                """, true
-                )
-        }
-        return outcome
     }
 
     /** Confirms the dialogs CLion may show when it opens or loads a CMake project; usually neither shows. */
