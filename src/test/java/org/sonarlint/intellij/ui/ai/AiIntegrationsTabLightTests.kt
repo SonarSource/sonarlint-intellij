@@ -29,7 +29,6 @@ import com.intellij.openapi.util.Disposer
 import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assumptions.assumeFalse
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -152,7 +151,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         val aiIntegrations = mainToolWindow.openAiIntegrations()
         val cliCard = aiIntegrations.sonarQubeCliCard
         awaitCliCheckFinished(cliCard)
-        assumeNoRealCliDetected(cliCard)
 
         cli.install()
         aiIntegrations.refresh()
@@ -241,7 +239,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     private fun startCliInstall(): AiIntegrationCardPage {
         val cliCard = mainToolWindow.openAiIntegrations().sonarQubeCliCard
         awaitCliCheckFinished(cliCard)
-        assumeNoRealCliDetected(cliCard)
         assertThat(cliCard.buttons).contains(INSTALL_CLI_LABEL)
 
         cliCard.clickButton(INSTALL_CLI_LABEL)
@@ -254,7 +251,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     private fun openCliCard(): AiIntegrationCardPage {
         val cliCard = mainToolWindow.openAiIntegrations().sonarQubeCliCard
         awaitCliCheckFinished(cliCard)
-        assumeNoRealCliDetected(cliCard)
         return cliCard
     }
 
@@ -267,17 +263,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     /** Waits until the CLI card has finished checking, whatever the result. */
     private fun awaitCliCheckFinished(cliCard: AiIntegrationCardPage) {
         awaitUntil { cliCard.labels.isNotEmpty() && !cliCard.labels.contains(CHECKING_STATUS) }
-    }
-
-    /**
-     * On macOS the backend searches the system paths from /etc/paths instead of PATH, which the build cannot control.
-     * A CLI installed there, e.g. in /usr/local/bin, is found before the fake one, so these scenarios cannot run on that machine.
-     */
-    private fun assumeNoRealCliDetected(cliCard: AiIntegrationCardPage) {
-        assumeFalse(
-            cliCard.tickedLabels.contains(INSTALLED_STATUS) && !cliCard.showsFakeCli(),
-            "A SonarQube CLI installed on this machine is visible to the backend: ${cliCard.labels}",
-        )
     }
 
     private fun AiIntegrationCardPage.showsFakeCli() = labels.any { it.endsWith("v${FakeSonarQubeCli.VERSION}") }

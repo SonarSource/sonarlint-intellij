@@ -343,9 +343,9 @@ tasks {
         systemProperty("sonarlint.monitoring.disabled", "true")
         // disable thread leak checker for now as it's raising FPs
         systemProperty("junit.jupiter.extensions.autodetection.exclude", "com.intellij.testFramework.junit5.impl.ThreadLeakTrackerExtension")
-        // Hide any SonarQube CLI installed on the machine from the backend, so tests decide whether a CLI is installed:
-        // it gets its own user home and a PATH without `sonar`, led by the directory the official installer adds to it.
-        // On macOS the backend reads the system paths (/etc/paths) instead of PATH, which cannot be controlled.
+        // Hide the tools installed on the machine from the backend, so tests decide whether a CLI is installed: it gets its
+        // own user home, where it still searches the official install locations, and an empty search path instead of
+        // PATH (or the system paths on macOS)
         val sloopUserHome = layout.buildDirectory.dir("sloop-user-home").get().asFile
         // The backend splits SONARLINT_JVM_OPTS on spaces, so the user home can only be passed from a path without spaces.
         // Without it, the tests that need this isolation skip themselves.
@@ -356,11 +356,7 @@ tasks {
         } else {
             systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
             environment("SONARLINT_JVM_OPTS", listOfNotNull(System.getenv("SONARLINT_JVM_OPTS")?.takeIf { it.isNotBlank() },
-                "-Duser.home=${sloopUserHome.absolutePath}").joinToString(" "))
-            val cliInstallDir = sloopUserHome.resolve(".local/share/sonarqube-cli/bin").absolutePath
-            environment("PATH", (listOf(cliInstallDir) + System.getenv("PATH").orEmpty().split(File.pathSeparator)
-                .filterNot { File(it, "sonar").exists() || File(it, "sonar.exe").exists() })
-                .joinToString(File.pathSeparator))
+                "-Duser.home=${sloopUserHome.absolutePath}", "-Dsonarlint.internal.ai.searchPath=").joinToString(" "))
             doFirst {
                 sloopUserHome.deleteRecursively()
                 // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so
