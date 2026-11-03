@@ -31,7 +31,8 @@ import kotlin.io.path.readLines
 /**
  * Stands in for a SonarQube CLI installed by the official script, in the user home the build gives to the backend
  * (see `sonarlint.test.sloop.user.home` in build.gradle.kts). The backend finds it and runs `sonar --version`,
- * `sonar system status` and `sonar system reset` for real. Its state lives in files next to the script.
+ * `sonar system status` and `sonar system reset` for real: a one-line launcher runs [FakeSonarQubeCliMain], whose state
+ * lives in files next to the launcher.
  */
 class FakeSonarQubeCli {
 
@@ -50,21 +51,27 @@ class FakeSonarQubeCli {
         Files.createDirectories(binDirectory)
         writeStatus(authenticated, integratedAgentIds = emptyList())
         val executable = binDirectory.resolve("sonar")
-        Files.writeString(
-            executable,
-            """
-            #!/bin/sh
-            dir=${'$'}(dirname "${'$'}0")
-            echo "${'$'}*" >> "$commandLog"
-            case "${'$'}*" in
-              --version) [ -f "${'$'}dir/broken" ] && exit 1; echo "$VERSION" ;;
-              "system status"*) cat "${'$'}dir/status.json" ;;
-              "system reset --force") ;;
-              *) echo "fake sonar: unsupported command ${'$'}*" >&2; exit 1 ;;
-            esac
-            """.trimIndent() + "\n"
-        )
+        Files.writeString(executable, "#!/bin/sh\nexec ${launchCommand()} \"${'$'}@\"\n")
         Files.setPosixFilePermissions(executable, PosixFilePermissions.fromString("rwxr-xr-x"))
+    }
+
+    /** Runs [FakeSonarQubeCliMain] on the test JVM's runtime, with the compiled test classes as its only classpath entry. */
+    private fun launchCommand(): String {
+        val java = Path.of(System.getProperty("java.home"), "bin", "java")
+        val testClasses = classpathRootOf(FakeSonarQubeCliMain::class.java)
+        return listOf(
+            java.toString(), "-cp", testClasses.toString(),
+            "-D${FakeSonarQubeCliMain.STATE_DIRECTORY_PROPERTY}=$binDirectory",
+            "-D${FakeSonarQubeCliMain.COMMAND_LOG_PROPERTY}=$commandLog",
+            "-D${FakeSonarQubeCliMain.VERSION_PROPERTY}=$VERSION",
+            FakeSonarQubeCliMain::class.java.name,
+        ).joinToString(" ") { "\"$it\"" }
+    }
+
+    /** The directory a class was compiled to; the IDE test class loader does not tell it through the code source. */
+    private fun classpathRootOf(type: Class<*>): Path {
+        val classFile = Path.of(checkNotNull(type.getResource("${type.simpleName}.class")) { "No class file for $type" }.toURI())
+        return type.packageName.split('.').fold(classFile.parent) { directory, _ -> directory.parent }
     }
 
     /** Makes `sonar --version` fail, as a damaged installation would. */
