@@ -14,7 +14,8 @@ jobs:
   notify:
     runs-on: sonar-xs
     name: Send Slack Notification
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    # One-off "Custom ITs" runs of the weekly workflow report to whoever started them, not to Slack
+    if: ${{ github.event.workflow_run.conclusion == 'failure' && !startsWith(github.event.workflow_run.display_title, 'Custom ITs') }}
     steps:
       - name: Vault Secrets
         id: secrets

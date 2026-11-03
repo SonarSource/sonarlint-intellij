@@ -4,9 +4,19 @@ on:
   workflow_call:
     inputs:
       matrix_mode:
-        description: Mode passed to .github/scripts/qa-matrix.py (pr or weekly)
+        description: Mode passed to .github/scripts/qa-matrix.py (pr, weekly or custom)
         type: string
         required: true
+      ide_version:
+        description: IDE for custom mode, e.g. IC-2026.2.3
+        type: string
+        required: false
+        default: ''
+      test_suite:
+        description: Suite for custom mode (default = the product's default suites)
+        type: string
+        required: false
+        default: ''
       project_version:
         description: Plugin version already deployed to the Artifactory QA repo. When empty, the workflow builds the plugin itself.
         type: string
@@ -32,6 +42,8 @@ jobs:
         id: set-matrix
         env:
           MATRIX_MODE: ${{ inputs.matrix_mode }}
+          IDE_VERSION: ${{ inputs.ide_version }}
+          TEST_SUITE: ${{ inputs.test_suite }}
         run: python3 .github/scripts/qa-matrix.py "${MATRIX_MODE}"
 
   aws-auth:
