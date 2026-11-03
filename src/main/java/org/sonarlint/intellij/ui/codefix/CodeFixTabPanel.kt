@@ -229,9 +229,6 @@ class CodeFixTabPanel(
         }
         getService(BackendService::class.java).suggestAiCodeFixSuggestion(module, issueId)
             .thenAcceptAsync { fixSuggestion ->
-                if (tabDisposed) {
-                    return@thenAcceptAsync
-                }
                 getService(project, FixSuggestionInlayHolder::class.java).addFixSuggestion(issueId.toString(), fixSuggestion)
                 displaySuggestion(fixSuggestion, false)
             }

@@ -175,7 +175,7 @@ class FixSuggestionInlayPanel(
             suggestion.snippetIndex
         )
         navigateToPreviousInlay()
-        dispose()
+        Disposer.dispose(this)
     }
 
     private fun acceptFix() {
@@ -194,7 +194,7 @@ class FixSuggestionInlayPanel(
             suggestion.snippetIndex
         )
         navigateToNextInlay()
-        dispose()
+        Disposer.dispose(this)
     }
 
     private fun normalizeLineEndingsToLineFeeds(text: String) = StringUtil.convertLineSeparators(text)

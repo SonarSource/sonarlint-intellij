@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.ruledescription
 
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileTypes.PlainTextFileType
+import com.intellij.openapi.util.Disposer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -37,6 +38,17 @@ class RuleDescriptionPanelTests : AbstractSonarLintLightTests() {
         assertThat(sonarLintViewerCount()).isEqualTo(1)
 
         panel.removeAll()
+
+        assertThat(sonarLintViewerCount()).isZero()
+    }
+
+    @Test
+    fun `does not create viewers when parent disposable is disposed`() {
+        val parent = Disposer.newDisposable(testRootDisposable, "rule description parent")
+        val panel = RuleDescriptionPanel(project, parent)
+        Disposer.dispose(parent)
+
+        panel.addMonolith(RuleMonolithicDescriptionDto("<pre>orphan snippet</pre>"), PlainTextFileType.INSTANCE)
 
         assertThat(sonarLintViewerCount()).isZero()
     }

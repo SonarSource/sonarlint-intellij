@@ -50,9 +50,15 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     private var sectionsTabs: JBTabbedPane? = null
     private var codeFixTab: CodeFixTabPanel? = null
     private var ruleContentDisposable: Disposable? = null
+    @Volatile
+    private var parentDisposed = false
 
     companion object {
         private const val AI_CODEFIX_TITLE = "AI CodeFix"
+    }
+
+    init {
+        Disposer.register(parent) { parentDisposed = true }
     }
 
     fun openCodeFixTabAndGenerate() {
@@ -90,6 +96,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     }
 
     fun addMonolithWithCodeFix(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
+        if (parentDisposed) return
         val sectionsTabs = JBTabbedPane()
         sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
@@ -102,11 +109,13 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     }
 
     fun addMonolith(monolithDescription: RuleMonolithicDescriptionDto, fileType: FileType) {
+        if (parentDisposed) return
         val scrollPane = parseCodeExamples(project, ruleContentParent(), monolithDescription.htmlContent, fileType)
         add(scrollPane, BorderLayout.CENTER)
     }
 
     fun addSectionsWithCodeFix(withSections: RuleSplitDescriptionDto, fileType: FileType, issueId: UUID, file: VirtualFile) {
+        if (parentDisposed) return
         addSections(withSections, fileType)
         sectionsTabs?.let {
             codeFixTab = CodeFixTabPanel(project, file, issueId).also { tab -> Disposer.tryRegister(ruleContentParent(), tab) }
@@ -115,6 +124,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
     }
 
     fun addSections(withSections: RuleSplitDescriptionDto, fileType: FileType) {
+        if (parentDisposed) return
         val htmlHeader = withSections.introductionHtmlContent
         if (!htmlHeader.isNullOrBlank()) {
             val htmlViewer = RuleHtmlViewer(false)
@@ -160,6 +170,7 @@ class RuleDescriptionPanel(private val project: Project, private val parent: Dis
         val contextCombo = ComboBox(DefaultComboBoxModel(contextualSections.toTypedArray()))
         contextCombo.renderer = textListCellRenderer<RuleContextualSectionDto> { it.displayName }
         contextCombo.addActionListener {
+            if (parentDisposed) return@addActionListener
             contextualContentDisposable?.let { Disposer.dispose(it) }
             val contentParent = Disposer.newDisposable(ruleContentParent(), "RuleDescriptionPanel contextual section")
             contextualContentDisposable = contentParent
