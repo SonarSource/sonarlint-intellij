@@ -53,7 +53,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
     runOnUiThread(project, () -> {
       configureAdditionalGearActions(toolWindow);
       var contentManager = toolWindow.getContentManager();
-      var findingsContent = addCurrentFileTab(project, contentManager);
+      var currentFilePanel = new CurrentFilePanel(project);
+      var findingsContent = addCurrentFileTab(currentFilePanel, contentManager);
       var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
       addAiIntegrationsTab(project, contentManager);
       addLogTab(project, toolWindow);
@@ -61,6 +62,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
       contentManager.setSelectedContent(findingsContent);
       toolWindow.setType(ToolWindowType.DOCKED, null);
       contentManager.addContentManagerListener(sonarLintToolWindow);
+      Disposer.register(currentFilePanel, () -> contentManager.removeContentManagerListener(sonarLintToolWindow));
     });
   }
 
@@ -70,8 +72,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
     toolWindow.setAdditionalGearActions(gearActions);
   }
 
-  private static Content addCurrentFileTab(Project project, ContentManager contentManager) {
-    var currentFilePanel = new CurrentFilePanel(project);
+  private static Content addCurrentFileTab(CurrentFilePanel currentFilePanel, ContentManager contentManager) {
     var content = contentManager.getFactory()
       .createContent(
         currentFilePanel,

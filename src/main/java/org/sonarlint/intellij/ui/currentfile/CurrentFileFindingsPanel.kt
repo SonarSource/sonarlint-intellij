@@ -349,7 +349,9 @@ abstract class CurrentFileFindingsPanel(val project: Project) : SimpleToolWindow
     }
 
     override fun dispose() {
-        // Nothing to do
+        if (::findingDetailsPanel.isInitialized) {
+            findingDetailsPanel.disposeUiResources()
+        }
     }
 
 }

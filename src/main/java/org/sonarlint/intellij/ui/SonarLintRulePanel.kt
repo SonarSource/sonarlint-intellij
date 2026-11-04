@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.progress.ProgressIndicator
@@ -90,8 +91,11 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
     private var issueDetails: EffectiveIssueDetailsDto? = null
     private var ruleDetails: EffectiveRuleDetailsDto? = null
     private var issueNotFoundError: Boolean = false
+    @Volatile
+    private var disposed = false
 
     init {
+        Disposer.register(parent) { disposed = true }
         mainPanel.add(topPanel.apply {
             add(ruleNameLabel.apply {
                 font = JBFont.h3().asBold()
@@ -292,6 +296,17 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
         runOnUiThread(project) { updateUiComponents() }
     }
 
+    /**
+     * Synchronously tears down rule description UI (including code-example viewers).
+     * Called from [org.sonarlint.intellij.ui.currentfile.CurrentFileFindingsPanel.dispose].
+     */
+    fun disposeUiResources() {
+        disposed = true
+        ruleDetailsLoader.clearState()
+        descriptionPanel.removeAll()
+        clearValues()
+    }
+
     private fun clearValues() {
         finding = null
         ruleKey = null
@@ -313,6 +328,9 @@ class SonarLintRulePanel(private val project: Project, parent: Disposable) : JBL
 
     private fun updateUiComponents() {
         ApplicationManager.getApplication().assertIsDispatchThread()
+        if (disposed) {
+            return
+        }
         val finding = this.finding
         val ruleKey = this.ruleKey
         val issueDetails = this.issueDetails
