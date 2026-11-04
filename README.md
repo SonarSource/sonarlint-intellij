@@ -185,8 +185,8 @@ The nightly workflow also checks minimum product versions and the latest stable 
 # Local / regular CI
 ./gradlew :verifyPlugin
 
-# Full nightly matrix
-./gradlew :verifyPlugin -PverifierEnv=LATEST
+# Full compatibility matrix
+./gradlew :verifyPlugin -PverifierEnv=FULL
 ```
 
 License

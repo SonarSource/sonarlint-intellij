@@ -141,13 +141,13 @@ intellijPlatform {
             VerifyPluginTask.FailureLevel.INVALID_PLUGIN
         )
         
-        val verifyLatest = providers.gradleProperty("verifierEnv").orNull == "LATEST"
+        val verifyFullMatrix = providers.gradleProperty("verifierEnv").orNull == "FULL"
         ignoredProblemsFile = rootProject.file(".verifier-ignored-problems.txt")
 
         ides {
             val minimumVersion = providers.gradleProperty("minSupportedIdeVersion").get()
             create(IntelliJPlatformType.IntellijIdeaCommunity, minimumVersion)
-            if (verifyLatest) {
+            if (verifyFullMatrix) {
                 create(IntelliJPlatformType.IntellijIdeaUltimate, minimumVersion)
                 create(IntelliJPlatformType.Rider, minimumVersion)
                 create(IntelliJPlatformType.CLion, minimumVersion)
