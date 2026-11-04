@@ -25,11 +25,10 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.deleteIfExists
-import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
 import kotlin.io.path.readLines
+import org.apache.commons.io.file.PathUtils
 
 /**
  * The real SonarQube CLI, installed where its official script puts it, in the user home the build gives to the backend
@@ -86,14 +85,19 @@ class SonarQubeCli {
     }
 
     /** Removes the CLI, its state, its token and what `sonar integrate claude` installed. */
-    @OptIn(ExperimentalPathApi::class)
     fun reset() {
-        installRoot.deleteRecursively()
+        deleteDirectoryIfExists(installRoot)
         commandLog.deleteIfExists()
-        home.resolve(".sonar").deleteRecursively()
+        deleteDirectoryIfExists(home.resolve(".sonar"))
         home.resolve("sonarqube-cli-keychain.json").deleteIfExists()
-        home.resolve(".claude").deleteRecursively()
+        deleteDirectoryIfExists(home.resolve(".claude"))
         home.resolve(".claude.json").deleteIfExists()
+    }
+
+    private fun deleteDirectoryIfExists(directory: Path) {
+        if (directory.exists()) {
+            PathUtils.deleteDirectory(directory)
+        }
     }
 
     /** The latest release, downloaded with the official script, as the backend's install command does. */
