@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
 import org.sonarlint.intellij.ai.AUTHENTICATED_STATUS
 import org.sonarlint.intellij.ai.AiAgentRegistry
@@ -55,6 +56,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.CredentialsService
+import org.sonarlint.intellij.fixtures.MockWebServerExtension
 import org.sonarlint.intellij.fixtures.awaitUntil
 import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
@@ -69,8 +71,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     private val cli = SonarQubeCli()
-    private val sonarQubeServer = FakeSonarQubeServer()
-    private val sonarQubeServerConnection = ServerConnection.newBuilder().setName("Fake SonarQube Server").setHostUrl(sonarQubeServer.url).build()
+    private val sonarQubeServerConnection = ServerConnection.newBuilder().setName("Fake SonarQube Server").setHostUrl(sonarQubeServer.url("")).build()
     private val recordingTerminal = RecordingTerminal()
     private lateinit var terminal: TerminalToolWindowPage
     private val claudeCode = AiAgentRegistry().displayName(AiAgent.CLAUDE_CODE)
@@ -78,6 +79,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     override fun beforeMainToolWindowCreated() {
         cli.reset()
+        answerSonarQubeCliRequests(tokenValid = true)
         terminal = TerminalToolWindowPage.create(project, testRootDisposable)
         notifications = recordNotifications()
     }
@@ -87,7 +89,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         terminal.closeAllTabs()
         cli.reset()
         getService(CredentialsService::class.java).eraseCredentials(sonarQubeServerConnection)
-        sonarQubeServer.close()
         TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
 
@@ -207,7 +208,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     @Test
     fun should_show_cli_as_signed_in_after_signing_in_with_the_ide_connection() {
         cli.install()
-        connectToSonarQubeServer(FakeSonarQubeServer.VALID_TOKEN)
+        connectToSonarQubeServer(TOKEN)
         // The backend signs the CLI in with the connection's token, without a terminal; a terminal would mean a browser login
         replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
@@ -224,7 +225,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     @Test
     fun should_keep_offering_sign_in_and_report_the_error_when_the_connection_token_is_rejected() {
         cli.install()
-        connectToSonarQubeServer("not-a-valid-token")
+        answerSonarQubeCliRequests(tokenValid = false)
+        connectToSonarQubeServer(TOKEN)
         replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
 
@@ -256,7 +258,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     @Test
     fun should_show_claude_code_integration_as_recorded_after_integrating_it_in_the_terminal() {
         cli.install()
-        cli.signIn(sonarQubeServer.url, FakeSonarQubeServer.VALID_TOKEN)
+        cli.signIn(sonarQubeServer.url(""), TOKEN)
         val cliCard = openCliCard()
         cliCard.showAgents()
         awaitUntil { cliCard.hasAgent(claudeCode) }
@@ -287,6 +289,18 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         awaitUntil { recordingTerminal.launchedCommand != null }
         assertThat(recordingTerminal.launchedCommand?.arguments.orEmpty().joinToString(" ")).contains("user-scripts/install.sh")
         return cliCard
+    }
+
+    /**
+     * What SonarQube Server answers to the requests the SonarQube CLI makes to sign in with a token and to integrate an
+     * agent, without entitlement to the agentic features.
+     */
+    private fun answerSonarQubeCliRequests(tokenValid: Boolean) {
+        sonarQubeServer.addStringResponse("/api/authentication/validate", """{"valid":$tokenValid}""")
+        sonarQubeServer.addStringResponse("/api/users/current", """{"isLoggedIn":true,"login":"user"}""")
+        sonarQubeServer.addStringResponse("/api/system/status", """{"id":"20160308094653","version":"2025.1","status":"UP"}""")
+        sonarQubeServer.addStringResponse("/api/v2/a3s/org-entitlement/$NO_ORGANIZATION", "{}")
+        sonarQubeServer.addStringResponse("/api/v2/cag/cag-entitlement/$NO_ORGANIZATION", "{}")
     }
 
     /** Creates the connection to the fake server as the settings do, with [token] saved in the credential store. */
@@ -332,6 +346,14 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     companion object {
+        private const val TOKEN = "token"
+        /** The organization the CLI asks entitlements for on SonarQube Server, which has none */
+        private const val NO_ORGANIZATION = "00000000-0000-0000-0000-000000000000"
+
+        @JvmField
+        @RegisterExtension
+        val sonarQubeServer = MockWebServerExtension.onRandomPort()
+
         @JvmStatic
         @BeforeAll
         fun requireIsolatedBackend() {
