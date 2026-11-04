@@ -41,6 +41,17 @@ buildscript {
     }
 }
 
+// The SonarQube CLI executable for the build machine, e.g. "macos-arm64@bin"
+val sonarQubeCliPlatform = System.getProperty("os.name").lowercase().let { os ->
+    val arm = System.getProperty("os.arch") in setOf("aarch64", "arm64")
+    when {
+        os.contains("win") -> "windows-x86-64@exe"
+        os.contains("mac") -> "macos-arm64@bin"
+        arm -> "linux-arm64@bin"
+        else -> "linux-x86-64@bin"
+    }
+}
+
 group = "org.sonarsource.sonarlint.intellij"
 description = "SonarLint for IntelliJ IDEA"
 
@@ -67,6 +78,7 @@ configurations {
         isTransitive = true
     }
     register("sloop")
+    register("sonarqubeCli")
 }
 
 java {
@@ -113,6 +125,7 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
     "sqplugins"(libs.bundles.sonar.analyzers)
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
+    "sonarqubeCli"("org.sonarsource.cli:sonarqube-cli:${libs.versions.sonarqube.cli.get()}:$sonarQubeCliPlatform")
 }
 
 apply(from = "gradle/intellij-dependency-lock.gradle")
@@ -353,14 +366,6 @@ tasks {
         // Hide the tools installed on the machine from the backend, so tests decide whether a CLI is installed: it gets its
         // own user home, where it still searches the official install locations, and an empty search path instead of
         // PATH (or the system paths on macOS)
-        // SonarQube Cloud is its staging environment in tests, as in the integration tests: the AI Integrations tests sign
-        // the SonarQube CLI in there
-        systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
-        systemProperty("sonarlint.internal.sonarcloud.api.url", "https://api.sc-staging.io")
-        systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.sc-staging.io/")
-        systemProperty("sonarlint.internal.sonarcloud.us.url", "https://us-sc-staging.io")
-        systemProperty("sonarlint.internal.sonarcloud.us.api.url", "https://api.us-sc-staging.io")
-        systemProperty("sonarlint.internal.sonarcloud.us.websocket.url", "wss://events-api.us-sc-staging.io")
         val sloopUserHome = layout.buildDirectory.dir("sloop-user-home").get().asFile
         // The backend splits SONARLINT_JVM_OPTS on spaces, so the user home can only be passed from a path without spaces.
         // Without it, the tests that need this isolation skip themselves.
@@ -372,13 +377,15 @@ tasks {
             systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
             environment("SONARLINT_JVM_OPTS", listOfNotNull(System.getenv("SONARLINT_JVM_OPTS")?.takeIf { it.isNotBlank() },
                 "-Duser.home=${sloopUserHome.absolutePath}", "-Dsonarlint.internal.ai.searchPath=").joinToString(" "))
-            // The real SonarQube CLI, its install script and `sonar integrate` work in the same user home as the backend,
-            // and keep their state and token there instead of in the machine's keychain. Java keeps the IDE's own user.home.
+            // The real SonarQube CLI and `sonar integrate` work in the same user home as the backend, and keep their state and
+            // token there instead of in the machine's keychain. Java keeps the IDE's own user.home.
             environment("HOME", sloopUserHome.absolutePath)
             environment("SONAR_USER_HOME", sloopUserHome.resolve(".sonar").absolutePath)
             environment("SONARQUBE_CLI_KEYCHAIN_FILE", sloopUserHome.resolve("sonarqube-cli-keychain.json").absolutePath)
-            // The tests that sign the CLI in skip without the token: do not reuse results from a run with the other setting
-            inputs.property("sonarCloudItTokenPresent", !System.getenv("SONARCLOUD_IT_TOKEN").isNullOrBlank())
+            // The real SonarQube CLI the AI Integrations tests install, resolved like the backend itself
+            val sonarQubeCli = configurations["sonarqubeCli"]
+            inputs.files(sonarQubeCli)
+            jvmArgumentProviders += CommandLineArgumentProvider { listOf("-Dsonarlint.test.sonarqube.cli=${sonarQubeCli.singleFile.absolutePath}") }
             doFirst {
                 sloopUserHome.deleteRecursively()
                 // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so

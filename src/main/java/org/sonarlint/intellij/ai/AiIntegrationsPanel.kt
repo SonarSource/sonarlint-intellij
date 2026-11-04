@@ -82,6 +82,7 @@ private const val NEEDS_ATTENTION = "Needs attention"
 private const val NOT_DETECTED_STATUS = "Not detected"
 internal const val UNAVAILABLE_STATUS = "Unavailable"
 internal const val INSTALLED_STATUS = "Installed"
+internal const val AUTHENTICATED_STATUS = "Authenticated"
 internal const val INSTALL_CLI_LABEL = "Install SonarQube CLI"
 internal const val SIGN_IN_LABEL = "Sign in"
 internal const val TROUBLESHOOT_LABEL = "Troubleshoot"
@@ -866,7 +867,7 @@ private fun verticalSpace(size: Int): Component = Box.createRigidArea(Dimension(
 private fun horizontalSpace(size: Int): Component = Box.createRigidArea(Dimension(JBUI.scale(size), 0))
 
 private fun CliAuthenticationStatus.displayText() = when (this) {
-    CliAuthenticationStatus.AUTHENTICATED -> "Authenticated"
+    CliAuthenticationStatus.AUTHENTICATED -> AUTHENTICATED_STATUS
     CliAuthenticationStatus.UNAUTHENTICATED -> "Not signed in"
     CliAuthenticationStatus.INVALID -> "Credentials invalid"
     CliAuthenticationStatus.UNVERIFIED -> "Connection not verified"

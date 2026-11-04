@@ -28,7 +28,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.UsernamePasswordDto;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -83,7 +82,7 @@ class ConnectionWizardModelTests {
     model.setServerType(ConnectionWizardModel.ServerType.SONARCLOUD);
 
     var server = model.createConnection();
-    assertThat(server.getHostUrl()).isEqualTo(SONARCLOUD_URL);
+    assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
     assertThat(server.getRegion()).isEqualTo(SonarCloudRegion.EU.name());
     assertThat(server.getOrganizationKey()).isEqualTo("org");
   }
@@ -101,7 +100,7 @@ class ConnectionWizardModelTests {
     server = model.createConnection();
 
     assertThat(server.isEnableProxy()).isTrue();
-    assertThat(server.getHostUrl()).isEqualTo(SONARCLOUD_URL);
+    assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
   }
 
   private static CredentialsService credentialsServiceMock(boolean withToken) {

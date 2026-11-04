@@ -226,18 +226,8 @@ jobs:
         if: runner.environment != 'github-hosted'
         uses: ./.github/actions/point-resolve-at-edge
 
-      - name: Vault Secrets
-        id: secrets
-        uses: SonarSource/vault-action-wrapper@a7fa5fd4a4e4e0f2593f6137c0812cac196cf4ce # 3.7.0
-        with:
-          secrets: |
-            development/team/sonarlint/kv/data/sonarcloud-it token | SONARCLOUD_IT_TOKEN;
-
       - name: Run Tests and Sonar Analysis
         uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
-        env:
-          # The AI Integrations light tests sign the real SonarQube CLI in to SonarQube Cloud staging
-          SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
         with:
           deploy: false
           use-develocity: true

@@ -30,13 +30,11 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.MethodOrderer
-import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
+import org.sonarlint.intellij.ai.AUTHENTICATED_STATUS
 import org.sonarlint.intellij.ai.AiAgentRegistry
 import org.sonarlint.intellij.ai.CHECKING_STATUS
 import org.sonarlint.intellij.ai.CLI_GUIDE_LABEL
@@ -53,7 +51,6 @@ import org.sonarlint.intellij.ai.TROUBLESHOOT_LABEL
 import org.sonarlint.intellij.ai.TerminalCompletion
 import org.sonarlint.intellij.ai.TerminalLaunch
 import org.sonarlint.intellij.ai.UNAVAILABLE_STATUS
-import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -67,13 +64,13 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
-// The fake Claude Code is a shell script and the CLI installs with a Unix script, while the backend only accepts sonar.exe on Windows
+// The fake Claude Code is a shell script, and the tests install the Unix CLI where the backend looks for it
 @DisabledOnOs(OS.WINDOWS)
-// The install test runs first: the other tests reuse the CLI it downloads
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     private val cli = SonarQubeCli()
+    private val sonarQubeServer = FakeSonarQubeServer()
+    private val sonarQubeServerConnection = ServerConnection.newBuilder().setName("Fake SonarQube Server").setHostUrl(sonarQubeServer.url).build()
     private val recordingTerminal = RecordingTerminal()
     private lateinit var terminal: TerminalToolWindowPage
     private val claudeCode = AiAgentRegistry().displayName(AiAgent.CLAUDE_CODE)
@@ -89,7 +86,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     fun closeTerminalAndUninstallCli() {
         terminal.closeAllTabs()
         cli.reset()
-        getService(CredentialsService::class.java).eraseCredentials(sonarQubeCloudConnection)
+        getService(CredentialsService::class.java).eraseCredentials(sonarQubeServerConnection)
+        sonarQubeServer.close()
         TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
 
@@ -104,20 +102,17 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
-    @Order(1)
     fun should_show_cli_as_installed_after_installing_it_from_the_card() {
-        val cliCard = mainToolWindow.openAiIntegrations().sonarQubeCliCard
-        awaitCliCheckFinished(cliCard)
+        val cliCard = startCliInstall()
 
-        // The terminal runs the official install script, which downloads the latest release
-        cliCard.clickButton(INSTALL_CLI_LABEL)
+        // What the install script does, without downloading the CLI
+        cli.install()
+        recordingTerminal.finish(TerminalCompletion.Exited(0))
 
-        awaitUntil(timeoutMs = 180_000) { cliCard.tickedLabels.contains(INSTALLED_STATUS) }
+        awaitUntil { cliCard.tickedLabels.contains(INSTALLED_STATUS) }
         assertThat(cliCard.tickedLabels).contains(INSTALLED_STATUS)
-        assertThat(cli.isInstalled).isTrue()
         assertThat(cliCard.labels).anyMatch { it.endsWith("v${cli.version}") }
         assertThat(cliCard.buttons).doesNotContain(INSTALL_CLI_LABEL)
-        assertThat(terminal.openedTabNames).contains(CLI_TERMINAL_TAB_NAME)
     }
 
     @Test
@@ -211,17 +206,16 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_cli_as_signed_in_after_signing_in_with_the_ide_connection() {
-        assumeTrue(token != null, "SONARCLOUD_IT_TOKEN is not set")
         cli.install()
-        connectToSonarQubeCloud(checkNotNull(token))
+        connectToSonarQubeServer(FakeSonarQubeServer.VALID_TOKEN)
         // The backend signs the CLI in with the connection's token, without a terminal; a terminal would mean a browser login
         replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
 
         cliCard.clickButton(SIGN_IN_LABEL)
 
-        awaitUntil(timeoutMs = 60_000) { cliCard.labels.any { it.contains("Authenticated with ${ORGANIZATION}") } }
-        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${ORGANIZATION}") }
+        awaitUntil { cliCard.labels.any { it.startsWith(AUTHENTICATED_STATUS) } }
+        assertThat(cliCard.labels).describedAs("unanswered: ${sonarQubeServer.unansweredRequests}").anyMatch { it.startsWith(AUTHENTICATED_STATUS) }
         assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
         assertThat(notifications).anyMatch { it.content.contains("SonarQube CLI authenticated") }
         assertThat(recordingTerminal.launchedCommand).isNull()
@@ -230,13 +224,13 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     @Test
     fun should_keep_offering_sign_in_and_report_the_error_when_the_connection_token_is_rejected() {
         cli.install()
-        connectToSonarQubeCloud("not-a-valid-token")
+        connectToSonarQubeServer("not-a-valid-token")
         replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
 
         cliCard.clickButton(SIGN_IN_LABEL)
 
-        awaitUntil(timeoutMs = 60_000) { notifications.isNotEmpty() }
+        awaitUntil { notifications.isNotEmpty() }
         awaitCardReloaded(cliCard)
         assertThat(notifications).anyMatch { it.type == NotificationType.ERROR && it.content.contains("SonarQube CLI authentication failed") }
         assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
@@ -261,9 +255,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_claude_code_integration_as_recorded_after_integrating_it_in_the_terminal() {
-        assumeTrue(token != null, "SONARCLOUD_IT_TOKEN is not set")
         cli.install()
-        cli.signIn(ORGANIZATION, checkNotNull(token))
+        cli.signIn(sonarQubeServer.url, FakeSonarQubeServer.VALID_TOKEN)
         val cliCard = openCliCard()
         cliCard.showAgents()
         awaitUntil { cliCard.hasAgent(claudeCode) }
@@ -272,12 +265,10 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
         claudeRow.clickButton(INTEGRATE_LABEL)
         // `sonar integrate` asks what to install; the recommended set is the default
-        awaitUntil(timeoutMs = 60_000) { terminal.lastTerminalText.contains("Install recommended") }
+        awaitUntil { terminal.lastTerminalText.contains("Install recommended") }
         terminal.typeInLastTerminal("\r")
 
-        awaitUntil(timeoutMs = 120_000) {
-            cliCard.hasAgent(claudeCode) && cliCard.agent(claudeCode).tickedLabels.contains(INTEGRATION_RECORDED_STATUS)
-        }
+        awaitUntil { cliCard.hasAgent(claudeCode) && cliCard.agent(claudeCode).tickedLabels.contains(INTEGRATION_RECORDED_STATUS) }
         assertThat(cliCard.agent(claudeCode).tickedLabels).contains(INTEGRATION_RECORDED_STATUS)
         assertThat(terminal.openedTabNames).contains(CLI_TERMINAL_TAB_NAME)
     }
@@ -298,10 +289,10 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         return cliCard
     }
 
-    /** Creates the SonarQube Cloud connection as the settings do, with [token] saved in the credential store. */
-    private fun connectToSonarQubeCloud(token: String) {
-        getService(CredentialsService::class.java).saveCredentials(sonarQubeCloudConnection.name, Either.forLeft(TokenDto(token)))
-        getGlobalSettings().addServerConnection(sonarQubeCloudConnection)
+    /** Creates the connection to the fake server as the settings do, with [token] saved in the credential store. */
+    private fun connectToSonarQubeServer(token: String) {
+        getService(CredentialsService::class.java).saveCredentials(sonarQubeServerConnection.name, Either.forLeft(TokenDto(token)))
+        getGlobalSettings().addServerConnection(sonarQubeServerConnection)
         ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
             .changed(getGlobalSettings().serverConnections)
     }
@@ -341,12 +332,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     companion object {
-        /** The integration tests' organization on SonarQube Cloud, which is its staging environment in tests, see build.gradle.kts */
-        private const val ORGANIZATION = "sonarlint-it"
-        private val token: String? = System.getenv("SONARCLOUD_IT_TOKEN")?.takeIf { it.isNotBlank() }
-        private val sonarQubeCloudConnection = ServerConnection.newBuilder().setName("SonarQube Cloud staging")
-            .setHostUrl(SONARCLOUD_URL).setOrganizationKey(ORGANIZATION).build()
-
         @JvmStatic
         @BeforeAll
         fun requireIsolatedBackend() {

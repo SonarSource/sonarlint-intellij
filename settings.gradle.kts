@@ -53,6 +53,16 @@ dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
     repositories {
         if (artifactoryUrl.isNotEmpty() && artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+            // The SonarQube CLI is published as plain executables, without a POM
+            maven("$artifactoryUrl/sonarsource") {
+                name = "SonarQube CLI binaries"
+                credentials {
+                    username = artifactoryUsername
+                    password = artifactoryPassword
+                }
+                metadataSources { artifact() }
+                content { includeGroup("org.sonarsource.cli") }
+            }
             maven("$artifactoryUrl/sonarsource") {
                 credentials {
                     username = artifactoryUsername

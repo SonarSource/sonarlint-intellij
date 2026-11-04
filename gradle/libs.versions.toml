@@ -1,5 +1,7 @@
 [versions]
 sonarlint-core = "12.3.0.87938"
+# Latest released SonarQube CLI, run by the AI Integrations light tests
+sonarqube-cli = "1.11.0.16877"
 
 sonar-java = "8.46.0.59609"
 sonar-java-symbolic = "8.16.4.1912"

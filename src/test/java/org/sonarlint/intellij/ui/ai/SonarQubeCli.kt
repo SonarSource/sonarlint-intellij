@@ -27,22 +27,18 @@ import java.util.concurrent.TimeUnit
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import org.apache.commons.io.file.PathUtils
-import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.BackendService
 
 /**
- * The real SonarQube CLI, installed where its official script puts it, in the user home the build gives to the backend
- * (see build.gradle.kts). The build points `HOME`, `SONAR_USER_HOME` and `SONARQUBE_CLI_KEYCHAIN_FILE` there too, so the
- * CLI, its installer and `sonar integrate` never touch the machine's own setup, shell profile or keychain.
+ * The real SonarQube CLI, installed where its official install script puts it, in the user home the build gives to the
+ * backend (see build.gradle.kts). The build points `HOME`, `SONAR_USER_HOME` and `SONARQUBE_CLI_KEYCHAIN_FILE` there too,
+ * so the CLI and `sonar integrate` never touch the machine's own setup or keychain. The CLI itself is the latest release,
+ * which the build resolves from Artifactory (see `sonarqubeCli` in build.gradle.kts).
  */
 class SonarQubeCli {
 
     private val home = sloopUserHome()
     private val installRoot = home.resolve(".local/share/sonarqube-cli")
     private val executable = installRoot.resolve("bin/sonar")
-    // Downloaded once per test run, outside the install location: the user home is wiped at the start of each run
-    private val downloadedExecutable = home.resolve(".sonarqube-cli-download/sonar")
 
     val isInstalled: Boolean
         get() = executable.exists()
@@ -51,16 +47,16 @@ class SonarQubeCli {
     val version: String
         get() = run(listOf(executable.toString(), "--version")).trim()
 
-    /** Installs the latest release. */
+    /** Installs the CLI the build resolved from Artifactory where the official install script puts it. */
     fun install() {
-        val downloaded = download()
         Files.createDirectories(executable.parent)
-        Files.copy(downloaded, executable, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+        Files.copy(releasedCli(), executable, StandardCopyOption.REPLACE_EXISTING)
+        check(executable.toFile().setExecutable(true)) { "Cannot make $executable executable" }
     }
 
-    /** Signs in to SonarQube Cloud, as `sonar auth login` does after the browser flow. */
-    fun signIn(organization: String, token: String) {
-        run(listOf(executable.toString(), "auth", "login", "--with-token", "--server", SONARCLOUD_URL, "--org", organization), input = token + "\n")
+    /** Signs in to [serverUrl], as `sonar auth login` does after the browser flow. */
+    fun signIn(serverUrl: String, token: String) {
+        run(listOf(executable.toString(), "auth", "login", "--with-token", "--server", serverUrl), input = token + "\n")
     }
 
     /** Damages the installed executable, so that the CLI no longer starts. */
@@ -68,15 +64,8 @@ class SonarQubeCli {
         Files.writeString(executable, "not an executable")
     }
 
-    /**
-     * Removes the CLI, its state, its token and what `sonar integrate claude` installed. A CLI installed from the card is
-     * kept for the next tests instead, so a test run downloads the CLI only once.
-     */
+    /** Removes the CLI, its state, its token and what `sonar integrate claude` installed. */
     fun reset() {
-        if (isInstalled && !downloadedExecutable.exists()) {
-            Files.createDirectories(downloadedExecutable.parent)
-            Files.move(executable, downloadedExecutable)
-        }
         deleteDirectoryIfExists(installRoot)
         deleteDirectoryIfExists(home.resolve(".sonar"))
         home.resolve("sonarqube-cli-keychain.json").deleteIfExists()
@@ -84,19 +73,8 @@ class SonarQubeCli {
         home.resolve(".claude.json").deleteIfExists()
     }
 
-    /**
-     * The latest release, kept from the card's install test, or else installed with the backend's install command, the one
-     * the card runs in the terminal.
-     */
-    private fun download(): Path {
-        if (!downloadedExecutable.exists()) {
-            val installCommand = getService(BackendService::class.java).prepareInstallCliCommand().get(30, TimeUnit.SECONDS)
-            run(listOf(installCommand.executable) + installCommand.arguments)
-            Files.createDirectories(downloadedExecutable.parent)
-            Files.move(executable, downloadedExecutable, StandardCopyOption.REPLACE_EXISTING)
-        }
-        return downloadedExecutable
-    }
+    private fun releasedCli(): Path =
+        Path.of(checkNotNull(System.getProperty(RELEASED_CLI_PROPERTY)) { "The build did not provide the SonarQube CLI, see build.gradle.kts" })
 
     private fun deleteDirectoryIfExists(directory: Path) {
         if (directory.exists()) {
@@ -116,6 +94,10 @@ class SonarQubeCli {
         val text = output.get(10, TimeUnit.SECONDS)
         check(process.exitValue() == 0) { "Failed with exit code ${process.exitValue()}: $command\n$text" }
         return text
+    }
+
+    private companion object {
+        const val RELEASED_CLI_PROPERTY = "sonarlint.test.sonarqube.cli"
     }
 }
 
