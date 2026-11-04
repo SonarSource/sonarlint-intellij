@@ -29,6 +29,8 @@ import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.readLines
 import org.apache.commons.io.file.PathUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 
 /**
  * The real SonarQube CLI, installed where its official script puts it, in the user home the build gives to the backend
@@ -100,10 +102,14 @@ class SonarQubeCli {
         }
     }
 
-    /** The latest release, downloaded with the official script, as the backend's install command does. */
+    /**
+     * The latest release, installed once per test run with the backend's install command, the one the card runs in the
+     * terminal, then moved out of the install location to leave room for the wrapper.
+     */
     private fun download(): Path {
         if (!downloadedExecutable.exists()) {
-            run(listOf("/bin/bash", "-o", "pipefail", "-c", "curl --fail --silent --show-error --location $INSTALL_SCRIPT_URL | bash"), executable = null)
+            val installCommand = getService(BackendService::class.java).prepareInstallCliCommand().get(30, TimeUnit.SECONDS)
+            run(listOf(installCommand.executable) + installCommand.arguments, executable = null)
             Files.createDirectories(downloadedExecutable.parent)
             Files.move(executable, downloadedExecutable, StandardCopyOption.REPLACE_EXISTING)
         }
@@ -147,8 +153,6 @@ class SonarQubeCli {
     }
 
     companion object {
-        /** The script the backend's install command runs. */
-        private const val INSTALL_SCRIPT_URL = "https://raw.githubusercontent.com/SonarSource/sonarqube-cli/refs/heads/master/user-scripts/install.sh"
         const val STAGING_URL = "https://sc-staging.io"
         const val ORGANIZATION = "sonarlint-it"
 
