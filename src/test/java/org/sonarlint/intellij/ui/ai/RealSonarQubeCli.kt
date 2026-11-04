@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.ai
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.deleteIfExists
@@ -79,11 +80,16 @@ class RealSonarQubeCli {
     private fun run(arguments: List<String>, input: String? = null, executable: Path? = this.executable): String {
         val command = listOfNotNull(executable?.toString()) + arguments
         val process = ProcessBuilder(command).directory(home.toFile()).redirectErrorStream(true).start()
+        // Read the output on another thread: reading it here would block until the command ends, past the timeout
+        val output = CompletableFuture.supplyAsync { process.inputStream.bufferedReader().readText() }
         process.outputStream.use { stdin -> input?.let { stdin.write(it.toByteArray()) } }
-        val output = process.inputStream.bufferedReader().readText()
-        check(process.waitFor(2, TimeUnit.MINUTES)) { "Timed out: $arguments" }
-        check(process.exitValue() == 0) { "Failed with exit code ${process.exitValue()}: $arguments\n$output" }
-        return output
+        if (!process.waitFor(2, TimeUnit.MINUTES)) {
+            process.destroyForcibly()
+            error("Timed out: $arguments")
+        }
+        val text = output.get(10, TimeUnit.SECONDS)
+        check(process.exitValue() == 0) { "Failed with exit code ${process.exitValue()}: $arguments\n$text" }
+        return text
     }
 
     companion object {
