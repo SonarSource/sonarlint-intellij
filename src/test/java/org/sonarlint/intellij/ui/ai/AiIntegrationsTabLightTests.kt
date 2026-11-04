@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.ai
 
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
@@ -52,11 +53,19 @@ import org.sonarlint.intellij.ai.TROUBLESHOOT_LABEL
 import org.sonarlint.intellij.ai.TerminalCompletion
 import org.sonarlint.intellij.ai.TerminalLaunch
 import org.sonarlint.intellij.ai.UNAVAILABLE_STATUS
+import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings.getGlobalSettings
+import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.credentials.CredentialsService
 import org.sonarlint.intellij.fixtures.awaitUntil
 import org.sonarlint.intellij.fixtures.pumpEdt
+import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.ui.page.AiIntegrationCardPage
 import org.sonarlint.intellij.ui.page.TerminalToolWindowPage
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
+import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
 // The fake Claude Code is a shell script and the CLI installs with a Unix script, while the backend only accepts sonar.exe on Windows
 @DisabledOnOs(OS.WINDOWS)
@@ -80,7 +89,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     fun closeTerminalAndUninstallCli() {
         terminal.closeAllTabs()
         cli.reset()
-        SonarQubeCloudStaging.removeConnectionToken()
+        getService(CredentialsService::class.java).eraseCredentials(sonarQubeCloudConnection)
         TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
 
@@ -202,18 +211,17 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_cli_as_signed_in_after_signing_in_with_the_ide_connection() {
-        val token = SonarQubeCloudStaging.token
         assumeTrue(token != null, "SONARCLOUD_IT_TOKEN is not set")
         cli.install()
-        SonarQubeCloudStaging.addConnection(checkNotNull(token))
+        connectToSonarQubeCloud(checkNotNull(token))
         // The backend signs the CLI in with the connection's token, without a terminal; a terminal would mean a browser login
         replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
 
         cliCard.clickButton(SIGN_IN_LABEL)
 
-        awaitUntil(timeoutMs = 60_000) { cliCard.labels.any { it.contains("Authenticated with ${SonarQubeCloudStaging.ORGANIZATION}") } }
-        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${SonarQubeCloudStaging.ORGANIZATION}") }
+        awaitUntil(timeoutMs = 60_000) { cliCard.labels.any { it.contains("Authenticated with ${ORGANIZATION}") } }
+        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${ORGANIZATION}") }
         assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
         assertThat(notifications).anyMatch { it.content.contains("SonarQube CLI authenticated") }
         assertThat(recordingTerminal.launchedCommand).isNull()
@@ -222,7 +230,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     @Test
     fun should_keep_offering_sign_in_and_report_the_error_when_the_connection_token_is_rejected() {
         cli.install()
-        SonarQubeCloudStaging.addConnection("not-a-valid-token")
+        connectToSonarQubeCloud("not-a-valid-token")
         replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
 
@@ -253,9 +261,9 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_claude_code_integration_as_recorded_after_integrating_it_in_the_terminal() {
-        assumeTrue(SonarQubeCloudStaging.token != null, "SONARCLOUD_IT_TOKEN is not set")
+        assumeTrue(token != null, "SONARCLOUD_IT_TOKEN is not set")
         cli.install()
-        cli.signIn()
+        cli.signIn(ORGANIZATION, checkNotNull(token))
         val cliCard = openCliCard()
         cliCard.showAgents()
         awaitUntil { cliCard.hasAgent(claudeCode) }
@@ -288,6 +296,14 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         awaitUntil { recordingTerminal.launchedCommand != null }
         assertThat(recordingTerminal.launchedCommand?.arguments.orEmpty().joinToString(" ")).contains("user-scripts/install.sh")
         return cliCard
+    }
+
+    /** Creates the SonarQube Cloud connection as the settings do, with [token] saved in the credential store. */
+    private fun connectToSonarQubeCloud(token: String) {
+        getService(CredentialsService::class.java).saveCredentials(sonarQubeCloudConnection.name, Either.forLeft(TokenDto(token)))
+        getGlobalSettings().addServerConnection(sonarQubeCloudConnection)
+        ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+            .changed(getGlobalSettings().serverConnections)
     }
 
     /** Opens the tab with a CLI already installed. */
@@ -325,6 +341,12 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     companion object {
+        /** The integration tests' organization on SonarQube Cloud, which is its staging environment in tests, see build.gradle.kts */
+        private const val ORGANIZATION = "sonarlint-it"
+        private val token: String? = System.getenv("SONARCLOUD_IT_TOKEN")?.takeIf { it.isNotBlank() }
+        private val sonarQubeCloudConnection = ServerConnection.newBuilder().setName("SonarQube Cloud staging")
+            .setHostUrl(SONARCLOUD_URL).setOrganizationKey(ORGANIZATION).build()
+
         @JvmStatic
         @BeforeAll
         fun requireIsolatedBackend() {

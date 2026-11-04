@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import org.apache.commons.io.file.PathUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 
@@ -57,12 +58,9 @@ class SonarQubeCli {
         Files.copy(downloaded, executable, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
     }
 
-    /** Signs in to SonarQube Cloud staging, as `sonar auth login` does after the browser flow. */
-    fun signIn() {
-        run(
-            listOf(executable.toString(), "auth", "login", "--with-token", "--server", SonarQubeCloudStaging.URL, "--org", SonarQubeCloudStaging.ORGANIZATION),
-            input = checkNotNull(SonarQubeCloudStaging.token) + "\n",
-        )
+    /** Signs in to SonarQube Cloud, as `sonar auth login` does after the browser flow. */
+    fun signIn(organization: String, token: String) {
+        run(listOf(executable.toString(), "auth", "login", "--with-token", "--server", SONARCLOUD_URL, "--org", organization), input = token + "\n")
     }
 
     /** Damages the installed executable, so that the CLI no longer starts. */
