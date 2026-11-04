@@ -33,7 +33,7 @@ Rider C# analysis needs a .NET 6 SDK on `PATH` so OmniSharp can start (`dotnet O
 One scheduled workflow, one plugin build:
 
 - IntelliJ **min** × 4 suites, CLion min+latest, Rider min+latest, PhpStorm latest, one PyCharm (Professional), GoLand latest, IntelliJ Ultimate min (PLSQL)
-- IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion` (Rider uses `eapRiderIdeVersion` when set)
+- IntelliJ Ultimate × 4 suites, CLion, and Rider against `eapIdeVersion` (Rider and CLion use `eapRiderIdeVersion` and `eapCLionIdeVersion` when set)
 
 Flavor jobs set `TEST_SUITE` to the matching JUnit tag so they do not discover IntelliJ-only classes (for example PLSQL on Rider, which ships the Database plugin). Failures notify Slack; they do not block PR promotion. PRs already cover latest IntelliJ (and CLion/Rider when those modules change). After this workflow exists on `master`, run it on demand from Actions → Integration Tests Weekly → Run workflow (`workflow_dispatch`). GitHub only lists that control once the file is on the default branch.
 
@@ -54,14 +54,15 @@ The matrix job rejects malformed versions and suites the product cannot run. `IC
 
 ```properties
 minSupportedIdeVersion=2024.2
-latestStableIdeVersion=2025.3.2   # bump when JetBrains ships a new stable
-eapIdeVersion=2026.3-EAP          # must match the Repox artifact name
-# Optional per-product overrides when patch numbers diverge
+latestStableIdeVersion=2026.2.4   # bump when JetBrains ships a new stable
+eapIdeVersion=263.7307.44         # EAPs are named by build number
+# Per-product overrides when versions diverge (latestRiderIdeVersion and latestPyCharmIdeVersion also exist)
 minRiderIdeVersion=2024.2.7
-latestRiderIdeVersion=2025.3.2
-eapRiderIdeVersion=2026.3-EAP
-latestPyCharmIdeVersion=2025.3.2.1
+eapRiderIdeVersion=2026.3-EAP9-263.7307.100.Checked
+eapCLionIdeVersion=263.7307.35
 ```
+
+Each value must match the Linux tarball name on download.jetbrains.com, which Repox mirrors as `jetbrains-download`. For EAPs, take it from the [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU,CL,RD&latest=true&type=eap): for example `idea-263.7307.44.tar.gz` gives `263.7307.44`, and `JetBrains.Rider-2026.3-EAP9-263.7307.100.Checked.tar.gz` gives `2026.3-EAP9-263.7307.100.Checked`.
 
 ## Local run
 

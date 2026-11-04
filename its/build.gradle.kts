@@ -132,11 +132,15 @@ tasks {
 }
 
 tasks.named<Test>("test") {
-    javaLauncher.set(
-        javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
-    )
+    // The IntelliJ Platform Gradle Plugin runs the tests on the selected IDE's bundled runtime, which the platform test
+    // framework needs (JBR 25 from 2026.1). That runtime lacks modules SonarQube's Elasticsearch needs (jdk.jlink),
+    // so Orchestrator starts SonarQube with a full JDK 21 instead (see SonarQubeConfiguration.kt).
+    val java21 = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        listOf("-Dits.sonarqube.java.home=${java21.get().metadata.installationPath.asFile.absolutePath}")
+    }
     // Keep Orchestrator on SaaS: Edge returns HTTP 404 for api/search/versions on
     // sonarsource-releases, which Orchestrator uses to resolve SQ distributions.
     systemProperty("orchestrator.artifactory.url", "https://repox.jfrog.io/repox")

@@ -19,21 +19,16 @@
  */
 package org.sonarlint.intellij.its.tests.flavor
 
-import com.intellij.remoterobot.fixtures.ComponentFixture
-import com.intellij.remoterobot.search.locators.byXpath
-import java.awt.Point
-import java.time.Duration
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.findElement
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.analyzeCurrentFileFromToolWindow
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
+import org.sonarlint.intellij.its.utils.CLionUtils.loadCMakeProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openExistingProject
 import org.sonarlint.intellij.its.utils.OpeningUtils.openFile
-import org.sonarlint.intellij.its.utils.optionalStep
 
 @Tag("CLion")
 @EnabledIf("isCLion")
@@ -44,36 +39,15 @@ class CLionTests : BaseUiTest() {
         openExistingProject("sample-cpp")
 
         openFile("CMakeLists.txt")
-
-        optionalStep {
-            idea {
-                actionHyperLink("Load CMake project") {
-                    click()
-                }
-                // from 2021.1+
-                dialog("Trust CMake Project?", Duration.ofSeconds(5)) {
-                    button("Trust Project").click()
-                }
-                dialog("Open Project Wizard", Duration.ofSeconds(5)) {
-                    button("OK").click()
-                }
-            }
-        }
-
-        optionalStep {
-            idea {
-                actionHyperLink("Fix\u2026") {
-                    click()
-                }
-                findElement<ComponentFixture>(byXpath("//div[@class='MyList']")).click(Point(10, 10))
-            }
-        }
+        loadCMakeProject()
 
         idea {
             waitBackgroundTasksFinished()
         }
 
         openFile("main.cpp")
+        // The analysis triggered when the file opens can run before CLion has set up the new project, and is not retried
+        analyzeCurrentFileFromToolWindow()
 
         verifyCurrentFileTabContainsMessages(
             "Found 4 issues",

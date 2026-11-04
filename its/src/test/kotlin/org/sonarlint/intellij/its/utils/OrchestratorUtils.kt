@@ -38,7 +38,7 @@ object OrchestratorUtils {
     private const val SONARLINT_PWD = "sonarlintpwd"
 
     fun defaultBuilderEnv(): OrchestratorExtensionBuilder {
-        return OrchestratorExtension.builderEnv()
+        return OrchestratorExtension.builder(sonarQubeConfiguration())
             .defaultForceAuthentication()
             .useDefaultAdminCredentialsForBuilds(true)
             .setSonarVersion(SONAR_VERSION)

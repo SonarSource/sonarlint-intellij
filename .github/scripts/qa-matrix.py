@@ -95,12 +95,13 @@ def weekly_matrix(versions):
     rider_min = versions.get("minRiderIdeVersion") or minimum
     rider_latest = versions.get("latestRiderIdeVersion") or latest
     rider_eap = versions.get("eapRiderIdeVersion") or eap
+    clion_eap = versions.get("eapCLionIdeVersion") or eap
     pycharm = versions.get("latestPyCharmIdeVersion") or latest
 
     flavors = [
         (f"CL-{minimum}", "CLion"),
         (f"CL-{latest}", "CLion"),
-        (f"CL-{eap}", "CLion"),
+        (f"CL-{clion_eap}", "CLion"),
         (f"RD-{rider_min}", "Rider"),
         (f"RD-{rider_latest}", "Rider"),
         (f"RD-{rider_eap}", "Rider"),

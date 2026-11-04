@@ -47,6 +47,14 @@ class QaMatrixTest(unittest.TestCase):
         self.git("commit", "-m", "Test fixture")
         return self.git("rev-parse", "HEAD")
 
+    def eap_versions(self):
+        """EAP versions pinned in the copied gradle.properties; EAPs are named by build number, not "-EAP"."""
+        lines = [line for line in (self.repo / "gradle.properties").read_text().splitlines()
+                 if "=" in line and not line.lstrip().startswith("#")]
+        # Values may carry an inline comment, as qa-matrix.py allows
+        properties = {key.strip(): value.split("#")[0].strip() for key, value in (line.split("=", 1) for line in lines)}
+        return {properties[key] for key in ("eapIdeVersion", "eapRiderIdeVersion", "eapCLionIdeVersion") if properties.get(key)}
+
     def run_matrix(self, mode="pr", **env):
         output = Path(self.env["GITHUB_OUTPUT"])
         output.unlink(missing_ok=True)
@@ -169,6 +177,7 @@ eapIdeVersion=2026.3-EAP
 minRiderIdeVersion=2024.2.7
 latestRiderIdeVersion=2025.3.3
 eapRiderIdeVersion=2026.3.1-EAP
+eapCLionIdeVersion=263.7307.35
 latestPyCharmIdeVersion=2025.3.2.1
 """)
         result, values = self.run_matrix("weekly")
@@ -178,6 +187,7 @@ latestPyCharmIdeVersion=2025.3.2.1
                          [job["ide_version"] for job in jobs if job["test_suite"] == "Rider"])
         self.assertIn({"ide_version": "PY-2025.3.2.1", "test_suite": "PyCharm"}, jobs)
         self.assertIn({"ide_version": "CL-2025.3.2", "test_suite": "CLion"}, jobs)
+        self.assertIn({"ide_version": "CL-263.7307.35", "test_suite": "CLion"}, jobs)
 
     def test_blank_product_overrides_use_shared_versions(self):
         (self.repo / "gradle.properties").write_text("""
@@ -187,6 +197,7 @@ eapIdeVersion=2026.3-EAP
 minRiderIdeVersion=
 latestRiderIdeVersion=
 eapRiderIdeVersion=
+eapCLionIdeVersion=
 latestPyCharmIdeVersion=
 """)
         result, values = self.run_matrix("weekly")
@@ -195,6 +206,7 @@ latestPyCharmIdeVersion=
         self.assertEqual(["RD-2024.2", "RD-2025.3.2", "RD-2026.3-EAP"],
                          [job["ide_version"] for job in jobs if job["test_suite"] == "Rider"])
         self.assertIn({"ide_version": "PY-2025.3.2", "test_suite": "PyCharm"}, jobs)
+        self.assertIn({"ide_version": "CL-2026.3-EAP", "test_suite": "CLion"}, jobs)
 
     def test_weekly_matrix_keeps_minimum_flavor_and_eap_coverage(self):
         result, values = self.run_matrix("weekly")
@@ -204,7 +216,8 @@ latestPyCharmIdeVersion=
         self.assertEqual(18, len({(job["ide_version"], job["test_suite"]) for job in jobs}))
         versions = [job["ide_version"] for job in jobs]
         self.assertEqual(4, sum(version.startswith("IC-") for version in versions))
-        eap_products = [version.split("-", 1)[0] for version in versions if version.endswith("-EAP")]
+        eap_versions = self.eap_versions()
+        eap_products = [version.split("-", 1)[0] for version in versions if version.split("-", 1)[1] in eap_versions]
         self.assertCountEqual(["IU"] * 4 + ["RD", "CL"], eap_products)
         self.assertIn("PLSQL", [job["test_suite"] for job in jobs])
 
