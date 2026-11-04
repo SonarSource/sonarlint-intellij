@@ -225,7 +225,13 @@ tasks.named<VerifyPluginTask>("verifyPlugin") {
         verificationReportsDirectory.get().asFile.listFiles().orEmpty()
             .filter { ideReport -> listOf("IC-", "IU-", "AI-").any(ideReport.name::startsWith) }
             .forEach { ideReport ->
-                check(ideReport.walkTopDown().none { it.name == "ignored-problems.txt" && it.length() > 0 }) {
+                // Reports also contain automatically ignored, documented API changes.
+                // Only reject the explicit Java exclusions from ignoredProblemsFile.
+                check(ideReport.walkTopDown().none { report ->
+                    report.name == "ignored-problems.txt" && report.useLines { lines ->
+                        lines.any { it.startsWith("because the problem is ignored by RegExp pattern:") }
+                    }
+                }) {
                     "Optional Java API problems were excluded in ${ideReport.name}"
                 }
             }
