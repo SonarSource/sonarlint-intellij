@@ -29,8 +29,8 @@ import java.util.List;
 
 /**
  * The wrapper around the real SonarQube CLI that the backend and the IDE terminal run in AiIntegrationsTabLightTests,
- * through the launcher script written by {@link WrappedSonarQubeCli}. It passes every command on to the real CLI, except for what the real one
- * cannot do on demand in a test:
+ * through the launcher script written by {@link SonarQubeCli}. It passes every command on to the real CLI, except for
+ * what the real one cannot do on demand in a test:
  * <ul>
  *   <li>a damaged installation: `sonar --version` fails;</li>
  *   <li>a failing sign-in: the next `sonar auth login` exits with a given code;</li>
@@ -39,13 +39,13 @@ import java.util.List;
  * </ul>
  * Only uses the JDK, so it runs with the compiled test classes as the only classpath entry.
  */
-public final class WrappedSonarQubeCliMain {
+public final class SonarQubeCliWrapperMain {
 
-  static final String REAL_EXECUTABLE_PROPERTY = "wrapped.sonar.realExecutable";
-  static final String STATE_DIRECTORY_PROPERTY = "wrapped.sonar.directory";
-  static final String COMMAND_LOG_PROPERTY = "wrapped.sonar.commandLog";
-  static final String SERVER_PROPERTY = "wrapped.sonar.server";
-  static final String ORGANIZATION_PROPERTY = "wrapped.sonar.organization";
+  static final String REAL_EXECUTABLE_PROPERTY = "sonarqube.cli.wrapper.realExecutable";
+  static final String STATE_DIRECTORY_PROPERTY = "sonarqube.cli.wrapper.directory";
+  static final String COMMAND_LOG_PROPERTY = "sonarqube.cli.wrapper.commandLog";
+  static final String SERVER_PROPERTY = "sonarqube.cli.wrapper.server";
+  static final String ORGANIZATION_PROPERTY = "sonarqube.cli.wrapper.organization";
 
   /** Marks a damaged installation. */
   static final String BROKEN_FILE = "broken";
@@ -54,7 +54,7 @@ public final class WrappedSonarQubeCliMain {
 
   static final String TOKEN_VARIABLE = "SONARCLOUD_IT_TOKEN";
 
-  private WrappedSonarQubeCliMain() {
+  private SonarQubeCliWrapperMain() {
   }
 
   public static void main(String[] args) throws IOException, InterruptedException {
@@ -70,7 +70,7 @@ public final class WrappedSonarQubeCliMain {
       failIfRequested(stateDirectory);
       var token = System.getenv(TOKEN_VARIABLE);
       if (token == null || token.isBlank()) {
-        System.err.println("wrapped sonar: " + TOKEN_VARIABLE + " is not set, cannot sign in");
+        System.err.println("sonar wrapper: " + TOKEN_VARIABLE + " is not set, cannot sign in");
         System.exit(1);
       }
       arguments = List.of("auth", "login", "--with-token",
@@ -89,7 +89,7 @@ public final class WrappedSonarQubeCliMain {
     if (Files.exists(failure)) {
       var exitCode = Integer.parseInt(Files.readString(failure).trim());
       Files.delete(failure);
-      System.err.println("wrapped sonar: failing as requested");
+      System.err.println("sonar wrapper: failing as requested");
       System.exit(exitCode);
     }
   }
