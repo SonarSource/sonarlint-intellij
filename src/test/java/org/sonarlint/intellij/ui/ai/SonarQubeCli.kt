@@ -22,12 +22,10 @@ package org.sonarlint.intellij.ui.ai
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
-import kotlin.io.path.readLines
 import org.apache.commons.io.file.PathUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
@@ -36,79 +34,71 @@ import org.sonarlint.intellij.core.BackendService
  * The real SonarQube CLI, installed where its official script puts it, in the user home the build gives to the backend
  * (see build.gradle.kts). The build points `HOME`, `SONAR_USER_HOME` and `SONARQUBE_CLI_KEYCHAIN_FILE` there too, so the
  * CLI, its installer and `sonar integrate` never touch the machine's own setup, shell profile or keychain.
- *
- * [install] puts a thin wrapper there, which passes every command on to the real CLI (see [SonarQubeCliWrapperMain]).
- * It records the commands, can break the installation or fail the next sign-in on demand, and signs in to SonarQube Cloud
- * staging with the integration tests' token, `SONARCLOUD_IT_TOKEN`, where the real `sonar auth login` would open a
- * browser.
  */
 class SonarQubeCli {
 
     private val home = sloopUserHome()
     private val installRoot = home.resolve(".local/share/sonarqube-cli")
-    private val binDirectory = installRoot.resolve("bin")
-    private val executable = binDirectory.resolve("sonar")
+    private val executable = installRoot.resolve("bin/sonar")
     // Downloaded once per test run, outside the install location: the user home is wiped at the start of each run
     private val downloadedExecutable = home.resolve(".sonarqube-cli-download/sonar")
-    private val commandLog = home.resolve("sonarqube-cli-commands.log")
 
     val isInstalled: Boolean
         get() = executable.exists()
 
     /** The version `sonar --version` prints, e.g. "1.11.0". */
     val version: String
-        get() = run(listOf("--version")).trim()
+        get() = run(listOf(executable.toString(), "--version")).trim()
 
-    /** Arguments of every command the backend or the terminal ran through the wrapper, oldest first. */
-    val receivedCommands: List<String>
-        get() = if (commandLog.exists()) commandLog.readLines() else emptyList()
-
-    /** Installs the latest release, behind the wrapper. */
+    /** Installs the latest release. */
     fun install() {
-        val realExecutable = download()
-        Files.createDirectories(binDirectory)
-        Files.writeString(executable, "#!/bin/sh\nexec ${wrapperCommand(realExecutable)} \"${'$'}@\"\n")
-        Files.setPosixFilePermissions(executable, PosixFilePermissions.fromString("rwxr-xr-x"))
+        val downloaded = download()
+        Files.createDirectories(executable.parent)
+        Files.copy(downloaded, executable, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
     }
 
-    /** Signs in to SonarQube Cloud staging, as `sonar auth login` would after the browser flow. */
+    /** Signs in to SonarQube Cloud staging, as `sonar auth login` does after the browser flow. */
     fun signIn() {
-        run(listOf("auth", "login", "--with-token", "--server", STAGING_URL, "--org", ORGANIZATION), input = checkNotNull(token) + "\n")
+        run(
+            listOf(executable.toString(), "auth", "login", "--with-token", "--server", SonarQubeCloudStaging.URL, "--org", SonarQubeCloudStaging.ORGANIZATION),
+            input = checkNotNull(SonarQubeCloudStaging.token) + "\n",
+        )
     }
 
-    /** Makes `sonar --version` fail, as a damaged installation would. */
+    /** Damages the installed executable, so that the CLI no longer starts. */
     fun breakInstallation() {
-        Files.writeString(binDirectory.resolve(SonarQubeCliWrapperMain.BROKEN_FILE), "")
-    }
-
-    /** Makes the next `sonar auth login` exit with [exitCode] and change nothing. */
-    fun failNextSignIn(exitCode: Int) {
-        Files.writeString(binDirectory.resolve(SonarQubeCliWrapperMain.FAIL_NEXT_SIGN_IN_FILE), exitCode.toString())
+        Files.writeString(executable, "not an executable")
     }
 
     /**
-     * Removes the CLI, its state, its token and what `sonar integrate claude` installed. A real CLI installed from the card
-     * is kept for the next tests instead, so a test run downloads the CLI only once.
+     * Removes the CLI, its state, its token and what `sonar integrate claude` installed. A CLI installed from the card is
+     * kept for the next tests instead, so a test run downloads the CLI only once.
      */
     fun reset() {
-        keepRealCliInstalledFromTheCard()
+        if (isInstalled && !downloadedExecutable.exists()) {
+            Files.createDirectories(downloadedExecutable.parent)
+            Files.move(executable, downloadedExecutable)
+        }
         deleteDirectoryIfExists(installRoot)
-        commandLog.deleteIfExists()
         deleteDirectoryIfExists(home.resolve(".sonar"))
         home.resolve("sonarqube-cli-keychain.json").deleteIfExists()
         deleteDirectoryIfExists(home.resolve(".claude"))
         home.resolve(".claude.json").deleteIfExists()
     }
 
-    private fun keepRealCliInstalledFromTheCard() {
-        if (isInstalled && !isWrapper(executable) && !downloadedExecutable.exists()) {
+    /**
+     * The latest release, kept from the card's install test, or else installed with the backend's install command, the one
+     * the card runs in the terminal.
+     */
+    private fun download(): Path {
+        if (!downloadedExecutable.exists()) {
+            val installCommand = getService(BackendService::class.java).prepareInstallCliCommand().get(30, TimeUnit.SECONDS)
+            run(listOf(installCommand.executable) + installCommand.arguments)
             Files.createDirectories(downloadedExecutable.parent)
-            Files.move(executable, downloadedExecutable)
+            Files.move(executable, downloadedExecutable, StandardCopyOption.REPLACE_EXISTING)
         }
+        return downloadedExecutable
     }
-
-    /** The wrapper is a script, while the real CLI is a native executable. */
-    private fun isWrapper(file: Path) = Files.newInputStream(file).use { it.readNBytes(2) }.contentEquals("#!".toByteArray())
 
     private fun deleteDirectoryIfExists(directory: Path) {
         if (directory.exists()) {
@@ -116,64 +106,18 @@ class SonarQubeCli {
         }
     }
 
-    /**
-     * The latest release, kept from the card's install test, or else installed with the backend's install command, the one
-     * the card runs in the terminal. It is kept out of the install location to leave room for the wrapper.
-     */
-    private fun download(): Path {
-        if (!downloadedExecutable.exists()) {
-            val installCommand = getService(BackendService::class.java).prepareInstallCliCommand().get(30, TimeUnit.SECONDS)
-            run(listOf(installCommand.executable) + installCommand.arguments, executable = null)
-            Files.createDirectories(downloadedExecutable.parent)
-            Files.move(executable, downloadedExecutable, StandardCopyOption.REPLACE_EXISTING)
-        }
-        return downloadedExecutable
-    }
-
-    /** Runs [SonarQubeCliWrapperMain] on the test JVM's runtime, with the compiled test classes as its only classpath entry. */
-    private fun wrapperCommand(realExecutable: Path): String {
-        val java = Path.of(System.getProperty("java.home"), "bin", "java")
-        val testClasses = classpathRootOf(SonarQubeCliWrapperMain::class.java)
-        return listOf(
-            java.toString(), "-cp", testClasses.toString(),
-            "-D${SonarQubeCliWrapperMain.REAL_EXECUTABLE_PROPERTY}=$realExecutable",
-            "-D${SonarQubeCliWrapperMain.STATE_DIRECTORY_PROPERTY}=$binDirectory",
-            "-D${SonarQubeCliWrapperMain.COMMAND_LOG_PROPERTY}=$commandLog",
-            "-D${SonarQubeCliWrapperMain.SERVER_PROPERTY}=$STAGING_URL",
-            "-D${SonarQubeCliWrapperMain.ORGANIZATION_PROPERTY}=$ORGANIZATION",
-            SonarQubeCliWrapperMain::class.java.name,
-        ).joinToString(" ") { "\"$it\"" }
-    }
-
-    /** The directory a class was compiled to; the IDE test class loader does not tell it through the code source. */
-    private fun classpathRootOf(type: Class<*>): Path {
-        val classFile = Path.of(checkNotNull(type.getResource("${type.simpleName}.class")) { "No class file for $type" }.toURI())
-        return type.packageName.split('.').fold(classFile.parent) { directory, _ -> directory.parent }
-    }
-
-    private fun run(arguments: List<String>, input: String? = null, executable: Path? = this.executable): String {
-        val command = listOfNotNull(executable?.toString()) + arguments
+    private fun run(command: List<String>, input: String? = null): String {
         val process = ProcessBuilder(command).directory(home.toFile()).redirectErrorStream(true).start()
         // Read the output on another thread: reading it here would block until the command ends, past the timeout
         val output = CompletableFuture.supplyAsync { process.inputStream.bufferedReader().readText() }
         process.outputStream.use { stdin -> input?.let { stdin.write(it.toByteArray()) } }
         if (!process.waitFor(2, TimeUnit.MINUTES)) {
             process.destroyForcibly()
-            error("Timed out: $arguments")
+            error("Timed out: $command")
         }
         val text = output.get(10, TimeUnit.SECONDS)
-        check(process.exitValue() == 0) { "Failed with exit code ${process.exitValue()}: $arguments\n$text" }
+        check(process.exitValue() == 0) { "Failed with exit code ${process.exitValue()}: $command\n$text" }
         return text
-    }
-
-    companion object {
-        const val STAGING_URL = "https://sc-staging.io"
-        const val ORGANIZATION = "sonarlint-it"
-
-        private val token: String? = System.getenv(SonarQubeCliWrapperMain.TOKEN_VARIABLE)?.takeIf { it.isNotBlank() }
-
-        /** False without the staging token, e.g. on a developer machine. */
-        val canSignIn: Boolean = token != null
     }
 }
 

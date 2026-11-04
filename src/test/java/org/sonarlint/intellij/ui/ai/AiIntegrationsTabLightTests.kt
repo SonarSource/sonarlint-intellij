@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.ai
 
 import com.intellij.notification.Notification
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
@@ -57,7 +58,7 @@ import org.sonarlint.intellij.ui.page.AiIntegrationCardPage
 import org.sonarlint.intellij.ui.page.TerminalToolWindowPage
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
-// The CLI wrapper and the fake Claude Code are shell scripts, while the backend only accepts sonar.exe on Windows
+// The fake Claude Code is a shell script and the CLI installs with a Unix script, while the backend only accepts sonar.exe on Windows
 @DisabledOnOs(OS.WINDOWS)
 // The install test runs first: the other tests reuse the CLI it downloads
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
@@ -79,6 +80,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     fun closeTerminalAndUninstallCli() {
         terminal.closeAllTabs()
         cli.reset()
+        SonarQubeCloudStaging.removeConnectionToken()
         TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
 
@@ -199,40 +201,59 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
-    fun should_show_cli_as_signed_in_after_signing_in_in_the_terminal() {
-        assumeTrue(SonarQubeCli.canSignIn, "SONARCLOUD_IT_TOKEN is not set")
+    fun should_show_cli_as_signed_in_after_signing_in_with_the_ide_connection() {
+        val token = SonarQubeCloudStaging.token
+        assumeTrue(token != null, "SONARCLOUD_IT_TOKEN is not set")
         cli.install()
+        SonarQubeCloudStaging.addConnection(checkNotNull(token))
+        // The backend signs the CLI in with the connection's token, without a terminal; a terminal would mean a browser login
+        replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
-        assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
 
-        // The CLI signs in to SonarQube Cloud staging with a token instead of a browser
         cliCard.clickButton(SIGN_IN_LABEL)
 
-        awaitUntil(timeoutMs = 60_000) { cliCard.labels.any { it.contains("Authenticated with ${SonarQubeCli.ORGANIZATION}") } }
-        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${SonarQubeCli.ORGANIZATION}") }
+        awaitUntil(timeoutMs = 60_000) { cliCard.labels.any { it.contains("Authenticated with ${SonarQubeCloudStaging.ORGANIZATION}") } }
+        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${SonarQubeCloudStaging.ORGANIZATION}") }
         assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
-        assertThat(terminal.openedTabNames).contains(CLI_TERMINAL_TAB_NAME)
-        assertThat(cli.receivedCommands).anyMatch { it.startsWith("auth login") }
+        assertThat(notifications).anyMatch { it.content.contains("SonarQube CLI authenticated") }
+        assertThat(recordingTerminal.launchedCommand).isNull()
     }
 
     @Test
-    fun should_keep_offering_sign_in_and_report_the_exit_code_when_sign_in_fails_in_the_terminal() {
+    fun should_keep_offering_sign_in_and_report_the_error_when_the_connection_token_is_rejected() {
         cli.install()
-        cli.failNextSignIn(exitCode = 3)
+        SonarQubeCloudStaging.addConnection("not-a-valid-token")
+        replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
 
         cliCard.clickButton(SIGN_IN_LABEL)
 
-        awaitUntil { notifications.isNotEmpty() }
+        awaitUntil(timeoutMs = 60_000) { notifications.isNotEmpty() }
         awaitCardReloaded(cliCard)
-        assertThat(notifications).anyMatch { it.content.contains("exited with code 3") }
+        assertThat(notifications).anyMatch { it.type == NotificationType.ERROR && it.content.contains("SonarQube CLI authentication failed") }
         assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
-        assertThat(cli.receivedCommands).anyMatch { it.startsWith("auth login") }
+        assertThat(recordingTerminal.launchedCommand).isNull()
+    }
+
+    @Test
+    fun should_sign_in_in_the_terminal_when_there_is_no_ide_connection() {
+        cli.install()
+        // The real command opens a browser
+        replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
+        val cliCard = openCliCard()
+
+        cliCard.clickButton(SIGN_IN_LABEL)
+
+        awaitUntil { recordingTerminal.launchedCommand != null }
+        val arguments = recordingTerminal.launchedCommand?.arguments.orEmpty()
+        assertThat(arguments.take(2)).containsExactly("auth", "login")
+        assertThat(arguments).doesNotContain("--with-token")
+        recordingTerminal.finish(TerminalCompletion.Cancelled)
     }
 
     @Test
     fun should_show_claude_code_integration_as_recorded_after_integrating_it_in_the_terminal() {
-        assumeTrue(SonarQubeCli.canSignIn, "SONARCLOUD_IT_TOKEN is not set")
+        assumeTrue(SonarQubeCloudStaging.token != null, "SONARCLOUD_IT_TOKEN is not set")
         cli.install()
         cli.signIn()
         val cliCard = openCliCard()

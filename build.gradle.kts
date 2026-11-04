@@ -353,6 +353,14 @@ tasks {
         // Hide the tools installed on the machine from the backend, so tests decide whether a CLI is installed: it gets its
         // own user home, where it still searches the official install locations, and an empty search path instead of
         // PATH (or the system paths on macOS)
+        // SonarQube Cloud is its staging environment in tests, as in the integration tests: the AI Integrations tests sign
+        // the SonarQube CLI in there
+        systemProperty("sonarlint.internal.sonarcloud.url", "https://sc-staging.io")
+        systemProperty("sonarlint.internal.sonarcloud.api.url", "https://api.sc-staging.io")
+        systemProperty("sonarlint.internal.sonarcloud.websocket.url", "wss://events-api.sc-staging.io/")
+        systemProperty("sonarlint.internal.sonarcloud.us.url", "https://us-sc-staging.io")
+        systemProperty("sonarlint.internal.sonarcloud.us.api.url", "https://api.us-sc-staging.io")
+        systemProperty("sonarlint.internal.sonarcloud.us.websocket.url", "wss://events-api.us-sc-staging.io")
         val sloopUserHome = layout.buildDirectory.dir("sloop-user-home").get().asFile
         // The backend splits SONARLINT_JVM_OPTS on spaces, so the user home can only be passed from a path without spaces.
         // Without it, the tests that need this isolation skip themselves.
