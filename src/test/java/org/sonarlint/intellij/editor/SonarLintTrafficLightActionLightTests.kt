@@ -45,7 +45,10 @@ class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
                 ?: myFixture.editor
         }
 
-        mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
+        awaitUntilAsserted {
+            assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
+        }
+        mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click()
 
         awaitUntilAsserted {
             assertThat(mainToolWindow.findings.issues).hasSize(1)
