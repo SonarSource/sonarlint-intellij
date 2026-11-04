@@ -66,5 +66,11 @@ fun pumpEdtUntil(timeoutMs: Long = 5_000, condition: () -> Boolean) {
  * assertion, which then reports what is actually shown instead of a bare timeout.
  */
 fun awaitUntil(timeoutMs: Long = 30_000, condition: () -> Boolean) {
-    runCatching { pumpEdtUntil(timeoutMs = timeoutMs, condition = condition) }
+    val deadline = System.currentTimeMillis() + timeoutMs
+    while (System.currentTimeMillis() < deadline) {
+        pumpEdt()
+        if (runCatching(condition).getOrDefault(false)) {
+            return
+        }
+    }
 }
