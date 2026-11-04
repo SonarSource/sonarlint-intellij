@@ -29,12 +29,12 @@ import kotlin.io.path.exists
 import kotlin.io.path.readLines
 
 /**
- * Stands in for a SonarQube CLI installed by the official script, in the user home the build gives to the backend
- * (see `sonarlint.test.sloop.user.home` in build.gradle.kts). The backend finds it and runs `sonar --version`,
- * `sonar system status` and `sonar system reset` for real, and the IDE terminal runs `sonar auth login` and
- * `sonar integrate`: a one-line launcher runs [FakeSonarQubeCliMain], whose state lives in files next to the launcher.
+ * Stands in for a SonarQube CLI installed by the official script, in the user home the build gives to the backend (see
+ * `sonarlint.test.sloop.user.home` in build.gradle.kts), and passes every command on to the real CLI: a one-line launcher
+ * runs [FakeSonarQubeCliMain]. Use it only for what the real CLI cannot do on demand: a damaged installation, a failing
+ * sign-in, and signing in from the card without a browser.
  */
-class FakeSonarQubeCli {
+class FakeSonarQubeCli(private val realCli: RealSonarQubeCli) {
 
     private val installRoot = sloopUserHome().resolve(".local/share/sonarqube-cli")
     private val binDirectory = installRoot.resolve("bin")
@@ -44,28 +44,25 @@ class FakeSonarQubeCli {
     val receivedCommands: List<String>
         get() = if (commandLog.exists()) commandLog.readLines() else emptyList()
 
-    val isInstalled: Boolean
-        get() = binDirectory.resolve("sonar").exists()
-
-    fun install(authenticated: Boolean = false) {
+    fun install() {
+        val launchCommand = launchCommand(realCli.download())
         Files.createDirectories(binDirectory)
-        if (authenticated) {
-            Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.AUTHENTICATION_FILE), ORGANIZATION)
-        }
         val executable = binDirectory.resolve("sonar")
-        Files.writeString(executable, "#!/bin/sh\nexec ${launchCommand()} \"${'$'}@\"\n")
+        Files.writeString(executable, "#!/bin/sh\nexec $launchCommand \"${'$'}@\"\n")
         Files.setPosixFilePermissions(executable, PosixFilePermissions.fromString("rwxr-xr-x"))
     }
 
     /** Runs [FakeSonarQubeCliMain] on the test JVM's runtime, with the compiled test classes as its only classpath entry. */
-    private fun launchCommand(): String {
+    private fun launchCommand(realExecutable: Path): String {
         val java = Path.of(System.getProperty("java.home"), "bin", "java")
         val testClasses = classpathRootOf(FakeSonarQubeCliMain::class.java)
         return listOf(
             java.toString(), "-cp", testClasses.toString(),
+            "-D${FakeSonarQubeCliMain.REAL_EXECUTABLE_PROPERTY}=$realExecutable",
             "-D${FakeSonarQubeCliMain.STATE_DIRECTORY_PROPERTY}=$binDirectory",
             "-D${FakeSonarQubeCliMain.COMMAND_LOG_PROPERTY}=$commandLog",
-            "-D${FakeSonarQubeCliMain.VERSION_PROPERTY}=$VERSION",
+            "-D${FakeSonarQubeCliMain.SERVER_PROPERTY}=${RealSonarQubeCli.STAGING_URL}",
+            "-D${FakeSonarQubeCliMain.ORGANIZATION_PROPERTY}=${RealSonarQubeCli.ORGANIZATION}",
             FakeSonarQubeCliMain::class.java.name,
         ).joinToString(" ") { "\"$it\"" }
     }
@@ -81,21 +78,15 @@ class FakeSonarQubeCli {
         Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.BROKEN_FILE), "")
     }
 
-    /** Makes the next `sonar auth login` or `sonar integrate` exit with [exitCode] and change nothing. */
-    fun failNextCommand(exitCode: Int) {
-        Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.FAIL_NEXT_COMMAND_FILE), exitCode.toString())
+    /** Makes the next `sonar auth login` exit with [exitCode] and change nothing. */
+    fun failNextSignIn(exitCode: Int) {
+        Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.FAIL_NEXT_SIGN_IN_FILE), exitCode.toString())
     }
 
     @OptIn(ExperimentalPathApi::class)
     fun uninstall() {
         installRoot.deleteRecursively()
         commandLog.deleteIfExists()
-    }
-
-    companion object {
-        /** No real CLI has this version, so the UI showing it proves the backend found this fake. */
-        const val VERSION = "0.0.1-fake"
-        const val ORGANIZATION = FakeSonarQubeCliMain.DEFAULT_ORGANIZATION
     }
 }
 

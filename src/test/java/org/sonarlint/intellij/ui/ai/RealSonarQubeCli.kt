@@ -50,16 +50,21 @@ class RealSonarQubeCli {
     val version: String
         get() = run(listOf("--version")).trim()
 
-    /** Installs the latest release as the official script does, downloading it only once per test run. */
+    /** Installs the latest release where the official script does. */
     fun install() {
+        val downloaded = download()
+        Files.createDirectories(executable.parent)
+        Files.copy(downloaded, executable, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+    }
+
+    /** The latest release, downloaded with the official script once per test run and kept outside the install location. */
+    fun download(): Path {
         if (!downloadedExecutable.exists()) {
             run(listOf("/bin/bash", "-o", "pipefail", "-c", "curl --fail --silent --show-error --location $INSTALL_SCRIPT_URL | bash"), executable = null)
             Files.createDirectories(downloadedExecutable.parent)
-            Files.copy(executable, downloadedExecutable, StandardCopyOption.REPLACE_EXISTING)
-            return
+            Files.move(executable, downloadedExecutable, StandardCopyOption.REPLACE_EXISTING)
         }
-        Files.createDirectories(executable.parent)
-        Files.copy(downloadedExecutable, executable, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES)
+        return downloadedExecutable
     }
 
     /** Signs in to SonarQube Cloud staging, as `sonar auth login` would after the browser flow. */

@@ -58,15 +58,15 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 @DisabledOnOs(OS.WINDOWS)
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
-    private val cli = FakeSonarQubeCli()
     private val realCli = RealSonarQubeCli()
+    private val fakeCli = FakeSonarQubeCli(realCli)
     private val fakeTerminal = FakeTerminal()
     private lateinit var terminal: TerminalToolWindowPage
     private val claudeCode = AiAgentRegistry().displayName(AiAgent.CLAUDE_CODE)
     private lateinit var notifications: List<Notification>
 
     override fun beforeMainToolWindowCreated() {
-        cli.uninstall()
+        fakeCli.uninstall()
         realCli.reset()
         terminal = TerminalToolWindowPage.create(project, testRootDisposable)
         notifications = recordNotifications()
@@ -76,7 +76,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     fun closeTerminalAndUninstallCli() {
         terminal.closeAllTabs()
         realCli.reset()
-        cli.uninstall()
+        fakeCli.uninstall()
         TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
 
@@ -151,46 +151,34 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         val cliCard = aiIntegrations.sonarQubeCliCard
         awaitCliCheckFinished(cliCard)
 
-        cli.install()
+        realCli.install()
         aiIntegrations.refresh()
 
-        awaitUntil { cliCard.showsFakeCli() }
+        awaitUntil { cliCard.tickedLabels.contains(INSTALLED_STATUS) }
         assertThat(cliCard.tickedLabels).contains(INSTALLED_STATUS)
-        assertThat(cliCard.labels).anyMatch { it.endsWith("v${FakeSonarQubeCli.VERSION}") }
+        assertThat(cliCard.labels).anyMatch { it.endsWith("v${realCli.version}") }
     }
 
     @Test
     fun should_show_cli_as_installed_when_detected() {
-        cli.install()
+        realCli.install()
 
         val cliCard = openCliCard()
 
         assertThat(cliCard.tickedLabels).contains(INSTALLED_STATUS)
-        assertThat(cliCard.labels).anyMatch { it.endsWith("v${FakeSonarQubeCli.VERSION}") }
+        assertThat(cliCard.labels).anyMatch { it.endsWith("v${realCli.version}") }
     }
 
     @Test
     fun should_offer_troubleshooting_when_the_cli_does_not_work() {
-        cli.install()
-        cli.breakInstallation()
+        fakeCli.install()
+        fakeCli.breakInstallation()
 
         val cliCard = openCliCard()
 
         assertThat(cliCard.labels).contains(UNAVAILABLE_STATUS)
         assertThat(cliCard.buttons).contains(TROUBLESHOOT_LABEL)
         assertThat(cliCard.tickedLabels).doesNotContain(INSTALLED_STATUS)
-    }
-
-    @Test
-    fun should_show_cli_as_signed_in_to_sonarqube_cloud_when_authenticated() {
-        assumeTrue(RealSonarQubeCli.canSignIn, "SONARCLOUD_IT_TOKEN is not set")
-        realCli.install()
-        realCli.signIn()
-
-        val cliCard = openCliCard()
-
-        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${RealSonarQubeCli.ORGANIZATION}") }
-        assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
     }
 
     @Test
@@ -209,23 +197,25 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_cli_as_signed_in_after_signing_in_in_the_terminal() {
-        cli.install(authenticated = false)
+        assumeTrue(RealSonarQubeCli.canSignIn, "SONARCLOUD_IT_TOKEN is not set")
+        // The real CLI, except that it signs in with a token instead of a browser
+        fakeCli.install()
         val cliCard = openCliCard()
         assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
 
         cliCard.clickButton(SIGN_IN_LABEL)
 
-        awaitUntil { cliCard.labels.any { it.contains("Authenticated with ${FakeSonarQubeCli.ORGANIZATION}") } }
-        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${FakeSonarQubeCli.ORGANIZATION}") }
+        awaitUntil(timeoutMs = 60_000) { cliCard.labels.any { it.contains("Authenticated with ${RealSonarQubeCli.ORGANIZATION}") } }
+        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${RealSonarQubeCli.ORGANIZATION}") }
         assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
         assertThat(terminal.openedTabNames).contains(CLI_TERMINAL_TAB_NAME)
-        assertThat(cli.receivedCommands).anyMatch { it.startsWith("auth login") }
+        assertThat(fakeCli.receivedCommands).anyMatch { it.startsWith("auth login") }
     }
 
     @Test
     fun should_keep_offering_sign_in_and_report_the_exit_code_when_sign_in_fails_in_the_terminal() {
-        cli.install(authenticated = false)
-        cli.failNextCommand(exitCode = 3)
+        fakeCli.install()
+        fakeCli.failNextSignIn(exitCode = 3)
         val cliCard = openCliCard()
 
         cliCard.clickButton(SIGN_IN_LABEL)
@@ -234,7 +224,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         awaitCardReloaded(cliCard)
         assertThat(notifications).anyMatch { it.content.contains("exited with code 3") }
         assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
-        assertThat(cli.receivedCommands).anyMatch { it.startsWith("auth login") }
+        assertThat(fakeCli.receivedCommands).anyMatch { it.startsWith("auth login") }
     }
 
     @Test
@@ -293,8 +283,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     private fun awaitCliCheckFinished(cliCard: AiIntegrationCardPage) {
         awaitUntil { cliCard.labels.isNotEmpty() && !cliCard.labels.contains(CHECKING_STATUS) }
     }
-
-    private fun AiIntegrationCardPage.showsFakeCli() = labels.any { it.endsWith("v${FakeSonarQubeCli.VERSION}") }
 
     /** Records the command the card asks to run instead of opening a real terminal. */
     private class FakeTerminal : CliTerminalAdapter {
