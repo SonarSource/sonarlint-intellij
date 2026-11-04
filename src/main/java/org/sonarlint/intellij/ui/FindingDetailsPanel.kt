@@ -113,6 +113,12 @@ class FindingDetailsPanel(private val project: Project, parentDisposable: Dispos
         rulePanel.clear()
     }
 
+    /** Releases rule description viewers; must run synchronously on the EDT when the findings panel is disposed. */
+    internal fun disposeUiResources() {
+        flowsTreeBuilder.clearFlows()
+        rulePanel.disposeUiResources()
+    }
+
     fun selectRulesTab() {
         selectedIndex = RULE_TAB_INDEX
     }

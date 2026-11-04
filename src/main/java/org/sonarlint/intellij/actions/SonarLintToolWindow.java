@@ -26,7 +26,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.content.ContentManagerListener;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.swing.SwingUtilities;
@@ -51,7 +50,7 @@ import static org.sonarlint.intellij.ui.UiUtils.runOnUiThread;
 import static org.sonarlint.intellij.util.ThreadUtilsKt.runOnPooledThread;
 
 @Service(Service.Level.PROJECT)
-public final class SonarLintToolWindow implements ContentManagerListener, ProjectBindingListener {
+public final class SonarLintToolWindow implements ProjectBindingListener {
 
   private final Project project;
 
