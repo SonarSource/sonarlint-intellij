@@ -31,8 +31,8 @@ import kotlin.io.path.readLines
 /**
  * Stands in for a SonarQube CLI installed by the official script, in the user home the build gives to the backend
  * (see `sonarlint.test.sloop.user.home` in build.gradle.kts). The backend finds it and runs `sonar --version`,
- * `sonar system status` and `sonar system reset` for real: a one-line launcher runs [FakeSonarQubeCliMain], whose state
- * lives in files next to the launcher.
+ * `sonar system status` and `sonar system reset` for real, and the IDE terminal runs `sonar auth login` and
+ * `sonar integrate`: a one-line launcher runs [FakeSonarQubeCliMain], whose state lives in files next to the launcher.
  */
 class FakeSonarQubeCli {
 
@@ -40,7 +40,7 @@ class FakeSonarQubeCli {
     private val binDirectory = installRoot.resolve("bin")
     private val commandLog = sloopUserHome().resolve("fake-sonar-commands.log")
 
-    /** Arguments of every command the backend ran, oldest first. */
+    /** Arguments of every command the backend or the terminal ran, oldest first. */
     val receivedCommands: List<String>
         get() = if (commandLog.exists()) commandLog.readLines() else emptyList()
 
@@ -49,7 +49,9 @@ class FakeSonarQubeCli {
 
     fun install(authenticated: Boolean = false) {
         Files.createDirectories(binDirectory)
-        writeStatus(authenticated, integratedAgentIds = emptyList())
+        if (authenticated) {
+            Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.AUTHENTICATION_FILE), ORGANIZATION)
+        }
         val executable = binDirectory.resolve("sonar")
         Files.writeString(executable, "#!/bin/sh\nexec ${launchCommand()} \"${'$'}@\"\n")
         Files.setPosixFilePermissions(executable, PosixFilePermissions.fromString("rwxr-xr-x"))
@@ -76,17 +78,12 @@ class FakeSonarQubeCli {
 
     /** Makes `sonar --version` fail, as a damaged installation would. */
     fun breakInstallation() {
-        Files.writeString(binDirectory.resolve("broken"), "")
+        Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.BROKEN_FILE), "")
     }
 
-    /** What `sonar auth login` would leave behind. */
-    fun signIn() {
-        writeStatus(authenticated = true, integratedAgentIds = emptyList())
-    }
-
-    /** What `sonar integrate <agent>` would leave behind, e.g. "claude-code". */
-    fun recordIntegration(agentId: String) {
-        writeStatus(authenticated = true, integratedAgentIds = listOf(agentId))
+    /** Makes the next `sonar auth login` or `sonar integrate` exit with [exitCode] and change nothing. */
+    fun failNextCommand(exitCode: Int) {
+        Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.FAIL_NEXT_COMMAND_FILE), exitCode.toString())
     }
 
     @OptIn(ExperimentalPathApi::class)
@@ -95,22 +92,10 @@ class FakeSonarQubeCli {
         commandLog.deleteIfExists()
     }
 
-    private fun writeStatus(authenticated: Boolean, integratedAgentIds: List<String>) {
-        val auth = if (authenticated) {
-            """{"status":"authenticated","server":"https://sonarcloud.io","org":"$ORGANIZATION","token":"active"}"""
-        } else {
-            """{"status":"unauthenticated"}"""
-        }
-        val integrations = integratedAgentIds.joinToString(",") {
-            """{"id":"$it","path":"/fake/$it","mcp":{"configured":true,"valid":true},"hooks":{"configured":true,"valid":true}}"""
-        }
-        Files.writeString(binDirectory.resolve("status.json"), """{"version":"$VERSION","auth":$auth,"integrations":[$integrations]}""")
-    }
-
     companion object {
         /** No real CLI has this version, so the UI showing it proves the backend found this fake. */
         const val VERSION = "0.0.1-fake"
-        const val ORGANIZATION = "fake-org"
+        const val ORGANIZATION = FakeSonarQubeCliMain.DEFAULT_ORGANIZATION
     }
 }
 

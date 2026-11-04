@@ -24,6 +24,8 @@ In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Pag
 1. `SonarLintMainToolWindowPage.create(project)` or `SonarLintWalkthroughToolWindowPage.create(project)` — uses the helpers above
 2. `@AfterEach` cleanup via `SonarLintUiTestContext.closeOpenEditorsAndSonarLintToolWindows()` (used by `AbstractSonarLintUILightTests` and standalone UI light tests)
 
+The IDE Terminal works headless too: `TerminalToolWindowPage.create(project, testRootDisposable)` registers the Terminal plugin's tool window and shows each new tab, since the plugin starts a tab's command only once it is shown. Commands then really run, so only send ones that are safe to run, such as a fake CLI (see `AiIntegrationsTerminalLightTests`).
+
 ## Page objects
 
 Light UI tests interact with the product through **page objects** (e.g. `SonarLintMainToolWindowPage` → `findings` → `findingsTree` / `issues`), not raw Swing containers or production panel types returned to tests. Subclass [`AbstractSonarLintUILightTests`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) to obtain a wired main tool window and automatic teardown.

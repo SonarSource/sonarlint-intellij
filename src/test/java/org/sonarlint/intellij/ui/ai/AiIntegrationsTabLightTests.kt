@@ -32,17 +32,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
-import org.sonarlint.intellij.ai.AiAgentRegistry
 import org.sonarlint.intellij.ai.CHECKING_STATUS
 import org.sonarlint.intellij.ai.CLI_GUIDE_LABEL
 import org.sonarlint.intellij.ai.CliCommand
 import org.sonarlint.intellij.ai.CliTerminalAdapter
 import org.sonarlint.intellij.ai.INSTALLED_STATUS
 import org.sonarlint.intellij.ai.INSTALL_CLI_LABEL
-import org.sonarlint.intellij.ai.INTEGRATE_LABEL
-import org.sonarlint.intellij.ai.INTEGRATION_RECORDED_STATUS
 import org.sonarlint.intellij.ai.MCP_GUIDE_LABEL
-import org.sonarlint.intellij.ai.SIGN_IN_LABEL
 import org.sonarlint.intellij.ai.TROUBLESHOOT_LABEL
 import org.sonarlint.intellij.ai.TerminalCompletion
 import org.sonarlint.intellij.ai.TerminalLaunch
@@ -50,7 +46,6 @@ import org.sonarlint.intellij.ai.UNAVAILABLE_STATUS
 import org.sonarlint.intellij.fixtures.awaitUntil
 import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.ui.page.AiIntegrationCardPage
-import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
 // The fake CLIs are shell scripts, while the backend only accepts sonar.exe on Windows
 @DisabledOnOs(OS.WINDOWS)
@@ -59,9 +54,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     private val cli = FakeSonarQubeCli()
     private val terminal = FakeTerminal()
     private lateinit var notifications: List<Notification>
-    private val claudeCode = AiAgentRegistry().displayName(AiAgent.CLAUDE_CODE)
 
-    // The terminal is where the real commands would download the CLI or change the user's setup
+    // The real install command downloads the CLI; AiIntegrationsTerminalLightTests runs the other commands in the real terminal
     override fun beforeMainToolWindowCreated() {
         cli.uninstall()
         replaceApplicationService(CliTerminalAdapter::class.java, terminal)
@@ -173,24 +167,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
-    fun should_show_cli_as_signed_in_after_signing_in_from_the_card() {
-        cli.install(authenticated = false)
-        val cliCard = openCliCard()
-        assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
-
-        cliCard.clickButton(SIGN_IN_LABEL)
-        awaitUntil { terminal.launchedCommand != null }
-        assertThat(terminal.launchedCommand?.arguments.orEmpty().joinToString(" ")).contains("auth login")
-
-        cli.signIn()
-        terminal.finish(TerminalCompletion.Exited(0))
-
-        awaitUntil { cliCard.labels.any { it.contains("Authenticated with ${FakeSonarQubeCli.ORGANIZATION}") } }
-        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${FakeSonarQubeCli.ORGANIZATION}") }
-        assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
-    }
-
-    @Test
     fun should_show_cli_as_not_installed_after_uninstalling_it_from_the_card() {
         cli.install(authenticated = true)
         TestDialogManager.setTestDialog(TestDialog.OK)
@@ -203,26 +179,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         assertThat(cliCard.buttons).contains(INSTALL_CLI_LABEL)
         assertThat(cli.receivedCommands).contains("system reset --force")
         assertThat(cli.isInstalled).isFalse()
-    }
-
-    @Test
-    fun should_show_claude_code_integration_as_recorded_after_integrating_it_from_the_card() {
-        cli.install(authenticated = true)
-        val cliCard = openCliCard()
-        cliCard.showAgents()
-        awaitUntil { cliCard.hasAgent(claudeCode) }
-        val claudeRow = cliCard.agent(claudeCode)
-        assertThat(claudeRow.buttons).contains(INTEGRATE_LABEL)
-
-        claudeRow.clickButton(INTEGRATE_LABEL)
-        awaitUntil { terminal.launchedCommand != null }
-        assertThat(terminal.launchedCommand?.arguments.orEmpty()).contains("integrate")
-
-        cli.recordIntegration("claude-code")
-        terminal.finish(TerminalCompletion.Exited(0))
-
-        awaitUntil { cliCard.hasAgent(claudeCode) && cliCard.agent(claudeCode).tickedLabels.contains(INTEGRATION_RECORDED_STATUS) }
-        assertThat(cliCard.agent(claudeCode).tickedLabels).contains(INTEGRATION_RECORDED_STATUS)
     }
 
     /** Opens the tab with no CLI installed and clicks "Install SonarQube CLI". */
