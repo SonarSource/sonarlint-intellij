@@ -35,7 +35,7 @@ val file = openFileFromTestData("src/file.xml")
 awaitUntilAsserted {
     assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
 }
-mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
+mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click()
 awaitUntilAsserted {
     assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")
     assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
@@ -52,6 +52,6 @@ Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/or
 | --- | --- |
 | Findings tool window | `SonarLintToolWindowFactory` |
 | Walkthrough | `SonarLintWalkthroughToolWindowFactory` |
-| Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`); page object [`EditorTrafficLightPage`](../src/test/java/org/sonarlint/intellij/ui/page/EditorTrafficLightPage.kt) |
+| Editor traffic light | `InspectionWidgetActionProvider` (`SonarLintEditorWidgetActionProvider`) |
 | Notifications | `SonarLintProjectNotifications`, `NotificationGroup` EP, `Notifications.TOPIC` |
 | Settings | `applicationConfigurable` / `projectConfigurable` EP (`sonarlint` ids in `plugin.xml`) |

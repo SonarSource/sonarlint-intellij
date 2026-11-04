@@ -33,10 +33,12 @@ class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_one_issue_in_findings_tab_after_toolbar_analyze_action() {
-        val file = openFileFromTestData("src/file.xml")
+        openFileFromTestData("src/file.xml")
 
-        assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
-        mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click(file)
+        awaitUntilAsserted {
+            assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
+        }
+        mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click()
 
         awaitUntilAsserted {
             assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")

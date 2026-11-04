@@ -24,7 +24,7 @@ import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
-import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.fileEditor.FileEditorManager
 import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.ui.currentfile.CurrentFileFindingsPanel
 import org.sonarlint.intellij.fixtures.readOnEdt
@@ -47,8 +47,11 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
             button.isEnabled && button.isVisible
         }
 
-    fun click(file: VirtualFile) {
+    fun click() {
         readOnEdt {
+            check(FileEditorManager.getInstance(project).selectedFiles.isNotEmpty()) {
+                "No file selected in the editor before Analyze Current File"
+            }
             syncFindingsTabWithEditor()
             ensureToolbarVisible()
             val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
