@@ -30,13 +30,11 @@ import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.ui.content.ContentManagerListener;
-import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.ai.AiIntegrationsController;
 import org.sonarlint.intellij.ai.AiIntegrationsPanel;
 import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.HELP_AND_FEEDBACK_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.AI_INTEGRATIONS_TAB_TITLE;
 import static org.sonarlint.intellij.ui.ToolWindowConstants.LOG_TAB_TITLE;
@@ -55,14 +53,11 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
       var contentManager = toolWindow.getContentManager();
       var currentFilePanel = new CurrentFilePanel(project);
       var findingsContent = addCurrentFileTab(currentFilePanel, contentManager);
-      var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
       addAiIntegrationsTab(project, contentManager);
       addLogTab(project, toolWindow);
       addHelpAndFeedbackTab(project, toolWindow);
       contentManager.setSelectedContent(findingsContent);
       toolWindow.setType(ToolWindowType.DOCKED, null);
-      contentManager.addContentManagerListener(sonarLintToolWindow);
-      Disposer.register(currentFilePanel, () -> contentManager.removeContentManagerListener(sonarLintToolWindow));
     });
   }
 
