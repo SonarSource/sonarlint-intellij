@@ -105,11 +105,13 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory, DumbAware 
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
+    var logPanel = new SonarLintLogPanel(project);
     var logContent = toolWindow.getContentManager().getFactory()
       .createContent(
-        new SonarLintLogPanel(project),
+        logPanel,
         LOG_TAB_TITLE,
         false);
+    logContent.setDisposer(logPanel);
     logContent.setCloseable(false);
     toolWindow.getContentManager().addContent(logContent);
   }

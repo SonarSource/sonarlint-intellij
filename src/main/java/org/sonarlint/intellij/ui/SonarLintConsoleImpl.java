@@ -107,17 +107,30 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
       consoleView.print(log.text, log.outputType);
     }
     this.consoleView = consoleView;
-    Disposer.register(this, consoleView);
+  }
+
+  @Override
+  public void clearConsoleView(ConsoleView consoleView) {
+    if (this.consoleView == consoleView) {
+      this.consoleView = null;
+    }
   }
 
   @Override
   public String getContent() {
-    return ((ConsoleViewImpl) this.consoleView).getText();
+    var view = consoleView;
+    if (view == null) {
+      return "";
+    }
+    return ((ConsoleViewImpl) view).getText();
   }
 
   @Override
   public void dispose() {
-    // nothing to do, the console view is already registered for dispose
+    if (consoleView != null) {
+      Disposer.dispose(consoleView);
+      consoleView = null;
+    }
   }
 
   private record Log(String text, ConsoleViewContentType outputType) {

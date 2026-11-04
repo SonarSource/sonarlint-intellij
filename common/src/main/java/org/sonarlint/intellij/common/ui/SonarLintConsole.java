@@ -48,6 +48,9 @@ public interface SonarLintConsole {
    */
   void setConsoleView(ConsoleView consoleView);
 
+  /** Clears the service reference when the log tool window tab is disposed. */
+  void clearConsoleView(ConsoleView consoleView);
+
   String getContent();
 
 }

@@ -20,25 +20,40 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
+import com.intellij.execution.ui.ConsoleView;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.util.Disposer;
 import javax.swing.Box;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.util.SonarLintActions;
 
-public class SonarLintLogPanel extends SimpleToolWindowPanel {
+public class SonarLintLogPanel extends SimpleToolWindowPanel implements Disposable {
 
   private static final String ID = "SonarQube for IDE";
 
+  private final Project project;
+  private final ConsoleView consoleView;
+
   public SonarLintLogPanel(Project project) {
     super(false, false);
+    this.project = project;
 
     addToolbar();
-    addConsole(project);
+    consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+    SonarLintUtils.getService(project, SonarLintConsole.class).setConsoleView(consoleView);
+    super.setContent(consoleView.getComponent());
+  }
+
+  @Override
+  public void dispose() {
+    SonarLintUtils.getService(project, SonarLintConsole.class).clearConsoleView(consoleView);
+    Disposer.dispose(consoleView);
   }
 
   private void addToolbar() {
@@ -58,12 +73,6 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     actionGroup.add(sonarLintActions.configure());
     actionGroup.add(sonarLintActions.cleanConsole());
     return actionGroup;
-  }
-
-  private void addConsole(Project project) {
-    var consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-    SonarLintUtils.getService(project, SonarLintConsole.class).setConsoleView(consoleView);
-    super.setContent(consoleView.getComponent());
   }
 
 }
