@@ -28,7 +28,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.MethodOrderer
+import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestMethodOrder
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
@@ -56,6 +59,8 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
 // The CLI wrapper and the fake Claude Code are shell scripts, while the backend only accepts sonar.exe on Windows
 @DisabledOnOs(OS.WINDOWS)
+// The install test runs first: the other tests reuse the CLI it downloads
+@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     private val cli = SonarQubeCli()
@@ -88,6 +93,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
+    @Order(1)
     fun should_show_cli_as_installed_after_installing_it_from_the_card() {
         val cliCard = mainToolWindow.openAiIntegrations().sonarQubeCliCard
         awaitCliCheckFinished(cliCard)

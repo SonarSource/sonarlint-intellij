@@ -86,8 +86,12 @@ class SonarQubeCli {
         Files.writeString(binDirectory.resolve(SonarQubeCliWrapperMain.FAIL_NEXT_SIGN_IN_FILE), exitCode.toString())
     }
 
-    /** Removes the CLI, its state, its token and what `sonar integrate claude` installed. */
+    /**
+     * Removes the CLI, its state, its token and what `sonar integrate claude` installed. A real CLI installed from the card
+     * is kept for the next tests instead, so a test run downloads the CLI only once.
+     */
     fun reset() {
+        keepRealCliInstalledFromTheCard()
         deleteDirectoryIfExists(installRoot)
         commandLog.deleteIfExists()
         deleteDirectoryIfExists(home.resolve(".sonar"))
@@ -96,6 +100,16 @@ class SonarQubeCli {
         home.resolve(".claude.json").deleteIfExists()
     }
 
+    private fun keepRealCliInstalledFromTheCard() {
+        if (isInstalled && !isWrapper(executable) && !downloadedExecutable.exists()) {
+            Files.createDirectories(downloadedExecutable.parent)
+            Files.move(executable, downloadedExecutable)
+        }
+    }
+
+    /** The wrapper is a script, while the real CLI is a native executable. */
+    private fun isWrapper(file: Path) = Files.newInputStream(file).use { it.readNBytes(2) }.contentEquals("#!".toByteArray())
+
     private fun deleteDirectoryIfExists(directory: Path) {
         if (directory.exists()) {
             PathUtils.deleteDirectory(directory)
@@ -103,8 +117,8 @@ class SonarQubeCli {
     }
 
     /**
-     * The latest release, installed once per test run with the backend's install command, the one the card runs in the
-     * terminal, then moved out of the install location to leave room for the wrapper.
+     * The latest release, kept from the card's install test, or else installed with the backend's install command, the one
+     * the card runs in the terminal. It is kept out of the install location to leave room for the wrapper.
      */
     private fun download(): Path {
         if (!downloadedExecutable.exists()) {
