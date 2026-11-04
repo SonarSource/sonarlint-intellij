@@ -228,8 +228,6 @@ jobs:
 
       - name: Vault Secrets
         id: secrets
-        # Pull requests from forks cannot read Vault: the tests that need the token then skip
-        continue-on-error: true
         uses: SonarSource/vault-action-wrapper@a7fa5fd4a4e4e0f2593f6137c0812cac196cf4ce # 3.7.0
         with:
           secrets: |
@@ -239,7 +237,7 @@ jobs:
         uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
         env:
           # The AI Integrations light tests sign the real SonarQube CLI in to SonarQube Cloud staging
-          SONARCLOUD_IT_TOKEN: ${{ steps.secrets.outcome == 'success' && fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN || '' }}
+          SONARCLOUD_IT_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONARCLOUD_IT_TOKEN }}
         with:
           deploy: false
           use-develocity: true
