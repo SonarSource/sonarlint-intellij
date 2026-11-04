@@ -369,6 +369,8 @@ tasks {
             environment("HOME", sloopUserHome.absolutePath)
             environment("SONAR_USER_HOME", sloopUserHome.resolve(".sonar").absolutePath)
             environment("SONARQUBE_CLI_KEYCHAIN_FILE", sloopUserHome.resolve("sonarqube-cli-keychain.json").absolutePath)
+            // The tests that sign the CLI in skip without the token: do not reuse results from a run with the other setting
+            inputs.property("sonarCloudItTokenPresent", !System.getenv("SONARCLOUD_IT_TOKEN").isNullOrBlank())
             doFirst {
                 sloopUserHome.deleteRecursively()
                 // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so

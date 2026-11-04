@@ -54,19 +54,19 @@ import org.sonarlint.intellij.ui.page.AiIntegrationCardPage
 import org.sonarlint.intellij.ui.page.TerminalToolWindowPage
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
-// The fake CLIs are shell scripts, while the backend only accepts sonar.exe on Windows
+// The CLI wrapper and the fake Claude Code are shell scripts, while the backend only accepts sonar.exe on Windows
 @DisabledOnOs(OS.WINDOWS)
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     private val realCli = RealSonarQubeCli()
-    private val fakeCli = FakeSonarQubeCli(realCli)
+    private val wrappedCli = WrappedSonarQubeCli(realCli)
     private val fakeTerminal = FakeTerminal()
     private lateinit var terminal: TerminalToolWindowPage
     private val claudeCode = AiAgentRegistry().displayName(AiAgent.CLAUDE_CODE)
     private lateinit var notifications: List<Notification>
 
     override fun beforeMainToolWindowCreated() {
-        fakeCli.uninstall()
+        wrappedCli.uninstall()
         realCli.reset()
         terminal = TerminalToolWindowPage.create(project, testRootDisposable)
         notifications = recordNotifications()
@@ -76,7 +76,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     fun closeTerminalAndUninstallCli() {
         terminal.closeAllTabs()
         realCli.reset()
-        fakeCli.uninstall()
+        wrappedCli.uninstall()
         TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
 
@@ -171,8 +171,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_offer_troubleshooting_when_the_cli_does_not_work() {
-        fakeCli.install()
-        fakeCli.breakInstallation()
+        wrappedCli.install()
+        wrappedCli.breakInstallation()
 
         val cliCard = openCliCard()
 
@@ -198,8 +198,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     @Test
     fun should_show_cli_as_signed_in_after_signing_in_in_the_terminal() {
         assumeTrue(RealSonarQubeCli.canSignIn, "SONARCLOUD_IT_TOKEN is not set")
-        // The real CLI, except that it signs in with a token instead of a browser
-        fakeCli.install()
+        // Signs in to SonarQube Cloud staging with a token instead of a browser
+        wrappedCli.install()
         val cliCard = openCliCard()
         assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
 
@@ -209,13 +209,13 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${RealSonarQubeCli.ORGANIZATION}") }
         assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
         assertThat(terminal.openedTabNames).contains(CLI_TERMINAL_TAB_NAME)
-        assertThat(fakeCli.receivedCommands).anyMatch { it.startsWith("auth login") }
+        assertThat(wrappedCli.receivedCommands).anyMatch { it.startsWith("auth login") }
     }
 
     @Test
     fun should_keep_offering_sign_in_and_report_the_exit_code_when_sign_in_fails_in_the_terminal() {
-        fakeCli.install()
-        fakeCli.failNextSignIn(exitCode = 3)
+        wrappedCli.install()
+        wrappedCli.failNextSignIn(exitCode = 3)
         val cliCard = openCliCard()
 
         cliCard.clickButton(SIGN_IN_LABEL)
@@ -224,7 +224,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         awaitCardReloaded(cliCard)
         assertThat(notifications).anyMatch { it.content.contains("exited with code 3") }
         assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
-        assertThat(fakeCli.receivedCommands).anyMatch { it.startsWith("auth login") }
+        assertThat(wrappedCli.receivedCommands).anyMatch { it.startsWith("auth login") }
     }
 
     @Test
@@ -266,7 +266,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         return cliCard
     }
 
-    /** Opens the tab with the fake CLI installed. */
+    /** Opens the tab with a CLI already installed. */
     private fun openCliCard(): AiIntegrationCardPage {
         val cliCard = mainToolWindow.openAiIntegrations().sonarQubeCliCard
         awaitCliCheckFinished(cliCard)

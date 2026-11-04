@@ -29,16 +29,16 @@ import kotlin.io.path.exists
 import kotlin.io.path.readLines
 
 /**
- * Stands in for a SonarQube CLI installed by the official script, in the user home the build gives to the backend (see
- * `sonarlint.test.sloop.user.home` in build.gradle.kts), and passes every command on to the real CLI: a one-line launcher
- * runs [FakeSonarQubeCliMain]. Use it only for what the real CLI cannot do on demand: a damaged installation, a failing
- * sign-in, and signing in from the card without a browser.
+ * The real SonarQube CLI behind a wrapper, installed where the official script puts the CLI in the user home the build
+ * gives to the backend (see `sonarlint.test.sloop.user.home` in build.gradle.kts). A one-line launcher runs
+ * [WrappedSonarQubeCliMain], which passes every command on to the real CLI. Use it only for what the real CLI cannot do
+ * on demand: a damaged installation, a failing sign-in, and signing in from the card without a browser.
  */
-class FakeSonarQubeCli(private val realCli: RealSonarQubeCli) {
+class WrappedSonarQubeCli(private val realCli: RealSonarQubeCli) {
 
     private val installRoot = sloopUserHome().resolve(".local/share/sonarqube-cli")
     private val binDirectory = installRoot.resolve("bin")
-    private val commandLog = sloopUserHome().resolve("fake-sonar-commands.log")
+    private val commandLog = sloopUserHome().resolve("wrapped-sonar-commands.log")
 
     /** Arguments of every command the backend or the terminal ran, oldest first. */
     val receivedCommands: List<String>
@@ -52,18 +52,18 @@ class FakeSonarQubeCli(private val realCli: RealSonarQubeCli) {
         Files.setPosixFilePermissions(executable, PosixFilePermissions.fromString("rwxr-xr-x"))
     }
 
-    /** Runs [FakeSonarQubeCliMain] on the test JVM's runtime, with the compiled test classes as its only classpath entry. */
+    /** Runs [WrappedSonarQubeCliMain] on the test JVM's runtime, with the compiled test classes as its only classpath entry. */
     private fun launchCommand(realExecutable: Path): String {
         val java = Path.of(System.getProperty("java.home"), "bin", "java")
-        val testClasses = classpathRootOf(FakeSonarQubeCliMain::class.java)
+        val testClasses = classpathRootOf(WrappedSonarQubeCliMain::class.java)
         return listOf(
             java.toString(), "-cp", testClasses.toString(),
-            "-D${FakeSonarQubeCliMain.REAL_EXECUTABLE_PROPERTY}=$realExecutable",
-            "-D${FakeSonarQubeCliMain.STATE_DIRECTORY_PROPERTY}=$binDirectory",
-            "-D${FakeSonarQubeCliMain.COMMAND_LOG_PROPERTY}=$commandLog",
-            "-D${FakeSonarQubeCliMain.SERVER_PROPERTY}=${RealSonarQubeCli.STAGING_URL}",
-            "-D${FakeSonarQubeCliMain.ORGANIZATION_PROPERTY}=${RealSonarQubeCli.ORGANIZATION}",
-            FakeSonarQubeCliMain::class.java.name,
+            "-D${WrappedSonarQubeCliMain.REAL_EXECUTABLE_PROPERTY}=$realExecutable",
+            "-D${WrappedSonarQubeCliMain.STATE_DIRECTORY_PROPERTY}=$binDirectory",
+            "-D${WrappedSonarQubeCliMain.COMMAND_LOG_PROPERTY}=$commandLog",
+            "-D${WrappedSonarQubeCliMain.SERVER_PROPERTY}=${RealSonarQubeCli.STAGING_URL}",
+            "-D${WrappedSonarQubeCliMain.ORGANIZATION_PROPERTY}=${RealSonarQubeCli.ORGANIZATION}",
+            WrappedSonarQubeCliMain::class.java.name,
         ).joinToString(" ") { "\"$it\"" }
     }
 
@@ -75,12 +75,12 @@ class FakeSonarQubeCli(private val realCli: RealSonarQubeCli) {
 
     /** Makes `sonar --version` fail, as a damaged installation would. */
     fun breakInstallation() {
-        Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.BROKEN_FILE), "")
+        Files.writeString(binDirectory.resolve(WrappedSonarQubeCliMain.BROKEN_FILE), "")
     }
 
     /** Makes the next `sonar auth login` exit with [exitCode] and change nothing. */
     fun failNextSignIn(exitCode: Int) {
-        Files.writeString(binDirectory.resolve(FakeSonarQubeCliMain.FAIL_NEXT_SIGN_IN_FILE), exitCode.toString())
+        Files.writeString(binDirectory.resolve(WrappedSonarQubeCliMain.FAIL_NEXT_SIGN_IN_FILE), exitCode.toString())
     }
 
     @OptIn(ExperimentalPathApi::class)
