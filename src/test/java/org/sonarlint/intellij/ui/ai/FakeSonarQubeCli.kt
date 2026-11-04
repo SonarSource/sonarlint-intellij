@@ -104,6 +104,6 @@ private const val SLOOP_USER_HOME_PROPERTY = "sonarlint.test.sloop.user.home"
 /** False when the build could not give the backend its own user home, e.g. from a path with spaces. */
 fun isSloopUserHomeIsolated(): Boolean = System.getProperty(SLOOP_USER_HOME_PROPERTY) != null
 
-private fun sloopUserHome(): Path = Path.of(
+internal fun sloopUserHome(): Path = Path.of(
     checkNotNull(System.getProperty(SLOOP_USER_HOME_PROPERTY)) { "Backend user home is not configured" }
 )

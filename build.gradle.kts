@@ -364,6 +364,11 @@ tasks {
             systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
             environment("SONARLINT_JVM_OPTS", listOfNotNull(System.getenv("SONARLINT_JVM_OPTS")?.takeIf { it.isNotBlank() },
                 "-Duser.home=${sloopUserHome.absolutePath}", "-Dsonarlint.internal.ai.searchPath=").joinToString(" "))
+            // The real SonarQube CLI, its install script and `sonar integrate` work in the same user home as the backend,
+            // and keep their state and token there instead of in the machine's keychain. Java keeps the IDE's own user.home.
+            environment("HOME", sloopUserHome.absolutePath)
+            environment("SONAR_USER_HOME", sloopUserHome.resolve(".sonar").absolutePath)
+            environment("SONARQUBE_CLI_KEYCHAIN_FILE", sloopUserHome.resolve("sonarqube-cli-keychain.json").absolutePath)
             doFirst {
                 sloopUserHome.deleteRecursively()
                 // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so

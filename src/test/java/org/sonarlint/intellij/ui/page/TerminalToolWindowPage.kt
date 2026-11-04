@@ -25,6 +25,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.wm.ToolWindow
+import com.intellij.terminal.JBTerminalWidget
+import com.intellij.terminal.ui.TerminalWidget
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.ui.content.ContentManagerEvent
 import com.intellij.ui.content.ContentManagerListener
@@ -33,6 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import javax.swing.JComponent
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
 import org.sonarlint.intellij.fixtures.pumpEdt
+import org.sonarlint.intellij.fixtures.readOnEdt
 
 /**
  * The IDE's Terminal tool window, where the plugin runs the SonarQube CLI commands that need the user.
@@ -47,6 +50,7 @@ class TerminalToolWindowPage private constructor(
 ) {
 
     private val openedTabs = CopyOnWriteArrayList<String>()
+    private val openedTerminals = CopyOnWriteArrayList<TerminalWidget>()
 
     /** Names of every terminal tab opened since the page was created, e.g. "SonarQube CLI"; a tab may close itself when its command ends. */
     val openedTabNames: List<String>
@@ -58,12 +62,25 @@ class TerminalToolWindowPage private constructor(
                 openedTabs.add(event.content.displayName)
                 // The manager links the tab to its terminal after adding it
                 ApplicationManager.getApplication().invokeLater {
-                    TerminalToolWindowManager.findWidgetByContent(event.content)?.component?.let { showOnScreen(it) }
+                    TerminalToolWindowManager.findWidgetByContent(event.content)?.let {
+                        openedTerminals.add(it)
+                        showOnScreen(it.component)
+                    }
                 }
             }
         }
         toolWindow.contentManager.addContentManagerListener(showNewTabs)
         Disposer.register(parentDisposable) { toolWindow.contentManager.removeContentManagerListener(showNewTabs) }
+    }
+
+    /** What the most recently opened terminal shows, empty before any terminal opens. */
+    val lastTerminalText: String
+        get() = readOnEdt { openedTerminals.lastOrNull()?.let { JBTerminalWidget.asJediTermWidget(it)?.text }.orEmpty() }
+
+    /** Types [text] in the most recently opened terminal, e.g. "\r" to press Enter. */
+    fun typeInLastTerminal(text: String) {
+        val connector = checkNotNull(openedTerminals.lastOrNull()?.ttyConnector) { "No running terminal" }
+        connector.write(text)
     }
 
     /** Closes every terminal tab, which also ends the commands still running in them. */

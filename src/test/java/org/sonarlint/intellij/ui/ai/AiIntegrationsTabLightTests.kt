@@ -59,6 +59,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     private val cli = FakeSonarQubeCli()
+    private val realCli = RealSonarQubeCli()
     private val fakeTerminal = FakeTerminal()
     private lateinit var terminal: TerminalToolWindowPage
     private val claudeCode = AiAgentRegistry().displayName(AiAgent.CLAUDE_CODE)
@@ -66,6 +67,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     override fun beforeMainToolWindowCreated() {
         cli.uninstall()
+        realCli.reset()
         terminal = TerminalToolWindowPage.create(project, testRootDisposable)
         notifications = recordNotifications()
     }
@@ -73,6 +75,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     @AfterEach
     fun closeTerminalAndUninstallCli() {
         terminal.closeAllTabs()
+        realCli.reset()
         cli.uninstall()
         TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
@@ -89,15 +92,18 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_cli_as_installed_after_installing_it_from_the_card() {
-        val cliCard = startCliInstall()
+        val cliCard = mainToolWindow.openAiIntegrations().sonarQubeCliCard
+        awaitCliCheckFinished(cliCard)
 
-        cli.install()
-        fakeTerminal.finish(TerminalCompletion.Exited(0))
+        // The terminal runs the official install script, which downloads the latest release
+        cliCard.clickButton(INSTALL_CLI_LABEL)
 
-        awaitUntil { cliCard.showsFakeCli() }
+        awaitUntil(timeoutMs = 180_000) { cliCard.tickedLabels.contains(INSTALLED_STATUS) }
         assertThat(cliCard.tickedLabels).contains(INSTALLED_STATUS)
-        assertThat(cliCard.labels).anyMatch { it.endsWith("v${FakeSonarQubeCli.VERSION}") }
+        assertThat(realCli.isInstalled).isTrue()
+        assertThat(cliCard.labels).anyMatch { it.endsWith("v${realCli.version}") }
         assertThat(cliCard.buttons).doesNotContain(INSTALL_CLI_LABEL)
+        assertThat(terminal.openedTabNames).contains(CLI_TERMINAL_TAB_NAME)
     }
 
     @Test
@@ -176,8 +182,20 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
+    fun should_show_cli_as_signed_in_to_sonarqube_cloud_when_authenticated() {
+        assumeTrue(RealSonarQubeCli.canSignIn, "SONARCLOUD_IT_TOKEN is not set")
+        realCli.install()
+        realCli.signIn()
+
+        val cliCard = openCliCard()
+
+        assertThat(cliCard.labels).anyMatch { it.contains("Authenticated with ${RealSonarQubeCli.ORGANIZATION}") }
+        assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
+    }
+
+    @Test
     fun should_show_cli_as_not_installed_after_uninstalling_it_from_the_card() {
-        cli.install(authenticated = true)
+        realCli.install()
         TestDialogManager.setTestDialog(TestDialog.OK)
         val cliCard = openCliCard()
         assertThat(cliCard.hasUninstallAction).isTrue()
@@ -186,8 +204,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
         awaitUntil { cliCard.buttons.contains(INSTALL_CLI_LABEL) }
         assertThat(cliCard.buttons).contains(INSTALL_CLI_LABEL)
-        assertThat(cli.receivedCommands).contains("system reset --force")
-        assertThat(cli.isInstalled).isFalse()
+        assertThat(realCli.isInstalled).isFalse()
     }
 
     @Test
@@ -222,7 +239,9 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     @Test
     fun should_show_claude_code_integration_as_recorded_after_integrating_it_in_the_terminal() {
-        cli.install(authenticated = true)
+        assumeTrue(RealSonarQubeCli.canSignIn, "SONARCLOUD_IT_TOKEN is not set")
+        realCli.install()
+        realCli.signIn()
         val cliCard = openCliCard()
         cliCard.showAgents()
         awaitUntil { cliCard.hasAgent(claudeCode) }
@@ -230,16 +249,20 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         assertThat(claudeRow.buttons).contains(INTEGRATE_LABEL)
 
         claudeRow.clickButton(INTEGRATE_LABEL)
+        // `sonar integrate` asks what to install; the recommended set is the default
+        awaitUntil(timeoutMs = 60_000) { terminal.lastTerminalText.contains("Install recommended") }
+        terminal.typeInLastTerminal("\r")
 
-        awaitUntil { cliCard.hasAgent(claudeCode) && cliCard.agent(claudeCode).tickedLabels.contains(INTEGRATION_RECORDED_STATUS) }
+        awaitUntil(timeoutMs = 120_000) {
+            cliCard.hasAgent(claudeCode) && cliCard.agent(claudeCode).tickedLabels.contains(INTEGRATION_RECORDED_STATUS)
+        }
         assertThat(cliCard.agent(claudeCode).tickedLabels).contains(INTEGRATION_RECORDED_STATUS)
         assertThat(terminal.openedTabNames).contains(CLI_TERMINAL_TAB_NAME)
-        assertThat(cli.receivedCommands).contains("integrate claude --global")
     }
 
     /**
-     * Opens the tab with no CLI installed and clicks "Install SonarQube CLI". The real install command downloads the CLI,
-     * so the terminal only records it; the test then plays the installer's part.
+     * Opens the tab with no CLI installed and clicks "Install SonarQube CLI" in a fake terminal, which only records the
+     * command: the test then decides how it ends, e.g. failed or cancelled.
      */
     private fun startCliInstall(): AiIntegrationCardPage {
         replaceApplicationService(CliTerminalAdapter::class.java, fakeTerminal)
