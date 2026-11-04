@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.clion;
 
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
@@ -64,6 +65,8 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     } else {
       try {
         languageKind = ocFile.getKind();
+      } catch (ProcessCanceledException e) {
+        throw e;
       } catch (Exception e) {
         SonarLintConsole.get(project).error("Could not retrieve language kind", e);
       }
@@ -77,6 +80,9 @@ public class CLionAnalyzerConfiguration extends AnalyzerConfiguration {
     OCCompilerSettings compilerSettings;
     try {
       compilerSettings = configuration.getCompilerSettings(ocFile.getKind(), file);
+    } catch (ProcessCanceledException e) {
+      // Let the read action end as cancelled, so the file is not excluded as if it had no compiler settings
+      throw e;
     } catch (Exception e) {
       return ConfigurationResult.skip("compiler settings not found");
     }
