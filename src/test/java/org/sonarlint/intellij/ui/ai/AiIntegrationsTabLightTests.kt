@@ -20,12 +20,9 @@
 package org.sonarlint.intellij.ui.ai
 
 import com.intellij.notification.Notification
-import com.intellij.notification.Notifications
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
-import com.intellij.openapi.util.Disposer
 import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -50,8 +47,8 @@ import org.sonarlint.intellij.ai.TROUBLESHOOT_LABEL
 import org.sonarlint.intellij.ai.TerminalCompletion
 import org.sonarlint.intellij.ai.TerminalLaunch
 import org.sonarlint.intellij.ai.UNAVAILABLE_STATUS
+import org.sonarlint.intellij.fixtures.awaitUntil
 import org.sonarlint.intellij.fixtures.pumpEdt
-import org.sonarlint.intellij.fixtures.pumpEdtUntil
 import org.sonarlint.intellij.ui.page.AiIntegrationCardPage
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
@@ -61,25 +58,18 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     private val cli = FakeSonarQubeCli()
     private val terminal = FakeTerminal()
-    private val notifications = mutableListOf<Notification>()
+    private lateinit var notifications: List<Notification>
     private val claudeCode = AiAgentRegistry().displayName(AiAgent.CLAUDE_CODE)
-    private val testDisposable = Disposer.newDisposable("AiIntegrationsTabLightTests")
 
     // The terminal is where the real commands would download the CLI or change the user's setup
     override fun beforeMainToolWindowCreated() {
         cli.uninstall()
         replaceApplicationService(CliTerminalAdapter::class.java, terminal)
-        ApplicationManager.getApplication().messageBus.connect(testDisposable)
-            .subscribe(Notifications.TOPIC, object : Notifications {
-                override fun notify(notification: Notification) {
-                    notifications.add(notification)
-                }
-            })
+        notifications = recordNotifications()
     }
 
     @AfterEach
     fun uninstallCli() {
-        Disposer.dispose(testDisposable)
         cli.uninstall()
         TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
@@ -266,11 +256,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     }
 
     private fun AiIntegrationCardPage.showsFakeCli() = labels.any { it.endsWith("v${FakeSonarQubeCli.VERSION}") }
-
-    /** The backend answers asynchronously; on timeout, let the following assertion report what is shown. */
-    private fun awaitUntil(condition: () -> Boolean) {
-        runCatching { pumpEdtUntil(timeoutMs = 30_000, condition = condition) }
-    }
 
     /** Records the command the card asks to run instead of opening a real terminal. */
     private class FakeTerminal : CliTerminalAdapter {

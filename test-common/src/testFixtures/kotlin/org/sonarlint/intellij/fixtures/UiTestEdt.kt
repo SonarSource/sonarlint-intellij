@@ -60,3 +60,11 @@ fun pumpEdtUntil(timeoutMs: Long = 5_000, condition: () -> Boolean) {
     }
     error("Condition was not met within ${timeoutMs}ms on EDT")
 }
+
+/**
+ * Pumps the EDT until [condition] is true or [timeoutMs] elapses, without failing on timeout: follow it with an
+ * assertion, which then reports what is actually shown instead of a bare timeout.
+ */
+fun awaitUntil(timeoutMs: Long = 30_000, condition: () -> Boolean) {
+    runCatching { pumpEdtUntil(timeoutMs = timeoutMs, condition = condition) }
+}
