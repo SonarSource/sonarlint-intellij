@@ -22,6 +22,7 @@ package org.sonarlint.intellij.editor
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
@@ -35,9 +36,19 @@ class SonarLintEditorWidgetActionProvider : InspectionWidgetActionProvider {
         if (editor.editorKind == EditorKind.UNTYPED && editor.document.getUserData(RuleCodeSnippet.IS_SONARLINT_DOCUMENT) == true) {
             return DefaultActionGroup(DiffCodeExamplesAction(editor), CopyCodeExampleAction(editor))
         }
-        if (editor.editorKind == EditorKind.MAIN_EDITOR) {
+        if (offersTrafficLight(editor)) {
             return DefaultActionGroup(SonarLintTrafficLightAction(editor), Separator.create())
         }
         return null
+    }
+
+    private fun offersTrafficLight(editor: Editor): Boolean {
+        if (editor.editorKind == EditorKind.MAIN_EDITOR) {
+            return true
+        }
+        // Light UI tests use CodeInsightTestFixture editors (UNTYPED); still exercise EP wiring in unit test mode.
+        return ApplicationManager.getApplication().isUnitTestMode &&
+            editor.editorKind == EditorKind.UNTYPED &&
+            editor.document.getUserData(RuleCodeSnippet.IS_SONARLINT_DOCUMENT) != true
     }
 }

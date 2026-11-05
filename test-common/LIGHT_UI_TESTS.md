@@ -44,6 +44,8 @@ awaitUntilAsserted {
 
 Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button. Wait until the button is enabled, then poll findings with [`awaitUntilAsserted`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt)—not direct `AnalysisSubmitter` / `AnalysisStatus` calls.
 
+Editor traffic light: build [`EditorTrafficLightPage`](../src/test/java/org/sonarlint/intellij/ui/page/EditorTrafficLightPage.kt) via [`trafficLightPageFor`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) so the widget is created through [`InspectionWidgetActionProvider`](../src/main/java/org/sonarlint/intellij/editor/SonarLintEditorWidgetActionProvider.kt) (not by instantiating `SonarLintTrafficLightAction` in tests). `issueCountLabelText` is null when there are no findings (green icon).
+
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 
 The backend answers asynchronously, so wait for the UI with `awaitUntil { … }` from [`UiTestEdt.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/UiTestEdt.kt), then assert. To check notifications, call `recordNotifications()` from `AbstractSonarLintLightTests` before the action that notifies.

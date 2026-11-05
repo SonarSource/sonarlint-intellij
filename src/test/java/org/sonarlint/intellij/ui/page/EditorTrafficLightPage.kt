@@ -25,8 +25,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.JLabel
@@ -38,35 +36,24 @@ import org.sonarlint.intellij.fixtures.findComponents
 import org.sonarlint.intellij.ui.traffic.light.SonarLintTrafficLightAction
 import org.sonarlint.intellij.ui.traffic.light.SonarLintTrafficLightWidget
 
+/** Page object for the editor inspection-widget traffic light (SonarQube for IDE dashboard chip). */
 class EditorTrafficLightPage private constructor(
     private val widget: SonarLintTrafficLightWidget,
 ) {
 
+    /** Issue count label next to the traffic-light icon; null when there are no findings (green icon). */
     val issueCountLabelText: String?
         get() = readOnEdt { widget.findComponents<JLabel>().single().text }
 
     companion object {
-        /** Builds the widget from [InspectionWidgetActionProvider] (requires [com.intellij.openapi.editor.EditorKind.MAIN_EDITOR]). */
-        fun create(project: Project, editor: Editor, file: VirtualFile): EditorTrafficLightPage =
-            readOnEdt { buildPage(project, editor, file, trafficLightActionFromExtension(editor)) }
-
         /**
-         * Builds the widget from [SonarLintTrafficLightAction] directly.
-         * Light-test editors are [com.intellij.openapi.editor.EditorKind.UNTYPED]; use this for light UI tests.
-         * EP wiring for [com.intellij.openapi.editor.EditorKind.MAIN_EDITOR] is covered by [org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProviderTest].
+         * Builds the traffic-light widget the same way the platform does: load
+         * [SonarLintEditorWidgetActionProvider] from [InspectionWidgetActionProvider] and create its action.
          */
-        fun createFromTrafficLightAction(project: Project, editor: Editor, file: VirtualFile): EditorTrafficLightPage =
-            readOnEdt { buildPage(project, editor, file, SonarLintTrafficLightAction(editor)) }
-
-        fun createForSelectedEditor(project: Project): EditorTrafficLightPage =
+        fun create(project: Project, editor: Editor, file: VirtualFile): EditorTrafficLightPage =
             readOnEdt {
-                val fileEditorManager = FileEditorManager.getInstance(project)
-                val file = fileEditorManager.selectedFiles.firstOrNull()
-                    ?: error("No selected file")
-                val editor = (fileEditorManager.getSelectedEditor(file) as? TextEditor)?.editor
-                    ?: fileEditorManager.selectedTextEditor
-                    ?: error("No text editor for selected file")
-                create(project, editor, file)
+                val action = trafficLightActionFromRegisteredProvider(editor)
+                buildPage(project, editor, file, action)
             }
 
         private fun buildPage(
@@ -83,15 +70,14 @@ class EditorTrafficLightPage private constructor(
             return EditorTrafficLightPage(widget)
         }
 
-        private fun trafficLightActionFromExtension(editor: Editor): SonarLintTrafficLightAction {
+        private fun trafficLightActionFromRegisteredProvider(editor: Editor): SonarLintTrafficLightAction {
             val provider = InspectionWidgetActionProvider.EP_NAME.extensionList
                 .filterIsInstance<SonarLintEditorWidgetActionProvider>()
                 .singleOrNull()
-                ?: error("SonarLintEditorWidgetActionProvider is not registered")
+                ?: error("SonarLintEditorWidgetActionProvider is not registered in InspectionWidgetActionProvider EP")
             val group = provider.createAction(editor) as? DefaultActionGroup
                 ?: error(
-                    "SonarLintEditorWidgetActionProvider returned no action for editor kind ${editor.editorKind}. " +
-                        "Use createFromTrafficLightAction() in light tests.",
+                    "SonarLintEditorWidgetActionProvider returned no action for editor kind ${editor.editorKind}",
                 )
             return group.childActionsOrStubs.filterIsInstance<SonarLintTrafficLightAction>().single()
         }

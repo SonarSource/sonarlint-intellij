@@ -19,6 +19,9 @@
  */
 package org.sonarlint.intellij
 
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.concurrent.TimeUnit
@@ -32,6 +35,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fs.VirtualFileEvent
+import org.sonarlint.intellij.ui.page.EditorTrafficLightPage
 import org.sonarlint.intellij.ui.page.SonarLintMainToolWindowPage
 import org.sonarlint.intellij.ui.page.SonarLintUiTestContext
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -60,7 +64,7 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         uiContext.closeOpenEditorsAndSonarLintToolWindows()
     }
 
-    /** Registers a test-data file with SLOOP and opens it in the editor (MAIN_EDITOR via code insight fixture). */
+    /** Registers a test-data file with SLOOP and opens it in the code-insight test editor. */
     protected fun openFileFromTestData(relativePath: String): VirtualFile {
         val sourcePath = java.nio.file.Path.of(testDataPath, relativePath).toAbsolutePath()
         check(java.nio.file.Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
@@ -71,6 +75,20 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
             true,
         )
         return virtualFile
+    }
+
+    /** Selected text editor for [file] (code-insight fixture editor in light tests). */
+    protected fun selectedEditorFor(file: VirtualFile): Editor = readOnEdt {
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        (fileEditorManager.getSelectedEditor(file) as? TextEditor)?.editor
+            ?: fileEditorManager.selectedTextEditor
+            ?: myFixture.editor
+    }
+
+    /** Builds [EditorTrafficLightPage] through the [com.intellij.openapi.editor.markup.InspectionWidgetActionProvider] EP. */
+    protected fun trafficLightPageFor(file: VirtualFile): EditorTrafficLightPage {
+        val editor = selectedEditorFor(file)
+        return EditorTrafficLightPage.create(project, editor, file)
     }
 
     protected fun waitUntilAnalysisReady(timeoutSeconds: Long = 30, module: Module = this.module) {
