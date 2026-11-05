@@ -19,14 +19,24 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import org.sonarlint.intellij.fixtures.walkComponents
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.SimpleToolWindowPanel
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 
 class FindingsTabToolbarPage internal constructor(
+    findingsTab: FindingsTabPage,
+    project: Project,
     private val panel: FindingsPanel,
 ) {
 
+    val analyzeCurrentFileButton: FindingsTabAnalyzeCurrentFileButtonPage =
+        FindingsTabAnalyzeCurrentFileButtonPage(findingsTab, project, panel)
+
     val isVisible: Boolean
-        get() = panel.walkComponents()
-            .any { it.javaClass.simpleName.contains("ActionToolbar", ignoreCase = true) }
+        get() = readOnEdt {
+            panel is SimpleToolWindowPanel &&
+                panel.getToolbar() != null &&
+                panel.findingsMainToolbar()?.component?.isVisible == true
+        }
 }
