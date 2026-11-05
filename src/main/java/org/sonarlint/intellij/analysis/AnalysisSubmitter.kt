@@ -21,15 +21,33 @@ package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.readActionBlocking
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.UUID
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.CompletableFuture
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.job
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.supervisorScope
 import org.apache.commons.lang3.tuple.Pair
 import org.jetbrains.annotations.VisibleForTesting
 import org.sonarlint.intellij.callable.CheckInCallable
@@ -50,28 +68,134 @@ import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.runOnPooledThread
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.analysis.ForceAnalyzeResponse
 
 @Service(Service.Level.PROJECT)
-class AnalysisSubmitter(private val project: Project) {
+class AnalysisSubmitter(private val project: Project, private val coroutineScope: CoroutineScope) {
 
     val onTheFlyFindingsHolder = OnTheFlyFindingsHolder(project)
 
     fun analyzeAllFiles() {
-        runOnPooledThread(project) {
-            val modules = ModuleManager.getInstance(project).modules
-            val callback = ShowReportCallable(project, modules.size)
-            val taskState = createGlobalTaskIfNeeded("Analyzing all projects files", modules.size, true)
-            modules.forEach { module ->
-                getService(BackendService::class.java).analyzeFullProject(module).thenAccept { response ->
-                    response.analysisId?.let { analysisId ->
-                        val analysisState = AnalysisState(analysisId, callback, module)
-                        getService(project, RunningAnalysesTracker::class.java).track(analysisState)
+        coroutineScope.launch {
+            val modules = readAction { ModuleManager.getInstance(project).modules }
+            val callback = readActionBlocking { ShowReportCallable(project, modules.size) }
+            val tracker = readAction { getService(project, RunningAnalysesTracker::class.java) }
+            val backend = getService(BackendService::class.java)
+            val taskState = readActionBlocking { createGlobalTaskIfNeeded("Analyzing all projects files", modules.size, true) }
+            supervisorScope {
+                modules.forEach { module ->
+                    launch {
+                        analyzeModule(module, backend, tracker, callback, taskState)
                     }
-                    taskState?.trackTask(module, response.analysisId?.toString())
                 }
             }
         }
     }
+
+    private suspend fun analyzeModule(
+        module: Module,
+        backend: BackendService,
+        tracker: RunningAnalysesTracker,
+        callback: AnalysisCallback,
+        taskState: GlobalTaskProgressReporter?
+    ) = coroutineScope {
+        val cancellation = BackendAnalysisCancellation(backend)
+        val owner = currentCoroutineContext().job
+        val finished = cancellation.finished
+        val taskCompletion = getService(GlobalBackgroundTaskTracker::class.java).onTaskFinished(cancellation::taskFinished)
+        try {
+            // Submission has side effects and must not be retried when a write action arrives.
+            val response = readActionBlocking {
+                backend.analyzeFullProject(module).also { future ->
+                    // Observe before leaving the read action, whose return can be cancelled.
+                    cancellation.observe(future, owner)
+                }
+            }
+            val analysisId = awaitAnalysisId(response)
+            val ownedCallback = completionCallback(callback, finished)
+            readActionBlocking {
+                ensureActive()
+                analysisId?.let { tracker.track(AnalysisState(it, ownedCallback, module)) }
+                taskState?.trackTask(module, analysisId?.toString())
+                // Reconcile progress that ended before its ID was registered.
+                if (finished.isCompleted) analysisId?.let { taskState?.taskFinished(it.toString()) }
+            }
+            if (analysisId != null) finished.await()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: ProcessCanceledException) {
+            throw e
+        } catch (e: Exception) {
+            readActionBlocking {
+                callback.onError(e)
+                taskState?.trackTask(module, null)
+            }
+        } finally {
+            taskCompletion.close()
+            if (owner.isCancelled && !finished.isCompleted) cancellation.cancel()
+        }
+    }
+
+    private fun completionCallback(callback: AnalysisCallback, finished: CompletableDeferred<Unit>) = object : AnalysisCallback {
+        override fun onSuccess(analysisResult: AnalysisResult) {
+            if (coroutineScope.isActive) callback.onSuccess(analysisResult)
+            finished.complete(Unit)
+        }
+
+        override fun onError(e: Throwable) {
+            if (coroutineScope.isActive) callback.onError(e)
+            finished.complete(Unit)
+        }
+    }
+
+    private class BackendAnalysisCancellation(private val backend: BackendService) {
+        val finished = CompletableDeferred<Unit>()
+        private var backendId: UUID? = null
+        private var cancellationSent = false
+        private val completedBeforeResponse = mutableSetOf<String>()
+
+        fun observe(response: CompletableFuture<ForceAnalyzeResponse>, owner: Job) {
+            response.thenAccept { result ->
+                setBackendId(result.analysisId)
+                if (owner.isCancelled) cancel()
+            }
+        }
+
+        @Synchronized
+        private fun setBackendId(id: UUID?) {
+            backendId = id
+            if (id?.toString() in completedBeforeResponse) finished.complete(Unit)
+            completedBeforeResponse.clear()
+        }
+
+        @Synchronized
+        fun taskFinished(taskId: String) {
+            if (backendId == null) completedBeforeResponse.add(taskId)
+            if (backendId?.toString() == taskId) finished.complete(Unit)
+        }
+
+        @Synchronized
+        fun cancel() {
+            backendId?.let {
+                if (!cancellationSent && !finished.isCompleted) {
+                    cancellationSent = true
+                    backend.cancelTask(it.toString())
+                }
+            }
+        }
+    }
+
+    private suspend fun awaitAnalysisId(response: CompletableFuture<ForceAnalyzeResponse>): UUID? =
+        suspendCancellableCoroutine { continuation ->
+            // Keep the response observable: cancelling the future would lose a late backend task ID.
+            response.whenComplete { result, error ->
+                if (error != null) {
+                    continuation.resumeWithException(error)
+                } else {
+                    continuation.resume(result.analysisId)
+                }
+            }
+        }
 
     fun analyzeVcsChangedFiles() {
         runOnPooledThread(project) {
