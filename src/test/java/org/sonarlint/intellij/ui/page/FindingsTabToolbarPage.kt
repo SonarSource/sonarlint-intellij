@@ -20,21 +20,32 @@
 package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
+import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.currentfile.CurrentFileFindingsPanel
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
+import org.sonarlint.intellij.util.SonarLintActions
 
 class FindingsTabToolbarPage internal constructor(
-    findingsTab: FindingsTabPage,
-    project: Project,
+    private val findingsTab: FindingsTabPage,
+    private val project: Project,
     private val panel: FindingsPanel,
 ) {
 
-    val analyzeCurrentFileButton: FindingsTabAnalyzeCurrentFileButtonPage =
-        FindingsTabAnalyzeCurrentFileButtonPage(this, findingsTab, project, panel)
+    val analyzeCurrentFileButton: FindingsTabAnalyzeCurrentFileButtonPage
+        get() = readOnEdt {
+            requireVisible()
+            FindingsTabAnalyzeCurrentFileButtonPage(
+                findAnalyzeCurrentFileButton(),
+                this,
+                findingsTab,
+                project,
+            )
+        }
 
     val isVisible: Boolean
         get() = readOnEdt { visibilityProblem() == null }
@@ -44,6 +55,35 @@ class FindingsTabToolbarPage internal constructor(
         readOnEdt {
             visibilityProblem()?.let { error(it) }
             pumpEdt()
+        }
+    }
+
+    internal fun refreshActions() {
+        readOnEdt {
+            panel.findingsMainToolbar()?.updateActionsImmediately()
+        }
+    }
+
+    private fun findAnalyzeCurrentFileButton(): ActionButton? {
+        val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
+        val buttons = toolbarActionButtons()
+        return buttons.firstOrNull { it.action === analyzeAction }
+            ?: buttons.firstOrNull { it.action.templateText == analyzeAction.templateText }
+    }
+
+    private fun toolbarActionButtons(): List<ActionButton> {
+        panel.findingsMainToolbar()?.updateActionsImmediately()
+        val roots = buildList {
+            panel.findingsMainToolbar()?.component?.let { add(it) }
+            if (panel is SimpleToolWindowPanel) {
+                panel.getToolbar()?.let { add(it) }
+            }
+            add(panel)
+        }
+        return roots.flatMap { root ->
+            root.walkComponents()
+                .filter { it.javaClass.simpleName.contains("ActionButton") }
+                .mapNotNull { it as? ActionButton }
         }
     }
 
