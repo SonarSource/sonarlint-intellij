@@ -68,6 +68,7 @@ class SonarQubeCli {
 
     /** Removes the CLI, its state, its token and what `sonar integrate claude` installed. */
     fun reset() {
+        stopRunningCommands()
         deleteDirectoryIfExists(installRoot)
         deleteDirectoryIfExists(home.resolve(".sonar"))
         home.resolve("sonarqube-cli-keychain.json").deleteIfExists()
@@ -77,6 +78,16 @@ class SonarQubeCli {
 
     private fun releasedCli(): Path =
         Path.of(checkNotNull(System.getProperty(RELEASED_CLI_PROPERTY)) { "The build did not provide the SonarQube CLI, see build.gradle.kts" })
+
+    /** Ends the CLI commands a test left running: Windows cannot delete an executable while it runs. */
+    private fun stopRunningCommands() {
+        ProcessHandle.allProcesses()
+            .filter { process -> process.info().command().map { Path.of(it) == executable }.orElse(false) }
+            .forEach { process ->
+                process.destroyForcibly()
+                process.onExit().get(10, TimeUnit.SECONDS)
+            }
+    }
 
     private fun deleteDirectoryIfExists(directory: Path) {
         if (directory.exists()) {
