@@ -19,9 +19,12 @@
  */
 package org.sonarlint.intellij.config.global.credentials
 
+import com.intellij.credentialStore.Credentials
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.ProcessCanceledException
 import java.util.Objects
 import org.apache.commons.lang3.BooleanUtils
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -116,6 +119,52 @@ class CredentialsService {
                 .onCredentialsChanged(connectionName)
         }
         return true
+    }
+
+    fun snapshotCredentials(connections: List<ServerConnection>): List<CredentialSnapshot> {
+        if (connections.isEmpty()) {
+            return emptyList()
+        }
+        val passwordSafe = PasswordSafe.instance
+        return computeOnPooledThread("Reading credentials before removal...") {
+            connections.map { connection ->
+                CredentialSnapshot(connection.name, passwordSafe.getToken(connection.name), passwordSafe.getUsernamePassword(connection.name))
+            }
+        } ?: throw IllegalStateException("Could not read credentials before removal")
+    }
+
+    fun removeCredentials(connections: List<ServerConnection>) {
+        if (connections.isEmpty()) {
+            return
+        }
+        runCredentialMutation("Removing credentials...") {
+            connections.forEach { eraseCredentials(it) }
+        }
+    }
+
+    fun restoreCredentials(snapshots: List<CredentialSnapshot>) {
+        if (snapshots.isEmpty()) {
+            return
+        }
+        runCredentialMutation("Restoring credentials...") {
+            val passwordSafe = PasswordSafe.instance
+            snapshots.forEach { snapshot ->
+                passwordSafe.setToken(snapshot.name, snapshot.token)
+                passwordSafe.setUsernamePassword(snapshot.name, snapshot.credentials)
+            }
+        }
+    }
+
+    private fun runCredentialMutation(title: String, action: Runnable) {
+        // Wait for mutations to finish before settings storage or recovery can start.
+        if (!ProgressManager.getInstance().runProcessWithProgressSynchronously(action, title, false, null)) {
+            throw ProcessCanceledException()
+        }
+    }
+
+    @JvmRecord
+    data class CredentialSnapshot(val name: String, val token: String?, val credentials: Credentials?) {
+        override fun toString() = "CredentialSnapshot(<redacted>)"
     }
 
     fun eraseCredentials(connection: ServerConnection) {
