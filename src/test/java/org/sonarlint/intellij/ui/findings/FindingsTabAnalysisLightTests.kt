@@ -36,6 +36,7 @@ class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
         openFileFromTestData("src/file.xml")
 
         awaitUntilAsserted {
+            assertThat(mainToolWindow.findings.toolbar.isVisible).isTrue()
             assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
         }
         mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click()

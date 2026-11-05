@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 
 class FindingsTabToolbarPage internal constructor(
@@ -33,5 +34,7 @@ class FindingsTabToolbarPage internal constructor(
         FindingsTabAnalyzeCurrentFileButtonPage(findingsTab, project, panel)
 
     val isVisible: Boolean
-        get() = panel is SimpleToolWindowPanel && panel.getToolbar() != null
+        get() = readOnEdt {
+            panel is SimpleToolWindowPanel && panel.getToolbar()?.isVisible == true
+        }
 }

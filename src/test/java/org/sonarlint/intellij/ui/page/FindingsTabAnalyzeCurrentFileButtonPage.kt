@@ -42,7 +42,7 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
 
     val isEnabled: Boolean
         get() = readOnEdt {
-            ensureToolbarVisible()
+            requireToolbarVisible()
             val button = findToolbarButton() ?: return@readOnEdt false
             button.isEnabled && button.isVisible
         }
@@ -53,7 +53,7 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
                 "No file selected in the editor before Analyze Current File"
             }
             syncFindingsTabWithEditor()
-            ensureToolbarVisible()
+            requireToolbarVisible()
             val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
             val button = checkNotNull(findToolbarButton()) {
                 "Analyze Current File button not found in Findings toolbar"
@@ -67,10 +67,10 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
         findingsTab.refreshWithEditorSelection()
     }
 
-    private fun ensureToolbarVisible() {
-        if (panel is SimpleToolWindowPanel) {
-            panel.getToolbar()?.isVisible = true
-        }
+    private fun requireToolbarVisible() {
+        check(panel is SimpleToolWindowPanel) { "Findings panel is not a SimpleToolWindowPanel" }
+        val toolbar = checkNotNull(panel.getToolbar()) { "Findings toolbar is missing" }
+        check(toolbar.isVisible) { "Findings toolbar must be visible (production sets visibility in setToolbarSections)" }
         pumpEdt()
     }
 
