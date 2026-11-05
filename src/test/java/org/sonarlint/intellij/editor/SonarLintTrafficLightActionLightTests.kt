@@ -19,12 +19,10 @@
  */
 package org.sonarlint.intellij.editor
 
-import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
-import org.sonarlint.intellij.ui.page.EditorTrafficLightPage
 
 class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
 
@@ -36,11 +34,6 @@ class SonarLintTrafficLightActionLightTests : AbstractSonarLintUILightTests() {
     @Test
     fun should_build_traffic_light_from_inspection_widget_action_provider_extension() {
         val file = openFileFromTestData("src/file.xml")
-
-        val provider = InspectionWidgetActionProvider.EP_NAME.extensionList
-            .filterIsInstance<SonarLintEditorWidgetActionProvider>()
-        assertThat(provider).hasSize(1)
-        assertThat(provider.single().createAction(selectedEditorFor(file))).isNotNull
 
         awaitUntilAsserted {
             assertThat(trafficLightPageFor(file).issueCountLabelText).isNull()

@@ -20,6 +20,7 @@
 package org.sonarlint.intellij
 
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.module.Module
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.fixtures.readOnEdt
@@ -77,18 +79,29 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         return virtualFile
     }
 
-    /** Selected text editor for [file] (code-insight fixture editor in light tests). */
-    protected fun selectedEditorFor(file: VirtualFile): Editor = readOnEdt {
+    /**
+     * Page object for the editor traffic light, built through [InspectionWidgetActionProvider]
+     * ([SonarLintEditorWidgetActionProvider] registration in `plugin.xml`).
+     */
+    protected fun trafficLightPageFor(file: VirtualFile): EditorTrafficLightPage {
+        val editor = selectedEditorFor(file)
+        assertSonarLintTrafficLightRegisteredViaInspectionWidgetProvider(editor)
+        return EditorTrafficLightPage.create(project, editor, file)
+    }
+
+    private fun selectedEditorFor(file: VirtualFile): Editor = readOnEdt {
         val fileEditorManager = FileEditorManager.getInstance(project)
         (fileEditorManager.getSelectedEditor(file) as? TextEditor)?.editor
             ?: fileEditorManager.selectedTextEditor
             ?: myFixture.editor
     }
 
-    /** Builds [EditorTrafficLightPage] through the [com.intellij.openapi.editor.markup.InspectionWidgetActionProvider] EP. */
-    protected fun trafficLightPageFor(file: VirtualFile): EditorTrafficLightPage {
-        val editor = selectedEditorFor(file)
-        return EditorTrafficLightPage.create(project, editor, file)
+    private fun assertSonarLintTrafficLightRegisteredViaInspectionWidgetProvider(editor: Editor) {
+        readOnEdt {
+            val providers = InspectionWidgetActionProvider.EP_NAME.extensionList
+                .filterIsInstance<SonarLintEditorWidgetActionProvider>()
+            assertThat(providers).hasSize(1)
+        }
     }
 
     protected fun waitUntilAnalysisReady(timeoutSeconds: Long = 30, module: Module = this.module) {
