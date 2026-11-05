@@ -25,6 +25,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
+import com.intellij.openapi.util.SystemInfo
 import java.util.Base64
 import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
@@ -32,8 +33,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledOnOs
-import org.junit.jupiter.api.condition.OS
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
 import org.sonarlint.intellij.ai.AUTHENTICATED_STATUS
@@ -67,8 +66,6 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
-// Not yet on Windows: the fake Claude Code is a shell script, and SonarQubeCli only installs the CLI at its Unix location
-@DisabledOnOs(OS.WINDOWS)
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     private val cli = SonarQubeCli()
@@ -288,7 +285,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
         cliCard.clickButton(INSTALL_CLI_LABEL)
         awaitUntil { recordingTerminal.launchedCommand != null }
-        assertThat(recordingTerminal.launchedCommand?.arguments.orEmpty().joinToString(" ")).contains("user-scripts/install.sh")
+        val installScript = if (SystemInfo.isWindows) "user-scripts/install.ps1" else "user-scripts/install.sh"
+        assertThat(recordingTerminal.launchedCommand?.arguments.orEmpty().joinToString(" ")).contains(installScript)
         return cliCard
     }
 

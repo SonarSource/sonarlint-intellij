@@ -365,8 +365,8 @@ tasks {
         // disable thread leak checker for now as it's raising FPs
         systemProperty("junit.jupiter.extensions.autodetection.exclude", "com.intellij.testFramework.junit5.impl.ThreadLeakTrackerExtension")
         // Hide the tools installed on the machine from the backend, so tests decide whether a CLI is installed: it gets its
-        // own user home, where it still searches the official install locations, and an empty search path instead of
-        // PATH (or the system paths on macOS)
+        // own user home (and, on Windows, its own %LOCALAPPDATA%), where it still searches the official install locations,
+        // and a search path replacing PATH (or the system paths on macOS): empty, or only the fake agent directory on Windows
         val sloopUserHome = layout.buildDirectory.dir("sloop-user-home").get().asFile
         // The backend splits SONARLINT_JVM_OPTS on spaces, so the user home can only be passed from a path without spaces.
         // Without it, the tests that need this isolation skip themselves.
@@ -376,11 +376,23 @@ tasks {
             }
         } else {
             systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
+            val agentBinDirectory = sloopUserHome.resolve(".local/bin")
+            val windows = buildMachineOs.contains("win")
+            // On Windows the backend looks for the official CLI installation under %LOCALAPPDATA%, and for agent CLIs only
+            // in the search path, so that path holds the fake agents there
+            if (windows) {
+                environment("LOCALAPPDATA", sloopUserHome.resolve("AppData/Local").absolutePath)
+            }
+            val searchPath = if (windows) agentBinDirectory.absolutePath else ""
             environment("SONARLINT_JVM_OPTS", listOfNotNull(System.getenv("SONARLINT_JVM_OPTS")?.takeIf { it.isNotBlank() },
-                "-Duser.home=${sloopUserHome.absolutePath}", "-Dsonarlint.internal.ai.searchPath=").joinToString(" "))
+                "-Duser.home=${sloopUserHome.absolutePath}", "-Dsonarlint.internal.ai.searchPath=$searchPath").joinToString(" "))
             // The real SonarQube CLI and `sonar integrate` work in the same user home as the backend, and keep their state and
-            // token there instead of in the machine's keychain. Java keeps the IDE's own user.home.
+            // token there instead of in the machine's keychain. Java keeps the IDE's own user.home. The CLI's home is HOME,
+            // or USERPROFILE on Windows.
             environment("HOME", sloopUserHome.absolutePath)
+            if (windows) {
+                environment("USERPROFILE", sloopUserHome.absolutePath)
+            }
             environment("SONAR_USER_HOME", sloopUserHome.resolve(".sonar").absolutePath)
             environment("SONARQUBE_CLI_KEYCHAIN_FILE", sloopUserHome.resolve("sonarqube-cli-keychain.json").absolutePath)
             // The real SonarQube CLI the AI Integrations tests install, resolved like the backend itself. It is only on
@@ -396,10 +408,14 @@ tasks {
                 sloopUserHome.deleteRecursively()
                 // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so
                 // the fake Claude Code used by AiIntegrationsTabLightTests must exist before any test runs
-                val agentBinDirectory = sloopUserHome.resolve(".local/bin").apply { mkdirs() }
-                agentBinDirectory.resolve("claude").apply {
-                    writeText("#!/bin/sh\necho \"2.0.0 (Claude Code)\"\n")
-                    setExecutable(true)
+                agentBinDirectory.mkdirs()
+                if (windows) {
+                    agentBinDirectory.resolve("claude.cmd").writeText("@echo 2.0.0 (Claude Code)\r\n")
+                } else {
+                    agentBinDirectory.resolve("claude").apply {
+                        writeText("#!/bin/sh\necho \"2.0.0 (Claude Code)\"\n")
+                        setExecutable(true)
+                    }
                 }
             }
         }

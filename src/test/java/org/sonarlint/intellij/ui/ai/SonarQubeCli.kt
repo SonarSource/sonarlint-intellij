@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.ai
 
+import com.intellij.openapi.util.SystemInfo
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -37,8 +38,9 @@ import org.apache.commons.io.file.PathUtils
 class SonarQubeCli {
 
     private val home = sloopUserHome()
-    private val installRoot = home.resolve(".local/share/sonarqube-cli")
-    private val executable = installRoot.resolve("bin/sonar")
+    // On Windows the official location is under %LOCALAPPDATA%, which the build points into the same user home
+    private val installRoot = home.resolve(if (SystemInfo.isWindows) "AppData/Local/sonarqube-cli" else ".local/share/sonarqube-cli")
+    private val executable = installRoot.resolve(if (SystemInfo.isWindows) "bin/sonar.exe" else "bin/sonar")
 
     val isInstalled: Boolean
         get() = executable.exists()
