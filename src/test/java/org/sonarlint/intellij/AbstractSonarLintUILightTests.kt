@@ -40,12 +40,15 @@ import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.ui.page.EditorTrafficLightPage
 import org.sonarlint.intellij.ui.page.SonarLintMainToolWindowPage
 import org.sonarlint.intellij.ui.page.SonarLintUiTestContext
+import org.sonarlint.intellij.ui.page.settings.global.SonarLintGlobalSettingsPage
+import org.sonarlint.intellij.ui.page.settings.project.SonarLintProjectSettingsPage
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
 
     protected lateinit var mainToolWindow: SonarLintMainToolWindowPage
     private lateinit var uiContext: SonarLintUiTestContext
+    private val openSettingsPages = mutableListOf<AutoCloseable>()
 
     @BeforeEach
     fun openMainToolWindow() {
@@ -63,8 +66,27 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
 
     @AfterEach
     fun closeMainToolWindow() {
-        uiContext.closeOpenEditorsAndSonarLintToolWindows()
+        try {
+            uiContext.closeOpenEditorsAndSonarLintToolWindows()
+        } finally {
+            val pages = openSettingsPages.toList()
+            openSettingsPages.clear()
+            pages.forEach { runCatching { it.close() } }
+        }
     }
+
+    /**
+     * Opens **Settings → Tools → SonarQube for IDE** and returns a page object for that configurable.
+     * Call [SonarLintGlobalSettingsPage.save] to persist changes (equivalent to OK/Apply on the settings dialog).
+     */
+    protected fun openSqIdeSettings(): SonarLintGlobalSettingsPage =
+        SonarLintGlobalSettingsPage.open(project).also { openSettingsPages.add(it) }
+
+    /**
+     * Opens **SonarQube for IDE → Project Settings** (same entry as the Findings toolbar configure action).
+     */
+    protected fun openSqIdeProjectSettings(): SonarLintProjectSettingsPage =
+        SonarLintProjectSettingsPage.open(project).also { openSettingsPages.add(it) }
 
     /** Registers a test-data file with SLOOP and opens it in the code-insight test editor. */
     protected fun openFileFromTestData(relativePath: String): VirtualFile {
