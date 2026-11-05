@@ -66,14 +66,15 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
 
     @AfterEach
     fun closeMainToolWindow() {
-        uiContext.closeOpenEditorsAndSonarLintToolWindows()
-        openSettingsPages.forEach { it.close() }
-        openSettingsPages.clear()
+        try {
+            uiContext.closeOpenEditorsAndSonarLintToolWindows()
+        } finally {
+            val pages = openSettingsPages.toList()
+            openSettingsPages.clear()
+            pages.forEach { runCatching { it.close() } }
+        }
     }
 
-<<<<<<< HEAD
-    /** Registers a test-data file with SLOOP and opens it in the code-insight test editor. */
-=======
     /**
      * Opens **Settings → Tools → SonarQube for IDE** and returns a page object for that configurable.
      * Call [SonarLintGlobalSettingsPage.save] to persist changes (equivalent to OK/Apply on the settings dialog).
@@ -87,8 +88,7 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
     protected fun openSqIdeProjectSettings(): SonarLintProjectSettingsPage =
         SonarLintProjectSettingsPage.open(project).also { openSettingsPages.add(it) }
 
-    /** Registers a test-data file with SLOOP and opens it in the editor (MAIN_EDITOR via code insight fixture). */
->>>>>>> 3c22c8b4c (SLI-2988 Restore settings light UI smoke tests for page objects)
+    /** Registers a test-data file with SLOOP and opens it in the code-insight test editor. */
     protected fun openFileFromTestData(relativePath: String): VirtualFile {
         val sourcePath = java.nio.file.Path.of(testDataPath, relativePath).toAbsolutePath()
         check(java.nio.file.Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
