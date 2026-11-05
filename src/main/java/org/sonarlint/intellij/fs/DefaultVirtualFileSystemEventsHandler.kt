@@ -44,7 +44,17 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
     constructor() : this(Executors.newSingleThreadExecutor { r -> Thread(r, "sonarlint-vfs-events-notifier") })
 
     override fun forwardEventsAsync(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?) {
-        executorService.submit { forwardEvents(events, eventTypeConverter) }
+        val (deletions, otherEvents) = events.partition { eventTypeConverter(it) == ModuleFileEvent.Type.DELETED }
+        // The write action can invalidate files or change their module before the worker runs.
+        val deletedFiles = if (deletions.isEmpty()) emptyMap() else fileEventsByModules(deletions, openProjects(), eventTypeConverter)
+        executorService.submit {
+            if (deletedFiles.isNotEmpty()) {
+                getService(BackendService::class.java).updateFileSystem(deletedFiles, false)
+            }
+            if (otherEvents.isNotEmpty()) {
+                forwardEvents(otherEvents, eventTypeConverter)
+            }
+        }
     }
 
     private fun forwardEvents(
@@ -52,7 +62,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?,
     ) {
         
-        val openProjects = ProjectManager.getInstance().openProjects.filter { !it.isDisposed }.toList()
+        val openProjects = openProjects()
         val filesByModule = fileEventsByModules(events, openProjects, eventTypeConverter)
         val allFilesByModule = filesByModule.entries.associate { it.key to it.value.toList() }
         if (allFilesByModule.isNotEmpty()) {
@@ -65,7 +75,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
         openProjects: List<Project>,
         eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?,
     ): Map<Module, List<VirtualFileEvent>> {
-        val map: MutableMap<Module, List<VirtualFileEvent>> = mutableMapOf()
+        val map = mutableMapOf<Module, MutableList<VirtualFileEvent>>()
         for (event in events) {
             // call event.file only once as it can be hurting performance
             val file = event.file ?: continue
@@ -75,8 +85,7 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
             val fileInvolved = if (event is VFileCopyEvent) event.findCreatedFile() else file
             fileInvolved ?: continue
             val type = eventTypeConverter(event) ?: continue
-            val moduleEvents = map[fileModule] ?: emptyList()
-            map[fileModule] = moduleEvents + allEventsFor(fileInvolved, fileModule, type)
+            map.getOrPut(fileModule) { mutableListOf() }.addAll(allEventsFor(fileInvolved, fileModule, type))
         }
         return map
     }
@@ -88,6 +97,8 @@ open class DefaultVirtualFileSystemEventsHandler @NonInjectable constructor(priv
     ): List<VirtualFileEvent> {
         return visitAndAddAllChildren(file, fileModule.project).mapNotNull { VirtualFileEvent(type, it) }
     }
+
+    private fun openProjects() = ProjectManager.getInstance().openProjects.filter { !it.isDisposed }
 
     private fun findModule(file: VirtualFile?, openProjects: List<Project>): Module? {
         file ?: return null

@@ -20,6 +20,10 @@
 package org.sonarlint.intellij.fs
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
+import java.util.concurrent.AbstractExecutorService
+import java.util.concurrent.TimeUnit
+import org.sonarlint.intellij.util.VirtualFileUtils.toURI
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
@@ -237,6 +241,94 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
             assertThat(it[0].virtualFile).isEqualTo(childFile)
         }
         assertThat(secondParamsCaptor.firstValue).isFalse()
+    }
+
+    @Test
+    fun should_preserve_deleted_uri_after_actual_deletion() {
+        val executor = installQueuedHandler()
+        val originalUri = toURI(file)
+        clearInvocations(backendService)
+
+        WriteCommandAction.runWriteCommandAction(project) { file.delete(this) }
+        assertThat(file.isValid).isFalse()
+        verifyNoInteractions(backendService)
+        executor.drain()
+
+        val batches = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService).updateFileSystem(batches.capture(), org.mockito.kotlin.eq(false))
+        val events = batches.firstValue.getValue(module)
+        assertThat(events).hasSize(1)
+        assertThat(events.single().uri).isEqualTo(originalUri)
+        assertThat(events.single().type).isEqualTo(ModuleFileEvent.Type.DELETED)
+    }
+
+    @Test
+    fun should_preserve_subtree_uris_after_actual_directory_move() {
+        val directory = myFixture.copyDirectoryToProject("sub/folder", "moving")
+        val child = directory.findChild("subfile.py")!!
+        val destination = myFixture.tempDirFixture.findOrCreateDir("destination")
+        val originalUri = toURI(child)
+        val executor = installQueuedHandler()
+        clearInvocations(backendService)
+
+        WriteCommandAction.runWriteCommandAction(project) { directory.move(this, destination) }
+        val destinationUri = toURI(child)
+        assertThat(destinationUri).isNotEqualTo(originalUri)
+        verifyNoInteractions(backendService)
+        executor.drain()
+
+        val batches = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, org.mockito.kotlin.times(2)).updateFileSystem(batches.capture(), org.mockito.kotlin.eq(false))
+        assertThat(batches.allValues[0].getValue(module).single().uri).isEqualTo(originalUri)
+        assertThat(batches.allValues[0].getValue(module).single().type).isEqualTo(ModuleFileEvent.Type.DELETED)
+        assertThat(batches.allValues[1].getValue(module).single().uri).isEqualTo(destinationUri)
+        assertThat(batches.allValues[1].getValue(module).single().type).isEqualTo(ModuleFileEvent.Type.CREATED)
+    }
+
+    @Test
+    fun should_keep_delete_and_recreate_in_order_in_a_large_batch() {
+        val files = (1..100).map { myFixture.copyFileToProject(FILE_NAME, "batch/$it.py") }
+        val originalUris = files.map { toURI(it) }
+        val executor = installQueuedHandler()
+        clearInvocations(backendService)
+
+        WriteCommandAction.runWriteCommandAction(project) { files.forEach { it.delete(this) } }
+        val replacement = myFixture.copyFileToProject(FILE_NAME, "batch/1.py")
+        executor.drain()
+
+        val batches = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
+        verify(backendService, org.mockito.kotlin.atLeastOnce()).updateFileSystem(batches.capture(), org.mockito.kotlin.eq(false))
+        val events = batches.allValues.flatMap { it.values.flatten() }
+        assertThat(events.filter { it.type == ModuleFileEvent.Type.DELETED }.map { it.uri })
+            .containsExactlyElementsOf(originalUris)
+        val creation = events.indexOfFirst { it.type == ModuleFileEvent.Type.CREATED && it.uri == toURI(replacement) }
+        assertThat(creation).isGreaterThanOrEqualTo(files.size)
+    }
+
+    private fun installQueuedHandler(): QueuedExecutor {
+        val executor = QueuedExecutor()
+        ApplicationManager.getApplication().replaceService(
+            VirtualFileSystemEventsHandler::class.java,
+            DefaultVirtualFileSystemEventsHandler(executor),
+            testRootDisposable,
+        )
+        return executor
+    }
+
+    private class QueuedExecutor : AbstractExecutorService() {
+        private val tasks = ArrayDeque<Runnable>()
+        private var stopped = false
+
+        override fun execute(command: Runnable) { tasks.addLast(command) }
+        fun drain() { while (tasks.isNotEmpty()) tasks.removeFirst().run() }
+        override fun shutdown() { stopped = true }
+        override fun shutdownNow(): MutableList<Runnable> {
+            stopped = true
+            return tasks.toMutableList().also { tasks.clear() }
+        }
+        override fun isShutdown() = stopped
+        override fun isTerminated() = stopped && tasks.isEmpty()
+        override fun awaitTermination(timeout: Long, unit: TimeUnit) = isTerminated
     }
 
     private var projectBindingManager: ProjectBindingManager = mock()
