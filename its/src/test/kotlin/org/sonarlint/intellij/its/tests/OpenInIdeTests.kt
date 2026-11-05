@@ -35,7 +35,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.changeStatusOnSonarQubeAndPressChange
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.confirm
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromFindingsPanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.openIssueReviewDialogFromList
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyIssueStatusWasSuccessfullyChanged
@@ -248,7 +248,7 @@ class OpenInIdeTests : BaseUiTest() {
             )
             acceptNewSCAutomatedConnection()
             verifyIssueOpened()
-            enableConnectedModeFromCurrentFilePanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "sonarlint-it", ConnectionType.SQC_EU)
+            enableConnectedModeFromFindingsPanel(SONARCLOUD_ISSUE_PROJECT_KEY, false, "sonarlint-it", ConnectionType.SQC_EU)
         }
 
         @Test
@@ -256,7 +256,7 @@ class OpenInIdeTests : BaseUiTest() {
             openExistingProject(ISSUE_PROJECT_KEY)
 
             // Issue Analysis Test
-            enableConnectedModeFromCurrentFilePanel(ISSUE_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
+            enableConnectedModeFromFindingsPanel(ISSUE_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
             openFile("src/main/java/foo/Foo.java", "Foo.java")
             verifyCurrentFileTabContainsMessages("Remove this empty class, write its code or make it an \"interface\".")
 

@@ -33,7 +33,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIf
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.sonarlint.intellij.its.BaseUiTest
-import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromCurrentFilePanel
+import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.enableConnectedModeFromFindingsPanel
 import org.sonarlint.intellij.its.tests.domain.CurrentFileTabTests.Companion.verifyCurrentFileTabContainsMessages
 import org.sonarlint.intellij.its.tests.domain.ReportTabTests.Companion.analyzeAndVerifyReportTabContainsMessages
 import org.sonarlint.intellij.its.utils.ConnectionType
@@ -150,7 +150,7 @@ class ConnectedAnalysisTests : BaseUiTest() {
             openExistingProject("sample-java-taint-vulnerability")
 
             // Focus On New Code Test
-            enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
+            enableConnectedModeFromFindingsPanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
             openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
             setFocusOnNewCode()
             analyzeAndVerifyReportTabContainsMessages(
@@ -168,14 +168,14 @@ class ConnectedAnalysisTests : BaseUiTest() {
         fun should_analyze_swift() = uiTest {
             openExistingProject("sample-swift")
 
-            enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
+            enableConnectedModeFromFindingsPanel(TAINT_VULNERABILITY_PROJECT_KEY, true, "Orchestrator", ConnectionType.SQS)
 
             openFile("file.swift")
             verifyCurrentFileTabContainsMessages(
                 "Found 1 issue",
                 "Use \"try\" or \"try?\" here instead; \"try!\" disables error propagation."
             )
-            enableConnectedModeFromCurrentFilePanel(TAINT_VULNERABILITY_PROJECT_KEY, false, "Orchestrator", ConnectionType.SQS)
+            enableConnectedModeFromFindingsPanel(TAINT_VULNERABILITY_PROJECT_KEY, false, "Orchestrator", ConnectionType.SQS)
         }
 
     }
