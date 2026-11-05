@@ -84,12 +84,15 @@ class SonarQubeCli {
     private fun releasedCli(): Path =
         Path.of(checkNotNull(System.getProperty(RELEASED_CLI_PROPERTY)) { "The build did not provide the SonarQube CLI, see build.gradle.kts" })
 
-    /** Ends the processes a test left running from the CLI installation: Windows cannot delete an executable while it runs. */
+    /**
+     * Ends the processes a test left running from the CLI installation, e.g. the background process the CLI may leave:
+     * Windows cannot delete an executable while it runs. Do not wait for them to be reaped: in a container without an init
+     * process, a killed orphan stays a zombie, which still counts as running but no longer holds its executable.
+     */
     private fun stopRunningCommands() {
-        processesRunningFrom(installRoot).forEach { process ->
-            process.destroyForcibly()
-            process.onExit().get(10, TimeUnit.SECONDS)
-        }
+        val processes = processesRunningFrom(installRoot)
+        processes.forEach { it.destroyForcibly() }
+        runCatching { CompletableFuture.allOf(*processes.map { it.onExit() }.toTypedArray()).get(5, TimeUnit.SECONDS) }
     }
 
     /**
