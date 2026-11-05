@@ -33,12 +33,14 @@ Example assertion (see `FindingsTabAnalysisLightTests`):
 ```kotlin
 val file = openFileFromTestData("src/file.xml")
 awaitUntilAsserted {
+    assertThat(trafficLightPageFor(file).issueCountLabelText).isNull()
     assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
 }
 mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click()
 awaitUntilAsserted {
     assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")
     assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
+    assertThat(trafficLightPageFor(file).issueCountLabelText).isEqualTo("1")
 }
 ```
 
