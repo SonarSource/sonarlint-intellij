@@ -64,7 +64,7 @@ The backend answers asynchronously, so wait for the UI with `awaitUntil { … }`
 
 ## Settings page objects
 
-Use [`openSqIdeSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Tools → SonarQube for IDE** (global configurable) and [`openSqIdeProjectSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Project Settings** (Findings toolbar configure action). Each opener returns a root page object with tab accessors; **File Exclusions** exposes `clickAddExclusion()` → dialog page object → `save()` on the root page persists via `Configurable.apply()`.
+Use [`openSqIdeSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Tools → SonarQube for IDE** (global configurable) and [`openSqIdeProjectSettings()`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) for **Project Settings** (Findings toolbar configure action). Each opener returns a root page object with tab accessors. Project **File Exclusions** drives `AddEditExclusionDialog` through `enterFilePath`, `enterDirectoryPath`, or `enterGlobPattern`. Radios use `doClick()` so the matching field is enabled. Unit-test mode rejects `DialogWrapper.showAndGet()`, so `confirm()` reads the dialog value and writes it into the exclusions table. `save()` on the root page persists via `Configurable.apply()`.
 
 Example (project file exclusion):
 

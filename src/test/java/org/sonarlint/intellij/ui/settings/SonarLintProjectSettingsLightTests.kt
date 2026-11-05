@@ -32,4 +32,12 @@ class SonarLintProjectSettingsLightTests : AbstractSonarLintUILightTests() {
         settings.save()
         assertThat(getProjectSettings().fileExclusions).isEmpty()
     }
+
+    @Test
+    fun should_add_a_file_exclusion_through_the_dialog() {
+        val settings = openSqIdeProjectSettings()
+        settings.fileExclusionsTab.addFileExclusion("src/main/java/foo/Bar.java")
+        settings.save()
+        assertThat(getProjectSettings().fileExclusions).containsExactly("FILE:src/main/java/foo/Bar.java")
+    }
 }

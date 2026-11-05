@@ -19,28 +19,15 @@
  */
 package org.sonarlint.intellij.ui.page.settings.global
 
-import com.intellij.openapi.project.Project
 import java.awt.Component
 import org.sonarlint.intellij.config.component.EditableList
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fixtures.walkComponents
-import org.sonarlint.intellij.ui.page.settings.openModalDialog
-import org.sonarlint.intellij.ui.page.settings.triggerExclusionsAddAction
 
 /** Page object for the global **File Exclusions** tab. */
 class GlobalFileExclusionsTabPage internal constructor(
-    private val project: Project,
     private val settingsRoot: Component,
 ) {
-
-    /** Clicks the toolbar **Add** button and returns a page object for the pattern input dialog. */
-    fun clickAddExclusion(): GlobalFileExclusionAddDialogPage {
-        val session = openModalDialog(
-            openModalAction = { settingsRoot.triggerExclusionsAddAction(project) },
-            dialogTitleContains = ADD_DIALOG_TITLE,
-        )
-        return GlobalFileExclusionAddDialogPage(session.dialog, session)
-    }
 
     /**
      * Adds a glob exclusion pattern on the File Exclusions tab.
@@ -59,9 +46,5 @@ class GlobalFileExclusionsTabPage internal constructor(
         listField.isAccessible = true
         @Suppress("UNCHECKED_CAST")
         return listField.get(exclusionsPanel) as EditableList<String>
-    }
-
-    companion object {
-        private const val ADD_DIALOG_TITLE = "Add File Exclusion"
     }
 }

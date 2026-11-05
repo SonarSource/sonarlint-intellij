@@ -19,31 +19,15 @@
  */
 package org.sonarlint.intellij.ui.page.settings
 
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.impl.ActionToolbarImpl
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.project.Project
 import com.intellij.ui.CommonActionsPanel
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTabbedPane
-import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import java.awt.Component
-import java.awt.Window
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 import javax.swing.JButton
-import javax.swing.JDialog
-import javax.swing.JEditorPane
 import javax.swing.JRadioButton
-import javax.swing.text.JTextComponent
-import org.awaitility.Awaitility
 import org.sonarlint.intellij.fixtures.findComponents
-import org.sonarlint.intellij.fixtures.pumpEdt
-import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fixtures.walkComponents
 
 /** Outermost tab strip (walk order is top-down from the settings root). */
@@ -98,26 +82,6 @@ private fun Component.exclusionsToolbarHost(): Component? {
     return null
 }
 
-internal fun Component.triggerExclusionsAddAction(project: Project) {
-    val selectedTab = findTabbedPane().selectedComponent ?: error("No selected settings tab")
-    val toolbar = selectedTab.walkComponents()
-        .filterIsInstance<ActionToolbarImpl>()
-        .firstOrNull()
-        ?: error("Exclusions toolbar not found on selected tab")
-    toolbar.updateActionsImmediately()
-    val actionsMethod = toolbar.javaClass.methods.first { it.name == "getActions" && it.parameterCount == 0 }
-    @Suppress("UNCHECKED_CAST")
-    val actions = actionsMethod.invoke(toolbar) as List<AnAction>
-    val event = AnActionEvent.createFromDataContext(
-        ActionPlaces.UNKNOWN,
-        null,
-        DataContext { dataId ->
-            if (CommonDataKeys.PROJECT.`is`(dataId)) project else null
-        },
-    )
-    actions.first().actionPerformed(event)
-}
-
 private fun CommonActionsPanel.resolveAddButton(): Component {
     javaClass.methods
         .asSequence()
@@ -151,83 +115,5 @@ internal fun Component.triggerToolbarButtonClick() {
     }
 }
 
-internal fun findShowingJDialog(titleContains: String): JDialog? =
-    Window.getWindows()
-        .filterIsInstance<JDialog>()
-        .firstOrNull { it.isShowing && it.title.contains(titleContains, ignoreCase = true) }
-        ?: Window.getWindows()
-            .filterIsInstance<JDialog>()
-            .firstOrNull { it.isShowing && titleContains.contains("Exclusion", ignoreCase = true) && it.title.contains("Exclusion", ignoreCase = true) }
-
-internal fun JDialog.findOkButton(): JButton =
-    rootPane.findComponents<JButton>().first { it.text == "OK" && it.isEnabled }
-
-internal fun JDialog.findTextField(): JBTextField =
-    rootPane.findComponents<JBTextField>().first()
-
-internal fun JDialog.findRadioButton(labelContains: String): JRadioButton =
-    rootPane.findComponents<JRadioButton>().first { it.text.contains(labelContains, ignoreCase = true) }
-
-internal fun JDialog.findTextInput(): JTextComponent =
-    rootPane.findComponents<JTextComponent>().first { it.isEnabled && it.isShowing }
-
-internal data class ModalDialogSession(
-    val dialog: JDialog,
-    private val openerThread: Thread,
-    private val openerError: AtomicReference<Throwable?>,
-) {
-    fun awaitClosed(timeoutMillis: Long = 120_000) {
-        openerThread.join(timeoutMillis)
-        openerError.get()?.let { throw it }
-        check(!openerThread.isAlive) {
-            "Modal dialog did not close within ${timeoutMillis}ms"
-        }
-    }
-}
-
-/** Opens a modal dialog on a worker EDT task and returns while the dialog is still visible. */
-internal fun openModalDialog(
-    openModalAction: () -> Unit,
-    dialogTitleContains: String,
-    timeoutSeconds: Long = 30,
-): ModalDialogSession {
-    val openerError = AtomicReference<Throwable?>(null)
-    val opener = Thread {
-        try {
-            readOnEdt {
-                openModalAction()
-            }
-        } catch (t: Throwable) {
-            openerError.set(t)
-        }
-    }
-    opener.isDaemon = true
-    opener.start()
-    Awaitility.await().atMost(timeoutSeconds, TimeUnit.SECONDS).until {
-        readOnEdt {
-            repeat(10) { pumpEdt() }
-            findShowingJDialog(dialogTitleContains) != null
-        }
-    }
-    val dialog = readOnEdt {
-        findShowingJDialog(dialogTitleContains) ?: error("Dialog '$dialogTitleContains' not found")
-    }
-    openerError.get()?.let { throw it }
-    return ModalDialogSession(dialog, opener, openerError)
-}
-
-/**
- * Clicks [openModalAction] on a worker thread (it usually blocks on a modal dialog), then runs [interactWithModal]
- * from the test thread while the dialog is open, and waits until the modal closes.
- */
-internal fun <T> interactWithModalDialog(
-    openModalAction: () -> Unit,
-    dialogTitleContains: String,
-    timeoutSeconds: Long = 30,
-    interactWithModal: (JDialog) -> T,
-): T {
-    val session = openModalDialog(openModalAction, dialogTitleContains, timeoutSeconds)
-    val result = readOnEdt { interactWithModal(session.dialog) }
-    session.awaitClosed(timeoutSeconds * 1000)
-    return result
-}
+internal fun Component.findRadioButton(labelContains: String): JRadioButton =
+    findComponents<JRadioButton>().first { it.text.contains(labelContains, ignoreCase = true) }

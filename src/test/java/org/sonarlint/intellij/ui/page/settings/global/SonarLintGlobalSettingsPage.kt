@@ -45,7 +45,7 @@ class SonarLintGlobalSettingsPage internal constructor(
     val fileExclusionsTab: GlobalFileExclusionsTabPage
         get() = readOnEdt {
             root.findTabbedPane().selectTab(TAB_FILE_EXCLUSIONS)
-            GlobalFileExclusionsTabPage(project, root)
+            GlobalFileExclusionsTabPage(root)
         }
 
     val rulesTab: GlobalRulesTabPage

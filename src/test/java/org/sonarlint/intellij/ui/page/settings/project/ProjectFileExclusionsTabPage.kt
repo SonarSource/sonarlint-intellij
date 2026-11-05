@@ -20,35 +20,45 @@
 package org.sonarlint.intellij.ui.page.settings.project
 
 import com.intellij.openapi.project.Project
-import java.awt.Component
-import org.sonarlint.intellij.ui.page.settings.openModalDialog
-import org.sonarlint.intellij.ui.page.settings.triggerExclusionsAddAction
+import org.sonarlint.intellij.config.project.AddEditExclusionDialog
+import org.sonarlint.intellij.config.project.ExclusionItem
+import org.sonarlint.intellij.config.project.ExclusionTable
+import org.sonarlint.intellij.config.project.ProjectExclusionsPanel
+import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable
+import org.sonarlint.intellij.config.project.SonarLintProjectSettingsPanel
+import org.sonarlint.intellij.fixtures.readOnEdt
 
 /** Page object for the project **File Exclusions** tab. */
 class ProjectFileExclusionsTabPage internal constructor(
     private val project: Project,
-    private val settingsRoot: Component,
+    private val configurable: SonarLintProjectConfigurable,
 ) {
 
-    /** Clicks the toolbar **Add** button and returns the add-exclusion dialog page object. */
-    fun clickAddExclusion(): AddProjectFileExclusionDialogPage {
-        val session = openModalDialog(
-            openModalAction = { settingsRoot.triggerExclusionsAddAction(project) },
-            dialogTitleContains = ADD_DIALOG_TITLE,
-        )
-        return AddProjectFileExclusionDialogPage(session.dialog, session)
+    /**
+     * Opens **Add SonarQube for IDE File Exclusion**.
+     * Unit-test mode rejects [com.intellij.openapi.ui.DialogWrapper.showAndGet], so the dialog content is driven directly
+     * and [AddProjectFileExclusionDialogPage.confirm] writes the exclusion into the table.
+     */
+    fun clickAddExclusion(): AddProjectFileExclusionDialogPage = readOnEdt {
+        AddProjectFileExclusionDialogPage(AddEditExclusionDialog(project), ::appendExclusion)
     }
 
     /** Adds a file exclusion by relative path (same flow as Standalone UI IT). */
     fun addFileExclusion(relativePath: String) {
         clickAddExclusion().apply {
             selectFile()
-            enterPath(relativePath)
+            enterFilePath(relativePath)
             confirm()
         }
     }
 
-    companion object {
-        private const val ADD_DIALOG_TITLE = "Add SonarQube for IDE File Exclusion"
+    private fun appendExclusion(item: ExclusionItem) {
+        val settingsPanel = configurable.declaredField("panel").get(configurable) as SonarLintProjectSettingsPanel
+        val exclusionsPanel = settingsPanel.declaredField("exclusionsPanel").get(settingsPanel) as ProjectExclusionsPanel
+        val table = exclusionsPanel.declaredField("table").get(exclusionsPanel) as ExclusionTable
+        table.set(table.get() + item)
     }
+
+    private fun Any.declaredField(name: String) =
+        javaClass.getDeclaredField(name).also { it.isAccessible = true }
 }

@@ -45,7 +45,7 @@ class SonarLintProjectSettingsPage internal constructor(
     val fileExclusionsTab: ProjectFileExclusionsTabPage
         get() = readOnEdt {
             root.findTabbedPane().selectTab(TAB_FILE_EXCLUSIONS)
-            ProjectFileExclusionsTabPage(project, root)
+            ProjectFileExclusionsTabPage(project, configurable)
         }
 
     val analysisPropertiesTab: ProjectAnalysisPropertiesTabPage
