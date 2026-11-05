@@ -19,6 +19,11 @@
  */
 package org.sonarlint.intellij
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup.InspectionWidgetActionProvider
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -32,9 +37,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.sonarlint.intellij.analysis.AnalysisReadinessCache
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
+import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction
 import org.sonarlint.intellij.editor.SonarLintEditorWidgetActionProvider
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarlint.intellij.ui.page.EditorTrafficLightPage
@@ -88,6 +95,18 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
     protected fun openSqIdeProjectSettings(): SonarLintProjectSettingsPage =
         SonarLintProjectSettingsPage.open(project).also { openSettingsPages.add(it) }
 
+    /** Copies a test-data file into the module and notifies SLOOP (does not open the editor). */
+    protected fun copyFileFromTestData(relativePath: String): VirtualFile {
+        val sourcePath = java.nio.file.Path.of(testDataPath, relativePath).toAbsolutePath()
+        check(java.nio.file.Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
+        val virtualFile = myFixture.copyFileToProject(relativePath, relativePath)
+        getService(BackendService::class.java).updateFileSystem(
+            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
+            true,
+        )
+        return virtualFile
+    }
+
     /** Registers a test-data file with SLOOP and opens it in the code-insight test editor. */
     protected fun openFileFromTestData(relativePath: String): VirtualFile {
         val sourcePath = java.nio.file.Path.of(testDataPath, relativePath).toAbsolutePath()
@@ -126,11 +145,45 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         }
     }
 
+    /** Selects [virtualFile] in the editor and runs Findings toolbar “Analyze Current File”. */
+    protected fun analyzeCurrentFileViaFindingsToolbar(virtualFile: VirtualFile) {
+        readOnEdt { myFixture.openFileInEditor(virtualFile) }
+        awaitUntilAsserted {
+            assertThat(mainToolWindow.findings.toolbar.isVisible).isTrue()
+            assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
+        }
+        mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click()
+    }
+
     protected fun waitUntilAnalysisReady(timeoutSeconds: Long = 30, module: Module = this.module) {
         Awaitility.await().atMost(timeoutSeconds, TimeUnit.SECONDS).untilAsserted {
             val readiness = getService(project, AnalysisReadinessCache::class.java)
             assertThat(readiness.isModuleReady(module)).isTrue()
             assertThat(readiness.isProjectReady).isTrue()
+        }
+    }
+
+    /** Runs **Analyze with SonarQube for IDE** on [files] and opens a **Report** tab (editor context menu place). */
+    protected fun analyzeFilesForReport(vararg files: VirtualFile) {
+        readOnEdt {
+            val action = SonarAnalyzeFilesAction()
+            val presentation = Presentation()
+            val event = AnActionEvent(
+                null,
+                { dataId ->
+                    when {
+                        CommonDataKeys.PROJECT.`is`(dataId) -> project
+                        CommonDataKeys.VIRTUAL_FILE_ARRAY.`is`(dataId) -> files
+                        else -> null
+                    }
+                },
+                ActionPlaces.EDITOR_POPUP,
+                presentation,
+                ActionManager.getInstance(),
+                0,
+            )
+            action.actionPerformed(event)
+            pumpEdt()
         }
     }
 

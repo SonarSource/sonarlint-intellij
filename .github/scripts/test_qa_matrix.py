@@ -11,7 +11,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ALL_SUITES = ["OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone"]
+ALL_SUITES = ["OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "LanguageAnalysis"]
 SMOKE_SUITES = ["SmokeIdea"]
 PR_MODES = {"pr-all": ALL_SUITES, "pr-minimal": SMOKE_SUITES}
 
@@ -235,9 +235,9 @@ latestPyCharmIdeVersion=
 
     def test_custom_default_suites_per_product(self):
         for ide_version, suites in [("IC-2026.2.3", ["OpenInIdeTests", "ConnectedAnalysisTests",
-                                                     "ConfigurationTests", "Standalone"]),
+                                                     "ConfigurationTests", "LanguageAnalysis"]),
                                     ("IU-263.7307.44", ["OpenInIdeTests", "ConnectedAnalysisTests",
-                                                        "ConfigurationTests", "Standalone"]),
+                                                        "ConfigurationTests", "LanguageAnalysis"]),
                                     ("RD-2026.3-EAP8-263.7307.48.Checked", ["Rider"]),
                                     ("CL-2026.2.4", ["CLion"]), ("PC-2025.2.4", ["PyCharm"])]:
             for suite in ["default", ""]:

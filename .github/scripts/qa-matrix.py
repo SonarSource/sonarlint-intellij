@@ -10,7 +10,7 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[2]
-IDEA_SUITES = ("OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone")
+IDEA_SUITES = ("OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "LanguageAnalysis")
 # Suites each IDE code can run in a custom run; the default is all of them except PLSQL.
 PRODUCT_SUITES = {"IC": IDEA_SUITES, "IU": IDEA_SUITES + ("PLSQL",), "CL": ("CLion",),
                   "RD": ("Rider",), "PY": ("PyCharm",), "PC": ("PyCharm",),
