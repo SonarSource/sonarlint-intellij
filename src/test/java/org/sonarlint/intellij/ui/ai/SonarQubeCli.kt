@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.ai
 
 import com.intellij.openapi.util.SystemInfo
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -79,20 +80,41 @@ class SonarQubeCli {
     private fun releasedCli(): Path =
         Path.of(checkNotNull(System.getProperty(RELEASED_CLI_PROPERTY)) { "The build did not provide the SonarQube CLI, see build.gradle.kts" })
 
-    /** Ends the CLI commands a test left running: Windows cannot delete an executable while it runs. */
+    /** Ends the processes a test left running from the CLI installation: Windows cannot delete an executable while it runs. */
     private fun stopRunningCommands() {
-        ProcessHandle.allProcesses()
-            .filter { process -> process.info().command().map { Path.of(it) == executable }.orElse(false) }
-            .forEach { process ->
-                process.destroyForcibly()
-                process.onExit().get(10, TimeUnit.SECONDS)
-            }
+        processesRunningFrom(installRoot).forEach { process ->
+            process.destroyForcibly()
+            process.onExit().get(10, TimeUnit.SECONDS)
+        }
     }
 
+    /**
+     * Deletes [directory], retrying for a few seconds: on Windows a just-ended process, or the antivirus scanning a new
+     * executable, can keep files open briefly.
+     */
     private fun deleteDirectoryIfExists(directory: Path) {
-        if (directory.exists()) {
-            PathUtils.deleteDirectory(directory)
+        var attempt = 0
+        while (directory.exists()) {
+            try {
+                PathUtils.deleteDirectory(directory)
+            } catch (e: IOException) {
+                if (++attempt == 20) {
+                    // Only the executable paths: a process's arguments or environment may hold secrets
+                    val runningFromHome = processesRunningFrom(home).mapNotNull { it.info().command().orElse(null) }
+                    throw IOException("Cannot delete $directory; processes running from the test user home: $runningFromHome", e)
+                }
+                Thread.sleep(500)
+            }
         }
+    }
+
+    private fun processesRunningFrom(directory: Path): List<ProcessHandle> {
+        val root = directory.toAbsolutePath().normalize()
+        return ProcessHandle.allProcesses().filter { process ->
+            process.info().command().map { command ->
+                runCatching { Path.of(command.removePrefix("\\\\?\\")).toAbsolutePath().normalize().startsWith(root) }.getOrDefault(false)
+            }.orElse(false)
+        }.toList()
     }
 
     private fun run(command: List<String>, input: String? = null): String {
