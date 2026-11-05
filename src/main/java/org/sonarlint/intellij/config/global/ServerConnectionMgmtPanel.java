@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
@@ -56,9 +58,8 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
-import org.sonarlint.intellij.config.global.credentials.CredentialsService;
+import org.sonarlint.intellij.config.global.credentials.CredentialOperationRunner;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -68,23 +69,26 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.CONNECTED_MODE_DOCS;
 
-public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
+public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGlobalSettings>, Disposable {
 
   // UI
   private JPanel panel;
   private JPanel serversPanel;
-  private JBList<ServerConnection> connectionList;
+  private final JBList<ServerConnection> connectionList = new JBList<>();
 
   // Model
   private GlobalConfigurationListener connectionChangeListener;
   private final List<ServerConnection> connections = new ArrayList<>();
   private final Set<String> deletedServerIds = new HashSet<>();
   private boolean hasUnappliedConnectionChanges;
+  private int requestGeneration;
+  private CredentialOperationRunner.Request credentialRequest;
+  private ServerConnectionWizard activeWizard;
+  private boolean credentialOperationPending;
 
   private void create() {
     var app = ApplicationManager.getApplication();
     connectionChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
-    connectionList = new JBList<>();
     connectionList.getEmptyText().appendLine("Add a connection to SonarQube (Server, Cloud)");
     connectionList.addMouseListener(new MouseAdapter() {
       @Override
@@ -102,6 +106,9 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       .setEditAction(e -> editSelectedConnection())
       .disableUpDownActions();
 
+    toolbarDecorator.setAddActionUpdater(e -> !credentialOperationPending);
+    toolbarDecorator.setEditActionUpdater(e -> !credentialOperationPending);
+    toolbarDecorator.setRemoveActionUpdater(e -> !credentialOperationPending);
     toolbarDecorator.setAddAction(new AddConnectionAction());
     toolbarDecorator.setRemoveAction(new RemoveServerAction());
 
@@ -238,6 +245,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
+    cancelPendingOperation();
     connections.clear();
     deletedServerIds.clear();
     hasUnappliedConnectionChanges = false;
@@ -274,41 +282,83 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     connectionChangeListener.draftChanged(connections);
   }
 
+  private boolean isCurrentRequest(int generation) {
+    return generation == requestGeneration;
+  }
+
+  private boolean containsConnection(ServerConnection connection) {
+    return connections.stream().anyMatch(current -> current == connection);
+  }
+
+  private void setCredentialOperationPending(boolean pending) {
+    credentialOperationPending = pending;
+    connectionList.setEnabled(!pending);
+  }
+
+  private void cancelPendingOperation() {
+    requestGeneration++;
+    if (credentialRequest != null) {
+      Disposer.dispose(credentialRequest);
+      credentialRequest = null;
+    }
+    if (activeWizard != null) {
+      activeWizard.cancel();
+      activeWizard = null;
+    }
+    setCredentialOperationPending(false);
+  }
+
+  @Override
+  public void dispose() {
+    cancelPendingOperation();
+  }
+
   private void editSelectedConnection() {
     var selectedConnection = getSelectedConnection();
-    int selectedIndex = connectionList.getSelectedIndex();
-
-    if (selectedConnection != null) {
-      try {
-        var serverEditor = ServerConnectionWizard.forConnectionEdition(selectedConnection);
-        if (serverEditor.showAndGet()) {
-          var editedConnection = serverEditor.getConnection();
-          ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(editedConnection, selectedIndex);
-          connections.set(connections.indexOf(selectedConnection), editedConnection);
-          connectionsChanged();
-        }
-      } catch (Exception e) {
-        Messages.showErrorDialog(
-          serversPanel,
-          "Failed to edit connection: " + e.getMessage(),
-          "Error Editing Connection"
-        );
-      }
+    if (selectedConnection == null || credentialOperationPending || activeWizard != null) {
+      return;
     }
+    requestGeneration++;
+    int generation = requestGeneration;
+    setCredentialOperationPending(true);
+    credentialRequest = CredentialOperationRunner.get(this, serversPanel, selectedConnection,
+      () -> isCurrentRequest(generation) && containsConnection(selectedConnection),
+      credentials -> {
+        activeWizard = ServerConnectionWizard.forConnectionEdition(selectedConnection, credentials);
+        try {
+          if (activeWizard.showAndGet() && isCurrentRequest(generation) && containsConnection(selectedConnection)) {
+            var editedConnection = activeWizard.getConnection();
+            int currentIndex = connections.indexOf(selectedConnection);
+            ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(editedConnection, currentIndex);
+            connections.set(currentIndex, editedConnection);
+            connectionsChanged();
+          }
+        } finally {
+          activeWizard = null;
+        }
+      },
+      error -> Messages.showErrorDialog(serversPanel, "Failed to edit connection: " + error.getMessage(), "Error Editing Connection"),
+      () -> setCredentialOperationPending(false));
   }
 
   private class AddConnectionAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
+      if (credentialOperationPending || activeWizard != null) {
+        return;
+      }
       var existingNames = connections.stream().map(ServerConnection::getName).collect(Collectors.toSet());
-      var wizard = ServerConnectionWizard.forNewConnection(existingNames);
-      if (wizard.showAndGet()) {
-        var created = wizard.getConnection();
+      requestGeneration++;
+      int generation = requestGeneration;
+      activeWizard = ServerConnectionWizard.forNewConnection(existingNames);
+      if (activeWizard.showAndGet() && isCurrentRequest(generation)) {
+        var created = activeWizard.getConnection();
         connections.add(created);
         ((CollectionListModel<ServerConnection>) connectionList.getModel()).add(created);
         connectionList.setSelectedIndex(connectionList.getModel().getSize() - 1);
         connectionsChanged();
       }
+      activeWizard = null;
     }
   }
 
@@ -316,7 +366,9 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
     @Override
     public void run(AnActionButton anActionButton) {
       var server = getSelectedConnection();
-      var selectedIndex = connectionList.getSelectedIndex();
+      if (credentialOperationPending || activeWizard != null) {
+        return;
+      }
 
       if (server == null) {
         return;
@@ -336,18 +388,24 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
         }
       }
 
-      var model = (CollectionListModel<ServerConnection>) connectionList.getModel();
-      // it's not removed from serverIds and editorList
-      model.remove(server);
-      connections.remove(server);
-      SonarLintUtils.getService(CredentialsService.class)
-          .eraseCredentials(server);
-      connectionsChanged();
-
-      if (model.getSize() > 0) {
-        var newIndex = Math.clamp(selectedIndex - 1, 0, model.getSize() - 1);
-        connectionList.setSelectedValue(model.getElementAt(newIndex), true);
-      }
+      requestGeneration++;
+      int generation = requestGeneration;
+      setCredentialOperationPending(true);
+      credentialRequest = CredentialOperationRunner.erase(ServerConnectionMgmtPanel.this, serversPanel, server,
+        () -> isCurrentRequest(generation) && containsConnection(server),
+        () -> {
+          var model = (CollectionListModel<ServerConnection>) connectionList.getModel();
+          int currentIndex = connections.indexOf(server);
+          model.remove(server);
+          connections.remove(currentIndex);
+          connectionsChanged();
+          if (model.getSize() > 0) {
+            var newIndex = Math.clamp((long) currentIndex - 1, 0, model.getSize() - 1);
+            connectionList.setSelectedValue(model.getElementAt(newIndex), true);
+          }
+        },
+        error -> Messages.showErrorDialog(serversPanel, "Failed to remove connection: " + error.getMessage(), "Error Removing Connection"),
+        () -> setCredentialOperationPending(false));
     }
 
     private List<String> getOpenProjectNames(Project[] openProjects, ServerConnection server) {
