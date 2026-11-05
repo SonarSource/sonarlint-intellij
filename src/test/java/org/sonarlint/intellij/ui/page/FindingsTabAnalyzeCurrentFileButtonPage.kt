@@ -19,14 +19,12 @@
  */
 package org.sonarlint.intellij.ui.page
 
-import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.fileEditor.FileEditorManager
 import org.sonarlint.intellij.fixtures.pumpEdt
-import org.sonarlint.intellij.ui.currentfile.CurrentFileFindingsPanel
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
@@ -35,6 +33,7 @@ import org.sonarlint.intellij.util.SonarLintActions
 
 /** Page object for the Findings tab “Analyze Current File” toolbar control. */
 class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
+    private val toolbar: FindingsTabToolbarPage,
     private val findingsTab: FindingsTabPage,
     private val project: Project,
     private val panel: FindingsPanel,
@@ -42,7 +41,7 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
 
     val isEnabled: Boolean
         get() = readOnEdt {
-            requireToolbarVisible()
+            toolbar.requireVisible()
             val button = findToolbarButton() ?: return@readOnEdt false
             button.isEnabled && button.isVisible
         }
@@ -53,7 +52,7 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
                 "No file selected in the editor before Analyze Current File"
             }
             syncFindingsTabWithEditor()
-            requireToolbarVisible()
+            toolbar.requireVisible()
             val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
             val button = checkNotNull(findToolbarButton()) {
                 "Analyze Current File button not found in Findings toolbar"
@@ -65,16 +64,6 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
 
     private fun syncFindingsTabWithEditor() {
         findingsTab.refreshWithEditorSelection()
-    }
-
-    private fun requireToolbarVisible() {
-        check(panel is SimpleToolWindowPanel) { "Findings panel is not a SimpleToolWindowPanel" }
-        checkNotNull(panel.getToolbar()) { "Findings toolbar is missing" }
-        val toolbarComponent = checkNotNull(panel.findingsMainToolbar()?.component) { "Findings main toolbar is missing" }
-        check(toolbarComponent.isVisible) {
-            "Findings main toolbar component must be visible (production sets visibility in setToolbarSections)"
-        }
-        pumpEdt()
     }
 
     private fun findToolbarButton(): ActionButton? {
@@ -99,15 +88,4 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
                 .mapNotNull { it as? ActionButton }
         }
     }
-
-}
-
-/** Returns the Findings tab [ActionToolbar] that production exposes in [CurrentFileFindingsPanel.setToolbarSections]. */
-internal fun FindingsPanel.findingsMainToolbar(): ActionToolbar? {
-    if (this !is CurrentFileFindingsPanel) {
-        return null
-    }
-    val field = CurrentFileFindingsPanel::class.java.getDeclaredField("mainToolbar")
-    field.isAccessible = true
-    return field.get(this) as? ActionToolbar
 }
