@@ -320,7 +320,7 @@ jobs:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
-          gradle-args: -x test -x check -x :its:check :verifyPlugin -PverifierEnv=CI
+          gradle-args: -x test -x check -x :its:check :verifyPlugin
           cache-paths: |
             /home/runner/.gradle/caches
             !/home/runner/.gradle/caches/*/transforms/
