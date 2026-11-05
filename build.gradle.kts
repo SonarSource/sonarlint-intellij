@@ -2,6 +2,7 @@
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.file.Files
@@ -349,6 +350,31 @@ tasks {
         systemProperty("sonarlint.monitoring.disabled", "true")
         // disable thread leak checker for now as it's raising FPs
         systemProperty("junit.jupiter.extensions.autodetection.exclude", "com.intellij.testFramework.junit5.impl.ThreadLeakTrackerExtension")
+        // Hide the tools installed on the machine from the backend, so tests decide whether a CLI is installed: it gets its
+        // own user home, where it still searches the official install locations, and an empty search path instead of
+        // PATH (or the system paths on macOS)
+        val sloopUserHome = layout.buildDirectory.dir("sloop-user-home").get().asFile
+        // The backend splits SONARLINT_JVM_OPTS on spaces, so the user home can only be passed from a path without spaces.
+        // Without it, the tests that need this isolation skip themselves.
+        if (sloopUserHome.absolutePath.contains(' ')) {
+            doFirst {
+                logger.warn("Tests needing an isolated SonarQube for IDE backend are skipped: the build path contains spaces (${sloopUserHome.absolutePath})")
+            }
+        } else {
+            systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
+            environment("SONARLINT_JVM_OPTS", listOfNotNull(System.getenv("SONARLINT_JVM_OPTS")?.takeIf { it.isNotBlank() },
+                "-Duser.home=${sloopUserHome.absolutePath}", "-Dsonarlint.internal.ai.searchPath=").joinToString(" "))
+            doFirst {
+                sloopUserHome.deleteRecursively()
+                // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so
+                // the fake Claude Code used by AiIntegrationsTabLightTests must exist before any test runs
+                val agentBinDirectory = sloopUserHome.resolve(".local/bin").apply { mkdirs() }
+                agentBinDirectory.resolve("claude").apply {
+                    writeText("#!/bin/sh\necho \"2.0.0 (Claude Code)\"\n")
+                    setExecutable(true)
+                }
+            }
+        }
     }
 
     prepareSandbox {

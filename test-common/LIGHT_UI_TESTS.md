@@ -46,6 +46,8 @@ Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurre
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 
+The backend answers asynchronously, so wait for the UI with `awaitUntil { … }` from [`UiTestEdt.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/UiTestEdt.kt), then assert. To check notifications, call `recordNotifications()` from `AbstractSonarLintLightTests` before the action that notifies.
+
 ## Prefer extension points
 
 | Surface | Entry point |

@@ -69,31 +69,36 @@ import org.sonarlint.intellij.documentation.SonarLintDocumentation
 
 private const val PAGE_TITLE = "Bring SonarQube to your AI agents"
 private const val PAGE_DESCRIPTION = "Find and fix issues as your agent writes code."
-private const val CLI_CARD_TITLE = "SonarQube CLI"
+internal const val CLI_CARD_TITLE = "SonarQube CLI"
 private const val CLI_CARD_HEADLINE = "Catch issues as AI writes code"
 private val CLI_CARD_DESCRIPTION_HTML =
     "Give your agents local code analysis with <a href=\"${SonarLintDocumentation.Intellij.SONAR_VORTEX_LINK}\">Sonar Vortex&nbsp;<icon src=\"ide/external_link_arrow.svg\"></a> to find bugs and vulnerabilities before you commit."
-private const val MCP_CARD_TITLE = "SonarQube MCP Server"
+internal const val MCP_CARD_TITLE = "SonarQube MCP Server"
 private const val MCP_CARD_HEADLINE = "Bring project context to your agent"
 private const val MCP_CARD_DESCRIPTION = "Ask your agent about issues, quality gates, and coverage in your SonarQube projects."
-private const val REFRESH_LABEL = "Refresh"
-private const val CHECKING_STATUS = "Checking"
+internal const val REFRESH_LABEL = "Refresh"
+internal const val CHECKING_STATUS = "Checking"
 private const val NEEDS_ATTENTION = "Needs attention"
 private const val NOT_DETECTED_STATUS = "Not detected"
-private const val UNAVAILABLE_STATUS = "Unavailable"
-private const val INSTALLED_STATUS = "Installed"
+internal const val UNAVAILABLE_STATUS = "Unavailable"
+internal const val INSTALLED_STATUS = "Installed"
+internal const val INSTALL_CLI_LABEL = "Install SonarQube CLI"
+internal const val SIGN_IN_LABEL = "Sign in"
+internal const val TROUBLESHOOT_LABEL = "Troubleshoot"
+internal const val INTEGRATE_LABEL = "Integrate"
+internal const val INTEGRATION_RECORDED_STATUS = "Integration recorded"
 private const val CLI_LOADING_MESSAGE = "Discovering your CLI and coding agents…"
 private const val MCP_LOADING_MESSAGE = "Checking which agents support MCP…"
 private const val MCP_ERROR_MESSAGE = "MCP capabilities could not be loaded."
 private const val NO_AGENTS_MESSAGE = "No supported AI agents detected."
 private const val RETRY_LABEL = "Try again"
-private const val MANAGE_AGENTS_LABEL = "Manage agents"
+internal const val MANAGE_AGENTS_LABEL = "Manage agents"
 private const val SUPPORTED_STATUS = "Supported"
 private const val NOT_SUPPORTED_STATUS = "Not supported"
-private const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
-private const val MCP_GUIDE_LABEL = "MCP configuration guide"
+internal const val CLI_GUIDE_LABEL = "SonarQube CLI guide"
+internal const val MCP_GUIDE_LABEL = "MCP configuration guide"
 private const val CONFIGURATION_DETAILS_LABEL = "Configuration details"
-private const val UNINSTALL_CLI_LABEL = "Uninstall CLI…"
+internal const val UNINSTALL_CLI_LABEL = "Uninstall CLI…"
 private const val CHECKING_CLI_UNINSTALL_MESSAGE = "Checking SonarQube CLI uninstall availability…"
 private const val UNINSTALLING_CLI_MESSAGE = "Uninstalling SonarQube CLI…"
 
@@ -377,7 +382,7 @@ class AiIntegrationsPanel(
             snapshot.cliIntegrations.takeIf { cli.installation == CliInstallationStatus.INSTALLED },
             rowActions = { capability ->
                 if (!uninstalling && cli.authentication == CliAuthenticationStatus.AUTHENTICATED && capability.cliIntegrationSupported) {
-                    listOf(RowAction("Integrate", AiIntegrationsIntent.IntegrateCli(capability.agent)))
+                    listOf(RowAction(INTEGRATE_LABEL, AiIntegrationsIntent.IntegrateCli(capability.agent)))
                 } else {
                     emptyList()
                 }
@@ -411,14 +416,14 @@ class AiIntegrationsPanel(
 
     private fun CardBuilder.addCliPrimaryAction(snapshot: AiIntegrationSnapshot, enabled: Boolean) {
         when (snapshot.cli.installation) {
-            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction("Install SonarQube CLI", AiIntegrationsIntent.InstallCli, enabled)
-            CliInstallationStatus.UNUSABLE -> addPrimaryAction("Troubleshoot", enabled) {
+            CliInstallationStatus.NOT_INSTALLED -> addPrimaryAction(INSTALL_CLI_LABEL, AiIntegrationsIntent.InstallCli, enabled)
+            CliInstallationStatus.UNUSABLE -> addPrimaryAction(TROUBLESHOOT_LABEL, enabled) {
                 intentListener(AiIntegrationsIntent.TroubleshootCli)
             }
             CliInstallationStatus.INSTALLED -> when (snapshot.cli.authentication) {
                 CliAuthenticationStatus.UNAUTHENTICATED,
                 CliAuthenticationStatus.INVALID,
-                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction("Sign in", AiIntegrationsIntent.AuthenticateCli, enabled)
+                CliAuthenticationStatus.UNVERIFIED -> addPrimaryAction(SIGN_IN_LABEL, AiIntegrationsIntent.AuthenticateCli, enabled)
                 CliAuthenticationStatus.UNAVAILABLE,
                 CliAuthenticationStatus.UNKNOWN -> addPrimaryAction("Check again", enabled) { refreshListener() }
                 CliAuthenticationStatus.AUTHENTICATED -> Unit
@@ -818,7 +823,7 @@ private fun CliState.toStatus(): CardStatus = when (installation) {
 }
 
 private fun CliIntegrationRecordingStatus.toStatus(): CardStatus = when (this) {
-    CliIntegrationRecordingStatus.RECORDED -> CardStatus("Integration recorded", StatusTone.SUCCESS)
+    CliIntegrationRecordingStatus.RECORDED -> CardStatus(INTEGRATION_RECORDED_STATUS, StatusTone.SUCCESS)
     CliIntegrationRecordingStatus.NOT_RECORDED -> CardStatus("No integration recorded", StatusTone.NEUTRAL)
     CliIntegrationRecordingStatus.UNKNOWN -> CardStatus("Unknown", StatusTone.NEUTRAL)
 }

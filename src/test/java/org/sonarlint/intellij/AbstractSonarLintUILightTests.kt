@@ -46,7 +46,13 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         // Unit test mode skips StartServicesOnProjectOpened; register editor listeners before tests open files.
         getService(project, AnalysisSubmitter::class.java)
         uiContext = SonarLintUiTestContext(project)
+        beforeMainToolWindowCreated()
         mainToolWindow = SonarLintMainToolWindowPage.create(project)
+    }
+
+    /** Tool window tabs resolve their services when created; replace services here so the tabs pick them up. */
+    protected open fun beforeMainToolWindowCreated() {
+        // no services replaced by default
     }
 
     @AfterEach
