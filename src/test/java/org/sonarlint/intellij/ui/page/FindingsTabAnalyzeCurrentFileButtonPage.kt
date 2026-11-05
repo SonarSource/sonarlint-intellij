@@ -69,8 +69,11 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
 
     private fun requireToolbarVisible() {
         check(panel is SimpleToolWindowPanel) { "Findings panel is not a SimpleToolWindowPanel" }
-        val toolbar = checkNotNull(panel.getToolbar()) { "Findings toolbar is missing" }
-        check(toolbar.isVisible) { "Findings toolbar must be visible (production sets visibility in setToolbarSections)" }
+        checkNotNull(panel.getToolbar()) { "Findings toolbar is missing" }
+        val toolbarComponent = checkNotNull(panel.findingsMainToolbar()?.component) { "Findings main toolbar is missing" }
+        check(toolbarComponent.isVisible) {
+            "Findings main toolbar component must be visible (production sets visibility in setToolbarSections)"
+        }
         pumpEdt()
     }
 
@@ -82,9 +85,9 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
     }
 
     private fun toolbarActionButtons(): List<ActionButton> {
-        findingsToolbar()?.updateActionsImmediately()
+        panel.findingsMainToolbar()?.updateActionsImmediately()
         val roots = buildList {
-            findingsToolbar()?.component?.let { add(it) }
+            panel.findingsMainToolbar()?.component?.let { add(it) }
             if (panel is SimpleToolWindowPanel) {
                 panel.getToolbar()?.let { add(it) }
             }
@@ -97,10 +100,14 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
         }
     }
 
-    private fun findingsToolbar(): ActionToolbar? {
-        val field = CurrentFileFindingsPanel::class.java.getDeclaredField("mainToolbar")
-        field.isAccessible = true
-        return field.get(panel) as? ActionToolbar
-    }
+}
 
+/** Returns the Findings tab [ActionToolbar] that production exposes in [CurrentFileFindingsPanel.setToolbarSections]. */
+internal fun FindingsPanel.findingsMainToolbar(): ActionToolbar? {
+    if (this !is CurrentFileFindingsPanel) {
+        return null
+    }
+    val field = CurrentFileFindingsPanel::class.java.getDeclaredField("mainToolbar")
+    field.isAccessible = true
+    return field.get(this) as? ActionToolbar
 }

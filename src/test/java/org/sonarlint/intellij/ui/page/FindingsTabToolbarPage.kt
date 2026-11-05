@@ -35,6 +35,8 @@ class FindingsTabToolbarPage internal constructor(
 
     val isVisible: Boolean
         get() = readOnEdt {
-            panel is SimpleToolWindowPanel && panel.getToolbar()?.isVisible == true
+            panel is SimpleToolWindowPanel &&
+                panel.getToolbar() != null &&
+                panel.findingsMainToolbar()?.component?.isVisible == true
         }
 }
