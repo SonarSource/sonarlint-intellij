@@ -197,7 +197,9 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         cliCard.uninstall()
 
         awaitUntil { cliCard.buttons.contains(INSTALL_CLI_LABEL) }
-        assertThat(cliCard.buttons).contains(INSTALL_CLI_LABEL)
+        assertThat(cliCard.buttons)
+            .describedAs("Notifications: ${notifications.map { "${it.type}: ${redacted(it.content)}" }}; still running: ${cli.runningExecutables}")
+            .contains(INSTALL_CLI_LABEL)
         assertThat(cli.isInstalled).isFalse()
     }
 
@@ -303,6 +305,12 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         sonarQubeServer.addStringResponse("/api/v2/a3s/org-entitlement/$NO_ORGANIZATION", "{}")
         sonarQubeServer.addStringResponse("/api/v2/cag/cag-entitlement/$NO_ORGANIZATION", "{}")
     }
+
+    /**
+     * [text] without what could be a secret, to show it in a failure: CI publishes test results, and an error message may
+     * list a process's environment.
+     */
+    private fun redacted(text: String) = text.substringBefore("envs=").replace(Regex("[A-Za-z0-9+/_.=-]{32,}"), "<redacted>")
 
     /** The tokens the fake server was asked to validate, from bearer or basic authorization. */
     private fun tokensSentToValidate() = sonarQubeServer.receivedRequests

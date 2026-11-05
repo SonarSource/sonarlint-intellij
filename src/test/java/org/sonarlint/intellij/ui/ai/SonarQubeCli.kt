@@ -57,6 +57,10 @@ class SonarQubeCli {
         check(executable.toFile().setExecutable(true)) { "Cannot make $executable executable" }
     }
 
+    /** Executables running from the CLI installation, by path only: arguments or environment may hold secrets. */
+    val runningExecutables: List<String>
+        get() = processesRunningFrom(installRoot).mapNotNull { it.info().command().orElse(null) }
+
     /** Signs in to [serverUrl], as `sonar auth login` does after the browser flow. */
     fun signIn(serverUrl: String, token: String) {
         run(listOf(executable.toString(), "auth", "login", "--with-token", "--server", serverUrl), input = token + "\n")
