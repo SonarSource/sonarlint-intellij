@@ -20,13 +20,16 @@
 package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.ControlFlowException;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
@@ -34,6 +37,7 @@ import javax.swing.JPanel;
 import javax.swing.ScrollPaneConstants;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -77,7 +81,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @Override
-  public void apply() {
+  public void apply() throws ConfigurationException {
     var currentSettings = getGlobalSettings();
     var telemetry = getService(SonarLintTelemetry.class);
     final boolean exclusionsModified = exclusions.isModified(currentSettings);
@@ -89,7 +93,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     about.save(telemetry);
     rules.save(newSettings);
     exclusions.save(newSettings);
-    getService(SonarLintGlobalSettingsStore.class).save(newSettings);
+    saveSettings(currentSettings, newSettings);
 
     ApplicationManager.getApplication().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC)
       .applied(currentSettings, newSettings);
@@ -106,6 +110,29 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
         getService(BackendService.class).changeAutomaticAnalysisSetting(newSettings.isAutoTrigger());
       }
     });
+  }
+
+  static void saveSettings(SonarLintGlobalSettings currentSettings, SonarLintGlobalSettings newSettings) throws ConfigurationException {
+    var remainingNames = newSettings.getServerConnections().stream().map(ServerConnection::getName).collect(Collectors.toSet());
+    var removedConnections = currentSettings.getServerConnections().stream()
+      .filter(connection -> !remainingNames.contains(connection.getName())).toList();
+    var store = getService(SonarLintGlobalSettingsStore.class);
+    try {
+      getService(CredentialsService.class).withRemovedCredentials(removedConnections, () -> store.save(newSettings));
+    } catch (RuntimeException failure) {
+      try {
+        store.save(currentSettings);
+      } catch (RuntimeException rollbackFailure) {
+        failure.addSuppressed(rollbackFailure);
+      }
+      if (failure instanceof ControlFlowException) {
+        throw failure;
+      }
+      var message = failure.getSuppressed().length == 0
+        ? "Could not apply connection changes. Previous credentials were preserved. You can retry Apply."
+        : "Could not apply connection changes or restore all settings and credentials. Check your connection settings and IDE password storage before retrying.";
+      throw new ConfigurationException(message);
+    }
   }
 
   public static void triggerAnalysis() {

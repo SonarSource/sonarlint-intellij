@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.credentials
 
+import com.intellij.credentialStore.Credentials
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
@@ -117,6 +118,35 @@ class CredentialsService {
         }
         return true
     }
+
+    fun withRemovedCredentials(connections: List<ServerConnection>, saveSettings: Runnable) {
+        val passwordSafe = PasswordSafe.instance
+        val snapshots = computeOnPooledThread("Reading credentials before removal...") {
+            connections.map { connection ->
+                CredentialSnapshot(connection.name, passwordSafe.getToken(connection.name), passwordSafe.getUsernamePassword(connection.name))
+            }
+        } ?: throw IllegalStateException("Could not read credentials before removal")
+        try {
+            connections.forEach { eraseCredentials(it) }
+            saveSettings.run()
+        } catch (failure: RuntimeException) {
+            snapshots.forEach { snapshot ->
+                try {
+                    passwordSafe.setToken(snapshot.name, snapshot.token)
+                } catch (rollbackFailure: RuntimeException) {
+                    failure.addSuppressed(rollbackFailure)
+                }
+                try {
+                    passwordSafe.setUsernamePassword(snapshot.name, snapshot.credentials)
+                } catch (rollbackFailure: RuntimeException) {
+                    failure.addSuppressed(rollbackFailure)
+                }
+            }
+            throw failure
+        }
+    }
+
+    private class CredentialSnapshot(val name: String, val token: String?, val credentials: Credentials?)
 
     fun eraseCredentials(connection: ServerConnection) {
         val passwordSafe = PasswordSafe.instance

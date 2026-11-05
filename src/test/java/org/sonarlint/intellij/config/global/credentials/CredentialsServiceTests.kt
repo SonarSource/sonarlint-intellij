@@ -223,4 +223,34 @@ class CredentialsServiceTests : AbstractSonarLintLightTests() {
         assertThat(userNamePassword).isNull()
         assertThat(token).isNull()
     }
+    @Test
+    fun `should restore both credential entries when settings save fails`() {
+        PasswordSafe.instance.setToken(CONNECTION_NAME, EXPECTED_TOKEN)
+        PasswordSafe.instance.setUsernamePassword(CONNECTION_NAME, Credentials(EXPECTED_USER, EXPECTED_PASSWORD))
+        val failure = IllegalStateException("Settings store unavailable")
+
+        val actual = assertThrows<IllegalStateException> {
+            tested.withRemovedCredentials(listOf(TEST_CONNECTION)) {
+                assertThat(PasswordSafe.instance.getToken(CONNECTION_NAME)).isNull()
+                assertThat(PasswordSafe.instance.getUsernamePassword(CONNECTION_NAME)).isNull()
+                throw failure
+            }
+        }
+
+        assertThat(actual).isSameAs(failure)
+        assertThat(PasswordSafe.instance.getToken(CONNECTION_NAME)).isEqualTo(EXPECTED_TOKEN)
+        assertThat(PasswordSafe.instance.getUsernamePassword(CONNECTION_NAME)).isEqualTo(Credentials(EXPECTED_USER, EXPECTED_PASSWORD))
+    }
+
+    @Test
+    fun `should commit removal when credentials are already missing`() {
+        var saved = false
+
+        tested.withRemovedCredentials(listOf(TEST_CONNECTION)) { saved = true }
+
+        assertThat(saved).isTrue()
+        assertThat(PasswordSafe.instance.getToken(CONNECTION_NAME)).isNull()
+        assertThat(PasswordSafe.instance.getUsernamePassword(CONNECTION_NAME)).isNull()
+    }
+
 }
