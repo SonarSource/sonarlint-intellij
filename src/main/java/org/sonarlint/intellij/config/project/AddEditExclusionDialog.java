@@ -166,7 +166,7 @@ public class AddEditExclusionDialog extends DialogWrapper {
     if (project == null) {
       return path;
     }
-    final File file = new File(path);
+    final var file = new File(path);
     String relativePath = path;
     if (file.isAbsolute()) {
       relativePath = ChangesUtil.getProjectRelativePath(project, file);

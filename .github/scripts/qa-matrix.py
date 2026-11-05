@@ -1,15 +1,24 @@
-"""Build the PR or weekly UI integration-test matrix for GitHub Actions."""
+"""Build the PR, weekly or custom UI integration-test matrix for GitHub Actions."""
 
 import argparse
 from fnmatch import fnmatchcase
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[2]
 IDEA_SUITES = ("OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone")
+# Suites each IDE code can run in a custom run; the default is all of them except PLSQL.
+PRODUCT_SUITES = {"IC": IDEA_SUITES, "IU": IDEA_SUITES + ("PLSQL",), "CL": ("CLion",),
+                  "RD": ("Rider",), "PY": ("PyCharm",), "PC": ("PyCharm",),
+                  "PS": ("PhpStorm",), "GO": ("GoLand",)}
+DEFAULT_SUITE = "default"
+EMBEDDED_2024_IDES = ("IC", "IU", "CL", "RD")
+SMOKE_SUITES = ("SmokeIdea",)
+PR_SUITES = {"pr-all": IDEA_SUITES, "pr-minimal": SMOKE_SUITES}
 DOCS_PATHS = ("*.md", "HEADER", "LICENSE", "LICENSE.*", "docs/*",
               ".github/CODEOWNERS", ".github/renovate.json")
 HARNESS_PATHS = ("its/*", ".github/*", "gradle/*", "*.gradle.kts", "gradle.properties", "mise.toml")
@@ -61,17 +70,17 @@ def job(ide_version, suite):
     return {"ide_version": ide_version, "test_suite": suite}
 
 
-def idea_suites(ide_version):
-    return [job(ide_version, suite) for suite in IDEA_SUITES]
+def idea_suites(ide_version, suites=IDEA_SUITES):
+    return [job(ide_version, suite) for suite in suites]
 
 
-def pr_matrix(versions, paths):
+def pr_matrix(versions, paths, suites):
     code_paths = [path for path in paths if not matches(path, DOCS_PATHS)]
     if paths and not code_paths:
         return []
 
     latest = versions["latestStableIdeVersion"]
-    matrix = idea_suites(f"IC-{latest}")
+    matrix = idea_suites(f"IC-{latest}", suites)
     harness_changed = any(matches(path, HARNESS_PATHS) for path in code_paths)
     if harness_changed or any(matches(path, CLION_PATHS) for path in code_paths):
         matrix.append(job(f"CL-{latest}", "CLion"))
@@ -88,12 +97,13 @@ def weekly_matrix(versions):
     rider_min = versions.get("minRiderIdeVersion") or minimum
     rider_latest = versions.get("latestRiderIdeVersion") or latest
     rider_eap = versions.get("eapRiderIdeVersion") or eap
+    clion_eap = versions.get("eapCLionIdeVersion") or eap
     pycharm = versions.get("latestPyCharmIdeVersion") or latest
 
     flavors = [
         (f"CL-{minimum}", "CLion"),
         (f"CL-{latest}", "CLion"),
-        (f"CL-{eap}", "CLion"),
+        (f"CL-{clion_eap}", "CLion"),
         (f"RD-{rider_min}", "Rider"),
         (f"RD-{rider_latest}", "Rider"),
         (f"RD-{rider_eap}", "Rider"),
@@ -106,12 +116,38 @@ def weekly_matrix(versions):
             + [job(version, suite) for version, suite in flavors])
 
 
+def custom_matrix(ide_version, suite):
+    """One-off run against any IDE build, e.g. IC-2026.2.3 or RD-2026.3-EAP8-263.7307.48.Checked."""
+    found = re.fullmatch(r"([A-Z]+)-(\d[\w.-]*)", ide_version)
+    if not found or found[1] not in PRODUCT_SUITES:
+        raise SystemExit(f"Invalid IDE version '{ide_version}'. Expected <CODE>-<version> with CODE in "
+                         f"{', '.join(PRODUCT_SUITES)}, e.g. IC-2026.2.3")
+    if (found[1] in EMBEDDED_2024_IDES and found[2].startswith("2024")
+            and not re.fullmatch(r"2024\.2(\.\d+)*", found[2])):
+        # setup-qa-ide.sh and run-qa-its use the container's 2024.2 IDE for any <CODE>-2024* of these products
+        raise SystemExit(f"'{ide_version}' would silently run on the container's embedded 2024.2 IDE. "
+                         f"For {found[1]}, only 2024.2 (the embedded build) is accepted among 2024 versions")
+    suites = PRODUCT_SUITES[found[1]]
+    if suite == DEFAULT_SUITE:
+        return [job(ide_version, name) for name in suites if name != "PLSQL"]
+    if suite not in suites:
+        raise SystemExit(f"Suite '{suite}' does not run on {found[1]}. Choose one of: "
+                         f"{', '.join((DEFAULT_SUITE, *suites))}")
+    return [job(ide_version, suite)]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("pr", "weekly"))
+    parser.add_argument("mode", choices=(*PR_SUITES, "weekly", "custom"))
     mode = parser.parse_args().mode
     versions = read_versions()
-    matrix = pr_matrix(versions, changed_files()) if mode == "pr" else weekly_matrix(versions)
+    if mode == "custom":
+        matrix = custom_matrix(os.environ.get("IDE_VERSION", "").strip(),
+                               os.environ.get("TEST_SUITE", "").strip() or DEFAULT_SUITE)
+    elif mode == "weekly":
+        matrix = weekly_matrix(versions)
+    else:
+        matrix = pr_matrix(versions, changed_files(), PR_SUITES[mode])
     matrix_json = json.dumps(matrix, separators=(",", ":"))
     output = f"matrix={matrix_json}\nskip_its={str(not matrix).lower()}\n"
     if output_path := os.environ.get("GITHUB_OUTPUT"):

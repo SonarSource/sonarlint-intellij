@@ -53,19 +53,30 @@ public abstract class AnalyzerConfiguration {
     private final Configuration configuration;
     @Nullable
     private final String skipReason;
+    private final boolean temporarilyUnavailable;
 
     public ConfigurationResult(@Nullable Configuration configuration) {
       this.configuration = configuration;
       this.skipReason = null;
+      this.temporarilyUnavailable = false;
     }
 
-    private ConfigurationResult(@Nullable String skipReason) {
+    private ConfigurationResult(@Nullable String skipReason, boolean temporarilyUnavailable) {
       this.skipReason = skipReason;
       this.configuration = null;
+      this.temporarilyUnavailable = temporarilyUnavailable;
     }
 
     public boolean hasConfiguration() {
       return configuration != null;
+    }
+
+    /**
+     * No configuration now, but the file may still be analyzable, e.g. the lookup was cancelled while the IDE updates its
+     * project model after a CMake project is loaded. Such a file must not be excluded, or it is never sent for analysis.
+     */
+    public boolean isTemporarilyUnavailable() {
+      return temporarilyUnavailable;
     }
 
     public Configuration getConfiguration() {
@@ -87,8 +98,23 @@ public abstract class AnalyzerConfiguration {
     }
 
     public static ConfigurationResult skip(String skipReason) {
-      return new ConfigurationResult(skipReason);
+      return new ConfigurationResult(skipReason, false);
     }
+
+    public static ConfigurationResult temporarilyUnavailable(String reason) {
+      return new ConfigurationResult(reason, true);
+    }
+  }
+
+  /**
+   * Result when the configuration read action returned nothing: either the file or the project is gone, or the read
+   * action was cancelled, which happens while the IDE writes to its project model.
+   */
+  public static ConfigurationResult noConfigurationComputed(Project project, VirtualFile file) {
+    if (project.isDisposed() || !file.isValid()) {
+      return ConfigurationResult.skip("The file is invalid or the project is being closed");
+    }
+    return ConfigurationResult.temporarilyUnavailable("The configuration could not be computed yet, e.g. while the IDE updates its project model");
   }
 
   public record Configuration(VirtualFile virtualFile, String compilerExecutable, String compilerWorkingDir,

@@ -64,8 +64,13 @@ open class DialogFixture(
     companion object {
         fun all() = byXpath("all dialog", "//div[@class='MyDialog']")
         fun byTitle(title: String) = byXpath("title $title", "//div[@title='$title' and @class='MyDialog']")
-        fun byTitleContains(partial: String) =
-            byXpath("partial title '$partial'", "//div[contains(@accessiblename, '$partial') and @class='MyDialog']")
+        // The MyDialog/accessible-name lookup does not find the 2026.2 Settings window, so also match
+        // any top-level window by title (window class hierarchies include java.awt.Window)
+        fun byTitleContains(partial: String) = byXpath(
+            "partial title '$partial'",
+            "//div[(contains(@accessiblename, '$partial') and @class='MyDialog')" +
+                " or (contains(@title, '$partial') and contains(@classhierarchy, 'java.awt.Window ->'))]"
+        )
 
         fun byPossibleTitles(possibleTitles: Array<String>): Locator {
             val titles = possibleTitles.joinToString(" or ")

@@ -22,6 +22,9 @@ package org.sonarlint.intellij.actions;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 
+import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
+
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ToolWindowVerboseModeAction extends AbstractSonarToggleAction {
@@ -41,6 +44,7 @@ public class ToolWindowVerboseModeAction extends AbstractSonarToggleAction {
     var p = event.getProject();
     if (p != null) {
       getSettingsFor(p).setVerboseEnabled(flag);
+      SonarLintUtils.getService(BackendService.class).syncBackendLogLevel();
     }
   }
 }

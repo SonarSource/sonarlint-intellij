@@ -11,6 +11,9 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
+ALL_SUITES = ["OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone"]
+SMOKE_SUITES = ["SmokeIdea"]
+PR_MODES = {"pr-all": ALL_SUITES, "pr-minimal": SMOKE_SUITES}
 
 
 class QaMatrixTest(unittest.TestCase):
@@ -47,7 +50,15 @@ class QaMatrixTest(unittest.TestCase):
         self.git("commit", "-m", "Test fixture")
         return self.git("rev-parse", "HEAD")
 
-    def run_matrix(self, mode="pr", **env):
+    def eap_versions(self):
+        """EAP versions pinned in the copied gradle.properties; EAPs are named by build number, not "-EAP"."""
+        lines = [line for line in (self.repo / "gradle.properties").read_text().splitlines()
+                 if "=" in line and not line.lstrip().startswith("#")]
+        # Values may carry an inline comment, as qa-matrix.py allows
+        properties = {key.strip(): value.split("#")[0].strip() for key, value in (line.split("=", 1) for line in lines)}
+        return {properties[key] for key in ("eapIdeVersion", "eapRiderIdeVersion", "eapCLionIdeVersion") if properties.get(key)}
+
+    def run_matrix(self, mode, **env):
         output = Path(self.env["GITHUB_OUTPUT"])
         output.unlink(missing_ok=True)
         result = subprocess.run([sys.executable, ".github/scripts/qa-matrix.py", mode],
@@ -65,64 +76,71 @@ class QaMatrixTest(unittest.TestCase):
         event.write_text(json.dumps({"before": before}))
         return {"GITHUB_EVENT_NAME": "push", "GITHUB_EVENT_PATH": str(event)}
 
-    def assert_suites(self, values, flavors=()):
+    def assert_suites(self, values, flavors=(), core=ALL_SUITES):
         self.assertEqual("false", values["skip_its"])
         suites = [job["test_suite"] for job in json.loads(values["matrix"])]
-        self.assertCountEqual(["OpenInIdeTests", "ConnectedAnalysisTests", "ConfigurationTests", "Standalone", *flavors], suites)
+        self.assertCountEqual([*core, *flavors], suites)
 
     def test_pr_path_selection(self):
-        for path, flavors in [("README.md", None), ("src/Main.kt", ()),
-                              ("rider/src/Main.kt", ("Rider",)), ("clion/src/Main.kt", ("CLion",)),
-                              ("clion-resharper/src/Main.kt", ("CLion",)),
-                              ("src/main/resources/META-INF/plugin-clion.xml", ("CLion",)),
-                              ("src/main/resources/META-INF/plugin-rider.xml", ("Rider",)),
-                              ("src/main/RiderSupport.kt", ("Rider",)),
-                              ("src/main/rider/Support.kt", ("Rider",)),
-                              ("its/src/Test.kt", ("CLion", "Rider"))]:
-            with self.subTest(path=path):
-                self.git("reset", "--hard", self.base)
-                self.commit(path)
-                result, values = self.run_matrix(GITHUB_BASE_REF="master")
-                self.assertEqual(0, result.returncode, result.stderr)
-                if flavors is None:
-                    self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
-                else:
-                    self.assert_suites(values, flavors)
+        for mode, core in PR_MODES.items():
+            for path, flavors in [("README.md", None), ("src/Main.kt", ()),
+                                  ("rider/src/Main.kt", ("Rider",)), ("clion/src/Main.kt", ("CLion",)),
+                                  ("clion-resharper/src/Main.kt", ("CLion",)),
+                                  ("src/main/resources/META-INF/plugin-clion.xml", ("CLion",)),
+                                  ("src/main/resources/META-INF/plugin-rider.xml", ("Rider",)),
+                                  ("src/main/RiderSupport.kt", ("Rider",)),
+                                  ("src/main/rider/Support.kt", ("Rider",)),
+                                  ("its/src/Test.kt", ("CLion", "Rider"))]:
+                with self.subTest(mode=mode, path=path):
+                    self.git("reset", "--hard", self.base)
+                    self.commit(path)
+                    result, values = self.run_matrix(mode, GITHUB_BASE_REF="master")
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    if flavors is None:
+                        self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
+                    else:
+                        self.assert_suites(values, flavors, core)
 
     def test_documentation_does_not_add_flavors_to_source_changes(self):
-        for path in ["rider/README.md", "clion/README.md", "its/README.md",
-                     ".github/ISSUE_TEMPLATE/bug_report.md", ".github/CODEOWNERS",
-                     "docs/rider/setup.md"]:
-            with self.subTest(path=path):
-                self.git("reset", "--hard", self.base)
-                self.commit("src/Main.kt")
-                self.commit(path)
-                result, values = self.run_matrix(GITHUB_BASE_REF="master")
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assert_suites(values)
+        for mode, core in PR_MODES.items():
+            for path in ["rider/README.md", "clion/README.md", "its/README.md",
+                         ".github/ISSUE_TEMPLATE/bug_report.md", ".github/CODEOWNERS",
+                         "docs/rider/setup.md"]:
+                with self.subTest(mode=mode, path=path):
+                    self.git("reset", "--hard", self.base)
+                    self.commit("src/Main.kt")
+                    self.commit(path)
+                    result, values = self.run_matrix(mode, GITHUB_BASE_REF="master")
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assert_suites(values, core=core)
 
     def test_push_includes_source_changes_before_final_docs_commit(self):
         self.commit("rider/src/Main.kt")
         self.commit("README.md")
-        result, values = self.run_matrix(**self.push_event(self.base))
+        result, values = self.run_matrix("pr-all", **self.push_event(self.base))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("Rider",))
 
     def test_docs_only_push_skips_its(self):
         self.commit("README.md")
         self.commit("docs/setup.md")
-        result, values = self.run_matrix(**self.push_event(self.base))
+        result, values = self.run_matrix("pr-all", **self.push_event(self.base))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
 
     def test_new_branch_runs_all_flavors(self):
-        result, values = self.run_matrix(**self.push_event("0" * 40))
+        result, values = self.run_matrix("pr-all", **self.push_event("0" * 40))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("CLion", "Rider"))
 
+    def test_minimal_new_branch_runs_smoke_and_all_flavors(self):
+        result, values = self.run_matrix("pr-minimal", **self.push_event("0" * 40))
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assert_suites(values, ("CLion", "Rider"), SMOKE_SUITES)
+
     def test_manual_run_covers_all_flavors_after_docs_commit(self):
         self.commit("README.md")
-        result, values = self.run_matrix(GITHUB_EVENT_NAME="workflow_dispatch")
+        result, values = self.run_matrix("pr-all", GITHUB_EVENT_NAME="workflow_dispatch")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("CLion", "Rider"))
 
@@ -134,29 +152,31 @@ class QaMatrixTest(unittest.TestCase):
         self.commit("OTHER.md")
         for env in [{"GITHUB_BASE_REF": "missing"}, {"GITHUB_BASE_REF": "master"}]:
             with self.subTest(env=env):
-                result, values = self.run_matrix(**env)
+                result, values = self.run_matrix("pr-all", **env)
                 self.assertNotEqual(0, result.returncode)
                 self.assertEqual({}, values)
 
     def test_force_push_missing_before_runs_all_flavors(self):
-        result, values = self.run_matrix(**self.push_event("1" * 40))
+        result, values = self.run_matrix("pr-all", **self.push_event("1" * 40))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("CLion", "Rider"))
 
     def test_empty_pr_diff_runs_core_suites(self):
-        result, values = self.run_matrix(GITHUB_BASE_REF="master")
+        result, values = self.run_matrix("pr-all", GITHUB_BASE_REF="master")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values)
 
     def test_invalid_mode_fails_without_emitting_matrix(self):
-        result, values = self.run_matrix("unknown")
-        self.assertNotEqual(0, result.returncode)
-        self.assertEqual({}, values)
+        for mode in ["unknown", "pr"]:
+            with self.subTest(mode=mode):
+                result, values = self.run_matrix(mode)
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual({}, values)
 
     def test_malformed_push_event_fails_without_emitting_matrix(self):
         env = self.push_event(self.base)
         Path(env["GITHUB_EVENT_PATH"]).write_text("{")
-        result, values = self.run_matrix(**env)
+        result, values = self.run_matrix("pr-all", **env)
         self.assertNotEqual(0, result.returncode)
         self.assertEqual({}, values)
 
@@ -169,6 +189,7 @@ eapIdeVersion=2026.3-EAP
 minRiderIdeVersion=2024.2.7
 latestRiderIdeVersion=2025.3.3
 eapRiderIdeVersion=2026.3.1-EAP
+eapCLionIdeVersion=263.7307.35
 latestPyCharmIdeVersion=2025.3.2.1
 """)
         result, values = self.run_matrix("weekly")
@@ -178,6 +199,7 @@ latestPyCharmIdeVersion=2025.3.2.1
                          [job["ide_version"] for job in jobs if job["test_suite"] == "Rider"])
         self.assertIn({"ide_version": "PY-2025.3.2.1", "test_suite": "PyCharm"}, jobs)
         self.assertIn({"ide_version": "CL-2025.3.2", "test_suite": "CLion"}, jobs)
+        self.assertIn({"ide_version": "CL-263.7307.35", "test_suite": "CLion"}, jobs)
 
     def test_blank_product_overrides_use_shared_versions(self):
         (self.repo / "gradle.properties").write_text("""
@@ -187,6 +209,7 @@ eapIdeVersion=2026.3-EAP
 minRiderIdeVersion=
 latestRiderIdeVersion=
 eapRiderIdeVersion=
+eapCLionIdeVersion=
 latestPyCharmIdeVersion=
 """)
         result, values = self.run_matrix("weekly")
@@ -195,6 +218,7 @@ latestPyCharmIdeVersion=
         self.assertEqual(["RD-2024.2", "RD-2025.3.2", "RD-2026.3-EAP"],
                          [job["ide_version"] for job in jobs if job["test_suite"] == "Rider"])
         self.assertIn({"ide_version": "PY-2025.3.2", "test_suite": "PyCharm"}, jobs)
+        self.assertIn({"ide_version": "CL-2026.3-EAP", "test_suite": "CLion"}, jobs)
 
     def test_weekly_matrix_keeps_minimum_flavor_and_eap_coverage(self):
         result, values = self.run_matrix("weekly")
@@ -204,9 +228,47 @@ latestPyCharmIdeVersion=
         self.assertEqual(18, len({(job["ide_version"], job["test_suite"]) for job in jobs}))
         versions = [job["ide_version"] for job in jobs]
         self.assertEqual(4, sum(version.startswith("IC-") for version in versions))
-        eap_products = [version.split("-", 1)[0] for version in versions if version.endswith("-EAP")]
+        eap_versions = self.eap_versions()
+        eap_products = [version.split("-", 1)[0] for version in versions if version.split("-", 1)[1] in eap_versions]
         self.assertCountEqual(["IU"] * 4 + ["RD", "CL"], eap_products)
         self.assertIn("PLSQL", [job["test_suite"] for job in jobs])
+
+    def test_custom_default_suites_per_product(self):
+        for ide_version, suites in [("IC-2026.2.3", ["OpenInIdeTests", "ConnectedAnalysisTests",
+                                                     "ConfigurationTests", "Standalone"]),
+                                    ("IU-263.7307.44", ["OpenInIdeTests", "ConnectedAnalysisTests",
+                                                        "ConfigurationTests", "Standalone"]),
+                                    ("RD-2026.3-EAP8-263.7307.48.Checked", ["Rider"]),
+                                    ("CL-2026.2.4", ["CLion"]), ("PC-2025.2.4", ["PyCharm"])]:
+            for suite in ["default", ""]:
+                with self.subTest(ide_version=ide_version, suite=suite):
+                    result, values = self.run_matrix("custom", IDE_VERSION=ide_version, TEST_SUITE=suite)
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assertEqual("false", values["skip_its"])
+                    self.assertEqual([{"ide_version": ide_version, "test_suite": name} for name in suites],
+                                     json.loads(values["matrix"]))
+
+    def test_custom_single_suite(self):
+        for ide_version, suite in [("IC-2026.2.3", "ConfigurationTests"), ("IU-2024.2", "PLSQL"),
+                                   ("RD-2024.2.7", "Rider"), ("PS-2024.3.5", "PhpStorm")]:
+            with self.subTest(suite=suite):
+                result, values = self.run_matrix("custom", IDE_VERSION=f" {ide_version} ", TEST_SUITE=suite)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual([{"ide_version": ide_version, "test_suite": suite}],
+                                 json.loads(values["matrix"]))
+
+    def test_custom_invalid_inputs_fail_without_emitting_matrix(self):
+        for ide_version, suite in [("", "default"), ("2026.2.3", "default"), ("XX-2026.2.3", "default"),
+                                   ("IC-", "default"), ("IC-2026.2.3; rm -rf /", "default"),
+                                   ("RD-2026.2.3.1", "OpenInIdeTests"), ("IC-2026.2.3", "PLSQL"),
+                                   ("IC-2026.2.3", "Unknown"),
+                                   # would silently run on the container's embedded 2024.2 IDE
+                                   ("IC-2024.3.5", "default"), ("IU-2024.1.7", "PLSQL"),
+                                   ("CL-2024.3", "default"), ("RD-2024.3.6", "default")]:
+            with self.subTest(ide_version=ide_version, suite=suite):
+                result, values = self.run_matrix("custom", IDE_VERSION=ide_version, TEST_SUITE=suite)
+                self.assertNotEqual(0, result.returncode)
+                self.assertEqual({}, values)
 
 
 if __name__ == "__main__":

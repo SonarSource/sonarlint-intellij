@@ -23,9 +23,12 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.FixtureName
+import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
+import java.awt.Point
 import java.nio.file.Paths
 import java.time.Duration
 
@@ -53,8 +56,21 @@ class FileBrowserDialogFixture(
   remoteRobot: RemoteRobot,
   remoteComponent: RemoteComponent) : DialogFixture(remoteRobot, remoteComponent) {
 
-  private val textField
-    get() = textField(byXpath("//div[(@class='BorderlessTextField' or @class='JTextField')]"))
+  /** Up to 2026.1 the dialog always shows a path field. */
+  private fun classicPathField(): JTextFieldFixture? =
+    findAll<JTextFieldFixture>(byXpath("//div[(@class='BorderlessTextField' or @class='JTextField')]")).firstOrNull()
+
+  /**
+   * From 2026.2 it shows a breadcrumb bar instead, which turns into a path field when its empty end is clicked. The dialog
+   * reopens in the last folder, whose crumbs can fill the bar, so go to the short home folder first.
+   */
+  private fun breadcrumbPathField(): JTextFieldFixture {
+    findElement<ComponentFixture>(byXpath("//div[@accessiblename='Home Directory' and @class='ActionButton']")).click()
+    Thread.sleep(1000)
+    val breadcrumbs = find<ComponentFixture>(byXpath("//div[@class='Breadcrumbs']"))
+    breadcrumbs.click(Point(breadcrumbs.remoteComponent.width - 5, breadcrumbs.remoteComponent.height / 2))
+    return find(byXpath("//div[@class='NioPathTextField']"), Duration.ofSeconds(5))
+  }
 
   private fun refreshButton(): ComponentFixture {
     return findElement(byXpath("//div[(@accessiblename='Refresh' and @class='ActionButton')]"))
@@ -66,16 +82,28 @@ class FileBrowserDialogFixture(
     val button = button("OK")
     waitFor(Duration.ofSeconds(10)) { button.isEnabled() }
 
-    // Select parent folder and refresh
-    textField.text = projectsDir.normalize().toString()
-    // it helps locating the project
-    refreshButton().click()
-    // Give some time for the refresh to work
-    Thread.sleep(2000)
+    val classicField = classicPathField()
+    if (classicField != null) {
+      // Select parent folder and refresh
+      classicField.text = projectsDir.normalize().toString()
+      // it helps locating the project
+      refreshButton().click()
+      // Give some time for the refresh to work
+      Thread.sleep(2000)
 
-    textField.text = projectBaseDir.normalize().toString()
+      classicField.text = projectBaseDir.normalize().toString()
+    } else {
+      val pathField = breadcrumbPathField()
+      pathField.text = projectBaseDir.normalize().toString()
+      // The path is applied on Enter, which can also confirm the dialog
+      pathField.click()
+      remoteRobot.keyboard { enter() }
+    }
     // Give some time for the refresh to work
     Thread.sleep(2000)
-    button.click()
+    // Enter may already have closed the dialog
+    if (runCatching { isShowing }.getOrDefault(false)) {
+      button.click()
+    }
   }
 }

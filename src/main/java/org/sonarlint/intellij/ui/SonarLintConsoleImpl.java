@@ -37,7 +37,7 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
-  private ConsoleView consoleView;
+  private volatile ConsoleView consoleView;
   private final Project myProject;
   private final Queue<Log> previousLogs = new ConcurrentLinkedQueue<>();
 
@@ -75,10 +75,11 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   private void print(String msg, ConsoleViewContentType outputType) {
     if (!myProject.isDisposed()) {
-      if (consoleView == null) {
+      var view = consoleView;
+      if (view == null) {
         previousLogs.offer(new Log(msg + "\n", outputType));
       } else {
-        consoleView.print(msg + "\n", outputType);
+        view.print(msg + "\n", outputType);
       }
     }
   }
@@ -95,8 +96,9 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   @Override
   public void clear() {
-    if (consoleView != null) {
-      consoleView.clear();
+    var view = consoleView;
+    if (view != null) {
+      view.clear();
     }
   }
 
@@ -107,17 +109,31 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
       consoleView.print(log.text, log.outputType);
     }
     this.consoleView = consoleView;
-    Disposer.register(this, consoleView);
+  }
+
+  @Override
+  public void clearConsoleView(ConsoleView consoleView) {
+    if (this.consoleView == consoleView) {
+      this.consoleView = null;
+    }
   }
 
   @Override
   public String getContent() {
-    return ((ConsoleViewImpl) this.consoleView).getText();
+    var view = consoleView;
+    if (view == null) {
+      return "";
+    }
+    return ((ConsoleViewImpl) view).getText();
   }
 
   @Override
   public void dispose() {
-    // nothing to do, the console view is already registered for dispose
+    var view = consoleView;
+    if (view != null) {
+      consoleView = null;
+      Disposer.dispose(view);
+    }
   }
 
   private record Log(String text, ConsoleViewContentType outputType) {
