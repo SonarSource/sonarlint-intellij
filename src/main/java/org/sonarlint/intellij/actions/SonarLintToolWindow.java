@@ -126,10 +126,8 @@ public final class SonarLintToolWindow implements ProjectBindingListener {
       runOnUiThread(project, () -> {
         var contentManager = toolWindow.getContentManager();
         // Refresh all open report tabs
-        var reportTabManager = getService(project, ReportTabManager.class);
-        for (var tabTitle : reportTabManager.getOpenReportTabs()) {
-          var content = contentManager.findContent(tabTitle);
-          if (content != null && content.getComponent() instanceof ReportPanel reportPanel) {
+        for (var content : contentManager.getContents()) {
+          if (content.getComponent() instanceof ReportPanel reportPanel) {
             runOnPooledThread(project, reportPanel::refreshView);
           }
         }
