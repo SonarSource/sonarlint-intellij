@@ -19,9 +19,12 @@
  */
 package org.sonarlint.intellij.ui.page
 
+import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
+import org.sonarlint.intellij.ui.currentfile.CurrentFileFindingsPanel
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 
 class FindingsTabToolbarPage internal constructor(
@@ -31,12 +34,41 @@ class FindingsTabToolbarPage internal constructor(
 ) {
 
     val analyzeCurrentFileButton: FindingsTabAnalyzeCurrentFileButtonPage =
-        FindingsTabAnalyzeCurrentFileButtonPage(findingsTab, project, panel)
+        FindingsTabAnalyzeCurrentFileButtonPage(this, findingsTab, project, panel)
 
     val isVisible: Boolean
-        get() = readOnEdt {
-            panel is SimpleToolWindowPanel &&
-                panel.getToolbar() != null &&
-                panel.findingsMainToolbar()?.component?.isVisible == true
+        get() = readOnEdt { visibilityProblem() == null }
+
+    /** Fails when the Findings main toolbar is missing or hidden. */
+    fun requireVisible() {
+        readOnEdt {
+            visibilityProblem()?.let { error(it) }
+            pumpEdt()
         }
+    }
+
+    private fun visibilityProblem(): String? {
+        if (panel !is SimpleToolWindowPanel) {
+            return "Findings panel is not a SimpleToolWindowPanel"
+        }
+        if (panel.getToolbar() == null) {
+            return "Findings toolbar is missing"
+        }
+        val toolbarComponent = panel.findingsMainToolbar()?.component
+            ?: return "Findings main toolbar is missing"
+        if (!toolbarComponent.isVisible) {
+            return "Findings main toolbar component must be visible (production sets visibility in setToolbarSections)"
+        }
+        return null
+    }
+}
+
+/** Returns the Findings tab [ActionToolbar] that production exposes in [CurrentFileFindingsPanel.setToolbarSections]. */
+internal fun FindingsPanel.findingsMainToolbar(): ActionToolbar? {
+    if (this !is CurrentFileFindingsPanel) {
+        return null
+    }
+    val field = CurrentFileFindingsPanel::class.java.getDeclaredField("mainToolbar")
+    field.isAccessible = true
+    return field.get(this) as? ActionToolbar
 }
