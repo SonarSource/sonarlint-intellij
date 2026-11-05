@@ -35,6 +35,13 @@ class SonarLintMainToolWindowPage private constructor(
     private val project: Project,
 ) {
 
+    val reports: List<ReportInstancePage>
+        get() = readOnEdt {
+            toolWindow.contentManager.contents
+                .filter { it.component is ReportPanel }
+                .map { ReportInstancePage(it) }
+        }
+
     /** Selects the AI Integrations tab, as a user clicking on it would, and returns its page object. */
     fun openAiIntegrations(): AiIntegrationsTabPage {
         val content = toolWindow.contentManager.findContent(AI_INTEGRATIONS_TAB_TITLE)
