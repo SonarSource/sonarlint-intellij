@@ -33,16 +33,20 @@ Example assertion (see `FindingsTabAnalysisLightTests`):
 ```kotlin
 val file = openFileFromTestData("src/file.xml")
 awaitUntilAsserted {
+    assertThat(trafficLightPageFor(file).issueCountLabelText).isNull()
     assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
 }
 mainToolWindow.findings.toolbar.analyzeCurrentFileButton.click()
 awaitUntilAsserted {
     assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")
     assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
+    assertThat(trafficLightPageFor(file).issueCountLabelText).isEqualTo("1")
 }
 ```
 
 Trigger analysis through the Findings toolbar page object (`toolbar.analyzeCurrentFileButton.click`), which invokes the production analyze action on the toolbar button. Wait until the button is enabled, then poll findings with [`awaitUntilAsserted`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt)—not direct `AnalysisSubmitter` / `AnalysisStatus` calls.
+
+Editor traffic light: build [`EditorTrafficLightPage`](../src/test/java/org/sonarlint/intellij/ui/page/EditorTrafficLightPage.kt) via [`trafficLightPageFor`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) so the widget is created through [`InspectionWidgetActionProvider`](../src/main/java/org/sonarlint/intellij/editor/SonarLintEditorWidgetActionProvider.kt) (not by instantiating `SonarLintTrafficLightAction` in tests). `issueCountLabelText` is null when there are no findings (green icon).
 
 Deep component lookup uses [`ContainerExtensions.kt`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/ContainerExtensions.kt) (`Component.walkComponents()`, `findComponents<T>()`).
 

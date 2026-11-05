@@ -32,10 +32,11 @@ class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
-    fun should_show_one_issue_in_findings_tab_after_toolbar_analyze_action() {
-        openFileFromTestData("src/file.xml")
+    fun should_show_findings_and_traffic_light_after_toolbar_analyze_action() {
+        val file = openFileFromTestData("src/file.xml")
 
         awaitUntilAsserted {
+            assertThat(trafficLightPageFor(file).issueCountLabelText).isNull()
             assertThat(mainToolWindow.findings.toolbar.isVisible).isTrue()
             assertThat(mainToolWindow.findings.toolbar.analyzeCurrentFileButton.isEnabled).isTrue()
         }
@@ -44,6 +45,7 @@ class FindingsTabAnalysisLightTests : AbstractSonarLintUILightTests() {
         awaitUntilAsserted {
             assertThat(mainToolWindow.findings.issuesSummaryButtonText).isEqualTo("1 Issue")
             assertThat(mainToolWindow.findings.issues.single().ruleKey).isEqualTo("xml:S1778")
+            assertThat(trafficLightPageFor(file).issueCountLabelText).isEqualTo("1")
         }
     }
 }
