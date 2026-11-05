@@ -21,28 +21,24 @@ package org.sonarlint.intellij.ui.page
 
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.ActionButton
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
-import org.sonarlint.intellij.fixtures.walkComponents
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
-import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.util.SonarLintActions
 
 /** Page object for the Findings tab “Analyze Current File” toolbar control. */
 class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
+    private val button: ActionButton?,
     private val toolbar: FindingsTabToolbarPage,
     private val findingsTab: FindingsTabPage,
     private val project: Project,
-    private val panel: FindingsPanel,
 ) {
 
     val isEnabled: Boolean
         get() = readOnEdt {
-            toolbar.requireVisible()
-            val button = findToolbarButton() ?: return@readOnEdt false
+            val button = button ?: return@readOnEdt false
             button.isEnabled && button.isVisible
         }
 
@@ -51,41 +47,15 @@ class FindingsTabAnalyzeCurrentFileButtonPage internal constructor(
             check(FileEditorManager.getInstance(project).selectedFiles.isNotEmpty()) {
                 "No file selected in the editor before Analyze Current File"
             }
-            syncFindingsTabWithEditor()
+            findingsTab.refreshWithEditorSelection()
             toolbar.requireVisible()
-            val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
-            val button = checkNotNull(findToolbarButton()) {
+            toolbar.refreshActions()
+            val button = checkNotNull(button) {
                 "Analyze Current File button not found in Findings toolbar"
             }
+            val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
             ActionUtil.invokeAction(analyzeAction, button, TOOL_WINDOW_ID, null, null)
             pumpEdt()
-        }
-    }
-
-    private fun syncFindingsTabWithEditor() {
-        findingsTab.refreshWithEditorSelection()
-    }
-
-    private fun findToolbarButton(): ActionButton? {
-        val analyzeAction = SonarLintActions.getInstance().analyzeCurrentFileAction()
-        val toolbarButtons = toolbarActionButtons()
-        return toolbarButtons.firstOrNull { it.action === analyzeAction }
-            ?: toolbarButtons.firstOrNull { it.action.templateText == analyzeAction.templateText }
-    }
-
-    private fun toolbarActionButtons(): List<ActionButton> {
-        panel.findingsMainToolbar()?.updateActionsImmediately()
-        val roots = buildList {
-            panel.findingsMainToolbar()?.component?.let { add(it) }
-            if (panel is SimpleToolWindowPanel) {
-                panel.getToolbar()?.let { add(it) }
-            }
-            add(panel)
-        }
-        return roots.flatMap { root ->
-            root.walkComponents()
-                .filter { it.javaClass.simpleName.contains("ActionButton") }
-                .mapNotNull { it as? ActionButton }
         }
     }
 }
