@@ -266,7 +266,8 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         claudeRow.clickButton(INTEGRATE_LABEL)
         // `sonar integrate` asks what to install; the recommended set is the default
         awaitUntil { terminal.lastTerminalText.contains("Install recommended") }
-        assertThat(terminal.lastTerminalText).describedAs("Terminal tabs: ${terminal.openedTabNames}").contains("Install recommended")
+        // Never print the terminal's content: when a command fails to start, it lists the whole environment, secrets included
+        assertThat(terminal.lastTerminalText.contains("Install recommended")).describedAs("The CLI prompt did not appear in the terminal").isTrue()
         terminal.typeInLastTerminal("\r")
 
         awaitUntil { cliCard.hasAgent(claudeCode) && cliCard.agent(claudeCode).tickedLabels.contains(INTEGRATION_RECORDED_STATUS) }
