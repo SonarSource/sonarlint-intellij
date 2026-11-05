@@ -67,7 +67,7 @@ import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
-// The fake Claude Code is a shell script, and the tests install the Unix CLI where the backend looks for it
+// Not yet on Windows: the fake Claude Code is a shell script, and SonarQubeCli only installs the CLI at its Unix location
 @DisabledOnOs(OS.WINDOWS)
 class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
@@ -373,7 +373,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         fun requireIsolatedBackendAndCli() {
             // The build also provides the fake Claude Code CLI there, see build.gradle.kts
             assumeTrue(isSloopUserHomeIsolated(), "The build could not isolate the backend's user home, see build.gradle.kts")
-            assumeTrue(isSonarQubeCliAvailable(), "The build could not resolve the SonarQube CLI from Artifactory, see build.gradle.kts")
+            assumeTrue(isSonarQubeCliAvailable(), "The build could not provide a SonarQube CLI for this machine, see build.gradle.kts")
         }
     }
 }
