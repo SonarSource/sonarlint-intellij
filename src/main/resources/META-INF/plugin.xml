@@ -65,6 +65,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>13.2 - Advanced Java reliability rules now run only in Connected Mode with SonarQube Server commercial editions and SonarQube Cloud. Fixed an IDE freeze when closing a project. Fixed an issue on IntelliJ IDEA 2026.3. Fixed C/C++ analysis being skipped right after a CLion project load. Fewer FPs for PHP.</li>
         <li>13.1 - Fixed an issue with IntelliJ 2026.3 EAP. Fixed an issue where analysis would fail when one analyzer could not be loaded. Support Terraform 1.16. Fewer FPs for secrets. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>13.0 - Raise minimal supported SonarQube Server version to 2025.1. Introduce new AI Integrations panel for SonarQube CLI and SonarQube MCP Server integrations. Fixed an issue on the settings page with IntelliJ 2026.3 EAP. Improved editor listener performance. 23 new rules for Java. 5 new rules for JS/TS. 1 new rule for C#. Fewer FPs for PHP and JS/TS. Bug fixes for many languages.</li>
         <li>12.8 - Drop support for Node.js 20, the minimum version is now 22.12.</li>
