@@ -382,10 +382,13 @@ tasks {
             environment("HOME", sloopUserHome.absolutePath)
             environment("SONAR_USER_HOME", sloopUserHome.resolve(".sonar").absolutePath)
             environment("SONARQUBE_CLI_KEYCHAIN_FILE", sloopUserHome.resolve("sonarqube-cli-keychain.json").absolutePath)
-            // The real SonarQube CLI the AI Integrations tests install, resolved like the backend itself
-            val sonarQubeCli = configurations["sonarqubeCli"]
+            // The real SonarQube CLI the AI Integrations tests install, resolved like the backend itself. It is only on
+            // Artifactory: without it, e.g. on the Maven Central fallback, those tests skip and the others still run.
+            val sonarQubeCli = configurations["sonarqubeCli"].incoming.artifactView { lenient(true) }.files
             inputs.files(sonarQubeCli)
-            jvmArgumentProviders += CommandLineArgumentProvider { listOf("-Dsonarlint.test.sonarqube.cli=${sonarQubeCli.singleFile.absolutePath}") }
+            jvmArgumentProviders += CommandLineArgumentProvider {
+                sonarQubeCli.files.singleOrNull()?.let { listOf("-Dsonarlint.test.sonarqube.cli=${it.absolutePath}") }.orEmpty()
+            }
             doFirst {
                 sloopUserHome.deleteRecursively()
                 // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so

@@ -25,6 +25,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
+import java.util.Base64
 import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -88,8 +89,6 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     fun closeTerminalAndUninstallCli() {
         terminal.closeAllTabs()
         cli.reset()
-        getService(CredentialsService::class.java).eraseCredentials(sonarQubeServerConnection)
-        TestDialogManager.setTestDialog(TestDialog.DEFAULT)
     }
 
     @Test
@@ -220,13 +219,14 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         assertThat(cliCard.buttons).doesNotContain(SIGN_IN_LABEL)
         assertThat(notifications).anyMatch { it.content.contains("SonarQube CLI authenticated") }
         assertThat(recordingTerminal.launchedCommand).isNull()
+        assertThat(tokensSentToValidate()).contains(TOKEN)
     }
 
     @Test
     fun should_keep_offering_sign_in_and_report_the_error_when_the_connection_token_is_rejected() {
         cli.install()
         answerSonarQubeCliRequests(tokenValid = false)
-        connectToSonarQubeServer(TOKEN)
+        connectToSonarQubeServer(REJECTED_TOKEN)
         replaceApplicationService(CliTerminalAdapter::class.java, recordingTerminal)
         val cliCard = openCliCard()
 
@@ -237,6 +237,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         assertThat(notifications).anyMatch { it.type == NotificationType.ERROR && it.content.contains("SonarQube CLI authentication failed") }
         assertThat(cliCard.buttons).contains(SIGN_IN_LABEL)
         assertThat(recordingTerminal.launchedCommand).isNull()
+        assertThat(tokensSentToValidate()).contains(REJECTED_TOKEN)
     }
 
     @Test
@@ -303,6 +304,18 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
         sonarQubeServer.addStringResponse("/api/v2/cag/cag-entitlement/$NO_ORGANIZATION", "{}")
     }
 
+    /** The tokens the fake server was asked to validate, from bearer or basic authorization. */
+    private fun tokensSentToValidate() = sonarQubeServer.receivedRequests
+        .filter { it.path == "/api/authentication/validate" }
+        .mapNotNull { request ->
+            val authorization = request.authorization ?: return@mapNotNull null
+            when {
+                authorization.startsWith("Bearer ") -> authorization.removePrefix("Bearer ")
+                authorization.startsWith("Basic ") -> String(Base64.getDecoder().decode(authorization.removePrefix("Basic "))).substringBefore(':')
+                else -> null
+            }
+        }
+
     /** Creates the connection to the fake server as the settings do, with [token] saved in the credential store. */
     private fun connectToSonarQubeServer(token: String) {
         getService(CredentialsService::class.java).saveCredentials(sonarQubeServerConnection.name, Either.forLeft(TokenDto(token)))
@@ -347,6 +360,7 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
     companion object {
         private const val TOKEN = "token"
+        private const val REJECTED_TOKEN = "rejected-token"
         /** The organization the CLI asks entitlements for on SonarQube Server, which has none */
         private const val NO_ORGANIZATION = "00000000-0000-0000-0000-000000000000"
 
@@ -356,9 +370,10 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
 
         @JvmStatic
         @BeforeAll
-        fun requireIsolatedBackend() {
+        fun requireIsolatedBackendAndCli() {
             // The build also provides the fake Claude Code CLI there, see build.gradle.kts
             assumeTrue(isSloopUserHomeIsolated(), "The build could not isolate the backend's user home, see build.gradle.kts")
+            assumeTrue(isSonarQubeCliAvailable(), "The build could not resolve the SonarQube CLI from Artifactory, see build.gradle.kts")
         }
     }
 }

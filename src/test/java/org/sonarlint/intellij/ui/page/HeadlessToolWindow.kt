@@ -62,9 +62,10 @@ internal fun ensureWalkthroughToolWindow(project: Project): ToolWindow {
 }
 
 /**
- * Registers the Terminal plugin's tool window, where `TerminalToolWindowManager` opens its sessions. In unit test mode the
- * plugin's factory does not create any content, so it does not hand the tool window to the manager either: do it here, or
- * the manager logs an error when it opens the first session.
+ * Registers the Terminal plugin's tool window, where `TerminalToolWindowManager` opens its sessions. Registering it does
+ * not hand it to the manager: the headless tool window manager never runs the factory (see [ensureHeadlessToolWindow]),
+ * and the Terminal factory does nothing in unit test mode anyway. So hand it over here, or the manager logs an error when
+ * it opens the first session.
  */
 internal fun ensureTerminalToolWindow(project: Project): ToolWindow {
     val manager = ToolWindowManager.getInstance(project)

@@ -41,7 +41,8 @@ import org.junit.jupiter.api.extension.ExtensionContext
  *
  * then answer the requests a test expects, e.g. `server.addStringResponse("/api/system/status", "{...}")`. A request
  * matches its path and query, or else its path alone; any other request gets 404 and is listed in [unansweredRequests].
- * Answers are cleared after each test. It uses the JDK's own HTTP server, so it needs no dependency.
+ * [receivedRequests] lists every request, e.g. to check the token a client sent. Answers and requests are cleared after
+ * each test. It uses the JDK's own HTTP server, so it needs no dependency.
  */
 class MockWebServerExtension private constructor() : BeforeAllCallback, AfterEachCallback, AfterAllCallback {
 
@@ -50,6 +51,9 @@ class MockWebServerExtension private constructor() : BeforeAllCallback, AfterEac
 
     /** Requests that got no answer, e.g. "GET /api/plugins/installed", to tell what a failing test is missing. */
     val unansweredRequests: MutableList<String> = CopyOnWriteArrayList()
+
+    /** Every request the server received, oldest first. */
+    val receivedRequests: MutableList<RecordedRequest> = CopyOnWriteArrayList()
 
     override fun beforeAll(context: ExtensionContext) {
         server = HttpServer.create(InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0).apply {
@@ -61,6 +65,7 @@ class MockWebServerExtension private constructor() : BeforeAllCallback, AfterEac
     override fun afterEach(context: ExtensionContext) {
         responsesByPath.clear()
         unansweredRequests.clear()
+        receivedRequests.clear()
     }
 
     override fun afterAll(context: ExtensionContext) {
@@ -81,6 +86,7 @@ class MockWebServerExtension private constructor() : BeforeAllCallback, AfterEac
     private fun dispatch(exchange: HttpExchange) {
         val uri = exchange.requestURI
         val pathAndQuery = uri.rawPath + (uri.rawQuery?.let { "?$it" } ?: "")
+        receivedRequests.add(RecordedRequest(exchange.requestMethod, uri.rawPath, uri.rawQuery, exchange.requestHeaders.getFirst("Authorization")))
         val response = responsesByPath[pathAndQuery] ?: responsesByPath[uri.rawPath]
         if (response == null) {
             unansweredRequests.add("${exchange.requestMethod} $pathAndQuery")
@@ -96,6 +102,9 @@ class MockWebServerExtension private constructor() : BeforeAllCallback, AfterEac
     }
 
     private data class MockResponse(val code: Int, val body: String, val contentType: String)
+
+    /** A request the server received, with its `Authorization` header if any. */
+    data class RecordedRequest(val method: String, val path: String, val query: String?, val authorization: String?)
 
     companion object {
         fun onRandomPort() = MockWebServerExtension()

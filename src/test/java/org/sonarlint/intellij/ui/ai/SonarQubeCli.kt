@@ -96,10 +96,12 @@ class SonarQubeCli {
         return text
     }
 
-    private companion object {
-        const val RELEASED_CLI_PROPERTY = "sonarlint.test.sonarqube.cli"
-    }
 }
+
+private const val RELEASED_CLI_PROPERTY = "sonarlint.test.sonarqube.cli"
+
+/** False when the build could not resolve the SonarQube CLI, e.g. without Artifactory credentials. */
+fun isSonarQubeCliAvailable(): Boolean = System.getProperty(RELEASED_CLI_PROPERTY) != null
 
 private const val SLOOP_USER_HOME_PROPERTY = "sonarlint.test.sloop.user.home"
 
