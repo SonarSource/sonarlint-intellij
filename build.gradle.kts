@@ -41,6 +41,18 @@ buildscript {
     }
 }
 
+// The SonarQube CLI executable for the build machine, e.g. "macos-arm64@bin". There is no macOS Intel build: those Macs
+// still resolve the arm64 one, so the lock state is the same everywhere, but cannot run it.
+val buildMachineIsArm = System.getProperty("os.arch") in setOf("aarch64", "arm64")
+val buildMachineOs = System.getProperty("os.name").lowercase()
+val sonarQubeCliPlatform = when {
+    buildMachineOs.contains("win") -> "windows-x86-64@exe"
+    buildMachineOs.contains("mac") -> "macos-arm64@bin"
+    buildMachineIsArm -> "linux-arm64@bin"
+    else -> "linux-x86-64@bin"
+}
+val sonarQubeCliRunsOnBuildMachine = !(buildMachineOs.contains("mac") && !buildMachineIsArm)
+
 group = "org.sonarsource.sonarlint.intellij"
 description = "SonarLint for IntelliJ IDEA"
 
@@ -67,6 +79,7 @@ configurations {
         isTransitive = true
     }
     register("sloop")
+    register("sonarqubeCli")
 }
 
 java {
@@ -113,6 +126,7 @@ dependencies {
     testRuntimeOnly(libs.junit.launcher)
     "sqplugins"(libs.bundles.sonar.analyzers)
     "sloop"("org.sonarsource.sonarlint.core:sonarlint-backend-cli:${libs.versions.sonarlint.core.get()}:no-arch@zip")
+    "sonarqubeCli"("org.sonarsource.cli:sonarqube-cli:${libs.versions.sonarqube.cli.get()}:$sonarQubeCliPlatform")
 }
 
 apply(from = "gradle/intellij-dependency-lock.gradle")
@@ -364,6 +378,20 @@ tasks {
             systemProperty("sonarlint.test.sloop.user.home", sloopUserHome.absolutePath)
             environment("SONARLINT_JVM_OPTS", listOfNotNull(System.getenv("SONARLINT_JVM_OPTS")?.takeIf { it.isNotBlank() },
                 "-Duser.home=${sloopUserHome.absolutePath}", "-Dsonarlint.internal.ai.searchPath=").joinToString(" "))
+            // The real SonarQube CLI and `sonar integrate` work in the same user home as the backend, and keep their state and
+            // token there instead of in the machine's keychain. Java keeps the IDE's own user.home.
+            environment("HOME", sloopUserHome.absolutePath)
+            environment("SONAR_USER_HOME", sloopUserHome.resolve(".sonar").absolutePath)
+            environment("SONARQUBE_CLI_KEYCHAIN_FILE", sloopUserHome.resolve("sonarqube-cli-keychain.json").absolutePath)
+            // The real SonarQube CLI the AI Integrations tests install, resolved like the backend itself. It is only on
+            // Artifactory: without it, e.g. on the Maven Central fallback, or on a machine it does not support, those tests
+            // skip and the others still run.
+            val sonarQubeCli = configurations["sonarqubeCli"].incoming.artifactView { lenient(true) }.files
+            inputs.files(sonarQubeCli)
+            jvmArgumentProviders += CommandLineArgumentProvider {
+                sonarQubeCli.files.singleOrNull()?.takeIf { sonarQubeCliRunsOnBuildMachine }
+                    ?.let { listOf("-Dsonarlint.test.sonarqube.cli=${it.absolutePath}") }.orEmpty()
+            }
             doFirst {
                 sloopUserHome.deleteRecursively()
                 // The backend discovers agent CLIs once per process, at the first AI Integrations request of the run, so

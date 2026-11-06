@@ -28,6 +28,8 @@ import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
+import com.intellij.openapi.ui.TestDialog;
+import com.intellij.openapi.ui.TestDialogManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -57,6 +59,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.BackendService;
@@ -140,6 +143,10 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
       }
     });
     createdTempDirs.clear();
+    // Connections are removed before the next test, their saved credentials would stay
+    var credentialsService = getService(CredentialsService.class);
+    getGlobalSettings().getServerConnections().forEach(credentialsService::eraseCredentials);
+    TestDialogManager.setTestDialog(TestDialog.DEFAULT);
     realBackendService.projectClosed(getProject());
     if (!getProject().isDisposed()) {
       getService(getProject(), RunningAnalysesTracker.class).cancelAll();

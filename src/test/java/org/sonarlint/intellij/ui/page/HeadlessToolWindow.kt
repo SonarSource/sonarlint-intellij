@@ -19,13 +19,17 @@
  */
 package org.sonarlint.intellij.ui.page
 
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.RegisterToolWindowTask
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.ex.ToolWindowEx
 import javax.swing.Icon
+import org.jetbrains.plugins.terminal.TerminalToolWindowFactory
+import org.jetbrains.plugins.terminal.TerminalToolWindowManager
 import org.sonarlint.intellij.fixtures.pumpEdtUntil
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
 import org.sonarlint.intellij.ui.ToolWindowConstants.FINDINGS_TAB_TITLE
@@ -55,6 +59,27 @@ internal fun ensureWalkthroughToolWindow(project: Project): ToolWindow {
         factory,
         contentReady = { tw -> tw.contentManager.contentCount > 0 },
     )
+}
+
+/**
+ * Registers the Terminal plugin's tool window, where `TerminalToolWindowManager` opens its sessions. Registering it does
+ * not hand it to the manager: the headless tool window manager never runs the factory (see [ensureHeadlessToolWindow]),
+ * and the Terminal factory does nothing in unit test mode anyway. So hand it over here, or the manager logs an error when
+ * it opens the first session.
+ */
+internal fun ensureTerminalToolWindow(project: Project): ToolWindow {
+    val manager = ToolWindowManager.getInstance(project)
+    manager.getToolWindow(TerminalToolWindowFactory.TOOL_WINDOW_ID)?.let { return it }
+    val toolWindow = manager.registerToolWindow(
+        RegisterToolWindowTask.lazyAndClosable(
+            TerminalToolWindowFactory.TOOL_WINDOW_ID, TerminalToolWindowFactory(), AllIcons.Debugger.Console, ToolWindowAnchor.BOTTOM,
+        ),
+    )
+    // Package-private in the Terminal plugin
+    TerminalToolWindowManager::class.java.getDeclaredMethod("initToolWindow", ToolWindowEx::class.java)
+        .apply { isAccessible = true }
+        .invoke(TerminalToolWindowManager.getInstance(project), toolWindow)
+    return toolWindow
 }
 
 private fun ensureHeadlessToolWindow(

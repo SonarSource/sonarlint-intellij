@@ -39,6 +39,8 @@ import org.jetbrains.plugins.terminal.TerminalToolWindowManager
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
 import org.sonarlint.intellij.util.computeInEDT
 
+internal const val CLI_TERMINAL_TAB_NAME = "SonarQube CLI"
+
 class IntellijTerminalAdapter : CliTerminalAdapter {
     override fun launch(project: Project, command: CliCommand): TerminalLaunch =
         ApplicationManager.getApplication().computeInEDT {
@@ -73,7 +75,7 @@ internal class CliTerminalRunner @JvmOverloads constructor(
 ) : AbstractTerminalRunner<Process>(project) {
     val completion = CompletableFuture<TerminalCompletion>()
     val tabState = TerminalTabState().apply {
-        myTabName = "SonarQube CLI"
+        myTabName = CLI_TERMINAL_TAB_NAME
         myWorkingDirectory = project.basePath
         myShellCommand = listOf(command.executable) + command.arguments
     }

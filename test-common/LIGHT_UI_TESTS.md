@@ -24,6 +24,10 @@ In the light sandbox, `plugin.xml` tool windows are **not** auto-registered. Pag
 1. `SonarLintMainToolWindowPage.create(project)` or `SonarLintWalkthroughToolWindowPage.create(project)` — uses the helpers above
 2. `@AfterEach` cleanup via `SonarLintUiTestContext.closeOpenEditorsAndSonarLintToolWindows()` (used by `AbstractSonarLintUILightTests` and standalone UI light tests)
 
+To fake SonarQube Server or Cloud, register [`MockWebServerExtension`](src/testFixtures/kotlin/org/sonarlint/intellij/fixtures/MockWebServerExtension.kt) with `@RegisterExtension` and answer the requests the test expects, e.g. `server.addStringResponse("/api/system/status", "{...}")`, then create a connection to `server.url("")`. Unanswered requests get 404 and are listed in `unansweredRequests`.
+
+The IDE Terminal works headless too: `TerminalToolWindowPage.create(project, testRootDisposable)` registers the Terminal plugin's tool window and shows each new tab, since the plugin starts a tab's command only once it is shown. Commands then really run, so only send ones that are safe to run, such as a CLI isolated in the test user home (see `AiIntegrationsTabLightTests`). `lastTerminalText` and `typeInLastTerminal` answer a command's prompts.
+
 ## Page objects
 
 Light UI tests interact with the product through **page objects** (e.g. `SonarLintMainToolWindowPage` → `findings` → `findingsTree` / `issues`), not raw Swing containers or production panel types returned to tests. Subclass [`AbstractSonarLintUILightTests`](../src/test/java/org/sonarlint/intellij/AbstractSonarLintUILightTests.kt) to obtain a wired main tool window and automatic teardown.
