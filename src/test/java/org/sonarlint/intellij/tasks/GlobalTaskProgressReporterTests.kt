@@ -27,6 +27,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.analysis.GlobalBackgroundTaskTracker
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 
 class GlobalTaskProgressReporterTests : AbstractSonarLintLightTests() {
     private lateinit var reporter: GlobalTaskProgressReporter
@@ -64,6 +66,19 @@ class GlobalTaskProgressReporterTests : AbstractSonarLintLightTests() {
         val cancelled = reporter.getCancelledTaskIds()
 
         assertThat(cancelled).containsExactlyInAnyOrder("task1", "task2")
+    }
+
+    @Test
+    fun `global cancellation releases task lifetimes including late submissions`() {
+        val finished = mutableListOf<String>()
+        getService(GlobalBackgroundTaskTracker::class.java).onTaskFinished { finished.add(it) }.use {
+            reporter.trackTask(module1, "task1")
+
+            reporter.onCancel()
+            reporter.trackTask(module2, "task2")
+
+            assertThat(finished).containsExactly("task1", "task2")
+        }
     }
 
     @Test

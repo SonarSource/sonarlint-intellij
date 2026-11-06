@@ -71,6 +71,18 @@ class GlobalBackgroundTaskTrackerTests {
     }
 
     @Test
+    fun `completion subscriptions are removed when closed`() {
+        val completed = mutableListOf<String>()
+        val subscription = tracker.onTaskFinished { completed.add(it) }
+
+        tracker.finishTask("first")
+        subscription.close()
+        tracker.finishTask("second")
+
+        assertThat(completed).containsExactly("first")
+    }
+
+    @Test
     fun `should check if taskId is cancelled`() {
         val taskId = "cancelledId"
         tracker.track(reporter1)

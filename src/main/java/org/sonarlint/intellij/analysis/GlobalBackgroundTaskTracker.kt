@@ -22,18 +22,30 @@ package org.sonarlint.intellij.analysis
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CopyOnWriteArraySet
 import org.sonarlint.intellij.tasks.GlobalTaskProgressReporter
 
 @Service(Service.Level.APP)
 class GlobalBackgroundTaskTracker() {
 
     private val backgroundTasks = ConcurrentLinkedQueue<GlobalTaskProgressReporter>()
+    private val taskCompletionListeners = CopyOnWriteArraySet<(String) -> Unit>()
+
+    fun onTaskFinished(listener: (String) -> Unit): AutoCloseable {
+        taskCompletionListeners.add(listener)
+        return AutoCloseable { taskCompletionListeners.remove(listener) }
+    }
+
+    fun notifyTaskFinished(taskId: String) {
+        taskCompletionListeners.forEach { it(taskId) }
+    }
 
     fun track(backgroundTask: GlobalTaskProgressReporter) {
         backgroundTasks.add(backgroundTask)
     }
 
     fun finishTask(taskId: String) {
+        notifyTaskFinished(taskId)
         backgroundTasks.find { it.hasTaskId(taskId) }?.taskFinished(taskId)
     }
 
