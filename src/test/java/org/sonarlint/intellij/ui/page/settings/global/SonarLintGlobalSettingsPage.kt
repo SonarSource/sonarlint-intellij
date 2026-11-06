@@ -60,6 +60,10 @@ class SonarLintGlobalSettingsPage internal constructor(
             GlobalAboutTabPage(root.selectedTabContent())
         }
 
+    /** True when Apply would be enabled on the Settings dialog. */
+    val isModified: Boolean
+        get() = readOnEdt { configurable.isModified }
+
     /** Persists changes the same way as OK/Apply on the Settings dialog for this configurable. */
     fun save() {
         readOnEdt {

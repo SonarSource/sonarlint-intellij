@@ -20,8 +20,64 @@
 package org.sonarlint.intellij.ui.page.settings.global
 
 import java.awt.Component
+import java.util.concurrent.TimeUnit
+import javax.swing.tree.TreeNode
+import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.Awaitility
+import org.sonarlint.intellij.config.global.rules.RulesTreeNode
+import org.sonarlint.intellij.config.global.rules.RulesTreeTable
+import org.sonarlint.intellij.config.global.rules.RulesTreeTableModel
+import org.sonarlint.intellij.fixtures.findComponents
+import org.sonarlint.intellij.fixtures.pumpEdt
+import org.sonarlint.intellij.fixtures.readOnEdt
 
 /** Page object for the global **Rules** tab. */
 class GlobalRulesTabPage internal constructor(
-    @Suppress("unused") private val tabContent: Component,
-)
+    private val tabContent: Component,
+) {
+
+    /** Toggles [ruleKey] (same as double-click on that row in the rules tree). */
+    fun toggleRuleActivation(ruleKey: String) {
+        val rule = awaitRuleNode(ruleKey)
+        readOnEdt {
+            val table = tabContent.findComponents<RulesTreeTable>().single()
+            (table.tree.model as RulesTreeTableModel).swapAndRefresh(rule)
+            repeat(10) { pumpEdt() }
+        }
+    }
+
+    private fun awaitRuleNode(ruleKey: String): RulesTreeNode.Rule {
+        lateinit var rule: RulesTreeNode.Rule
+        Awaitility.await()
+            .pollInSameThread()
+            .atMost(60, TimeUnit.SECONDS)
+            .untilAsserted {
+                readOnEdt {
+                    repeat(30) { pumpEdt() }
+                    val table = tabContent.findComponents<RulesTreeTable>().single()
+                    rule = findRuleNode(table, ruleKey)
+                    assertThat(rule.key).isEqualTo(ruleKey)
+                }
+            }
+        return rule
+    }
+
+    private fun findRuleNode(table: RulesTreeTable, ruleKey: String): RulesTreeNode.Rule {
+        val root = table.tree.model.root as TreeNode
+        val stack = ArrayDeque<TreeNode>()
+        var match: RulesTreeNode.Rule? = null
+        stack.add(root)
+        while (stack.isNotEmpty() && match == null) {
+            val node = stack.removeFirst()
+            if (node is RulesTreeNode.Rule && node.key == ruleKey) {
+                match = node
+            } else {
+                for (i in 0 until node.childCount) {
+                    stack.add(node.getChildAt(i))
+                }
+            }
+        }
+        assertThat(match).withFailMessage("Rule $ruleKey was not found in the rules tree").isNotNull
+        return match!!
+    }
+}
