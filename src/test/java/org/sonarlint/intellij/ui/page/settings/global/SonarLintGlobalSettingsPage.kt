@@ -51,7 +51,7 @@ class SonarLintGlobalSettingsPage internal constructor(
     val rulesTab: GlobalRulesTabPage
         get() = readOnEdt {
             root.findTabbedPane().selectTab(TAB_RULES)
-            GlobalRulesTabPage(configurable, root.selectedTabContent())
+            GlobalRulesTabPage(root.selectedTabContent())
         }
 
     val aboutTab: GlobalAboutTabPage
@@ -59,6 +59,10 @@ class SonarLintGlobalSettingsPage internal constructor(
             root.findTabbedPane().selectTab(TAB_ABOUT)
             GlobalAboutTabPage(root.selectedTabContent())
         }
+
+    /** True when Apply would be enabled on the Settings dialog. */
+    val isModified: Boolean
+        get() = readOnEdt { configurable.isModified }
 
     /** Persists changes the same way as OK/Apply on the Settings dialog for this configurable. */
     fun save() {

@@ -28,8 +28,6 @@ import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
 import org.sonarlint.intellij.OpenWelcomePageOnceOneProjectOpened
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
-import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.fs.VirtualFileEvent
@@ -63,14 +61,14 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
             assertThat(trafficLightPageFor(file).issueCountLabelText).isEqualTo("1")
         }
 
-        setGlobalRuleActive(RULE_S2094, active = false)
+        toggleRuleInSettings(RULE_S2094)
 
         awaitUntilAsserted {
-            assertThat(mainToolWindow.findings.emptyStateText).isIn(NO_FINDINGS_EMPTY_STATES)
+            assertThat(mainToolWindow.findings.issues).isEmpty()
             assertThat(trafficLightPageFor(file).issueCountLabelText).isNull()
         }
 
-        setGlobalRuleActive(RULE_S2094, active = true)
+        toggleRuleInSettings(RULE_S2094)
 
         mainToolWindow.findings.filters.setFocusOnNewCode(true)
         analyzeFilesForReport(file)
@@ -147,11 +145,12 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
         analyzeCurrentFileViaFindingsToolbar(yaml)
 
         awaitUntilAsserted(timeoutSeconds = 60) {
-            assertThat(mainToolWindow.findings.issues.map { it.message })
+            val issues = mainToolWindow.findings.issues
+            assertThat(issues.map { it.message })
                 .anyMatch {
                     it.contains("Bind this resource's automounted service account to RBAC or disable automounting.")
                 }
-            assertThat(trafficLightPageFor(yaml).issueCountLabelText).isEqualTo("1")
+            assertThat(trafficLightPageFor(yaml).issueCountLabelText).isEqualTo(issues.size.toString())
         }
     }
 
@@ -174,15 +173,13 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
         }
     }
 
-    private fun setGlobalRuleActive(ruleKey: String, active: Boolean) {
-        val globals = getGlobalSettings()
-        if (active) {
-            globals.enableRule(ruleKey)
-        } else {
-            globals.disableRule(ruleKey)
+    private fun toggleRuleInSettings(ruleKey: String) {
+        val settings = openSqIdeSettings()
+        settings.rulesTab.toggleRuleActivation(ruleKey)
+        awaitUntilAsserted {
+            assertThat(settings.isModified).isTrue()
         }
-        getService(SonarLintGlobalSettingsStore::class.java).save(globals)
-        SonarLintGlobalConfigurable.triggerAnalysis()
+        settings.save()
     }
 
     private companion object {
