@@ -38,6 +38,9 @@ class FindingsTabPage internal constructor(
     private val panel: FindingsPanel,
 ) {
 
+    val summaryFilters: List<SummaryFilterPage>
+        get() = readPanelState { panel.walkComponents().filterIsInstance<org.sonarlint.intellij.ui.currentfile.SummaryButton>().map { SummaryFilterPage(it) }.toList() }
+
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
     val filters: FindingsTabFiltersPanelPage
