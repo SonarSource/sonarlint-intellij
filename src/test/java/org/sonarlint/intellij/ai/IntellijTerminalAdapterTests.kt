@@ -24,6 +24,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.terminal.ui.TerminalWidget
+import com.intellij.util.SystemProperties
 import com.intellij.terminal.ui.TtyConnectorAccessor
 import com.jediterm.terminal.ProcessTtyConnector
 import com.jediterm.terminal.TerminalKeyEncoder
@@ -164,6 +165,22 @@ class IntellijTerminalAdapterTests : AbstractSonarLintLightTests() {
             connector.close()
             Disposer.dispose(widget)
         }
+    }
+
+    @Test
+    fun `CLI commands start in the project directory`(@TempDir directory: Path) {
+        val project = mock<Project>()
+        whenever(project.basePath).thenReturn(directory.toString())
+
+        assertThat(cliWorkingDirectory(project)).isEqualTo(directory.toString())
+    }
+
+    @Test
+    fun `CLI commands start in the user home when the project directory is not on disk`(@TempDir directory: Path) {
+        val project = mock<Project>()
+        whenever(project.basePath).thenReturn(directory.resolve("missing").toString())
+
+        assertThat(cliWorkingDirectory(project)).isEqualTo(SystemProperties.getUserHome())
     }
 
     @Test

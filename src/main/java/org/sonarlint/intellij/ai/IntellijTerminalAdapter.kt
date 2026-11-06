@@ -25,11 +25,14 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.terminal.ui.TerminalWidget
+import com.intellij.util.SystemProperties
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.jediterm.terminal.TtyConnector
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
+import kotlin.io.path.isDirectory
 import org.jetbrains.plugins.terminal.AbstractTerminalRunner
 import org.jetbrains.plugins.terminal.LocalTerminalDirectRunner
 import org.jetbrains.plugins.terminal.ShellStartupOptions
@@ -76,7 +79,7 @@ internal class CliTerminalRunner @JvmOverloads constructor(
     val completion = CompletableFuture<TerminalCompletion>()
     val tabState = TerminalTabState().apply {
         myTabName = CLI_TERMINAL_TAB_NAME
-        myWorkingDirectory = project.basePath
+        myWorkingDirectory = cliWorkingDirectory(project)
         myShellCommand = listOf(command.executable) + command.arguments
     }
     lateinit var widget: TerminalWidget
@@ -138,6 +141,13 @@ internal class CliTerminalRunner @JvmOverloads constructor(
         }
     }
 }
+
+/**
+ * Where the CLI commands start: the project directory, or the user home when it is not on disk. The terminal cannot start
+ * a command in a missing directory, and the commands it runs here do not depend on the project.
+ */
+internal fun cliWorkingDirectory(project: Project): String =
+    project.basePath?.takeIf { Path.of(it).isDirectory() } ?: SystemProperties.getUserHome()
 
 internal fun observeTerminalCompletion(
     widget: TerminalWidget,

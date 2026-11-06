@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.ui.ai
 
+import com.intellij.openapi.util.SystemInfo
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -37,8 +39,9 @@ import org.apache.commons.io.file.PathUtils
 class SonarQubeCli {
 
     private val home = sloopUserHome()
-    private val installRoot = home.resolve(".local/share/sonarqube-cli")
-    private val executable = installRoot.resolve("bin/sonar")
+    // On Windows the official location is under %LOCALAPPDATA%, which the build points into the same user home
+    private val installRoot = home.resolve(if (SystemInfo.isWindows) "AppData/Local/sonarqube-cli" else ".local/share/sonarqube-cli")
+    private val executable = installRoot.resolve(if (SystemInfo.isWindows) "bin/sonar.exe" else "bin/sonar")
 
     val isInstalled: Boolean
         get() = executable.exists()
@@ -54,6 +57,10 @@ class SonarQubeCli {
         check(executable.toFile().setExecutable(true)) { "Cannot make $executable executable" }
     }
 
+    /** Executables running from the CLI installation, by path only: arguments or environment may hold secrets. */
+    val runningExecutables: List<String>
+        get() = processesRunningFrom(installRoot).mapNotNull { it.info().command().orElse(null) }
+
     /** Signs in to [serverUrl], as `sonar auth login` does after the browser flow. */
     fun signIn(serverUrl: String, token: String) {
         run(listOf(executable.toString(), "auth", "login", "--with-token", "--server", serverUrl), input = token + "\n")
@@ -66,6 +73,7 @@ class SonarQubeCli {
 
     /** Removes the CLI, its state, its token and what `sonar integrate claude` installed. */
     fun reset() {
+        stopRunningCommands()
         deleteDirectoryIfExists(installRoot)
         deleteDirectoryIfExists(home.resolve(".sonar"))
         home.resolve("sonarqube-cli-keychain.json").deleteIfExists()
@@ -76,10 +84,44 @@ class SonarQubeCli {
     private fun releasedCli(): Path =
         Path.of(checkNotNull(System.getProperty(RELEASED_CLI_PROPERTY)) { "The build did not provide the SonarQube CLI, see build.gradle.kts" })
 
+    /**
+     * Ends the processes a test left running from the CLI installation, e.g. the background process the CLI may leave:
+     * Windows cannot delete an executable while it runs. Do not wait for them to be reaped: in a container without an init
+     * process, a killed orphan stays a zombie, which still counts as running but no longer holds its executable.
+     */
+    private fun stopRunningCommands() {
+        val processes = processesRunningFrom(installRoot)
+        processes.forEach { it.destroyForcibly() }
+        runCatching { CompletableFuture.allOf(*processes.map { it.onExit() }.toTypedArray()).get(5, TimeUnit.SECONDS) }
+    }
+
+    /**
+     * Deletes [directory], retrying for a few seconds: on Windows a just-ended process, or the antivirus scanning a new
+     * executable, can keep files open briefly.
+     */
     private fun deleteDirectoryIfExists(directory: Path) {
-        if (directory.exists()) {
-            PathUtils.deleteDirectory(directory)
+        var attempt = 0
+        while (directory.exists()) {
+            try {
+                PathUtils.deleteDirectory(directory)
+            } catch (e: IOException) {
+                if (++attempt == 20) {
+                    // Only the executable paths: a process's arguments or environment may hold secrets
+                    val runningFromHome = processesRunningFrom(home).mapNotNull { it.info().command().orElse(null) }
+                    throw IOException("Cannot delete $directory; processes running from the test user home: $runningFromHome", e)
+                }
+                Thread.sleep(500)
+            }
         }
+    }
+
+    private fun processesRunningFrom(directory: Path): List<ProcessHandle> {
+        val root = directory.toAbsolutePath().normalize()
+        return ProcessHandle.allProcesses().filter { process ->
+            process.info().command().map { command ->
+                runCatching { Path.of(command.removePrefix("\\\\?\\")).toAbsolutePath().normalize().startsWith(root) }.getOrDefault(false)
+            }.orElse(false)
+        }.toList()
     }
 
     private fun run(command: List<String>, input: String? = null): String {
