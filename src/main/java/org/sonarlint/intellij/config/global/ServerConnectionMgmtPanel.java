@@ -56,9 +56,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
-import org.sonarlint.intellij.config.global.credentials.CredentialsService;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -231,9 +229,6 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   public void save(SonarLintGlobalSettings newSettings) {
     var newConnections = new ArrayList<>(connections);
     newSettings.setServerConnections(newConnections);
-
-    // remove them even if a server with the same name was later added
-    unbindRemovedServers();
   }
 
   @Override
@@ -266,6 +261,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   }
 
   void markConnectionChangesApplied() {
+    unbindRemovedServers();
     hasUnappliedConnectionChanges = false;
   }
 
@@ -337,11 +333,8 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
       }
 
       var model = (CollectionListModel<ServerConnection>) connectionList.getModel();
-      // it's not removed from serverIds and editorList
       model.remove(server);
       connections.remove(server);
-      SonarLintUtils.getService(CredentialsService.class)
-          .eraseCredentials(server);
       connectionsChanged();
 
       if (model.getSize() > 0) {
