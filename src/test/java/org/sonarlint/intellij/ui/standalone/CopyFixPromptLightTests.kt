@@ -24,7 +24,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIf
 import java.nio.file.Files
 import java.nio.file.Path
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
@@ -36,10 +35,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-/**
- * Light UI slot for former Standalone IT `should_copy_fix_prompt_from_current_file_tab` ([SLI-2813](https://github.com/SonarSource/sonarlint-intellij/pull/1844)).
- * Runs automatically once [GenerateFixPromptAction] is on the classpath (when #1844 is stacked on this branch).
- */
 class CopyFixPromptLightTests : AbstractSonarLintUILightTests() {
 
     @BeforeEach
@@ -48,7 +43,6 @@ class CopyFixPromptLightTests : AbstractSonarLintUILightTests() {
     }
 
     @Test
-    @EnabledIf("org.sonarlint.intellij.ui.standalone.CopyFixPromptLightTests#isGenerateFixPromptActionAvailable")
     fun should_copy_fix_prompt_after_findings_analysis() {
         val file = openFooJavaFromStandaloneFixture()
         analyzeCurrentFileViaFindingsToolbar(file)
@@ -86,11 +80,5 @@ class CopyFixPromptLightTests : AbstractSonarLintUILightTests() {
             true,
         )
         return virtualFile
-    }
-
-    companion object {
-        @JvmStatic
-        fun isGenerateFixPromptActionAvailable(): Boolean =
-            runCatching { Class.forName("org.sonarlint.intellij.actions.GenerateFixPromptAction") }.isSuccess
     }
 }
