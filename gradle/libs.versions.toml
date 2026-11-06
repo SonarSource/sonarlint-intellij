@@ -1,5 +1,5 @@
 [versions]
-sonarlint-core = "12.2.0.87867"
+sonarlint-core = "12.3.0.87938"
 
 sonar-java = "8.46.0.59609"
 sonar-java-symbolic = "8.16.4.1912"
@@ -26,7 +26,7 @@ cyclonedx-plugin = "3.5.1"
 commons-lang3 = "3.21.0"
 commons-text = "1.15.0"
 findbugs-jsr305 = "3.0.2"
-sentry = "8.61.1"
+sentry = "8.62.0"
 junit = "6.1.3"
 junit-four = "4.13.2"
 mockito-kotlin = "6.4.0"
@@ -45,7 +45,6 @@ sonarlint-java-client-utils = { module = "org.sonarsource.sonarlint.core:sonarli
 sonarlint-rpc-java-client = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-java-client", version.ref = "sonarlint-core" }
 sonarlint-rpc-impl = { module = "org.sonarsource.sonarlint.core:sonarlint-rpc-impl", version.ref = "sonarlint-core" }
 
-sonar-java-symbolic-execution = { module = "org.sonarsource.java:sonar-java-symbolic-execution-plugin", version.ref = "sonar-java-symbolic" }
 sonar-java = { module = "org.sonarsource.java:sonar-java-plugin", version.ref = "sonar-java" }
 sonar-javascript = { module = "org.sonarsource.javascript:sonar-javascript-plugin", version.ref = "sonar-javascript" }
 sonar-php = { module = "org.sonarsource.php:sonar-php-plugin", version.ref = "sonar-php" }
@@ -79,7 +78,7 @@ its-remote-robot = { module = "com.intellij.remoterobot:remote-robot", version.r
 its-remote-fixtures = { module = "com.intellij.remoterobot:remote-fixtures", version.ref = "its-remote" }
 
 [bundles]
-sonar-analyzers = ["sonar-java", "sonar-java-symbolic-execution", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac"]
+sonar-analyzers = ["sonar-java", "sonar-javascript", "sonar-php", "sonar-python", "sonar-kotlin", "sonar-ruby", "sonar-html", "sonar-xml", "sonar-omnisharp", "sonar-text", "sonar-go", "sonar-iac"]
 its-remote = ["its-remote-robot", "its-remote-fixtures"]
 
 [plugins]

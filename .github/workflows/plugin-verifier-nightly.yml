@@ -15,7 +15,7 @@ env:
 jobs:
   verify_plugin:
     runs-on: sonar-m
-    name: Verify Plugin - LATEST
+    name: Verify Plugin - FULL
     if: github.ref_name == github.event.repository.default_branch
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -30,8 +30,10 @@ jobs:
         uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
         with:
           path: .intellijPlatform/ides
-          key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-LATEST-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
+          key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-FULL-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
+          # Reuse IDE downloads cached before the mode was renamed to FULL.
           restore-keys: |
+            verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-FULL-
             verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-LATEST-
 
       - name: Cache Gradle
@@ -58,12 +60,12 @@ jobs:
       # Verifier downloads IDE tarballs through Gradle ivy from jetbrains-download.
       # Edge returns HTTP 404 for that repo; keep this job on SaaS (same as curl IDE fetches).
       - name: Run plugin verifier
-        run: ./gradlew :verifyPlugin -PverifierEnv=LATEST
+        run: ./gradlew :verifyPlugin -PverifierEnv=FULL
 
-      - name: Upload reports on failure
-        if: failure()
+      - name: Upload verification reports
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: verifier-reports-latest
+          name: verifier-reports-full
           path: "**/reports/**/*"
           if-no-files-found: warn

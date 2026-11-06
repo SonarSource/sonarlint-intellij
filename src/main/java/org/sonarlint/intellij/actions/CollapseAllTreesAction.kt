@@ -26,7 +26,7 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.wm.ToolWindowManager
 import org.sonarlint.intellij.ui.ToolWindowConstants.TOOL_WINDOW_ID
 import org.sonarlint.intellij.ui.UiUtils.Companion.runOnUiThread
-import org.sonarlint.intellij.ui.currentfile.CurrentFilePanel
+import org.sonarlint.intellij.ui.currentfile.FindingsPanel
 import org.sonarlint.intellij.ui.report.ReportPanel
 
 /**
@@ -44,7 +44,7 @@ class CollapseAllTreesAction : AnAction("Collapse All", "Collapse all finding tr
             val selectedContent = toolWindow.contentManager.selectedContent ?: return@runOnUiThread
             
             when (val component = selectedContent.component) {
-                is CurrentFilePanel -> {
+                is FindingsPanel -> {
                     collapseCurrentFileTrees(component)
                 }
                 is ReportPanel -> {
@@ -54,7 +54,7 @@ class CollapseAllTreesAction : AnAction("Collapse All", "Collapse all finding tr
         }
     }
     
-    private fun collapseCurrentFileTrees(panel: CurrentFilePanel) {
+    private fun collapseCurrentFileTrees(panel: FindingsPanel) {
         panel.collapseAllTrees()
     }
     

@@ -21,6 +21,7 @@ package org.sonarlint.intellij;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.notification.Notification;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
 import org.jetbrains.annotations.NotNull;
@@ -150,6 +152,23 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
     var mgr = getNotificationsManager();
     Stream.of(mgr.getNotificationsOfType(Notification.class, getProject()))
       .forEach(mgr::expire);
+  }
+
+  /**
+   * Starts recording the notifications published on the application message bus until the end of the test, whether
+   * they expire or not. Call it before the action that notifies.
+   *
+   * @return a live view of the notifications recorded so far, oldest first
+   */
+  protected List<Notification> recordNotifications() {
+    var recorded = new CopyOnWriteArrayList<Notification>();
+    ApplicationManager.getApplication().getMessageBus().connect(disposable).subscribe(Notifications.TOPIC, new Notifications() {
+      @Override
+      public void notify(@NotNull Notification notification) {
+        recorded.add(notification);
+      }
+    });
+    return Collections.unmodifiableList(recorded);
   }
 
   protected List<Notification> getProjectNotifications() {

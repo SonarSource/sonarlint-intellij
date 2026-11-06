@@ -20,12 +20,11 @@
 package org.sonarlint.intellij.vcs
 
 import com.intellij.openapi.project.Project
-import com.intellij.serviceContainer.NonInjectable
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.core.BackendService
 
-class DefaultVcsService @NonInjectable constructor(private val project: Project) : VcsService {
+class DefaultVcsService constructor(private val project: Project) : VcsService {
     override fun onVcsRepoChange() {
         getService(BackendService::class.java).didVcsRepoChange(project)
     }
