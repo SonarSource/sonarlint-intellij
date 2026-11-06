@@ -148,6 +148,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       rootPanel.setVisible(false);
       rootPanel = null;
     }
+    if (connectionsPanel != null) {
+      Disposer.dispose(connectionsPanel);
+    }
     connectionsPanel = null;
     about = null;
     if (rules != null) {
