@@ -69,6 +69,10 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
         }
 
         toggleRuleInSettings(RULE_S2094)
+        analyzeCurrentFileViaFindingsToolbar(file)
+        awaitUntilAsserted(timeoutSeconds = 60) {
+            assertThat(mainToolWindow.findings.issues.map { it.ruleKey }).contains(RULE_S2094)
+        }
 
         mainToolWindow.findings.filters.setFocusOnNewCode(true)
         analyzeFilesForReport(file)
