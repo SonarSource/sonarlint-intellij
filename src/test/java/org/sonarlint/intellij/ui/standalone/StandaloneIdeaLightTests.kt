@@ -28,10 +28,6 @@ import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintUILightTests
 import org.sonarlint.intellij.OpenWelcomePageOnceOneProjectOpened
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.fs.VirtualFileEvent
-import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 import org.junit.jupiter.api.AfterEach
 import org.sonarlint.intellij.ui.page.WALKTHROUGH_TOOL_WINDOW_ID
 
@@ -120,7 +116,7 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
     fun should_analyze_ansible() {
         // Same finding as UI IT (`DuplicatedEnvsChart` / automount). Helm does not resolve in light tests;
         // use plain Kubernetes YAML materialized on disk (as IT would after template rendering).
-        val yaml = createAndOpenTestVirtualFile(
+        val yaml = openGeneratedFile(
             "memory_limit_pod2-evaluated.yml",
             """
             apiVersion: v1
@@ -141,10 +137,6 @@ class StandaloneIdeaLightTests : AbstractSonarLintUILightTests() {
                       memory: 512Mi
                       cpu: 200m
             """.trimIndent() + "\n",
-        )
-        getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, yaml))),
-            true,
         )
         analyzeCurrentFileViaFindingsToolbar(yaml)
 

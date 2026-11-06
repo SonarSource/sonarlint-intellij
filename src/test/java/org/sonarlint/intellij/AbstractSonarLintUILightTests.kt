@@ -100,10 +100,7 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         val sourcePath = java.nio.file.Path.of(testDataPath, relativePath).toAbsolutePath()
         check(java.nio.file.Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
         val virtualFile = myFixture.copyFileToProject(relativePath, relativePath)
-        getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
-            true,
-        )
+        notifyFileCreated(virtualFile)
         return virtualFile
     }
 
@@ -113,11 +110,22 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
         check(java.nio.file.Files.isRegularFile(sourcePath)) { "Test file not found: $sourcePath" }
         val virtualFile = myFixture.copyFileToProject(relativePath, relativePath)
         myFixture.configureFromExistingVirtualFile(virtualFile)
+        notifyFileCreated(virtualFile)
+        return virtualFile
+    }
+
+    /** Opens [text] as [fileName] and registers it with SLOOP, same as [openFileFromTestData]. */
+    protected fun openGeneratedFile(fileName: String, text: String): VirtualFile {
+        val virtualFile = createAndOpenTestVirtualFile(fileName, text)
+        notifyFileCreated(virtualFile)
+        return virtualFile
+    }
+
+    private fun notifyFileCreated(virtualFile: VirtualFile) {
         getService(BackendService::class.java).updateFileSystem(
             mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
             true,
         )
-        return virtualFile
     }
 
     /**
