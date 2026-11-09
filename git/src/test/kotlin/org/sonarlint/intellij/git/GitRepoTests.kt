@@ -41,9 +41,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.fixtures.AbstractLightTests
@@ -175,7 +177,7 @@ class GitRepoTests : AbstractLightTests() {
     }
 
     @Test
-    fun `should use cache instead of trying to iterate all branches`() {
+    fun `should use cache instead of recomputing distances`() {
         val repoSpy = spy(initRepoWithCommit())
         newBranch("branch-1")
         commitNewFile("1.txt")
@@ -200,8 +202,7 @@ class GitRepoTests : AbstractLightTests() {
         // always invoked
         verify(repoSpy, times(3)).currentBranchName
         verify(repoSpy, times(3)).currentRevision
-        // invoked when no cache
-        verify(repoSpy, times(1)).branches
+        verify(SonarLintConsole.get(project), times(2)).debug(argThat { startsWith("Branch matching cache hit") })
     }
 
     @Test
@@ -231,8 +232,7 @@ class GitRepoTests : AbstractLightTests() {
         // always invoked
         verify(repoSpy, times(2)).currentBranchName
         verify(repoSpy, times(2)).currentRevision
-        // invoked when no cache
-        verify(repoSpy, times(2)).branches
+        verify(SonarLintConsole.get(project), never()).debug(argThat { startsWith("Branch matching cache hit") })
     }
 
     @Test
@@ -258,8 +258,7 @@ class GitRepoTests : AbstractLightTests() {
         // always invoked
         verify(repoSpy, times(2)).currentBranchName
         verify(repoSpy, times(2)).currentRevision
-        // invoked when no cache
-        verify(repoSpy, times(2)).branches
+        verify(SonarLintConsole.get(project), never()).debug(argThat { startsWith("Branch matching cache hit") })
     }
 
     @Test
@@ -285,8 +284,7 @@ class GitRepoTests : AbstractLightTests() {
         // always invoked
         verify(repoSpy, times(2)).currentBranchName
         verify(repoSpy, times(2)).currentRevision
-        // invoked when no cache
-        verify(repoSpy, times(2)).branches
+        verify(SonarLintConsole.get(project), never()).debug(argThat { startsWith("Branch matching cache hit") })
     }
 
     @Test
@@ -308,8 +306,7 @@ class GitRepoTests : AbstractLightTests() {
         // Cheap getters always run
         verify(repoSpy, times(2)).currentBranchName
         verify(repoSpy, times(2)).currentRevision
-        // The expensive walk must run exactly once; the second call hits the (now cached) null result.
-        verify(repoSpy, times(1)).branches
+        verify(SonarLintConsole.get(project)).debug(argThat { startsWith("Branch matching cache hit") })
     }
 
     @Test
@@ -340,8 +337,62 @@ class GitRepoTests : AbstractLightTests() {
         // Cheap getters are called every time
         verify(realRepoSpy, times(2)).currentBranchName
         verify(realRepoSpy, times(2)).currentRevision
-        // The expensive branch walk must run exactly once: the second call hits the cache despite the other repo being matched in-between.
-        verify(realRepoSpy, times(1)).branches
+        verify(SonarLintConsole.get(project)).debug(argThat { startsWith("Branch matching cache hit") })
+    }
+
+    @Test
+    fun `should recompute distances when candidate tips change with unchanged HEAD and names`() {
+        val repository = initRepoWithCommit()
+        newBranch(EXPECTED)
+        commitNewFile("1.txt")
+        newBranch("feature")
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repository.update()
+        }.get()
+        val tested = GitRepo(repository, project)
+        val branches = setOf(MAIN_BRANCH, EXPECTED)
+        val head = repository.currentRevision
+
+        assertThat(tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, branches)).isEqualTo(EXPECTED)
+
+        git(GitCommand.BRANCH, "-f", MAIN_BRANCH, "HEAD")
+        git(GitCommand.BRANCH, "-f", EXPECTED, "HEAD~1")
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repository.update()
+        }.get()
+
+        assertThat(repository.currentRevision).isEqualTo(head)
+        assertThat(repository.currentBranchName).isEqualTo("feature")
+        assertThat(tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, branches)).isEqualTo(MAIN_BRANCH)
+        verify(SonarLintConsole.get(project), times(2)).debug(argThat { startsWith("Branch matching: distance to 'main'") })
+    }
+
+    @Test
+    fun `should recompute when a corresponding local branch appears or disappears`() {
+        val repository = initRepoWithCommit()
+        newBranch("feature")
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repository.update()
+        }.get()
+        val tested = GitRepo(repository, project)
+        val branches = setOf(EXPECTED)
+        val head = repository.currentRevision
+
+        assertThat(tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, branches)).isNull()
+
+        git(GitCommand.BRANCH, EXPECTED)
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repository.update()
+        }.get()
+        assertThat(tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, branches)).isEqualTo(EXPECTED)
+
+        git(GitCommand.BRANCH, "-D", EXPECTED)
+        ApplicationManager.getApplication().executeOnPooledThread<Unit> {
+            repository.update()
+        }.get()
+        assertThat(repository.currentRevision).isEqualTo(head)
+        assertThat(repository.currentBranchName).isEqualTo("feature")
+        assertThat(tested.electBestMatchingServerBranchForCurrentHead(MAIN_BRANCH, branches)).isNull()
     }
 
     private fun otherRepoMock(rootPath: String): GitRepository {

@@ -37,6 +37,7 @@ private data class CacheKey(
     val repoBaseDir: Path?,
     val mainBranchName: String,
     val allBranchNames: Set<String>,
+    val candidateTips: Map<String, String>,
 )
 
 // Keyed by repository root path so independent repositories (and independent open projects) do not evict each other.
@@ -53,7 +54,16 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
         val repoBaseDir = getGitDir()
         val repoCacheKey = repo.root.path
 
-        val cacheKey = CacheKey(currentBranch, head, repoBaseDir, mainBranchName, allBranchNames)
+        val candidateTips = if (head != null && currentBranch !in allBranchNames) {
+            val branches = repo.branches
+            allBranchNames.mapNotNull { name ->
+                val branch = branches.findLocalBranch(name) ?: return@mapNotNull null
+                branches.getHash(branch)?.asString()?.let { name to it }
+            }.toMap()
+        } else {
+            emptyMap()
+        }
+        val cacheKey = CacheKey(currentBranch, head, repoBaseDir, mainBranchName, allBranchNames.toSet(), candidateTips)
 
         cacheByRepoPath[repoCacheKey]?.let { (cachedKey, cachedResult) ->
             if (cachedKey == cacheKey) {
@@ -79,13 +89,10 @@ class GitRepo(private val repo: GitRepository, private val project: Project) : V
 
         val result = try {
             val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
-            val branches = repo.branches
             var matchedCount = 0
-            for (serverBranchName in allBranchNames) {
-                val localBranch = branches.findLocalBranch(serverBranchName) ?: continue
-                val localBranchHash = branches.getHash(localBranch) ?: continue
+            for ((serverBranchName, localBranchHash) in candidateTips) {
                 val distanceStart = System.currentTimeMillis()
-                val distance = distance(project, repo, head, localBranchHash.asString()) ?: continue
+                val distance = distance(project, repo, head, localBranchHash) ?: continue
                 SonarLintConsole.get(project).debug(
                     "Branch matching: distance to '$serverBranchName' computed in ${System.currentTimeMillis() - distanceStart} ms"
                 )
