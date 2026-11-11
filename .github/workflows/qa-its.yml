@@ -100,7 +100,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/config-gradle@0bcfefcfa58f975805e4c48653a64f633fa414d5 # 1.8.10
         with:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
@@ -113,7 +113,7 @@ jobs:
         if: runner.environment != 'github-hosted'
         uses: ./.github/actions/point-resolve-at-edge
 
-      - uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+      - uses: SonarSource/ci-github-actions/build-gradle@0bcfefcfa58f975805e4c48653a64f633fa414d5 # 1.8.10
         id: build_plugin
         with:
           sonar-platform: none
@@ -128,7 +128,7 @@ jobs:
         run: echo "project-version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Upload built plugin
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: qa-plugin
           path: |

@@ -27,7 +27,7 @@ jobs:
       # Cache extracted IDEs and their indices independently of the Gradle version.
       # Refresh snapshots when verifier configuration changes, reusing older caches as a fallback.
       - name: Restore verifier IDEs cache
-        uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
+        uses: SonarSource/gh-action_cache@10fff0296bfc17164fb1ed6473f7238df3430ebf # v1.7.5
         with:
           path: .intellijPlatform/ides
           key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-FULL-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
@@ -37,7 +37,7 @@ jobs:
             verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-LATEST-
 
       - name: Cache Gradle
-        uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
+        uses: SonarSource/gh-action_cache@10fff0296bfc17164fb1ed6473f7238df3430ebf # v1.7.5
         with:
           path: |
             ~/.gradle/caches
@@ -49,7 +49,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/config-gradle@0bcfefcfa58f975805e4c48653a64f633fa414d5 # 1.8.10
         with:
           sonar-platform: none
           use-develocity: true
@@ -64,7 +64,7 @@ jobs:
 
       - name: Upload verification reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verifier-reports-full
           path: "**/reports/**/*"
