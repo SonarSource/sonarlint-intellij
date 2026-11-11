@@ -30,6 +30,7 @@ import org.sonarlint.intellij.editor.EditorHighlightRefresh
 import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarlint.intellij.ui.currentfile.FindingsPanel
+import org.sonarlint.intellij.ui.currentfile.SummaryButton
 import org.sonarlint.intellij.ui.currentfile.TreeType
 import org.sonarlint.intellij.ui.tree.IssueTree
 
@@ -37,6 +38,9 @@ class FindingsTabPage internal constructor(
     private val project: Project,
     private val panel: FindingsPanel,
 ) {
+
+    val summaryFilters: List<SummaryFilterPage>
+        get() = readPanelState { panel.walkComponents().filterIsInstance<SummaryButton>().map { SummaryFilterPage(it) }.toList() }
 
     val toolbar: FindingsTabToolbarPage = FindingsTabToolbarPage(this, project, panel)
 
