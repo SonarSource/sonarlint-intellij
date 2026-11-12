@@ -428,6 +428,10 @@ class BackendService : Disposable {
             serverConnections.filter { it.isSonarCloud && it.organizationKey != null }.map { toSonarCloudBackendConnection(it) }
         val sonarQubeConnections =
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
+        // The new backend only knows these connections, so a credentials change for any other name must be held until it is added
+        synchronized(connectionInvocationLock) {
+            backendConnectionNames = (sonarQubeConnections.map { it.connectionId } + sonarCloudConnections.map { it.connectionId }).toSet()
+        }
         val nonDefaultRpcRulesConfigurationByKey =
             getGlobalSettings().rulesByKey.mapValues { StandaloneRuleConfigDto(it.value.isActive, it.value.params) }
         val nodeJsPath = NodeJsSettings.getNodeJsPathForInitialization()?.let { Paths.get(it) }

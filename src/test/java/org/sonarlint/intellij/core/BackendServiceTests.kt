@@ -884,6 +884,24 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     }
 
     @Test
+    fun test_hold_credentials_change_after_restart_when_draft_removed_the_connection() {
+        verify(backend, timeout(2000)).initialize(any())
+        clearInvocations(backend, backendConnectionService)
+        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+        publisher.draftChanged(emptyList())
+
+        service.restartBackendService()
+        verify(backend, timeout(2000)).initialize(any())
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialsChangeListener.TOPIC).onCredentialsChanged(CONNECTION_NAME)
+        Thread.sleep(300)
+        verify(backendConnectionService, never()).didChangeCredentials(any())
+
+        publisher.draftChanged(listOf(ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("https://replacement").build()))
+
+        verify(backendConnectionService, timeout(2000)).didChangeCredentials(refEq(DidChangeCredentialsParams(CONNECTION_NAME)))
+    }
+
+    @Test
     fun test_restart_does_not_restore_applied_connections_removed_from_draft() {
         verify(backend, timeout(2000)).initialize(any())
         clearInvocations(backend)
