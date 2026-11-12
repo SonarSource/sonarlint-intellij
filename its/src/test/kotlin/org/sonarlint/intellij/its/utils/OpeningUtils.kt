@@ -60,17 +60,38 @@ object OpeningUtils {
         }
     }
 
+    /**
+     * Runs File | Open without going through the menu, whose layout differs between IDEs and on the welcome screen that some
+     * IDEs show as a project window (2025.3+ PyCharm, 2026.3+ EAPs). Takes the first "Open" entry of the IDE's own File menu
+     * (Rider has its own), else the platform action. Runs later on the EDT, as the dialog it opens is modal.
+     */
     fun openFileSelector() {
         with(remoteRobot) {
             idea {
-                optionalStep {
-                    findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
-                }
-                actionMenu("File") {
-                    item("Open") {
-                        click(Point(10, 10)) // Force the click on the left
-                    }
-                }
+                runJs(
+                    """
+                        const actionManager = com.intellij.openapi.actionSystem.ActionManager.getInstance();
+                        function findOpenAction(group) {
+                            const children = group.getChildActionsOrStubs();
+                            for (let i = 0; i < children.length; i++) {
+                                const child = children[i];
+                                if (child instanceof com.intellij.openapi.actionSystem.DefaultActionGroup) {
+                                    const found = findOpenAction(child);
+                                    if (found) return found;
+                                } else {
+                                    const text = child.getTemplateText();
+                                    // Children can be unloaded stubs, so resolve the action by id
+                                    if (text && new String(text).startsWith("Open")) return actionManager.getAction(actionManager.getId(child));
+                                }
+                            }
+                            return null;
+                        }
+                        const fileMenu = actionManager.getAction("FileMenu");
+                        const action = (fileMenu && findOpenAction(fileMenu)) || actionManager.getAction("OpenFile");
+                        com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() =>
+                            actionManager.tryToExecute(action, null, component, "MainMenu", true));
+                    """
+                )
             }
         }
     }
