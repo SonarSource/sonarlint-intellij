@@ -24,8 +24,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.ui.content.Content
+import java.time.Clock
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import org.sonarlint.intellij.analysis.AnalysisResult
 import org.sonarlint.intellij.ui.ToolWindowConstants
@@ -35,7 +38,7 @@ import org.sonarlint.intellij.ui.ToolWindowConstants
  * 
  * <h3>Design & Architecture:</h3>
  * This service manages the lifecycle of dated report tabs, allowing multiple analysis results
- * to be displayed simultaneously. Each report tab is uniquely identified by a timestamp and
+ * to be displayed simultaneously. Each report tab is identified independently of its display timestamp and
  * can be closed independently.
  * 
  * <h3>Key Features:</h3>
@@ -47,8 +50,10 @@ import org.sonarlint.intellij.ui.ToolWindowConstants
 @Service(Service.Level.PROJECT)
 class ReportTabManager(private val project: Project) {
     
-    private val reportTabs = ConcurrentHashMap<String, ReportPanel>()
-    private val batchToTabTitle = ConcurrentHashMap<String, String>()
+    private data class ReportTab(val content: Content, val panel: ReportPanel)
+
+    private val reportTabs = ConcurrentHashMap<String, ReportTab>()
+    internal var clock: Clock = Clock.systemDefaultZone()
     private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm")
     
     /**
@@ -57,16 +62,16 @@ class ReportTabManager(private val project: Project) {
      */
     @Synchronized
     fun createLoadingReportTab(batchId: String, expectedModuleCount: Int = 1): String? {
-        val existingTabTitle = batchToTabTitle[batchId]
-        if (existingTabTitle != null) {
+        val existingTab = reportTabs[batchId]
+        if (existingTab != null) {
             // Tab already exists, just return the title
-            return existingTabTitle
+            return existingTab.content.displayName
         }
         
         val toolWindow = getToolWindow() ?: return null
         val contentManager = toolWindow.contentManager
         
-        val timestamp = LocalDateTime.now()
+        val timestamp = LocalDateTime.now(clock)
         val tabTitle = "Report - ${dateFormatter.format(timestamp)}"
         
         // Create new report panel in loading state
@@ -76,15 +81,14 @@ class ReportTabManager(private val project: Project) {
         // Create and add content to tool window
         val content = contentManager.factory.createContent(reportPanel, tabTitle, false).apply {
             isCloseable = true
-            putUserData(REPORT_TAB_KEY, tabTitle)
+            putUserData(REPORT_TAB_KEY, batchId)
         }
         
         contentManager.addContent(content)
         contentManager.setSelectedContent(content)
         
         // Store reference to panel and batch mapping
-        reportTabs[tabTitle] = reportPanel
-        batchToTabTitle[batchId] = tabTitle
+        reportTabs[batchId] = ReportTab(content, reportPanel)
 
         toolWindow.show()
         
@@ -97,18 +101,13 @@ class ReportTabManager(private val project: Project) {
      */
     @Synchronized
     fun updateOrCreateReportTab(batchId: String, analysisResult: AnalysisResult, completedModules: Int = 1, expectedModules: Int = 1): String? {
-        val existingTabTitle = batchToTabTitle[batchId]
+        val existingTab = reportTabs[batchId]
         
-        return if (existingTabTitle != null) {
-            // Update existing tab
-            reportTabs[existingTabTitle]?.let { panel ->
-                // Update progress and merge new results with existing results
-                panel.updateAnalysisProgress(completedModules, expectedModules)
-                panel.mergeAnalysisResults(analysisResult)
-                existingTabTitle
-            }
+        return if (existingTab != null) {
+            existingTab.panel.updateAnalysisProgress(completedModules, expectedModules)
+            existingTab.panel.mergeAnalysisResults(analysisResult)
+            existingTab.content.displayName
         } else {
-            // Create new tab (fallback if loading tab wasn't created)
             createReportTab(analysisResult, batchId)
         }
     }
@@ -117,14 +116,14 @@ class ReportTabManager(private val project: Project) {
      * Creates a new report tab with the current timestamp and displays the analysis results.
      */
     fun createReportTab(analysisResult: AnalysisResult): String? {
-        return createReportTab(analysisResult, null)
+        return createReportTab(analysisResult, UUID.randomUUID().toString())
     }
     
-    private fun createReportTab(analysisResult: AnalysisResult, batchId: String?): String? {
+    private fun createReportTab(analysisResult: AnalysisResult, batchId: String): String? {
         val toolWindow = getToolWindow() ?: return null
         val contentManager = toolWindow.contentManager
         
-        val timestamp = LocalDateTime.now()
+        val timestamp = LocalDateTime.now(clock)
         val tabTitle = "Report - ${dateFormatter.format(timestamp)}"
         
         // Create new report panel
@@ -134,27 +133,20 @@ class ReportTabManager(private val project: Project) {
         // Create and add content to tool window
         val content = contentManager.factory.createContent(reportPanel, tabTitle, false).apply {
             isCloseable = true
-            putUserData(REPORT_TAB_KEY, tabTitle)
+            putUserData(REPORT_TAB_KEY, batchId)
         }
         
         contentManager.addContent(content)
         contentManager.setSelectedContent(content)
         
         // Store reference to panel
-        reportTabs[tabTitle] = reportPanel
-        
-        // Store batch mapping if provided
-        batchId?.let { batchToTabTitle[it] = tabTitle }
+        reportTabs[batchId] = ReportTab(content, reportPanel)
 
         toolWindow.show()
         
         return tabTitle
     }
 
-    fun getOpenReportTabs(): Set<String> {
-        return reportTabs.keys.toSet()
-    }
-    
     private fun getToolWindow(): ToolWindow? {
         return ToolWindowManager.getInstance(project).getToolWindow(ToolWindowConstants.TOOL_WINDOW_ID)
     }
