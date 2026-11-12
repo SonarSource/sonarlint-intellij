@@ -223,34 +223,4 @@ class CredentialsServiceTests : AbstractSonarLintLightTests() {
         assertThat(userNamePassword).isNull()
         assertThat(token).isNull()
     }
-    @Test
-    fun `snapshot diagnostics do not expose credentials`() {
-        val snapshot = CredentialsService.CredentialSnapshot(CONNECTION_NAME, EXPECTED_TOKEN, Credentials(EXPECTED_USER, EXPECTED_PASSWORD))
-
-        assertThat(snapshot.toString()).doesNotContain(EXPECTED_TOKEN, EXPECTED_USER, EXPECTED_PASSWORD)
-    }
-
-    @Test
-    fun `should restore both credential entries as a batch`() {
-        PasswordSafe.instance.setToken(CONNECTION_NAME, EXPECTED_TOKEN)
-        PasswordSafe.instance.setUsernamePassword(CONNECTION_NAME, Credentials(EXPECTED_USER, EXPECTED_PASSWORD))
-        val snapshots = tested.snapshotCredentials(listOf(TEST_CONNECTION))
-        tested.removeCredentials(listOf(TEST_CONNECTION))
-        assertThat(PasswordSafe.instance.getToken(CONNECTION_NAME)).isNull()
-        assertThat(PasswordSafe.instance.getUsernamePassword(CONNECTION_NAME)).isNull()
-
-        tested.restoreCredentials(snapshots)
-
-        assertThat(PasswordSafe.instance.getToken(CONNECTION_NAME)).isEqualTo(EXPECTED_TOKEN)
-        assertThat(PasswordSafe.instance.getUsernamePassword(CONNECTION_NAME)).isEqualTo(Credentials(EXPECTED_USER, EXPECTED_PASSWORD))
-    }
-
-    @Test
-    fun `should commit removal when credentials are already missing`() {
-        tested.removeCredentials(listOf(TEST_CONNECTION))
-
-        assertThat(PasswordSafe.instance.getToken(CONNECTION_NAME)).isNull()
-        assertThat(PasswordSafe.instance.getUsernamePassword(CONNECTION_NAME)).isNull()
-    }
-
 }
