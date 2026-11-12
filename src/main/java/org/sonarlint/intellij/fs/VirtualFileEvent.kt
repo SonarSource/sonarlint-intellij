@@ -20,9 +20,12 @@
 package org.sonarlint.intellij.fs
 
 import com.intellij.openapi.vfs.VirtualFile
+import java.net.URI
+import org.sonarlint.intellij.util.VirtualFileUtils.toURI
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 data class VirtualFileEvent(
     val type: ModuleFileEvent.Type,
     val virtualFile: VirtualFile,
+    val uri: URI? = toURI(virtualFile),
 )

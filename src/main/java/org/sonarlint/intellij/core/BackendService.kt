@@ -1180,7 +1180,7 @@ class BackendService : Disposable {
     fun updateFileSystem(filesByModule: Map<Module, List<VirtualFileEvent>>, includeFileContent: Boolean) {
         val deletedFileUris = filesByModule.values
             .flatMap { it.filter { event -> event.type == ModuleFileEvent.Type.DELETED } }
-            .mapNotNull { toURI(it.virtualFile) }
+            .mapNotNull { it.uri }
 
         val addedFiles = filesByModule.entries.flatMap { (module, events) ->
             gatherClientFiles(module, ModuleFileEvent.Type.CREATED, events, includeFileContent)
@@ -1202,6 +1202,7 @@ class BackendService : Disposable {
         shouldIncludeContent: Boolean,
     ): List<ClientFileDto> {
         val filesOfType = events.filter { it.type == type }
+        if (filesOfType.isEmpty()) return emptyList()
         val virtualFiles = filesOfType.map { it.virtualFile }.toList()
         val contributedLanguages = collectContributedLanguages(module, virtualFiles)
         val moduleId = moduleId(module)
