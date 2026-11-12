@@ -19,12 +19,12 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+    - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
       with:
         version: 2025.9.12
 
     - name: Configure Gradle
-      uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+      uses: SonarSource/ci-github-actions/config-gradle@e2032bdce92b0675c839fd6a697c8bb0078985d5 # 2.5.2
       with:
         sonar-platform: none
         use-develocity: true
@@ -323,7 +323,7 @@ runs:
         echo "FFMPEG_PID=$!" >> $GITHUB_ENV
 
     - name: Configure Maven
-      uses: SonarSource/ci-github-actions/config-maven@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+      uses: SonarSource/ci-github-actions/config-maven@e2032bdce92b0675c839fd6a697c8bb0078985d5 # 2.5.2
       with:
         artifactory-reader-role: private-reader
 
