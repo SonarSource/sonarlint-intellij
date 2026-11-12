@@ -41,17 +41,16 @@ class GlobalTaskProgressReporter(
     }
 
     override fun onCancel() {
-        isCancelled = true
-        modulesPerTaskId.keys.forEach { id ->
-            getService(BackendService::class.java).cancelTask(id)
-        }
+        cancelAllTasks()
         super.onCancel()
     }
 
+    @Synchronized
     fun cancelAllTasks() {
         isCancelled = true
         modulesPerTaskId.keys.forEach { id ->
             getService(BackendService::class.java).cancelTask(id)
+            getService(GlobalBackgroundTaskTracker::class.java).notifyTaskFinished(id)
         }
     }
 
@@ -61,15 +60,22 @@ class GlobalTaskProgressReporter(
         }
     }
 
+    @Synchronized
     fun trackTask(module: Module, taskId: String?) {
         taskId?.let { modulesPerTaskId[taskId] = module } ?: modulesDone.add(module)
+        if (isCancelled && taskId != null) {
+            getService(BackendService::class.java).cancelTask(taskId)
+            getService(GlobalBackgroundTaskTracker::class.java).notifyTaskFinished(taskId)
+        }
         checkIfGloballyFinished()
     }
 
+    @Synchronized
     fun hasTaskId(taskId: String): Boolean {
         return modulesPerTaskId.contains(taskId)
     }
 
+    @Synchronized
     fun taskFinished(taskId: String) {
         val module = modulesPerTaskId[taskId] ?: return
         modulesPerTaskId.remove(taskId)
@@ -78,9 +84,10 @@ class GlobalTaskProgressReporter(
         checkIfGloballyFinished()
     }
 
+    @Synchronized
     fun getCancelledTaskIds(): Set<String> {
         return if (isCancelled) {
-            modulesPerTaskId.keys
+            modulesPerTaskId.keys.toSet()
         } else {
             emptySet()
         }
