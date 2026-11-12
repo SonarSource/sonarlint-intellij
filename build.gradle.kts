@@ -258,6 +258,7 @@ intellijPlatformTesting {
         register("runLocalIde") {
             if (project.hasProperty("runIdeDirectory")) {
                 localPath = file(runIdeDirectory)
+                useCache = false
             }
             sandboxDirectory = project.layout.buildDirectory.dir("sonarlint-test")
             prepareSandboxTask {
