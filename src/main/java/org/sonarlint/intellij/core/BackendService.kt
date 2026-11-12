@@ -216,6 +216,11 @@ class BackendService : Disposable {
     private var connectionDispatchTail: CompletableFuture<Void> = CompletableFuture.completedFuture(null)
     private var currentConnectionsById: Map<String, ServerConnection>? = null
     private var connectionDispatchGeneration = 0L
+
+    // Both guarded by connectionInvocationLock. Names of the connections last sent to the backend (null while unknown) and
+    // credential changes received while their connection was absent from the backend.
+    private var backendConnectionNames: Set<String>? = null
+    private val pendingCredentialChanges = mutableSetOf<String>()
     private var sloop: Sloop? = null
     private var defaultSloopLauncher: SloopLauncher? = null
     private var intentionalRestart = AtomicBoolean(false)
@@ -253,11 +258,7 @@ class BackendService : Disposable {
             }
         })
         busConnection.subscribe(CredentialsChangeListener.TOPIC, CredentialsChangeListener { connectionId ->
-            runOnPooledThread {
-                notifyBackend {
-                    it.connectionService.didChangeCredentials(DidChangeCredentialsParams(connectionId))
-                }
-            }
+            dispatchConnectionAction { notifyCredentialsChanged(it, connectionId) }
         })
     }
 
@@ -272,6 +273,12 @@ class BackendService : Disposable {
     private fun dispatchConnectionUpdate(serverConnections: List<ServerConnection>, isDraft: Boolean, action: (SonarLintRpcServer) -> Unit) {
         synchronized(connectionDispatchLock) {
             currentConnectionsById = if (isDraft) serverConnections.associateBy { it.name } else null
+            dispatchConnectionAction(action)
+        }
+    }
+
+    private fun dispatchConnectionAction(action: (SonarLintRpcServer) -> Unit) {
+        synchronized(connectionDispatchLock) {
             val generation = connectionDispatchGeneration
             connectionDispatchTail = connectionDispatchTail
                 .handle<Void> { _, _ -> null }
@@ -617,8 +624,32 @@ class BackendService : Disposable {
     private fun updateConnections(serverConnections: List<ServerConnection>, isDraft: Boolean) {
         val scConnections = serverConnections.filter { it.isSonarCloud && it.organizationKey != null }.map { toSonarCloudBackendConnection(it) }
         val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
+        val connectionNames = (sqConnections.map { it.connectionId } + scConnections.map { it.connectionId }).toSet()
         dispatchConnectionUpdate(serverConnections, isDraft) {
             it.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
+            backendConnectionNames = connectionNames
+            if (!isDraft) {
+                pendingCredentialChanges.retainAll(connectionNames)
+            }
+            // Re-sent once the connection is known again: the backend may have cached the failed lookup of the absent connection
+            val nowKnown = pendingCredentialChanges.filter { name -> name in connectionNames }
+            pendingCredentialChanges.removeAll(nowKnown.toSet())
+            nowKnown.forEach { name -> it.connectionService.didChangeCredentials(DidChangeCredentialsParams(name)) }
+        }
+    }
+
+    /**
+     * Runs on the connection dispatch chain, so after any connection update already queued. Settings replacing a connection under
+     * the same name remove it and add it back in separate drafts, with the new token saved in between. A credentials change
+     * reaching the backend while the connection is absent makes it cache the connection as gone, and it does not reconsider
+     * when the connection is added back: nothing would be synchronized for it. Hold such a change until the connection is back.
+     */
+    private fun notifyCredentialsChanged(backend: SonarLintRpcServer, connectionId: String) {
+        val knownNames = backendConnectionNames
+        if (knownNames != null && connectionId !in knownNames) {
+            pendingCredentialChanges.add(connectionId)
+        } else {
+            backend.connectionService.didChangeCredentials(DidChangeCredentialsParams(connectionId))
         }
     }
 
@@ -1026,6 +1057,8 @@ class BackendService : Disposable {
                 synchronized(connectionInvocationLock) {
                     connectionDispatchGeneration++
                     connectionDispatchTail = CompletableFuture.completedFuture(null)
+                    backendConnectionNames = null
+                    pendingCredentialChanges.clear()
                     initializationTriedOnce.set(false)
                     backendFuture = CompletableFuture()
                     sloop = null

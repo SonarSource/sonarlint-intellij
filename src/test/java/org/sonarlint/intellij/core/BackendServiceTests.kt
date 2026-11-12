@@ -51,6 +51,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.doThrow
+import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
@@ -1159,6 +1160,45 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
         await().atMost(Duration.ofSeconds(3)).untilAsserted {
             verify(backendConnectionService).didChangeCredentials(refEq(DidChangeCredentialsParams(CONNECTION_NAME)))
         }
+    }
+
+    @Test
+    fun test_hold_credentials_change_until_connection_replaced_under_same_name_is_added_back() {
+        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+        val replacement = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("https://replacement").build()
+        publisher.draftChanged(listOf(replacement))
+        verify(backendConnectionService, timeout(2000)).didUpdateConnections(any())
+        clearInvocations(backendConnectionService)
+
+        // removing then re-adding a connection in the settings dialog saves the new token in between
+        publisher.draftChanged(emptyList())
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialsChangeListener.TOPIC).onCredentialsChanged(CONNECTION_NAME)
+        verify(backendConnectionService, timeout(2000)).didUpdateConnections(any())
+        Thread.sleep(300)
+        verify(backendConnectionService, never()).didChangeCredentials(any())
+
+        publisher.draftChanged(listOf(replacement))
+
+        val order = inOrder(backendConnectionService)
+        order.verify(backendConnectionService, timeout(2000).times(2)).didUpdateConnections(any())
+        order.verify(backendConnectionService, timeout(2000)).didChangeCredentials(refEq(DidChangeCredentialsParams(CONNECTION_NAME)))
+    }
+
+    @Test
+    fun test_drop_held_credentials_change_when_connection_is_not_added_back() {
+        val publisher = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
+        val connection = ServerConnection.newBuilder().setName(CONNECTION_NAME).setHostUrl("https://replacement").build()
+        publisher.draftChanged(listOf(connection))
+        verify(backendConnectionService, timeout(2000)).didUpdateConnections(any())
+        clearInvocations(backendConnectionService)
+        publisher.draftChanged(emptyList())
+        ApplicationManager.getApplication().messageBus.syncPublisher(CredentialsChangeListener.TOPIC).onCredentialsChanged(CONNECTION_NAME)
+        publisher.changed(emptyList())
+        publisher.draftChanged(listOf(connection))
+
+        verify(backendConnectionService, timeout(2000).times(3)).didUpdateConnections(any())
+        Thread.sleep(300)
+        verify(backendConnectionService, never()).didChangeCredentials(any())
     }
 
     @Test
