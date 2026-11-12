@@ -67,10 +67,18 @@ class FileBrowserDialogFixture(
   private fun breadcrumbPathField(): JTextFieldFixture {
     findElement<ComponentFixture>(byXpath("//div[@accessiblename='Home Directory' and @class='ActionButton']")).click()
     Thread.sleep(1000)
-    val breadcrumbs = find<ComponentFixture>(byXpath("//div[@class='Breadcrumbs']"))
+    val breadcrumbs = find<ComponentFixture>(byXpath(BREADCRUMBS_XPATH))
     breadcrumbs.click(Point(breadcrumbs.remoteComponent.width - 5, breadcrumbs.remoteComponent.height / 2))
-    return find(byXpath("//div[@class='NioPathTextField']"), Duration.ofSeconds(5))
+    return find(byXpath(NIO_PATH_FIELD_XPATH), Duration.ofSeconds(5))
   }
+
+  /** From 2026.3 the breadcrumb bar is gone again and the path field is always shown. */
+  private fun universalPathField(): JTextFieldFixture =
+    if (findAll<ComponentFixture>(byXpath(BREADCRUMBS_XPATH)).isNotEmpty()) {
+      breadcrumbPathField()
+    } else {
+      find(byXpath(NIO_PATH_FIELD_XPATH), Duration.ofSeconds(5))
+    }
 
   private fun refreshButton(): ComponentFixture {
     return findElement(byXpath("//div[(@accessiblename='Refresh' and @class='ActionButton')]"))
@@ -93,7 +101,7 @@ class FileBrowserDialogFixture(
 
       classicField.text = projectBaseDir.normalize().toString()
     } else {
-      val pathField = breadcrumbPathField()
+      val pathField = universalPathField()
       pathField.text = projectBaseDir.normalize().toString()
       // The path is applied on Enter, which can also confirm the dialog
       pathField.click()
@@ -105,5 +113,10 @@ class FileBrowserDialogFixture(
     if (runCatching { isShowing }.getOrDefault(false)) {
       button.click()
     }
+  }
+
+  private companion object {
+    const val BREADCRUMBS_XPATH = "//div[@class='Breadcrumbs']"
+    const val NIO_PATH_FIELD_XPATH = "//div[@class='NioPathTextField']"
   }
 }
