@@ -20,10 +20,13 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
+import com.intellij.openapi.util.registry.Registry
 import java.nio.file.Path
+import java.util.MissingResourceException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.`when`
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 
@@ -110,6 +113,46 @@ class AiAgentRegistryTests {
         assertThat(registry.standaloneMcpPath(AiAgent.CLAUDE_CODE, home, false, null))
             .isEqualTo(home.resolve(".claude.json"))
         assertThat(registry.standaloneMcpPath(AiAgent.KIRO, home, false, null)).isNull()
+    }
+
+    @Test
+    fun `resolves Junie default and overridden global configurations`() {
+        val registry = AiAgentRegistry { false }
+        val home = Path.of("/users/me").toAbsolutePath().normalize()
+        val custom = home.resolve("custom/../junie")
+
+        listOf(null, "", "  ").forEach { override ->
+            assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = override))
+                .isEqualTo(home.resolve(".junie/mcp/mcp.json"))
+        }
+        assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = custom.toString()))
+            .isEqualTo(home.resolve("junie/mcp/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = "invalid\u0000path")).isNull()
+    }
+
+    @Test
+    fun `resolves AI Assistant registry paths relative to home or as absolute paths`() {
+        val registry = AiAgentRegistry { false }
+        val home = Path.of("/users/me").toAbsolutePath().normalize()
+        val custom = home.resolve("custom/../assistant.json")
+
+        assertThat(registry.standaloneMcpPath(AiAgent.JETBRAINS_AI_ASSISTANT, home, false, null, assistantPath = ".ai/mcp/mcp.json"))
+            .isEqualTo(home.resolve(".ai/mcp/mcp.json"))
+        assertThat(registry.standaloneMcpPath(AiAgent.JETBRAINS_AI_ASSISTANT, home, false, null, assistantPath = custom.toString()))
+            .isEqualTo(home.resolve("assistant.json"))
+        listOf(null, "", "  ", "invalid\u0000path").forEach { value ->
+            assertThat(registry.standaloneMcpPath(AiAgent.JETBRAINS_AI_ASSISTANT, home, false, null, assistantPath = value)).isNull()
+        }
+    }
+
+    @Test
+    fun `unavailable AI Assistant registry key leaves configuration unsupported`() {
+        mockStatic(Registry::class.java).use { registry ->
+            registry.`when`<String> { Registry.stringValue("llm.mcp.client.global.mcp.json.path") }
+                .thenThrow(MissingResourceException("Unavailable", "Registry", "llm.mcp.client.global.mcp.json.path"))
+
+            assertThat(AiAgentRegistry { false }.standaloneMcpPath(AiAgent.JETBRAINS_AI_ASSISTANT)).isNull()
+        }
     }
 
     private val supportedPlugins = mapOf(
