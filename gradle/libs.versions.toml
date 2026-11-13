@@ -14,7 +14,7 @@ sonar-go = "1.48.0.9254"
 sonar-html = "3.28.0.8018"
 sonar-xml = "2.19.0.8138"
 sonar-omnisharp = "1.49.0.102154"
-sonar-text = "2.54.0.13918"
+sonar-text = "2.55.0.13968"
 sonar-iac = "2.27.0.24646"
 
 sonarqube = "7.3.0.8198"
