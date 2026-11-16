@@ -22,7 +22,7 @@ orchestrator = "6.4.4.4797"
 
 kotlin-plugin = "2.4.21"
 spotless = "8.11.0"
-artifactory-plugin = "6.0.4"
+artifactory-plugin = "6.0.5"
 cyclonedx-plugin = "3.5.1"
 
 commons-lang3 = "3.21.0"
