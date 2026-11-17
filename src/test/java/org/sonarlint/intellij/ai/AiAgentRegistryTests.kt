@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ai
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.registry.Registry
 import java.nio.file.Path
 import java.util.MissingResourceException
@@ -133,9 +134,22 @@ class AiAgentRegistryTests {
         val registry = AiAgentRegistry { false }
         val home = Path.of("/users/me").toAbsolutePath().normalize()
 
-        listOf("", "  ", "custom/../junie", "~/.junie").forEach { override ->
+        listOf("", "custom/../junie", "~/.junie").forEach { override ->
             assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = override))
                 .isEqualTo(Path.of(override).toAbsolutePath().normalize().resolve("mcp/mcp.json"))
+        }
+    }
+
+    @Test
+    fun `handles a whitespace Junie override according to the platform path rules`() {
+        val registry = AiAgentRegistry { false }
+        val home = Path.of("/users/me").toAbsolutePath().normalize()
+        val path = registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = "  ")
+
+        if (SystemInfo.isWindows) {
+            assertThat(path).isNull()
+        } else {
+            assertThat(path).isEqualTo(Path.of("  ").toAbsolutePath().normalize().resolve("mcp/mcp.json"))
         }
     }
 
