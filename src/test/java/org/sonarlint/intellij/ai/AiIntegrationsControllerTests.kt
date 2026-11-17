@@ -27,6 +27,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.UIUtil
 import java.awt.Container
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import javax.swing.JButton
 import javax.swing.JToggleButton
@@ -34,7 +35,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.spy
+import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
@@ -60,7 +64,9 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
     private lateinit var mcpCoordinator: McpConfigurationCoordinator
     private var extraController: AiIntegrationsController? = null
     private var enabledPluginIds = emptySet<String>()
-    private val registry = AiAgentRegistry(IdePluginDetector { it in enabledPluginIds })
+    private val registry = spy(AiAgentRegistry(IdePluginDetector { it in enabledPluginIds }))
+    @TempDir
+    lateinit var configDir: Path
     private var acceptUninstall = true
     private var confirmationCount = 0
     private var duringConfirmation: () -> Unit = {}
@@ -68,6 +74,9 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
     fun setUpController() {
+        listOf(AiAgent.GITHUB_COPILOT, AiAgent.JUNIE, AiAgent.JETBRAINS_AI_ASSISTANT).forEach { agent ->
+            doReturn(configDir.resolve("$agent.json")).`when`(registry).standaloneMcpPath(agent)
+        }
         backend = mock(BackendService::class.java)
         replaceApplicationService(SonarLintTelemetry::class.java, mock(SonarLintTelemetry::class.java))
         coordinator = createCoordinator()
@@ -200,7 +209,7 @@ class AiIntegrationsControllerTests : AbstractSonarLintLightTests() {
         verify(backend).getAiIntegrationState(project, onlyAiAssistant)
         second.complete(snapshot(onlyAiAssistant.map(::hostedCapability)))
         UIUtil.dispatchAllInvocationEvents()
-        assertThat(labels(panel)).contains("1 agent detected", "No agents with MCP configuration files", "JetBrains AI Assistant")
+        assertThat(labels(panel)).contains("1 agent detected", "0 configured", "JetBrains AI Assistant")
             .doesNotContain("GitHub Copilot", "Junie")
 
         enabledPluginIds = emptySet()
