@@ -27,10 +27,11 @@ class RegionUtils {
     companion object {
         @JvmStatic
         fun getUrlByRegion(region: SonarCloudRegion?): String {
-            return if (region != null && region == SonarCloudRegion.US) {
-                SonarLintUtils.US_SONARCLOUD_URL
-            } else {
-                SonarLintUtils.SONARCLOUD_URL
+            return when (region) {
+                SonarCloudRegion.US -> SonarLintUtils.US_SONARCLOUD_URL
+                SonarCloudRegion.AU -> SonarLintUtils.AU_SONARCLOUD_URL
+                // EU is the default for connections saved without a region
+                SonarCloudRegion.EU, null -> SonarLintUtils.SONARCLOUD_URL
             }
         }
     }

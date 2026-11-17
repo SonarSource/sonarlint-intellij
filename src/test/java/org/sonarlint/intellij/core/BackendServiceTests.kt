@@ -1429,6 +1429,48 @@ class BackendServiceTests : AbstractSonarLintHeavyTests() {
     }
 
     @Test
+    fun test_initialize_params_sonarcloud_au_alternative_environment() {
+        try {
+            verify(backend, timeout(2000)).initialize(any())
+            clearInvocations(backend)
+            System.setProperty("sonarlint.internal.sonarcloud.au.url", "https://au-sc-staging.io")
+            System.setProperty("sonarlint.internal.sonarcloud.au.api.url", "https://api.au-sc-staging.io")
+            System.setProperty("sonarlint.internal.sonarcloud.au.websocket.url", "wss://events-api.au-sc-staging.io")
+            service.restartBackendService()
+            val paramsCaptor = argumentCaptor<InitializeParams>()
+            verify(backend, timeout(2000)).initialize(paramsCaptor.capture())
+
+            val regions = paramsCaptor.firstValue.alternativeSonarCloudEnvironment!!.alternateRegionUris
+            assertThat(regions.keys).containsExactly(SonarCloudRegion.AU)
+            val au = regions[SonarCloudRegion.AU]!!
+            assertThat(au.uri.toString()).isEqualTo("https://au-sc-staging.io")
+            assertThat(au.apiUri.toString()).isEqualTo("https://api.au-sc-staging.io")
+            assertThat(au.webSocketsEndpointUri.toString()).isEqualTo("wss://events-api.au-sc-staging.io")
+        } finally {
+            System.clearProperty("sonarlint.internal.sonarcloud.au.url")
+            System.clearProperty("sonarlint.internal.sonarcloud.au.api.url")
+            System.clearProperty("sonarlint.internal.sonarcloud.au.websocket.url")
+        }
+    }
+
+    @Test
+    fun test_check_list_user_organizations_for_sonarcloud_au() {
+        PasswordSafe.instance.setToken(CONNECTION_NAME, "token")
+        val serverConnection = ServerConnection.newBuilder()
+            .setName(CONNECTION_NAME)
+            .setRegion(SonarCloudRegion.AU.name)
+            .setHostUrl("https://sonarqube.au")
+            .setOrganizationKey("org")
+            .build()
+
+        service.listUserOrganizations(serverConnection)
+
+        val paramsCaptor = argumentCaptor<ListUserOrganizationsParams>()
+        verify(backendConnectionService, timeout(500)).listUserOrganizations(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue.region).isEqualTo(SonarCloudRegion.AU)
+    }
+
+    @Test
     fun test_check_list_user_organizations_for_sonarcloud() {
         PasswordSafe.instance.setToken(CONNECTION_NAME, "token")
         val serverConnection = ServerConnection.newBuilder()

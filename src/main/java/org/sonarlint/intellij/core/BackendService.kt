@@ -533,6 +533,13 @@ class BackendService : Disposable {
             alternateRegions[SonarCloudRegion.US] = SonarQubeCloudRegionDto(URI.create(sonarCloudUsUrl), URI.create(sonarCloudUsApiUrl), URI.create(sonarCloudUsWebSocketUrl))
         }
 
+        val sonarCloudAuUrl = System.getProperty("sonarlint.internal.sonarcloud.au.url")
+        val sonarCloudAuApiUrl = System.getProperty("sonarlint.internal.sonarcloud.au.api.url")
+        val sonarCloudAuWebSocketUrl = System.getProperty("sonarlint.internal.sonarcloud.au.websocket.url")
+        if (sonarCloudAuUrl != null && sonarCloudAuApiUrl != null && sonarCloudAuWebSocketUrl != null) {
+            alternateRegions[SonarCloudRegion.AU] = SonarQubeCloudRegionDto(URI.create(sonarCloudAuUrl), URI.create(sonarCloudAuApiUrl), URI.create(sonarCloudAuWebSocketUrl))
+        }
+
         return if (alternateRegions.isEmpty()) null else SonarCloudAlternativeEnvironmentDto(alternateRegions)
     }
 

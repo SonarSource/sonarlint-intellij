@@ -88,6 +88,39 @@ class ConnectionWizardModelTests {
   }
 
   @Test
+  void testEditExistingAuConnectionKeepsRegionAndUrl() {
+    var server = ServerConnection.newBuilder()
+      .setName("name")
+      .setOrganizationKey("org")
+      .setHostUrl("https://sonarqube.au")
+      .setRegion(SonarCloudRegion.AU.name())
+      .build();
+    var model = new ConnectionWizardModel(server, credentialsServiceMock(true).getCredentials(server));
+
+    assertThat(model.getServerType()).isEqualTo(ConnectionWizardModel.ServerType.SONARCLOUD);
+    assertThat(model.getRegion()).isEqualTo(SonarCloudRegion.AU);
+    var edited = model.createConnection();
+    assertThat(edited.getHostUrl()).isEqualTo("https://sonarqube.au");
+    assertThat(edited.getRegion()).isEqualTo(SonarCloudRegion.AU.name());
+    assertThat(edited.getOrganizationKey()).isEqualTo("org");
+  }
+
+  @Test
+  void testEditExistingUsConnectionKeepsRegionAndUrl() {
+    var server = ServerConnection.newBuilder()
+      .setName("name")
+      .setOrganizationKey("org")
+      .setHostUrl("https://sonarqube.us")
+      .setRegion(SonarCloudRegion.US.name())
+      .build();
+    var model = new ConnectionWizardModel(server, credentialsServiceMock(true).getCredentials(server));
+
+    var edited = model.createConnection();
+    assertThat(edited.getHostUrl()).isEqualTo("https://sonarqube.us");
+    assertThat(edited.getRegion()).isEqualTo(SonarCloudRegion.US.name());
+  }
+
+  @Test
   void testMigrationSonarCloud() {
     var server = ServerConnection.newBuilder()
       .setName("name")
