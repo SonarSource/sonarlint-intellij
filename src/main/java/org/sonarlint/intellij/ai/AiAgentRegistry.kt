@@ -60,7 +60,8 @@ class AiAgentRegistry(private val pluginDetector: IdePluginDetector = IntellijId
     fun standaloneMcpPath(agent: AiAgent): Path? {
         val userHome = Path.of(SystemProperties.getUserHome()).toAbsolutePath().normalize()
         val localAppData = if (agent == AiAgent.GITHUB_COPILOT && SystemInfo.isWindows) EnvironmentUtil.getValue("LOCALAPPDATA")?.let(Path::of) else null
-        val junieHome = if (agent == AiAgent.JUNIE) EnvironmentUtil.getValue("JUNIE_HOME") else null
+        // Junie reads the IDE process environment, without IntelliJ's shell environment expansion.
+        val junieHome = if (agent == AiAgent.JUNIE) System.getenv("JUNIE_HOME") else null
         val assistantPath = if (agent == AiAgent.JETBRAINS_AI_ASSISTANT) {
             try {
                 Registry.stringValue("llm.mcp.client.global.mcp.json.path")
@@ -88,14 +89,14 @@ class AiAgentRegistry(private val pluginDetector: IdePluginDetector = IntellijId
             }
             AiAgent.CURSOR -> userHome.resolve(".cursor/mcp.json")
             AiAgent.CLAUDE_CODE -> userHome.resolve(".claude.json")
-            AiAgent.JUNIE -> resolvePath(junieHome?.takeIf { it.isNotBlank() } ?: ".junie", userHome)?.resolve("mcp/mcp.json")
+            AiAgent.JUNIE -> resolvePath(junieHome ?: userHome.resolve(".junie").toString())?.resolve("mcp/mcp.json")
             AiAgent.JETBRAINS_AI_ASSISTANT -> assistantPath?.takeIf { it.isNotBlank() }?.let { resolvePath(it, userHome) }
             else -> null
         }
     }
 
-    private fun resolvePath(value: String, userHome: Path): Path? = try {
-        userHome.resolve(value).toAbsolutePath().normalize()
+    private fun resolvePath(value: String, base: Path = Path.of("")): Path? = try {
+        base.resolve(value).toAbsolutePath().normalize()
     } catch (_: InvalidPathException) {
         null
     }

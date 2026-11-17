@@ -30,7 +30,13 @@ import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
 import org.mockito.kotlin.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -41,7 +47,10 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.fixtures.awaitUntil
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
+import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgentDetectionSource
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.McpConfigurationState
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationAction
+import org.sonarsource.sonarlint.core.rpc.protocol.client.telemetry.AiIntegrationActionStatus
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
 
@@ -94,6 +103,7 @@ class JetBrainsMcpConfigurationLightTests : AbstractSonarLintLightTests() {
         assertThat(path).isRegularFile()
         assertThat(coordinator.inspectSnapshot(snapshot).join().mcpConfigurations.getValue(agent).state)
             .isEqualTo(McpConfigurationState.STANDALONE)
+        assertSetupOutcome(agent, AiIntegrationActionStatus.SUCCEEDED)
     }
 
     @ParameterizedTest
@@ -113,10 +123,18 @@ class JetBrainsMcpConfigurationLightTests : AbstractSonarLintLightTests() {
         val content = JsonMapper().readTree(Files.readString(path))
         assertThat(content.path("custom").asText()).isEqualTo("keep")
         assertThat(content.path("mcpServers").path("other").path("command").asText()).isEqualTo("custom")
-        assertThat(content.path("mcpServers").path("sonarqube").path("env").path("SONARQUBE_TOKEN").asText()).isEqualTo("test-token")
+        val sonar = content.path("mcpServers").path("sonarqube")
+        assertThat(sonar.path("command").asText()).isEqualTo("docker")
+        assertThat(sonar.path("args").map { it.asText() }).contains("-i", "--rm", "sonarsource/sonarqube-mcp")
+        assertThat(sonar.path("env").path("SONARQUBE_URL").asText()).isEqualTo("http://localhost:1")
+        assertThat(sonar.path("env").path("SONARQUBE_TOKEN").asText()).isEqualTo("test-token")
+        assertThat(sonar.path("env").path("SONARQUBE_IDE_PORT").asInt()).isBetween(1, 65535)
+        assertSetupOutcome(agent, AiIntegrationActionStatus.SUCCEEDED)
         whenever(ui.openConfiguration(project, path)).thenReturn(true)
         coordinator.openConfiguration(project, agent, configured)
         verify(ui).openConfiguration(project, path)
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.OPEN_MCP_CONFIGURATION, AiIntegrationActionStatus.STARTED, agent)
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.OPEN_MCP_CONFIGURATION, AiIntegrationActionStatus.SUCCEEDED, agent)
         assertObservedState(agent, McpConfigurationState.STANDALONE)
     }
 
@@ -135,6 +153,8 @@ class JetBrainsMcpConfigurationLightTests : AbstractSonarLintLightTests() {
             assertThat(inspected.mcpConfigurations.getValue(agent).state).isEqualTo(state)
 
             assertThat(coordinator.setUp(project, inspected, agent)).isFalse()
+            assertSetupOutcome(agent, AiIntegrationActionStatus.FAILED)
+            clearInvocations(telemetry)
             coordinator.embeddedServerStarted(64121)
 
             assertThat(Files.readString(path)).isEqualTo(content)
@@ -160,6 +180,7 @@ class JetBrainsMcpConfigurationLightTests : AbstractSonarLintLightTests() {
         val mapper = JsonMapper()
         assertThat(mapper.readTree(Files.readString(path))).isEqualTo(mapper.readTree(content.replace("64120", "64121")))
         assertObservedState(agent, McpConfigurationState.STANDALONE)
+        verify(telemetry, never()).aiIntegrationAction(any(), any(), anyOrNull())
     }
 
     private fun assertObservedState(agent: AiAgent, state: McpConfigurationState) {
@@ -172,8 +193,15 @@ class JetBrainsMcpConfigurationLightTests : AbstractSonarLintLightTests() {
             controller.loadInitially()
             awaitUntil { observedStates[agent] == state }
             assertThat(observedStates[agent]).isEqualTo(state)
+            verify(telemetry).aiAgentIntegrationStateObserved(agent, listOf(AiAgentDetectionSource.IDE), state)
         } finally {
             Disposer.dispose(controller)
         }
+    }
+
+    private fun assertSetupOutcome(agent: AiAgent, outcome: AiIntegrationActionStatus) {
+        val statuses = argumentCaptor<AiIntegrationActionStatus>()
+        verify(telemetry, times(2)).aiIntegrationAction(eq(AiIntegrationAction.CONFIGURE_MCP), statuses.capture(), eq(agent))
+        assertThat(statuses.allValues).containsExactly(AiIntegrationActionStatus.STARTED, outcome)
     }
 }

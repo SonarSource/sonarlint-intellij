@@ -121,13 +121,22 @@ class AiAgentRegistryTests {
         val home = Path.of("/users/me").toAbsolutePath().normalize()
         val custom = home.resolve("custom/../junie")
 
-        listOf(null, "", "  ").forEach { override ->
-            assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = override))
-                .isEqualTo(home.resolve(".junie/mcp/mcp.json"))
-        }
+        assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null))
+            .isEqualTo(home.resolve(".junie/mcp/mcp.json"))
         assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = custom.toString()))
             .isEqualTo(home.resolve("junie/mcp/mcp.json"))
         assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = "invalid\u0000path")).isNull()
+    }
+
+    @Test
+    fun `resolves relative Junie overrides against the IDE working directory like Junie`() {
+        val registry = AiAgentRegistry { false }
+        val home = Path.of("/users/me").toAbsolutePath().normalize()
+
+        listOf("", "  ", "custom/../junie", "~/.junie").forEach { override ->
+            assertThat(registry.standaloneMcpPath(AiAgent.JUNIE, home, false, null, junieHome = override))
+                .isEqualTo(Path.of(override).toAbsolutePath().normalize().resolve("mcp/mcp.json"))
+        }
     }
 
     @Test
