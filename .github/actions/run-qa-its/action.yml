@@ -21,6 +21,7 @@ runs:
   steps:
     - uses: step-security/mise-action@a225bbd7c202ddf57dd76dff22bb7992f6314173 # v5.1.2
       with:
+        persist_github_token: true
         version: 2025.9.12
 
     - name: Configure Gradle
