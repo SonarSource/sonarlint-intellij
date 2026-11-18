@@ -19,7 +19,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+    - uses: step-security/mise-action@a225bbd7c202ddf57dd76dff22bb7992f6314173 # v5.1.2
       with:
         version: 2025.9.12
 
