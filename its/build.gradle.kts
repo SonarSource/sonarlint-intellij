@@ -141,9 +141,11 @@ tasks.named<Test>("test") {
     jvmArgumentProviders += CommandLineArgumentProvider {
         listOf("-Dits.sonarqube.java.home=${java21.get().metadata.installationPath.asFile.absolutePath}")
     }
-    // Keep Orchestrator on SaaS: Edge returns HTTP 404 for api/search/versions on
-    // sonarsource-releases, which Orchestrator uses to resolve SQ distributions.
-    systemProperty("orchestrator.artifactory.url", "https://repox.jfrog.io/repox")
+    // Edge serves api/search/versions under /artifactory only (/repox returns HTTP 404).
+    systemProperty(
+        "orchestrator.artifactory.url",
+        if (System.getenv("CI") == "true") "https://repox.sonar.build/artifactory" else "https://repox.jfrog.io/artifactory"
+    )
     val artifactoryToken = System.getenv("ARTIFACTORY_ACCESS_TOKEN")
         ?: System.getenv("ARTIFACTORY_PASSWORD")
     if (!artifactoryToken.isNullOrEmpty()) {

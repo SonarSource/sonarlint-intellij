@@ -11,7 +11,7 @@
 # Environment variables (required):
 #   ARTIFACTORY_USERNAME:     Authentication username
 #   ARTIFACTORY_ACCESS_TOKEN: Authentication token
-#   ARTIFACTORY_IDE_URL:      Optional override; defaults to SaaS. Edge 404s jetbrains-download.
+#   ARTIFACTORY_IDE_URL:      Optional override; defaults to ARTIFACTORY_URL, then SaaS.
 
 #
 # Exit codes:
@@ -37,8 +37,7 @@ fi
 IDE_TYPE="${BASH_REMATCH[1]}"
 IDE_VERSION="${BASH_REMATCH[2]}"
 
-# jetbrains-download is not on Edge (HTTP 404). Keep IDE tarball fetches on SaaS.
-ARTIFACTORY_URL="${ARTIFACTORY_IDE_URL:-https://repox.jfrog.io/artifactory}"
+ARTIFACTORY_URL="${ARTIFACTORY_IDE_URL:-${ARTIFACTORY_URL:-https://repox.jfrog.io/artifactory}}"
 ARTIFACTORY_URL="${ARTIFACTORY_URL%/}"
 : "${ARTIFACTORY_URL:?}" "${ARTIFACTORY_USERNAME:?}" "${ARTIFACTORY_ACCESS_TOKEN:?}"
 

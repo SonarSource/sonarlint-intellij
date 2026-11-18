@@ -69,8 +69,6 @@ dependencyResolutionManagement {
                     password = artifactoryPassword
                 }
             }
-            // IDE installer tarballs are not on Edge (HTTP 404). Keep Ivy fetches on SaaS.
-            val installerArtifactoryUrl = "https://repox.jfrog.io/artifactory"
             intellijPlatform {
                 localPlatformArtifacts()
                 maven("$artifactoryUrl/jetbrains-intellij-dependencies") {
@@ -81,14 +79,14 @@ dependencyResolutionManagement {
                     }
                 }
                 jetbrainsIdeInstallers {
-                    url = URI("$installerArtifactoryUrl/jetbrains-download")
+                    url = URI("$artifactoryUrl/jetbrains-download")
                     credentials {
                         username = artifactoryUsername
                         password = artifactoryPassword
                     }
                 }
                 androidStudioInstallers {
-                    url = URI("$installerArtifactoryUrl/android-studio")
+                    url = URI("$artifactoryUrl/android-studio")
                     credentials {
                         username = artifactoryUsername
                         password = artifactoryPassword

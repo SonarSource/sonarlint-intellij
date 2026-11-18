@@ -31,8 +31,9 @@ jobs:
     name: Get build number
     permissions:
       id-token: write
+      contents: write
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+      - uses: SonarSource/ci-github-actions/get-build-number@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         id: build-number
 
   aws-auth:
@@ -92,10 +93,8 @@ jobs:
           echo "RIDER_HOME=${RIDER_2024_DIR}" >> $GITHUB_ENV
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
-      # config-gradle first so we can wait for Edge federation before Gradle resolve.
-      # build-gradle then skips its nested config-gradle (CONFIG_GRADLE_COMPLETED).
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/config-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         with:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
@@ -104,12 +103,8 @@ jobs:
             /home/runner/.gradle/caches
             /home/runner/.gradle/wrapper
 
-      - name: Point resolve at Edge
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
-
       - name: Build Plugin
-        uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/build-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         id: build_plugin
         with:
           sonar-platform: none
@@ -141,14 +136,9 @@ jobs:
           version: 2025.9.12
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/config-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         with:
-          sonar-platform: none
           artifactory-reader-role: private-reader
-
-      - name: Point resolve at Edge
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
 
       - name: Run checks
         env:
@@ -213,7 +203,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/config-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         with:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
@@ -222,12 +212,8 @@ jobs:
             /home/runner/.gradle/caches
             /home/runner/.gradle/wrapper
 
-      - name: Point resolve at Edge
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
-
       - name: Run Tests and Sonar Analysis
-        uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/build-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         with:
           deploy: false
           use-develocity: true
@@ -299,7 +285,7 @@ jobs:
             verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-CI-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/config-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         with:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
@@ -309,11 +295,8 @@ jobs:
             !/home/runner/.gradle/caches/*/transforms/
             /home/runner/.gradle/wrapper
 
-      # Verifier downloads IDE tarballs through Gradle ivy from jetbrains-download.
-      # Edge returns HTTP 404 for that repo, and the config-gradle init script strips
-      # any ivy host that does not match ARTIFACTORY_URL. Keep this job on SaaS.
       - name: Verify Plugin Compatibility
-        uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/build-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         with:
           deploy: false
           sonar-platform: none
@@ -336,11 +319,14 @@ jobs:
         run: python3 .github/scripts/test_qa_matrix.py
 
   qa:
-    needs: build-plugin
+    needs:
+      - build-number
+      - build-plugin
     uses: ./.github/workflows/qa-its.yml
     with:
       matrix_mode: ${{ github.event_name == 'pull_request' && 'pr-minimal' || 'pr-all' }}
       project_version: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
+      build_number: ${{ needs.build-number.outputs.BUILD_NUMBER }}
 
   promote:
     runs-on: sonar-xs
@@ -371,7 +357,7 @@ jobs:
           version: 2025.9.12
 
       - name: Promote artifacts
-        uses: SonarSource/ci-github-actions/promote@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/promote@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         env:
           PROJECT_VERSION: ${{ needs.build-plugin.outputs.PROJECT_VERSION }}
         with:

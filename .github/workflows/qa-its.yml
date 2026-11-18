@@ -22,6 +22,11 @@ on:
         type: string
         required: false
         default: ''
+      build_number:
+        description: Build number from the caller's get-build-number job. When empty, the workflow gets one itself.
+        type: string
+        required: false
+        default: ''
 
 env:
   CACHE_BACKEND: s3
@@ -45,6 +50,22 @@ jobs:
           IDE_VERSION: ${{ inputs.ide_version }}
           TEST_SUITE: ${{ inputs.test_suite }}
         run: python3 .github/scripts/qa-matrix.py "${MATRIX_MODE}"
+
+  build-number:
+    if: needs.setup-qa-matrix.outputs.skip_its != 'true'
+    needs: setup-qa-matrix
+    outputs:
+      BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
+    runs-on: sonar-xs
+    name: Get build number
+    permissions:
+      id-token: write
+      contents: write
+    env:
+      BUILD_NUMBER: ${{ inputs.build_number }}
+    steps:
+      - uses: SonarSource/ci-github-actions/get-build-number@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
+        id: build-number
 
   aws-auth:
     if: needs.setup-qa-matrix.outputs.skip_its != 'true'
@@ -82,7 +103,10 @@ jobs:
         shell: bash
     needs:
       - aws-auth
+      - build-number
     name: Build Plugin
+    env:
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     outputs:
       PROJECT_VERSION: ${{ steps.set_version.outputs.project-version }}
     steps:
@@ -100,7 +124,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/config-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         with:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
@@ -109,11 +133,7 @@ jobs:
             /home/runner/.gradle/caches
             /home/runner/.gradle/wrapper
 
-      - name: Point resolve at Edge
-        if: runner.environment != 'github-hosted'
-        uses: ./.github/actions/point-resolve-at-edge
-
-      - uses: SonarSource/ci-github-actions/build-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+      - uses: SonarSource/ci-github-actions/build-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         id: build_plugin
         with:
           sonar-platform: none
@@ -151,6 +171,7 @@ jobs:
     name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite }}
     needs:
       - aws-auth
+      - build-number
       - build-plugin
       - setup-qa-matrix
     strategy:
@@ -159,6 +180,7 @@ jobs:
         include: ${{ fromJson(needs.setup-qa-matrix.outputs.matrix) }}
     env:
       DISPLAY: ':10'
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
