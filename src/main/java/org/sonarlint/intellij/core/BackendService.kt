@@ -391,7 +391,7 @@ class BackendService : Disposable {
         return sloopLauncher.start(
             sloopPath,
             jreHomePath,
-            "-Xms384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+            "-Xms384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:-UseBASE64Intrinsics"
         )
     }
 
