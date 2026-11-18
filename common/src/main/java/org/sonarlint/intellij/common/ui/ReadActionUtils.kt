@@ -115,7 +115,13 @@ class ReadActionUtils {
             action: Computable<T>
         ): T? {
             if (!project.isDisposed && virtualFile.isValid) {
-                return if (ApplicationManager.getApplication().isDispatchThread) {
+                val application = ApplicationManager.getApplication()
+                // Waiting for smart mode from inside an already held read action can never succeed while the IDE is indexing:
+                // the platform throws an IllegalStateException instead of waiting. Report "not computable now" like a cancellation.
+                if (!application.isDispatchThread && application.isReadAccessAllowed && DumbService.isDumb(project)) {
+                    return null
+                }
+                return if (application.isDispatchThread) {
                     DumbService.getInstance(project).runReadActionInSmartMode(action)
                 } else {
                     executeNonBlockingReadAction(

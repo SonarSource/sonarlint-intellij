@@ -22,6 +22,7 @@ package org.sonarlint.intellij.common.ui
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.DumbModeTestUtils
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -162,5 +163,35 @@ class ReadActionUtilsTests : AbstractSonarLintLightTests() {
         `when`(disposedProject.isDisposed).thenReturn(true)
 
         assertThat(ReadActionUtils.computeReadActionSafelyInSmartMode(file, disposedProject) { file.name }).isNull()
+    }
+
+    @Test
+    fun computeReadActionSafelyInSmartMode_returns_null_instead_of_throwing_when_nested_in_a_read_action_while_indexing() {
+        myFixture.configureByText("Sample.java", "class Sample {}")
+        val file = myFixture.file.virtualFile
+
+        val result = DumbModeTestUtils.computeInDumbModeSynchronously(project) {
+            CompletableFuture.supplyAsync {
+                ReadActionUtils.computeReadActionSafely(project) {
+                    ReadActionUtils.computeReadActionSafelyInSmartMode(file, project) { file.name }
+                }
+            }.get(10, TimeUnit.SECONDS)
+        }
+
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun computeReadActionSafelyInSmartMode_returns_value_when_nested_in_a_read_action_in_smart_mode() {
+        myFixture.configureByText("Sample.java", "class Sample {}")
+        val file = myFixture.file.virtualFile
+
+        val result = CompletableFuture.supplyAsync {
+            ReadActionUtils.computeReadActionSafely(project) {
+                ReadActionUtils.computeReadActionSafelyInSmartMode(file, project) { file.name }
+            }
+        }.get(10, TimeUnit.SECONDS)
+
+        assertThat(result).isEqualTo("Sample.java")
     }
 }
