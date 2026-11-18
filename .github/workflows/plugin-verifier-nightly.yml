@@ -13,10 +13,26 @@ env:
   CACHE_BACKEND: s3
 
 jobs:
+  build-number:
+    if: github.ref_name == github.event.repository.default_branch
+    outputs:
+      BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
+    runs-on: sonar-xs
+    name: Get build number
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: SonarSource/ci-github-actions/get-build-number@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
+        id: build-number
+
   verify_plugin:
     runs-on: sonar-m
     name: Verify Plugin - FULL
     if: github.ref_name == github.event.repository.default_branch
+    needs: build-number
+    env:
+      BUILD_NUMBER: ${{ needs.build-number.outputs.BUILD_NUMBER }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
@@ -49,16 +65,13 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@983645f538ff01044b1e567adb23e6f527d8b52a # 1.8.9
+        uses: SonarSource/ci-github-actions/config-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
         with:
-          sonar-platform: none
           use-develocity: true
           develocity-url: https://develocity.sonar.build
           artifactory-reader-role: private-reader
           disable-caching: 'true'
 
-      # Verifier downloads IDE tarballs through Gradle ivy from jetbrains-download.
-      # Edge returns HTTP 404 for that repo; keep this job on SaaS (same as curl IDE fetches).
       - name: Run plugin verifier
         run: ./gradlew :verifyPlugin -PverifierEnv=FULL
 
