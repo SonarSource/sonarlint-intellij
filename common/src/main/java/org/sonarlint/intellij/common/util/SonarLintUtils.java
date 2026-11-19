@@ -43,10 +43,13 @@ public class SonarLintUtils {
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
   public static final String DEFAULT_SONARCLOUD_URL = "https://sonarcloud.io";
   public static final String DEFAULT_SONARCLOUD_US_URL = "https://sonarqube.us";
+  public static final String DEFAULT_SONARCLOUD_AU_URL = "https://sonarqube.au";
   public static final String SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.url", DEFAULT_SONARCLOUD_URL);
   public static final String US_SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.us.url", DEFAULT_SONARCLOUD_US_URL);
+  public static final String AU_SONARCLOUD_URL = System.getProperty("sonarlint.internal.sonarcloud.au.url", DEFAULT_SONARCLOUD_AU_URL);
   private static final Set<String> SONARCLOUD_ALIAS = Set.copyOf(List.of("https://sonarqube.com", "https://www.sonarqube.com",
-    "https://www.sonarcloud.io", DEFAULT_SONARCLOUD_URL, SONARCLOUD_URL, DEFAULT_SONARCLOUD_US_URL, US_SONARCLOUD_URL));
+    "https://www.sonarcloud.io", DEFAULT_SONARCLOUD_URL, SONARCLOUD_URL, DEFAULT_SONARCLOUD_US_URL, US_SONARCLOUD_URL,
+    DEFAULT_SONARCLOUD_AU_URL, AU_SONARCLOUD_URL));
 
   private SonarLintUtils() {
     // Utility class

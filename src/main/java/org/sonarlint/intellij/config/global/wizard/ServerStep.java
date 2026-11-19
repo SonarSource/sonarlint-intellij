@@ -48,10 +48,9 @@ import org.sonarlint.intellij.ui.icons.SonarLintIcons;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.promotion.UtmParameters;
 import org.sonarlint.intellij.telemetry.LinkTelemetry;
+import org.sonarlint.intellij.util.RegionUtils;
 import org.sonarsource.sonarlint.core.rpc.protocol.common.SonarCloudRegion;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.SONARCLOUD_URL;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.US_SONARCLOUD_URL;
 import static org.sonarlint.intellij.telemetry.LinkTelemetry.SONARCLOUD_FREE_SIGNUP_PAGE;
 
 public class ServerStep extends AbstractWizardStepEx {
@@ -155,6 +154,9 @@ public class ServerStep extends AbstractWizardStepEx {
       radioSonarCloud.setSelected(true);
       if (model.getRegion() == SonarCloudRegion.US) {
         radioUS.setSelected(true);
+      } else if (model.getRegion() == SonarCloudRegion.AU) {
+        // AU has no radio button: show no region as selected and keep the connection's region on save
+        radioEU.getModel().getGroup().clearSelection();
       } else {
         radioEU.setSelected(true);
       }
@@ -254,17 +256,23 @@ public class ServerStep extends AbstractWizardStepEx {
     }
   }
 
+  static SonarCloudRegion resolveRegion(boolean usSelected, boolean euSelected, SonarCloudRegion current) {
+    if (usSelected) {
+      return SonarCloudRegion.US;
+    }
+    if (euSelected) {
+      return SonarCloudRegion.EU;
+    }
+    // no radio selected: the region of an existing connection without a radio button (AU) is kept
+    return current;
+  }
+
   private void save() {
     if (radioSonarCloud.isSelected()) {
       model.setServerType(ConnectionWizardModel.ServerType.SONARCLOUD);
-      var isUS = radioUS.isSelected();
-      if (isUS) {
-        model.setServerUrl(US_SONARCLOUD_URL);
-        model.setRegion(SonarCloudRegion.US);
-      } else {
-        model.setServerUrl(SONARCLOUD_URL);
-        model.setRegion(SonarCloudRegion.EU);
-      }
+      var region = resolveRegion(radioUS.isSelected(), radioEU.isSelected(), model.getRegion());
+      model.setServerUrl(RegionUtils.getUrlByRegion(region));
+      model.setRegion(region);
     } else {  
       model.setServerType(ConnectionWizardModel.ServerType.SONARQUBE);
       model.setServerUrl(urlText.getText().trim());

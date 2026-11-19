@@ -87,4 +87,12 @@ class SonarLintUtilsTests extends AbstractSonarLintLightTests {
     assertThat(SonarLintUtils.withTrailingSlash(URL_WITHOUT_SLASH)).isEqualTo(URL_WITH_SLASH);
   }
 
+
+  @Test
+  void sonarqube_au_is_a_sonarcloud_alias() {
+    assertThat(SonarLintUtils.isSonarCloudAlias("https://sonarqube.au")).isTrue();
+    assertThat(SonarLintUtils.isSonarCloudAlias("https://sonarqube.us")).isTrue();
+    assertThat(SonarLintUtils.isSonarCloudAlias("https://sonarcloud.io")).isTrue();
+    assertThat(SonarLintUtils.isSonarCloudAlias("https://sonarqube.example.org")).isFalse();
+  }
 }
