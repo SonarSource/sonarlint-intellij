@@ -5,7 +5,7 @@ sonarqube-cli = "1.11.0.16877"
 
 sonar-java = "8.46.0.59609"
 sonar-java-symbolic = "8.16.4.1912"
-sonar-javascript = "14.5.0.46527"
+sonar-javascript = "14.6.0.46571"
 sonar-php = "4.2.0.27261"
 sonar-python = "5.33.0.48743"
 sonar-kotlin = "3.14.0.11245"
