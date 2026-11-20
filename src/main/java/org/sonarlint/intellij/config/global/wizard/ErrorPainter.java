@@ -34,7 +34,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 public class ErrorPainter extends AbstractPainter {
-  private Set<JComponent> componentsWithErrors = new HashSet<>();
+  private final Set<JComponent> componentsWithErrors = new HashSet<>();
   private JPanel panel;
 
   @Override
