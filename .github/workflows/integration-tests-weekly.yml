@@ -18,6 +18,7 @@ on:
         type: choice
         options:
           - default
+          - HarnessSmoke
           - OpenInIdeTests
           - ConnectedAnalysisTests
           - ConfigurationTests

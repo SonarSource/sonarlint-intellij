@@ -130,6 +130,7 @@ def custom_matrix(ide_version, suite):
     suites = PRODUCT_SUITES[found[1]]
     if suite == DEFAULT_SUITE:
         return [job(ide_version, name) for name in suites if name != "PLSQL"]
+    suites = (*suites, "HarnessSmoke")
     if suite not in suites:
         raise SystemExit(f"Suite '{suite}' does not run on {found[1]}. Choose one of: "
                          f"{', '.join((DEFAULT_SUITE, *suites))}")
@@ -141,6 +142,8 @@ def main():
     parser.add_argument("mode", choices=(*PR_SUITES, "weekly", "custom"))
     mode = parser.parse_args().mode
     versions = read_versions()
+    if mode == "weekly" and os.environ.get("TEST_SUITE", "").strip() == "HarnessSmoke":
+        raise SystemExit("HarnessSmoke requires an explicit ide_version; refusing to run the full weekly matrix")
     if mode == "custom":
         matrix = custom_matrix(os.environ.get("IDE_VERSION", "").strip(),
                                os.environ.get("TEST_SUITE", "").strip() or DEFAULT_SUITE)

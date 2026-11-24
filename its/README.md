@@ -51,6 +51,27 @@ Actions → Integration Tests Weekly → Run workflow, with an `ide_version` inp
 
 The matrix job rejects malformed versions and suites the product cannot run. `IC`, `IU`, `CL` and `RD` 2024 versions always run on the 2024.2 IDE embedded in the CI container (including 2024.2.x patch versions), so other 2024 versions of these products are rejected rather than silently testing 2024.2. A version that does not exist fails in the IDE download step with the download.jetbrains.com URL to check. These runs are named `Custom ITs - <ide_version> - <suite>` and do not notify Slack.
 
+### Fast validation of the UI harness
+
+Choose `test_suite=HarnessSmoke` with an explicit `ide_version` in the weekly workflow.
+This runs one test that opens and cancels Settings on startup, opens a sample project through
+its file chooser, verifies the actual project path, then opens and cancels Settings again.
+It does not start a SonarQube server or wait for analysis results. The IDE setup and plugin
+build still run. `HarnessSmoke` requires an explicit IDE; leaving it empty fails instead of
+launching the full matrix. Default and weekly matrices keep their existing suites.
+
+For welcome-screen, Settings, or file-chooser changes, validate the affected EAPs individually:
+
+```bash
+gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=IU-263.7307.44 -f test_suite=HarnessSmoke
+gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=RD-2026.3-EAP9-263.7307.100.Checked -f test_suite=HarnessSmoke
+gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=CL-263.7307.35 -f test_suite=HarnessSmoke
+```
+
+Run the same smoke test on an older IDE (for example `IC-2024.2`) to check the classic
+welcome-screen/file-chooser path. After the smoke tests pass, use a single affected product
+suite for analysis coverage; another full weekly matrix is unnecessary for each iteration.
+
 ## Version bumps
 
 ```properties

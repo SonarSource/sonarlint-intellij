@@ -182,7 +182,7 @@ object SettingsUtils {
         return ideaFrame
     }
 
-    private fun settings(function: PreferencesDialog.() -> Unit) {
+    internal fun settings(function: PreferencesDialog.() -> Unit) {
         with(remoteRobot) {
             try {
                 welcomeFrame {
