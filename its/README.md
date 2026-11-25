@@ -60,17 +60,20 @@ It does not start a SonarQube server or wait for analysis results. The IDE setup
 build still run. `HarnessSmoke` requires an explicit IDE; leaving it empty fails instead of
 launching the full matrix. Default and weekly matrices keep their existing suites.
 
-For welcome-screen, Settings, or file-chooser changes, validate the affected EAPs individually:
+For welcome-screen, Settings, or file-chooser changes, validate the affected IDEs individually.
+The CLion command currently uses the 2026.3 release because its last EAP has expired:
 
 ```bash
 gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=IU-263.8311.30 -f test_suite=HarnessSmoke
 gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=RD-2026.3-EAP9-263.7307.100.Checked -f test_suite=HarnessSmoke
-gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=CL-263.7307.35 -f test_suite=HarnessSmoke
+gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=CL-2026.3.0.2 -f test_suite=HarnessSmoke
 ```
 
 EAP builds expire even while their archives remain downloadable. If a recording shows
 "EAP Build Expired", choose a current build from the JetBrains releases API and update
-`eapIdeVersion` before retrying; a successful download does not establish that an EAP can run.
+`eapIdeVersion` (or the product override) before retrying. If no usable EAP exists, temporarily
+pin the release from the same platform line and document that fallback. A successful download
+does not establish that an EAP can run.
 
 Run the same smoke test on an older IDE (for example `IC-2024.2`) to check the classic
 welcome-screen/file-chooser path. After the smoke tests pass, use a single affected product
@@ -85,7 +88,7 @@ eapIdeVersion=263.8311.30         # EAPs are named by build number
 # Per-product overrides when versions diverge (latestRiderIdeVersion and latestPyCharmIdeVersion also exist)
 minRiderIdeVersion=2024.2.7
 eapRiderIdeVersion=2026.3-EAP9-263.7307.100.Checked
-eapCLionIdeVersion=263.7307.35
+eapCLionIdeVersion=2026.3.0.2 # temporary release fallback: the last CLion EAP has expired
 ```
 
 Each value must match the Linux tarball name on download.jetbrains.com, which Repox mirrors as `jetbrains-download`. For EAPs, take it from the [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU,CL,RD&latest=true&type=eap): for example `idea-263.8311.30.tar.gz` gives `263.8311.30`, and `JetBrains.Rider-2026.3-EAP9-263.7307.100.Checked.tar.gz` gives `2026.3-EAP9-263.7307.100.Checked`.
