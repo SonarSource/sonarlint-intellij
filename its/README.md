@@ -46,7 +46,7 @@ QA jobs run `./gradlew :its:check` with `TEST_SUITE` as JUnit `includeTags`. Sta
 
 Actions → Integration Tests Weekly → Run workflow, with an `ide_version` input, runs only that IDE instead of the weekly matrix. Use it to reproduce a user report on their exact version or to try a new EAP build. You can run it from any branch.
 
-- `ide_version`: `<CODE>-<version>` (`IC`, `IU`, `CL`, `RD`, `PY`, `PC`, `PS`, `GO`). The version is the one in the download.jetbrains.com tarball name, which Repox mirrors: for example `IC-2026.2.3`, or `IU-263.7307.44` / `RD-2026.3-EAP8-263.7307.48.Checked` for EAPs (EAP tarballs are named by build number). The [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU&latest=true&type=eap) lists the current builds.
+- `ide_version`: `<CODE>-<version>` (`IC`, `IU`, `CL`, `RD`, `PY`, `PC`, `PS`, `GO`). The version is the one in the download.jetbrains.com tarball name, which Repox mirrors: for example `IC-2026.2.3`, or `IU-263.8311.30` / `RD-2026.3-EAP8-263.7307.48.Checked` for EAPs (EAP tarballs are named by build number). The [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU&latest=true&type=eap) lists the current builds.
 - `test_suite`: `default` runs the 4 core suites on `IC`/`IU` and the product's suite elsewhere. Pick one suite to narrow the run, or `PLSQL` on `IU`.
 
 The matrix job rejects malformed versions and suites the product cannot run. `IC`, `IU`, `CL` and `RD` 2024 versions always run on the 2024.2 IDE embedded in the CI container (including 2024.2.x patch versions), so other 2024 versions of these products are rejected rather than silently testing 2024.2. A version that does not exist fails in the IDE download step with the download.jetbrains.com URL to check. These runs are named `Custom ITs - <ide_version> - <suite>` and do not notify Slack.
@@ -63,10 +63,14 @@ launching the full matrix. Default and weekly matrices keep their existing suite
 For welcome-screen, Settings, or file-chooser changes, validate the affected EAPs individually:
 
 ```bash
-gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=IU-263.7307.44 -f test_suite=HarnessSmoke
+gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=IU-263.8311.30 -f test_suite=HarnessSmoke
 gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=RD-2026.3-EAP9-263.7307.100.Checked -f test_suite=HarnessSmoke
 gh workflow run integration-tests-weekly.yml --ref <branch> -f ide_version=CL-263.7307.35 -f test_suite=HarnessSmoke
 ```
+
+EAP builds expire even while their archives remain downloadable. If a recording shows
+"EAP Build Expired", choose a current build from the JetBrains releases API and update
+`eapIdeVersion` before retrying; a successful download does not establish that an EAP can run.
 
 Run the same smoke test on an older IDE (for example `IC-2024.2`) to check the classic
 welcome-screen/file-chooser path. After the smoke tests pass, use a single affected product
@@ -77,14 +81,14 @@ suite for analysis coverage; another full weekly matrix is unnecessary for each 
 ```properties
 minSupportedIdeVersion=2024.2
 latestStableIdeVersion=2026.2.4   # bump when JetBrains ships a new stable
-eapIdeVersion=263.7307.44         # EAPs are named by build number
+eapIdeVersion=263.8311.30         # EAPs are named by build number
 # Per-product overrides when versions diverge (latestRiderIdeVersion and latestPyCharmIdeVersion also exist)
 minRiderIdeVersion=2024.2.7
 eapRiderIdeVersion=2026.3-EAP9-263.7307.100.Checked
 eapCLionIdeVersion=263.7307.35
 ```
 
-Each value must match the Linux tarball name on download.jetbrains.com, which Repox mirrors as `jetbrains-download`. For EAPs, take it from the [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU,CL,RD&latest=true&type=eap): for example `idea-263.7307.44.tar.gz` gives `263.7307.44`, and `JetBrains.Rider-2026.3-EAP9-263.7307.100.Checked.tar.gz` gives `2026.3-EAP9-263.7307.100.Checked`.
+Each value must match the Linux tarball name on download.jetbrains.com, which Repox mirrors as `jetbrains-download`. For EAPs, take it from the [JetBrains releases API](https://data.services.jetbrains.com/products/releases?code=IIU,CL,RD&latest=true&type=eap): for example `idea-263.8311.30.tar.gz` gives `263.8311.30`, and `JetBrains.Rider-2026.3-EAP9-263.7307.100.Checked.tar.gz` gives `2026.3-EAP9-263.7307.100.Checked`.
 
 ## Local run
 
