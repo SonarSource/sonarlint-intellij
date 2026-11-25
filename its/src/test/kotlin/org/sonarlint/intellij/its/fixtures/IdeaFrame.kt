@@ -22,7 +22,6 @@ package org.sonarlint.intellij.its.fixtures
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
-import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
@@ -125,17 +124,21 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     }
 
     fun openSettings() {
-        optionalStep {
-            findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
-        }
-        actionMenu("File") {
-            optionalStep {
-                open()
-            }
-            item("Settings") {
-                click()
-            }
-        }
+        invokeAction("ShowSettings")
+    }
+
+    /** Use registered actions rather than menu layout or translated/prefix-matched labels. */
+    fun invokeAction(actionId: String) {
+        runJs(
+            """
+                const actionManager = com.intellij.openapi.actionSystem.ActionManager.getInstance();
+                const action = actionManager.getAction("$actionId");
+                if (!action) throw new Error("IDE action is not registered: $actionId");
+                // Settings and file choosers are modal. Queue the action on the EDT so the robot request can return.
+                com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() =>
+                    actionManager.tryToExecute(action, null, component, "MainMenu", true));
+            """, true
+        )
     }
 
 }

@@ -62,15 +62,9 @@ object OpeningUtils {
 
     fun openFileSelector() {
         with(remoteRobot) {
+            val actionId = if (isRider()) "RiderOpenSolution" else "OpenFile"
             idea {
-                optionalStep {
-                    findElement<ComponentFixture>(byXpath("//div[@tooltiptext='Main Menu']")).click()
-                }
-                actionMenu("File") {
-                    item("Open") {
-                        click(Point(10, 10)) // Force the click on the left
-                    }
-                }
+                invokeAction(actionId)
             }
         }
     }
