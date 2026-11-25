@@ -75,6 +75,7 @@ public class ServerStep extends AbstractWizardStepEx {
   private ErrorPainter errorPainter;
   private JRadioButton radioUS;
   private JRadioButton radioEU;
+  private JRadioButton radioAU;
   private JLabel sonarCloudUrl;
 
   public ServerStep(ConnectionWizardModel model, boolean editing, Collection<String> existingNames) {
@@ -152,14 +153,7 @@ public class ServerStep extends AbstractWizardStepEx {
 
     if (model.getServerType() == ConnectionWizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
       radioSonarCloud.setSelected(true);
-      if (model.getRegion() == SonarCloudRegion.US) {
-        radioUS.setSelected(true);
-      } else if (model.getRegion() == SonarCloudRegion.AU) {
-        // AU has no radio button: show no region as selected and keep the connection's region on save
-        radioEU.getModel().getGroup().clearSelection();
-      } else {
-        radioEU.setSelected(true);
-      }
+      regionRadio(model.getRegion()).setSelected(true);
       if (editing) {
         sqsIcon = SonarLintIcons.toDisabled(sqsIcon);
       }
@@ -189,6 +183,7 @@ public class ServerStep extends AbstractWizardStepEx {
     sonarCloudUrl.setEnabled(!sq);
     radioEU.setEnabled(!sq);
     radioUS.setEnabled(!sq);
+    radioAU.setEnabled(!sq);
 
     urlText.setEnabled(sq);
     urlLabel.setEnabled(sq);
@@ -256,21 +251,28 @@ public class ServerStep extends AbstractWizardStepEx {
     }
   }
 
-  static SonarCloudRegion resolveRegion(boolean usSelected, boolean euSelected, SonarCloudRegion current) {
-    if (usSelected) {
+  private JRadioButton regionRadio(SonarCloudRegion region) {
+    return switch (region) {
+      case US -> radioUS;
+      case AU -> radioAU;
+      default -> radioEU;
+    };
+  }
+
+  private SonarCloudRegion selectedRegion() {
+    if (radioUS.isSelected()) {
       return SonarCloudRegion.US;
     }
-    if (euSelected) {
-      return SonarCloudRegion.EU;
+    if (radioAU.isSelected()) {
+      return SonarCloudRegion.AU;
     }
-    // no radio selected: the region of an existing connection without a radio button (AU) is kept
-    return current;
+    return SonarCloudRegion.EU;
   }
 
   private void save() {
     if (radioSonarCloud.isSelected()) {
       model.setServerType(ConnectionWizardModel.ServerType.SONARCLOUD);
-      var region = resolveRegion(radioUS.isSelected(), radioEU.isSelected(), model.getRegion());
+      var region = selectedRegion();
       model.setServerUrl(RegionUtils.getUrlByRegion(region));
       model.setRegion(region);
     } else {  

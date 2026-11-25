@@ -139,7 +139,7 @@
                   </grid>
                 </constraints>
               </vspacer>
-              <grid id="ff3a7" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="2">
+              <grid id="ff3a7" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="2">
                 <margin top="0" left="0" bottom="5" right="0"/>
                 <constraints>
                   <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -171,7 +171,15 @@
                       <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="US - sonarqube.us (invite-only)"/>
+                      <text value="US - sonarqube.us"/>
+                    </properties>
+                  </component>
+                  <component id="a7c3e" class="javax.swing.JRadioButton" binding="radioAU">
+                    <constraints>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="AU - sonarqube.au"/>
                     </properties>
                   </component>
                 </children>
@@ -299,6 +307,7 @@
     <group name="regionGroup">
       <member id="4e4ef"/>
       <member id="dedf1"/>
+      <member id="a7c3e"/>
     </group>
   </buttonGroups>
 </form>

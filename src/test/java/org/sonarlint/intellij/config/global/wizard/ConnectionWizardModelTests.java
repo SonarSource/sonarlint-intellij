@@ -88,6 +88,21 @@ class ConnectionWizardModelTests {
   }
 
   @Test
+  void testCreateNewAuConnection() {
+    var model = new ConnectionWizardModel();
+    model.setName("name");
+    model.setOrganizationKey("org");
+    model.setToken("token");
+    model.setServerType(ConnectionWizardModel.ServerType.SONARCLOUD);
+    model.setRegion(SonarCloudRegion.AU);
+
+    var server = model.createConnection();
+    assertThat(server.getHostUrl()).isEqualTo("https://sonarqube.au");
+    assertThat(server.getRegion()).isEqualTo(SonarCloudRegion.AU.name());
+    assertThat(server.getOrganizationKey()).isEqualTo("org");
+  }
+
+  @Test
   void testEditExistingAuConnectionKeepsRegionAndUrl() {
     var server = ServerConnection.newBuilder()
       .setName("name")
