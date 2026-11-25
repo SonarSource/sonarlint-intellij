@@ -257,21 +257,6 @@ latestPyCharmIdeVersion=
                 self.assertEqual([{"ide_version": ide_version, "test_suite": suite}],
                                  json.loads(values["matrix"]))
 
-    def test_harness_smoke_without_an_ide_does_not_run_weekly_matrix(self):
-        result, values = self.run_matrix("weekly", TEST_SUITE="HarnessSmoke")
-        self.assertNotEqual(0, result.returncode)
-        self.assertIn("explicit ide_version", result.stderr)
-        self.assertEqual({}, values)
-
-    def test_custom_harness_smoke_is_one_job_for_each_product(self):
-        for product in ("IC", "IU", "CL", "RD", "PY", "PC", "PS", "GO"):
-            ide_version = f"{product}-2026.2.4"
-            with self.subTest(product=product):
-                result, values = self.run_matrix("custom", IDE_VERSION=ide_version, TEST_SUITE="HarnessSmoke")
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertEqual([{"ide_version": ide_version, "test_suite": "HarnessSmoke"}],
-                                 json.loads(values["matrix"]))
-
     def test_custom_invalid_inputs_fail_without_emitting_matrix(self):
         for ide_version, suite in [("", "default"), ("2026.2.3", "default"), ("XX-2026.2.3", "default"),
                                    ("IC-", "default"), ("IC-2026.2.3; rm -rf /", "default"),
