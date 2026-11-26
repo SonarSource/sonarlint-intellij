@@ -28,11 +28,12 @@
     <description><![CDATA[
         <html>
             <p>
-                SonarQube for IDE (formerly SonarLint) by <a href="https://www.sonarsource.com/">Sonar</a> is a free, sophisticated static analysis tool that
-                enhances both your code quality and security. Start analyzing your code early—as you write or generate it.
-                Local analysis automatically identifies quality and security issues in real-time, even with AI-generated code.
-                Then, fix any issues found using a QuickFix or the AI CodeFix feature before pushing to your SCM.
-                This assures your code meets your quality standards and is safe for running in production.
+                SonarQube for IDE (formerly SonarLint) by <a href="https://www.sonarsource.com/">Sonar</a> is a free developer extension that brings
+                real-time analysis, quick-fix guidance, and security issue detection directly into your IDE. It surfaces issues as you code,
+                in AI-generated and developer-written code alike, explains why they matter, and suggests clear next steps,
+                so you can apply consistent standards at the point where code is created. Fix any issues found using a quick fix
+                or the AI CodeFix feature before pushing to your SCM, reducing rework and supporting the delivery of code
+                that teams can have confidence in, at the speed of agents.
             </p>
             <br/>
             <p>
@@ -41,15 +42,15 @@
             </p>
             <br/>
             <p>
-                When connected to <a href="https://www.sonarsource.com/products/sonarqube/">SonarQube Server</a>
-                or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarQube Cloud</a> (you can create a <a href="https://www.sonarsource.com/products/sonarcloud/signup/">free SonarQube Cloud</a>
-                account to get started!), it becomes a powerful, unified code quality platform for your entire team throughout your software development lifecycle.
+                When connected to the SonarQube platform (<a href="https://www.sonarsource.com/products/sonarqube/">SonarQube Server</a>
+                or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarQube Cloud</a>; you can <a href="https://www.sonarsource.com/products/sonarqube/cloud/signup/">create a free SonarQube Cloud account</a>
+                to get started!), it aligns your entire team on the same standards throughout your software development lifecycle.
                 This connection enables sharing of consistent language rulesets and project settings,
                 and unlocks analysis of deeply hidden security issues, fostering collaboration and code uniformity.
             </p>
             <br/>
             <p>
-                SonarQube for IDE is the only extension you need in your JetBrains IDE for ensuring both code quality and security.
+                SonarQube for IDE brings code quality and security verification into your JetBrains IDE.
                 It supports a wide range of languages, including C, C++, Java, Go, JavaScript, TypeScript, Python, C#, Kotlin, Ruby, HTML,
                 CSS, PHP, and PL/SQL. Please check out our <a href="https://docs.sonarsource.com/sonarqube-for-intellij/using/rules/">documentation</a>
                 for the complete list of supported languages, rules and secret detection capabilities.
