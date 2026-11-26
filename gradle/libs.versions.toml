@@ -17,7 +17,7 @@ sonar-omnisharp = "1.50.0.102227"
 sonar-text = "2.56.0.14025"
 sonar-iac = "2.28.0.24820"
 
-sonarqube = "7.3.0.8198"
+sonarqube = "7.6.0.18749"
 orchestrator = "6.4.4.4797"
 
 kotlin-plugin = "2.4.21"
