@@ -21,7 +21,7 @@ SMOKE_SUITES = ("SmokeIdea",)
 PR_SUITES = {"pr-all": IDEA_SUITES, "pr-minimal": SMOKE_SUITES}
 DOCS_PATHS = ("*.md", "HEADER", "LICENSE", "LICENSE.*", "docs/*",
               ".github/CODEOWNERS", ".github/renovate.json")
-HARNESS_PATHS = ("its/*", ".github/*", "gradle/*", "*.gradle.kts", "gradle.properties", "mise.toml")
+HARNESS_PATHS = ("e2e/*", ".github/*", "gradle/*", "*.gradle.kts", "gradle.properties", "mise.toml")
 CLION_PATHS = ("clion/*", "clion-resharper/*", "src/main/resources/META-INF/plugin-clion*.xml")
 RIDER_PATHS = ("rider/*", "src/*Rider*", "src/*rider*")
 
@@ -124,7 +124,7 @@ def custom_matrix(ide_version, suite):
                          f"{', '.join(PRODUCT_SUITES)}, e.g. IC-2026.2.3")
     if (found[1] in EMBEDDED_2024_IDES and found[2].startswith("2024")
             and not re.fullmatch(r"2024\.2(\.\d+)*", found[2])):
-        # setup-qa-ide.sh and run-qa-its use the container's 2024.2 IDE for any <CODE>-2024* of these products
+        # setup-qa-ide.sh and run-ide-e2e use the container's 2024.2 IDE for any <CODE>-2024* of these products
         raise SystemExit(f"'{ide_version}' would silently run on the container's embedded 2024.2 IDE. "
                          f"For {found[1]}, only 2024.2 (the embedded build) is accepted among 2024 versions")
     suites = PRODUCT_SUITES[found[1]]
@@ -149,12 +149,12 @@ def main():
     else:
         matrix = pr_matrix(versions, changed_files(), PR_SUITES[mode])
     matrix_json = json.dumps(matrix, separators=(",", ":"))
-    output = f"matrix={matrix_json}\nskip_its={str(not matrix).lower()}\n"
+    output = f"matrix={matrix_json}\nskip_e2e={str(not matrix).lower()}\n"
     if output_path := os.environ.get("GITHUB_OUTPUT"):
         with open(output_path, "a", encoding="utf-8") as output_file:
             output_file.write(output)
     print(f"QA matrix ({mode}): {matrix_json}")
-    print(f"skip_its={str(not matrix).lower()}")
+    print(f"skip_e2e={str(not matrix).lower()}")
 
 
 if __name__ == "__main__":

@@ -122,6 +122,8 @@ dependencyResolutionManagement {
 
 include("its", "clion", "clion-resharper", "nodejs", "common", "git", "rider", "test-common")
 
+project(":its").projectDir = file("e2e")
+
 val isCiServer = System.getenv("CI") != null
 
 buildCache {

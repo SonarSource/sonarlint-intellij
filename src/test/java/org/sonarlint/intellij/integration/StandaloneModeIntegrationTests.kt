@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.mediumtests
+package org.sonarlint.intellij.integration
 
 import com.intellij.openapi.vfs.VirtualFile
 import java.nio.file.Files
@@ -42,7 +42,7 @@ import org.sonarlint.intellij.fs.VirtualFileEvent
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 @DisabledOnOs(OS.WINDOWS)
-class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
+class StandaloneModeIntegrationTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
     fun waitForReady() {

@@ -1,7 +1,7 @@
 name: Notify Failure
 on:
   workflow_run:
-    workflows: [ "Build", "Plugin Verifier Nightly", "Integration Tests Weekly" ]
+    workflows: [ "Build", "Plugin Verifier Nightly", "IDE E2E Weekly" ]
     types:
       - completed
     branches:
@@ -14,8 +14,8 @@ jobs:
   notify:
     runs-on: sonar-xs
     name: Send Slack Notification
-    # One-off "Custom ITs" runs of the weekly workflow report to whoever started them, not to Slack
-    if: ${{ github.event.workflow_run.conclusion == 'failure' && !startsWith(github.event.workflow_run.display_title, 'Custom ITs') }}
+    # One-off "Custom IDE E2E" runs of the weekly workflow report to whoever started them, not to Slack
+    if: ${{ github.event.workflow_run.conclusion == 'failure' && !startsWith(github.event.workflow_run.display_title, 'Custom IDE E2E') }}
     steps:
       - name: Vault Secrets
         id: secrets

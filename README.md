@@ -94,16 +94,20 @@ For the complete list of tasks, see:
 For external contributors, the project should be guaranteed to build from any specific tag. During the development phase, some
 unreleased dependencies not accessible to the public could be used, preventing you from building the project.
 
-How to run UI tests
--------------------
+Running tests
+-------------
 
-CI coverage (what runs on PRs vs the weekly full/EAP sweep) is documented in [`its/README.md`](its/README.md).
+Run unit and platform integration tests with `./gradlew :test`. The platform fixtures exercise the plugin with the real SLOOP backend.
+
+### IDE E2E tests
+
+The installed-plugin suite uses a full IDE. See the [E2E test guide](e2e/README.md) for PR and weekly CI coverage.
 
 ```bash
 ./gradlew :its:runIdeForUiTests &
 ```
 
-The above will start an IDE instance with the SonarQube for IntelliJ plugin. Wait for the UI robot server to start, then run the ITs:
+The above will start an IDE instance with the SonarQube for IntelliJ plugin. Wait for the UI robot server to start, then run the E2E suite:
 
 ```bash
 ./gradlew :its:check
@@ -125,16 +129,16 @@ If you want to use a local installation, you can use the `runIdeDirectory` prope
 
 Please note that the IDE must be in the foreground while tests are executed.
 
-Because some ITs are leveraging SonarCloud, make sure the `SONARCLOUD_IT_TOKEN` env var is defined (you can find the value in our
+Because some E2E tests use SonarQube Cloud, make sure the `SONARCLOUD_IT_TOKEN` env var is defined (you can find the value in our
 password management tool).
 
-How to debug UI tests
----------------------
+How to debug IDE E2E tests
+--------------------------
 
 If you want to debug what happens on the test side, you can launch the test in debug mode from the IDE.
 
 If you want to debug what happens in the SonarQube for IntelliJ plugin, you can open the project in IntelliJ, and run the
-`its:runIdeForUiTests` task in debug mode (for example, from the Gradle panel on the right).
+`:its:runIdeForUiTests` task in debug mode (for example, from the Gradle panel on the right).
 
 
 How to debug SLOOP
@@ -142,7 +146,7 @@ How to debug SLOOP
 
 If you want to debug SLOOP:
 
-* open the Run configuration you are using to launch the IDE (`runLocalIde` or `its:runIdeForUiTests`)
+* open the Run configuration you are using to launch the IDE (`runLocalIde` or `:its:runIdeForUiTests`)
 * Add an environment variable: `SONARLINT_JVM_OPTS` with the value `-agentlib:jdwp=transport=dt_socket,address=8080,server=y,suspend=n`
 * Run the task
 * Open the SLCORE project and click `Run` > `Attach to process`

@@ -77,7 +77,7 @@ class QaMatrixTest(unittest.TestCase):
         return {"GITHUB_EVENT_NAME": "push", "GITHUB_EVENT_PATH": str(event)}
 
     def assert_suites(self, values, flavors=(), core=ALL_SUITES):
-        self.assertEqual("false", values["skip_its"])
+        self.assertEqual("false", values["skip_e2e"])
         suites = [job["test_suite"] for job in json.loads(values["matrix"])]
         self.assertCountEqual([*core, *flavors], suites)
 
@@ -90,20 +90,20 @@ class QaMatrixTest(unittest.TestCase):
                                   ("src/main/resources/META-INF/plugin-rider.xml", ("Rider",)),
                                   ("src/main/RiderSupport.kt", ("Rider",)),
                                   ("src/main/rider/Support.kt", ("Rider",)),
-                                  ("its/src/Test.kt", ("CLion", "Rider"))]:
+                                  ("e2e/src/Test.kt", ("CLion", "Rider"))]:
                 with self.subTest(mode=mode, path=path):
                     self.git("reset", "--hard", self.base)
                     self.commit(path)
                     result, values = self.run_matrix(mode, GITHUB_BASE_REF="master")
                     self.assertEqual(0, result.returncode, result.stderr)
                     if flavors is None:
-                        self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
+                        self.assertEqual({"matrix": "[]", "skip_e2e": "true"}, values)
                     else:
                         self.assert_suites(values, flavors, core)
 
     def test_documentation_does_not_add_flavors_to_source_changes(self):
         for mode, core in PR_MODES.items():
-            for path in ["rider/README.md", "clion/README.md", "its/README.md",
+            for path in ["rider/README.md", "clion/README.md", "e2e/README.md",
                          ".github/ISSUE_TEMPLATE/bug_report.md", ".github/CODEOWNERS",
                          "docs/rider/setup.md"]:
                 with self.subTest(mode=mode, path=path):
@@ -121,12 +121,12 @@ class QaMatrixTest(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stderr)
         self.assert_suites(values, ("Rider",))
 
-    def test_docs_only_push_skips_its(self):
+    def test_docs_only_push_skips_e2e(self):
         self.commit("README.md")
         self.commit("docs/setup.md")
         result, values = self.run_matrix("pr-all", **self.push_event(self.base))
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual({"matrix": "[]", "skip_its": "true"}, values)
+        self.assertEqual({"matrix": "[]", "skip_e2e": "true"}, values)
 
     def test_new_branch_runs_all_flavors(self):
         result, values = self.run_matrix("pr-all", **self.push_event("0" * 40))
@@ -244,7 +244,7 @@ latestPyCharmIdeVersion=
                 with self.subTest(ide_version=ide_version, suite=suite):
                     result, values = self.run_matrix("custom", IDE_VERSION=ide_version, TEST_SUITE=suite)
                     self.assertEqual(0, result.returncode, result.stderr)
-                    self.assertEqual("false", values["skip_its"])
+                    self.assertEqual("false", values["skip_e2e"])
                     self.assertEqual([{"ide_version": ide_version, "test_suite": name} for name in suites],
                                      json.loads(values["matrix"]))
 

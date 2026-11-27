@@ -1,4 +1,4 @@
-name: Integration Tests PR
+name: IDE E2E PR
 
 on:
   pull_request:

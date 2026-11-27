@@ -186,7 +186,7 @@ intellijPlatform {
     sonar {
         properties {
             property("sonar.projectName", "SonarLint for IntelliJ IDEA")
-            property("sonar.sca.exclusions", "its/projects/**")
+            property("sonar.sca.exclusions", "e2e/projects/**")
             // Fix deprecated implicit compilation
             property("sonar.gradle.skipCompile", "true")
             property("sonar.organization", "sonarsource")

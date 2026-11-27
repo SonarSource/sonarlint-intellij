@@ -23,17 +23,17 @@ xmlLicenseHeader.append("\n-->")
 spotless {
     java {
         target("**/src/**/*.java")
-        targetExclude("**/src/**/package-info.java", "its/projects/**", "**/testData/**")
+        targetExclude("**/src/**/package-info.java", "e2e/projects/**", "**/testData/**")
         licenseHeader(javaLicenseHeader.toString(), "package ")
     }
     format("packageInfo") {
         target("**/src/**/package-info.java")
-        targetExclude("its/projects/**")
+        targetExclude("e2e/projects/**")
         licenseHeader(javaLicenseHeader.toString(), "(package |@)")
     }
     kotlin {
         target("**/src/**/*.kt")
-        targetExclude("its/projects/**", "**/testData/**")
+        targetExclude("e2e/projects/**", "**/testData/**")
         licenseHeader(javaLicenseHeader.toString(), "package ")
     }
     format("svg") {
@@ -47,7 +47,7 @@ spotless {
     }
     format("xml") {
         target("**/src/main/resources/**/*.xml")
-        targetExclude("its/**", "**/testData/**", "**/colorSchemes/**")
+        targetExclude("e2e/**", "**/testData/**", "**/colorSchemes/**")
         licenseHeader(xmlLicenseHeader.toString(), "<idea-plugin")
     }
     format("xmlWithDeclaration") {

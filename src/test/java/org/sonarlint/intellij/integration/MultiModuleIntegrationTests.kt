@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.mediumtests
+package org.sonarlint.intellij.integration
 
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.PrimaryModuleManager
@@ -33,7 +33,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ModuleBindingManager
 
-class MultiModuleMediumTests : AbstractSonarLintHeavyTests() {
+class MultiModuleIntegrationTests : AbstractSonarLintHeavyTests() {
 
     @Test
     fun `primary project cannot override its binding when projects can be attached`() {

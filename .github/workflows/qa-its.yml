@@ -1,4 +1,4 @@
-name: QA Integration Tests
+name: IDE E2E
 
 on:
   workflow_call:
@@ -37,7 +37,7 @@ jobs:
     name: Setup QA matrix
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-      skip_its: ${{ steps.set-matrix.outputs.skip_its }}
+      skip_e2e: ${{ steps.set-matrix.outputs.skip_e2e }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -52,7 +52,7 @@ jobs:
         run: python3 .github/scripts/qa-matrix.py "${MATRIX_MODE}"
 
   build-number:
-    if: needs.setup-qa-matrix.outputs.skip_its != 'true'
+    if: needs.setup-qa-matrix.outputs.skip_e2e != 'true'
     needs: setup-qa-matrix
     outputs:
       BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
@@ -68,7 +68,7 @@ jobs:
         id: build-number
 
   aws-auth:
-    if: needs.setup-qa-matrix.outputs.skip_its != 'true'
+    if: needs.setup-qa-matrix.outputs.skip_e2e != 'true'
     needs: setup-qa-matrix
     runs-on: sonar-xs
     permissions:
@@ -158,7 +158,7 @@ jobs:
           if-no-files-found: error
 
   qa:
-    if: ${{ !cancelled() && !failure() && needs.setup-qa-matrix.outputs.skip_its != 'true' }}
+    if: ${{ !cancelled() && !failure() && needs.setup-qa-matrix.outputs.skip_e2e != 'true' }}
     runs-on: warp-custom-ubuntu-24-04
     container:
       image: 275878209202.dkr.ecr.eu-central-1.amazonaws.com/sonarlint-intellij:20260410161051
@@ -169,7 +169,7 @@ jobs:
     defaults:
       run:
         shell: bash
-    name: Run ITs - ${{ matrix.ide_version }} - ${{ matrix.test_suite }}
+    name: IDE E2E - ${{ matrix.ide_version }} - ${{ matrix.test_suite }}
     needs:
       - aws-auth
       - build-number
@@ -209,7 +209,7 @@ jobs:
           fi
           echo "path=${PLUGIN_ZIPS[0]}" >> "$GITHUB_OUTPUT"
 
-      - uses: ./.github/actions/run-qa-its
+      - uses: ./.github/actions/run-ide-e2e
         with:
           ide_version: ${{ matrix.ide_version }}
           project_version: ${{ inputs.project_version || needs.build-plugin.outputs.PROJECT_VERSION }}
