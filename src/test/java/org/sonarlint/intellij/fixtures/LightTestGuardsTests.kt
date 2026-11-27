@@ -21,6 +21,7 @@ package org.sonarlint.intellij.fixtures
 
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.runInEdtAndWait
@@ -66,14 +67,14 @@ class LightTestGuardsTests : BasePlatformTestCase() {
             readOnEdt { FileEditorManager.getInstance(project).openFile(file, false) }
             guard.assertNoViolations()
             runInEdtAndWait {
-                val immediate = assertThrows<AssertionError> { SlowOperations.assertSlowOperationsAreAllowed() }
+                val immediate = assertThrows<AssertionError> { ProjectFileIndex.getInstance(project).isInContent(file) }
                 assertThat(immediate).hasMessageContaining("Slow operations are prohibited on EDT")
             }
         } finally {
             runInEdtAndWait { guard.close() }
         }
         assertThat(assertThrows<AssertionError> { guard.assertNoViolations() }.stackTraceToString())
-            .contains("Slow operations are prohibited on EDT", "SlowOperations.assertSlowOperationsAreAllowed")
+            .contains("Slow operations are prohibited on EDT", "WorkspaceFileIndexDataImpl.ensureIsUpToDate")
         assertThat(logger.level).isEqualTo(originalLevel)
         assertThat(logger.handlers).containsExactly(*originalHandlers)
         runInEdtAndWait {

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.fixtures
 
+import com.intellij.openapi.project.ProjectLocator
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.testFramework.RunAll
@@ -29,6 +30,7 @@ import java.util.logging.Handler
 import java.util.logging.Level
 import java.util.logging.LogRecord
 import java.util.logging.Logger
+import org.mockito.MockedStatic
 import org.mockito.Mockito
 
 class SlowOperationGuard : AutoCloseable {
@@ -36,6 +38,7 @@ class SlowOperationGuard : AutoCloseable {
     private val logger = Logger.getLogger("#${SlowOperations::class.java.name}")
     private val originalLevel = logger.level
     private val registryOverrides = Disposer.newDisposable("Light test slow operation registry overrides")
+    private var fixtureLocatorOverride: MockedStatic<ProjectLocator>? = null
     private val handler = object : Handler() {
         override fun publish(record: LogRecord) {
             if (record.message?.startsWith("Slow operations are prohibited on EDT.") == true) {
@@ -65,6 +68,7 @@ class SlowOperationGuard : AutoCloseable {
     init {
         try {
             bypassOverride.`when`<Boolean>(SlowOperations::isAlwaysAllowed).thenReturn(false)
+            fixtureLocatorOverride = FixtureProjectLocator.install()
             Registry.get("ide.slow.operations.assertion").setValue(true, registryOverrides)
             Registry.get("ide.slow.operations.assertion.other").setValue(true, registryOverrides)
             // TestLoggerFactory sends error reports to JUL at INFO before throwing.
@@ -89,6 +93,7 @@ class SlowOperationGuard : AutoCloseable {
 
     override fun close() {
         RunAll.runAll(
+            { fixtureLocatorOverride?.close() },
             { bypassOverride.close() },
             { Disposer.dispose(registryOverrides) },
             {
@@ -102,20 +107,16 @@ class SlowOperationGuard : AutoCloseable {
         val stack = Thread.currentThread().stackTrace
         fun contains(owner: String, method: String) = stack.any { it.className == owner && it.methodName == method }
 
-        // SLI-3096: workspace lookups by IntelliJ's editor double and its fixture teardown.
+        // Other IntelliJ 2024.2 fixture paths that do not use the project-ownership lookup.
         if (contains("com.intellij.workspaceModel.core.fileIndex.impl.WorkspaceFileIndexDataImpl", "ensureIsUpToDate")) {
-            val projectOwnership = contains("com.intellij.psi.impl.PsiDocumentManagerImpl", "assertFileIsFromCorrectProject")
             val opensEditor = contains("com.intellij.openapi.fileEditor.impl.TestEditorManagerImpl", "doOpenTextEditor")
             val daemonListener = contains("com.intellij.codeInsight.daemon.impl.DaemonListeners\$4", "editorCreated")
             val fixture = "com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl"
-            val fixtureLifecycle = contains(fixture, "setFileAndEditor") || contains(fixture, "closeOpenFiles")
             val validatesFixtureFile = contains(fixture, "addFileToProject") &&
-                (contains("com.intellij.openapi.project.ProjectLocatorImpl", "getProjectsForFile") ||
-                    contains("com.intellij.psi.impl.PsiManagerImpl", "findFile"))
+                contains("com.intellij.psi.impl.PsiManagerImpl", "findFile")
             val cacheCleanup = contains("com.intellij.testFramework.common.TestApplicationKt", "cleanupApplicationCaches") &&
                 contains("com.intellij.util.indexing.events.ChangedFilesCollector", "processFilesInReadAction")
-            return (opensEditor && (projectOwnership || daemonListener)) || (fixtureLifecycle && projectOwnership) ||
-                validatesFixtureFile || cacheCleanup
+            return (opensEditor && daemonListener) || validatesFixtureFile || cacheCleanup
         }
 
         // SLI-3097: the affected MCP adapter refreshes the configuration path on the EDT.
