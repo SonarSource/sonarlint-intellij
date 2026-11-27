@@ -8,6 +8,14 @@
   ],
   "packageRules": [
     {
+      "description": "Ignore IntelliJ-internal Kotlin builds (e.g. 2.5.0-ij263-59); stay on stable releases",
+      "matchPackageNames": [
+        "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin",
+        "org.jetbrains.kotlin:**"
+      ],
+      "allowedVersions": "!/-ij/"
+    },
+    {
       "description": "Regenerate Gradle lockfiles after dependency updates",
       "matchManagers": [
         "gradle",
