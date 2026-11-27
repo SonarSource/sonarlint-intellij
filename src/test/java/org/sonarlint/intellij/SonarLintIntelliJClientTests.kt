@@ -141,7 +141,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_not_list_files_if_project_does_not_have_any() {
-        val result = client.listFiles(projectBackendId)
+        val result = runFixtureIo { client.listFiles(projectBackendId) }
 
         assertThat(result).isEmpty()
     }
@@ -150,7 +150,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     fun it_should_find_files_if_project_has_one_with_matching_name() {
         myFixture.configureByFile("file.properties")
 
-        val result = client.listFiles(projectBackendId)
+        val result = runFixtureIo { client.listFiles(projectBackendId) }
 
         assertThat(result).extracting(ClientFileDto::getIdeRelativePath, ClientFileDto::getContent)
             .containsOnly(tuple(Paths.get("file.properties"), null))
@@ -161,7 +161,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         myFixture.configureByFile("file.properties")
         myFixture.type("pre")
 
-        val result = client.listFiles(projectBackendId)
+        val result = runFixtureIo { client.listFiles(projectBackendId) }
 
         assertThat(result).extracting(ClientFileDto::getIdeRelativePath, ClientFileDto::getContent)
             .containsOnly(tuple(Paths.get("file.properties"), null))
@@ -171,7 +171,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
     fun it_should_find_files_with_content_if_specific_property_file() {
         myFixture.configureByFile("sonar-project.properties")
 
-        val result = client.listFiles(projectBackendId)
+        val result = runFixtureIo { client.listFiles(projectBackendId) }
 
         assertThat(result).extracting(ClientFileDto::getIdeRelativePath, ClientFileDto::getContent)
             .containsOnly(tuple(Paths.get("sonar-project.properties"), "content=hey\n"))
@@ -182,7 +182,7 @@ class SonarLintIntelliJClientTests : AbstractSonarLintLightTests() {
         myFixture.configureByFile("sonar-project.properties")
         myFixture.type("pre")
 
-        val result = client.listFiles(projectBackendId)
+        val result = runFixtureIo { client.listFiles(projectBackendId) }
 
         assertThat(result).extracting(ClientFileDto::getIdeRelativePath, ClientFileDto::getContent)
             .containsOnly(tuple(Paths.get("sonar-project.properties"), "precontent=hey\n"))

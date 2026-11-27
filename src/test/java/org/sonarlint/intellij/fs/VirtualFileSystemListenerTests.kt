@@ -43,10 +43,13 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.fixtures.RunTestOffEdt
+import org.sonarlint.intellij.fixtures.readOnEdt
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 private const val FILE_NAME = "main.py"
 
+@RunTestOffEdt
 class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
 
     @BeforeEach
@@ -218,7 +221,7 @@ class VirtualFileSystemListenerTests : AbstractSonarLintLightTests() {
 
     @Test
     fun should_notify_about_subfiles_when_event_happens_on_a_directory() {
-        val directory = myFixture.copyDirectoryToProject("sub/folder", "sub/folder")
+        val directory = readOnEdt { myFixture.copyDirectoryToProject("sub/folder", "sub/folder") }
         val subfileName = "subfile.py"
         val childFile = directory.findChild(subfileName)!!
         val vFileEvent = VFileDeleteEvent(null, directory, false)

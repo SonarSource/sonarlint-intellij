@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.fixtures.RunTestOffEdt
 import org.sonarlint.intellij.messages.CredentialsChangeListener
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
@@ -43,6 +44,7 @@ private val TEST_CONNECTION = ServerConnection.newBuilder()
     .setName(CONNECTION_NAME)
     .build()
 
+@RunTestOffEdt
 class CredentialsServiceTests : AbstractSonarLintLightTests() {
 
     private val tested = CredentialsService()
@@ -60,8 +62,10 @@ class CredentialsServiceTests : AbstractSonarLintLightTests() {
 
     @AfterEach
     fun afterEach() {
-        PasswordSafe.instance.eraseToken(CONNECTION_NAME)
-        PasswordSafe.instance.eraseUsernamePassword(CONNECTION_NAME)
+        runFixtureIo {
+            PasswordSafe.instance.eraseToken(CONNECTION_NAME)
+            PasswordSafe.instance.eraseUsernamePassword(CONNECTION_NAME)
+        }
         busConnection.disconnect()
     }
 

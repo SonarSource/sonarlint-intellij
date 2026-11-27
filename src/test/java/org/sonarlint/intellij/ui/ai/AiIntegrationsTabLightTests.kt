@@ -62,6 +62,7 @@ import org.sonarlint.intellij.fixtures.pumpEdt
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.ui.page.AiIntegrationCardPage
 import org.sonarlint.intellij.ui.page.TerminalToolWindowPage
+import org.sonarlint.intellij.ui.page.ensureTerminalToolWindow
 import org.sonarsource.sonarlint.core.rpc.protocol.backend.ai.AiAgent
 import org.sonarsource.sonarlint.core.rpc.protocol.common.Either
 import org.sonarsource.sonarlint.core.rpc.protocol.common.TokenDto
@@ -74,6 +75,12 @@ class AiIntegrationsTabLightTests : AbstractSonarLintUILightTests() {
     private lateinit var terminal: TerminalToolWindowPage
     private val claudeCode = AiAgentRegistry().displayName(AiAgent.CLAUDE_CODE)
     private lateinit var notifications: List<Notification>
+
+    override fun initializeProjectLifetimeServices() {
+        super.initializeProjectLifetimeServices()
+        // The Terminal plugin initializes its tool window once per reused project.
+        ensureTerminalToolWindow(project)
+    }
 
     override fun beforeMainToolWindowCreated() {
         cli.reset()

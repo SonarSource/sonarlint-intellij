@@ -162,14 +162,18 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         val backend = mock<BackendService>()
         whenever(backend.prepareAuthenticateCliCommand(null)).thenReturn(CompletableFuture.completedFuture(command))
         val terminal = mock<CliTerminalAdapter>()
-        whenever(terminal.launch(project, command)).thenReturn(TerminalLaunch.Started({}, CompletableFuture()))
+        val completion = CompletableFuture<TerminalCompletion>()
+        whenever(terminal.launch(project, command)).thenReturn(TerminalLaunch.Started({}, completion))
         val coordinator = coordinator(backend, terminal)
 
-        coordinator.execute(project, snapshot, AiIntegrationsIntent.AuthenticateCli)
-
-        verify(backend).prepareAuthenticateCliCommand(null)
-        verify(backend, never()).authenticateCliWithConnection(any())
-        verify(terminal).launch(project, command)
+        try {
+            coordinator.execute(project, snapshot, AiIntegrationsIntent.AuthenticateCli)
+            verify(backend).prepareAuthenticateCliCommand(null)
+            verify(backend, never()).authenticateCliWithConnection(any())
+            verify(terminal).launch(project, command)
+        } finally {
+            completion.complete(TerminalCompletion.Exited(0))
+        }
     }
 
     @Test
@@ -279,12 +283,16 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         val tasks = mutableListOf<Task.Backgroundable>()
         val coordinator = coordinator(backend, mock(), authentication = tasks::add)
 
-        assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isTrue()
-        assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isFalse()
-        assertThat(tasks).hasSize(1)
-        tasks.single().onCancel()
-        assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isTrue()
-        verifyNoInteractions(backend)
+        try {
+            assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isTrue()
+            assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isFalse()
+            assertThat(tasks).hasSize(1)
+            tasks.removeAt(0).onCancel()
+            assertThat(coordinator.execute(project, connectedSnapshot, AiIntegrationsIntent.AuthenticateCli)).isTrue()
+            verifyNoInteractions(backend)
+        } finally {
+            tasks.forEach { it.onCancel() }
+        }
     }
 
     @Test
@@ -355,7 +363,8 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
         whenever(backend.prepareInstallCliCommand()).thenReturn(CompletableFuture.completedFuture(command))
         val terminal = mock<CliTerminalAdapter>()
         val focuses = AtomicInteger()
-        whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started({ focuses.incrementAndGet() }, CompletableFuture()))
+        val completion = CompletableFuture<TerminalCompletion>()
+        whenever(terminal.launch(any(), any())).thenReturn(TerminalLaunch.Started({ focuses.incrementAndGet() }, completion))
         var choices = 0
         val selector = ConnectionSelector { _, _ -> choices++; null }
         val coordinator = coordinator(backend, terminal, selector = selector)
@@ -364,12 +373,15 @@ class CliOperationCoordinatorTests : AbstractSonarLintLightTests() {
             IntegrationConnection("second", "https://second", null)
         ))
 
-        coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
-        assertThat(coordinator.execute(project, connections, AiIntegrationsIntent.AuthenticateCli)).isFalse()
-
-        assertThat(choices).isZero()
-        assertThat(focuses.get()).isEqualTo(1)
-        assertThat(coordinator.activeOperation()).isTrue()
+        try {
+            coordinator.execute(project, snapshot, AiIntegrationsIntent.InstallCli)
+            assertThat(coordinator.execute(project, connections, AiIntegrationsIntent.AuthenticateCli)).isFalse()
+            assertThat(choices).isZero()
+            assertThat(focuses.get()).isEqualTo(1)
+            assertThat(coordinator.activeOperation()).isTrue()
+        } finally {
+            completion.complete(TerminalCompletion.Exited(0))
+        }
     }
 
     @Test

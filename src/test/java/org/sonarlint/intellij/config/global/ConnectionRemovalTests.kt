@@ -45,7 +45,7 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
 
     @AfterEach
     fun clearCredentials() {
-        PasswordSafe.instance.eraseToken(connection.name)
+        runFixtureIo { PasswordSafe.instance.eraseToken(connection.name) }
     }
 
     @Test
@@ -56,7 +56,7 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
         configurable.disposeUIResources()
 
         assertThat(globalSettings.serverConnections).containsExactly(connection)
-        assertThat(PasswordSafe.instance.getToken(connection.name)).isEqualTo("test-token")
+        assertThat(savedToken()).isEqualTo("test-token")
     }
 
     @Test
@@ -68,7 +68,7 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
             configurable.reset()
 
             assertThat(configurable.currentConnections).containsExactly(connection)
-            assertThat(PasswordSafe.instance.getToken(connection.name)).isEqualTo("test-token")
+            assertThat(savedToken()).isEqualTo("test-token")
         } finally {
             configurable.disposeUIResources()
         }
@@ -83,7 +83,7 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
             configurable.apply()
 
             assertThat(globalSettings.serverConnections).isEmpty()
-            assertThat(PasswordSafe.instance.getToken(connection.name)).isNull()
+            assertThat(savedToken()).isNull()
         } finally {
             configurable.disposeUIResources()
         }
@@ -115,7 +115,7 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
             configurable.apply()
 
             verifyNoInteractions(bindingManager)
-            assertThat(PasswordSafe.instance.getToken(connection.name)).isEqualTo("test-token")
+            assertThat(savedToken()).isEqualTo("test-token")
         } finally {
             configurable.disposeUIResources()
         }
@@ -134,7 +134,7 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
     @Test
     fun `same name replacement keeps credentials`() {
         globalSettings.setServerConnections(listOf(connection))
-        PasswordSafe.instance.setToken(connection.name, "test-token")
+        runFixtureIo { PasswordSafe.instance.setToken(connection.name, "test-token") }
         val replacement = ServerConnection.newBuilder().setName(connection.name).setHostUrl("https://replacement.example.org").build()
         val proposed = SonarLintGlobalSettings(globalSettings)
         proposed.setServerConnections(listOf(replacement))
@@ -142,7 +142,7 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
         SonarLintGlobalConfigurable.saveSettings(globalSettings, proposed)
 
         assertThat(globalSettings.serverConnections).containsExactly(replacement)
-        assertThat(PasswordSafe.instance.getToken(connection.name)).isEqualTo("test-token")
+        assertThat(savedToken()).isEqualTo("test-token")
     }
 
     @Test
@@ -218,7 +218,7 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
             assertThrows<ConfigurationException> { configurable.apply() }
 
             assertThat(globalSettings.serverConnections).containsExactly(connection)
-            assertThat(PasswordSafe.instance.getToken(connection.name)).isEqualTo("test-token")
+            assertThat(savedToken()).isEqualTo("test-token")
             assertThat(configurable.currentConnections).isEmpty()
             assertThat(configurable.isModified).isTrue()
         } finally {
@@ -226,9 +226,11 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
         }
     }
 
+    private fun savedToken() = runFixtureIo { PasswordSafe.instance.getToken(connection.name) }
+
     private fun createConfigurable(): SonarLintGlobalConfigurable {
         globalSettings.setServerConnections(listOf(connection))
-        PasswordSafe.instance.setToken(connection.name, "test-token")
+        runFixtureIo { PasswordSafe.instance.setToken(connection.name, "test-token") }
         return SonarLintGlobalConfigurable().also {
             it.createComponent()
             it.reset()
@@ -244,6 +246,6 @@ class ConnectionRemovalTests : AbstractSonarLintLightTests() {
         constructor.isAccessible = true
         (constructor.newInstance(panel) as AnActionButtonRunnable).run(null)
         assertThat(configurable.currentConnections).isEmpty()
-        assertThat(PasswordSafe.instance.getToken(connection.name)).isEqualTo("test-token")
+        assertThat(savedToken()).isEqualTo("test-token")
     }
 }

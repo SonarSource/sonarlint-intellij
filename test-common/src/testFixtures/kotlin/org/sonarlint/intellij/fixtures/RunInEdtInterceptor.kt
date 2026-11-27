@@ -26,6 +26,10 @@ import org.junit.jupiter.api.extension.InvocationInterceptor
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext
 import java.lang.reflect.Method
 
+/** Runs test methods on the JUnit thread while keeping fixture setup and teardown on the EDT. */
+@Target(AnnotationTarget.CLASS)
+annotation class RunTestOffEdt
+
 class RunInEdtInterceptor : InvocationInterceptor {
     companion object {
         init {
@@ -53,7 +57,11 @@ class RunInEdtInterceptor : InvocationInterceptor {
         invocationContext: ReflectiveInvocationContext<Method>,
         extensionContext: ExtensionContext
     ) {
-        runInEdtAndWait { invocation.proceed() }
+        if (extensionContext.requiredTestClass.isAnnotationPresent(RunTestOffEdt::class.java)) {
+            invocation.proceed()
+        } else {
+            runInEdtAndWait { invocation.proceed() }
+        }
     }
 
     override fun interceptAfterEachMethod(

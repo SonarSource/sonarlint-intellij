@@ -122,10 +122,8 @@ abstract class AbstractSonarLintUILightTests : AbstractSonarLintLightTests() {
     }
 
     private fun notifyFileCreated(virtualFile: VirtualFile) {
-        getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
-            true,
-        )
+        val fileEvents = mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile)))
+        runFixtureIo { getService(BackendService::class.java).updateFileSystem(fileEvents, true) }
     }
 
     /**

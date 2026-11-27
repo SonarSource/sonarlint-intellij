@@ -156,10 +156,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
 
         val issues = resultRef.get().findings.issuesPerFile[file] ?: emptyList()
 
-        getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.DELETED, file))),
-            true
-        )
+        updateSloopFileSystem(ModuleFileEvent.Type.DELETED, file)
         
         return issues
     }
@@ -174,10 +171,7 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         val psiFile = createTestPsiFile(relativePath, content)
         val virtualFile = psiFile.virtualFile
 
-        getService(BackendService::class.java).updateFileSystem(
-            mapOf(module to listOf(VirtualFileEvent(ModuleFileEvent.Type.CREATED, virtualFile))),
-            true
-        )
+        updateSloopFileSystem(ModuleFileEvent.Type.CREATED, virtualFile)
         
         // Give backend time to process
         Thread.sleep(3000)
@@ -185,4 +179,8 @@ class StandaloneModeMediumTests : AbstractSonarLintLightTests() {
         return virtualFile
     }
 
+    private fun updateSloopFileSystem(type: ModuleFileEvent.Type, file: VirtualFile) {
+        val events = mapOf(module to listOf(VirtualFileEvent(type, file)))
+        runFixtureIo { getService(BackendService::class.java).updateFileSystem(events, true) }
+    }
 }

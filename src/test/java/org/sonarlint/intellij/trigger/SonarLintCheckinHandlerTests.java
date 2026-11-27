@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TestDialogManager;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -162,12 +164,20 @@ class SonarLintCheckinHandlerTests extends AbstractSonarLintLightTests {
   }
 
   @Test
-  void commitsWhenPreCommitAnalysisDidNotStart() {
-    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(null);
+  void submitsPreCommitAnalysisOffEdtAndCommitsWhenAnalysisDoesNotStart() {
+    var application = ApplicationManager.getApplication();
+    assertThat(application.isDispatchThread()).isTrue();
+    assertThat(application.isWriteAccessAllowed()).isFalse();
+    var submittedOnEdt = new AtomicReference<Boolean>();
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenAnswer(invocation -> {
+      submittedOnEdt.set(application.isDispatchThread());
+      return null;
+    });
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var result = handler.beforeCheckin(null, null);
 
+    assertThat(submittedOnEdt.get()).as("pre-commit analysis submitted on the EDT").isFalse();
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
     verify(sonarLintTelemetry).analysisReportingTriggered(AnalysisReportingType.PRE_COMMIT_ANALYSIS_TYPE);
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));

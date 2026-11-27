@@ -32,9 +32,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.serviceContainer.NonInjectable
+import com.intellij.util.concurrency.AppExecutorUtil
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import org.jetbrains.annotations.VisibleForTesting
 import org.sonarlint.intellij.actions.MarkAsResolvedAction
@@ -72,7 +72,11 @@ class DirectHighlighter @NonInjectable internal constructor(
     private val debounceDelayMs: Long,
 ) : Disposable {
 
-    constructor(project: Project) : this(project, newScheduler(project), DEFAULT_DEBOUNCE_DELAY_MS)
+    constructor(project: Project) : this(
+        project,
+        AppExecutorUtil.createBoundedScheduledExecutorService("SonarQube findings highlighter", 1),
+        DEFAULT_DEBOUNCE_DELAY_MS,
+    )
 
     private val queueLock = Any()
     private val pendingFiles = linkedSetOf<VirtualFile>()
@@ -85,7 +89,7 @@ class DirectHighlighter @NonInjectable internal constructor(
      * Recomputes and writes the SonarQube highlights for the given [files]. Called (debounced) from
      * [CodeAnalyzerRestarter] whenever the displayed findings change.
      *
-     * Requests are coalesced and prepared serially on a project-owned worker. Only the final markup update is posted to
+     * Requests are coalesced and prepared serially in a project-owned scheduler. Only the final markup update is posted to
      * the EDT. Each request gets a generation so an obsolete prepared result cannot overwrite a newer one. Keeping
      * [UpdateHighlightersUtil.setHighlightersToEditor] off the read-action path avoids "slow operations on EDT"
      * assertions in integration tests.
@@ -225,7 +229,7 @@ class DirectHighlighter @NonInjectable internal constructor(
             pendingFiles.clear()
             latestGenerationByFile.clear()
         }
-        scheduler.shutdownNow()
+        scheduler.shutdown()
     }
 
     private data class HighlightRequest(val file: VirtualFile, val generation: Long)
@@ -352,11 +356,6 @@ class DirectHighlighter @NonInjectable internal constructor(
 
     companion object {
         private const val DEFAULT_DEBOUNCE_DELAY_MS = 100L
-
-        private fun newScheduler(project: Project): ScheduledExecutorService =
-            ScheduledThreadPoolExecutor(1) { runnable ->
-                Thread(runnable, "sonarlint-direct-highlighter-${project.name}").apply { isDaemon = true }
-            }.apply { removeOnCancelPolicy = true }
 
         // Dedicated highlighter group id used exclusively for SonarQube findings. It must stay distinct from the
         // (small) group ids used by IntelliJ's own daemon passes so that neither clears the other's highlights. The
