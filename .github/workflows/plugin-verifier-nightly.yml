@@ -23,7 +23,7 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
+      - uses: SonarSource/ci-github-actions/get-build-number@cd228f1d8cd84e341efb928b19c5f1d3b62d5590 # 2.8.0
         id: build-number
 
   verify_plugin:
@@ -43,7 +43,7 @@ jobs:
       # Cache extracted IDEs and their indices independently of the Gradle version.
       # Refresh snapshots when verifier configuration changes, reusing older caches as a fallback.
       - name: Restore verifier IDEs cache
-        uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
+        uses: SonarSource/gh-action_cache@10fff0296bfc17164fb1ed6473f7238df3430ebf # v1.7.5
         with:
           path: .intellijPlatform/ides
           key: verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-FULL-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
@@ -53,7 +53,7 @@ jobs:
             verifier-ides-v2-${{ runner.os }}-${{ runner.arch }}-LATEST-
 
       - name: Cache Gradle
-        uses: SonarSource/gh-action_cache@0b86c7a0e6c3cb8238c826be7dd9fdfd02f16f8b # v1.7.3
+        uses: SonarSource/gh-action_cache@10fff0296bfc17164fb1ed6473f7238df3430ebf # v1.7.5
         with:
           path: |
             ~/.gradle/caches
@@ -65,7 +65,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
+        uses: SonarSource/ci-github-actions/config-gradle@cd228f1d8cd84e341efb928b19c5f1d3b62d5590 # 2.8.0
         with:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
@@ -77,7 +77,7 @@ jobs:
 
       - name: Upload verification reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: verifier-reports-full
           path: "**/reports/**/*"

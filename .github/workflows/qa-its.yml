@@ -64,7 +64,7 @@ jobs:
     env:
       BUILD_NUMBER: ${{ inputs.build_number }}
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
+      - uses: SonarSource/ci-github-actions/get-build-number@cd228f1d8cd84e341efb928b19c5f1d3b62d5590 # 2.8.0
         id: build-number
 
   aws-auth:
@@ -85,7 +85,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
+        uses: aws-actions/amazon-ecr-login@7290e214a610b32bc0eef81748948b6d466a8783 # v2.2.0
         with:
           mask-password: 'false'
 
@@ -124,7 +124,7 @@ jobs:
           echo "ULTIMATE_HOME=${IDEA_ULTIMATE_2024_DIR}" >> $GITHUB_ENV
 
       - name: Configure Gradle
-        uses: SonarSource/ci-github-actions/config-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
+        uses: SonarSource/ci-github-actions/config-gradle@cd228f1d8cd84e341efb928b19c5f1d3b62d5590 # 2.8.0
         with:
           use-develocity: true
           develocity-url: https://develocity.sonar.build
@@ -133,7 +133,7 @@ jobs:
             /home/runner/.gradle/caches
             /home/runner/.gradle/wrapper
 
-      - uses: SonarSource/ci-github-actions/build-gradle@43609e4795f6400aa0b66dc1f5277f1fc3fb4768 # 2.6.0
+      - uses: SonarSource/ci-github-actions/build-gradle@cd228f1d8cd84e341efb928b19c5f1d3b62d5590 # 2.8.0
         id: build_plugin
         with:
           sonar-platform: none
@@ -148,7 +148,7 @@ jobs:
         run: echo "project-version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Upload built plugin
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: qa-plugin
           path: |
