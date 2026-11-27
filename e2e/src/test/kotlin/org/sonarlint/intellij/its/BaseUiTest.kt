@@ -94,7 +94,7 @@ open class BaseUiTest {
 
         /**
          * Database plugin plus IntelliJ. Rider ships the Database plugin, so a
-         * plugin-only check would enable PLSQL ITs there.
+         * plugin-only check would enable PLSQL E2E tests there.
          */
         @JvmStatic
         fun isSQLPlugin() = remoteRobot.isSQLPlugin() && isIntelliJIdea()

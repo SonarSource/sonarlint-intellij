@@ -15,7 +15,7 @@ Base class for heavy integration tests that require a full IntelliJ project setu
 - Provides `@BeforeEach` and `@AfterEach` setup
 
 ### AbstractLightTests
-Base class for lightweight unit tests.
+Base class for tests that use a lightweight IntelliJ platform fixture.
 - Extends `BasePlatformTestCase`
 - Uses `RunInEdtInterceptor` for proper EDT handling
 - Provides `@BeforeEach` and `@AfterEach` setup

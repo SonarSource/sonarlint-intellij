@@ -32,7 +32,7 @@ import org.junit.jupiter.api.extension.ExtensionContext
 
 /**
  * A local web server for light tests, to stand in for SonarQube Server or Cloud while the real backend talks to it, as
- * in the language server's medium tests. Register it in a companion object:
+ * in the language server's integration tests. Register it in a companion object:
  *
  * ```
  * @JvmField @RegisterExtension

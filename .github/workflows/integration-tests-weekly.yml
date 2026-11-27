@@ -1,5 +1,5 @@
-name: Integration Tests Weekly
-run-name: ${{ inputs.ide_version && format('Custom ITs - {0} - {1}', inputs.ide_version, inputs.test_suite) || 'Integration Tests Weekly' }}
+name: IDE E2E Weekly
+run-name: ${{ inputs.ide_version && format('Custom IDE E2E - {0} - {1}', inputs.ide_version, inputs.test_suite) || 'IDE E2E Weekly' }}
 
 on:
   schedule:

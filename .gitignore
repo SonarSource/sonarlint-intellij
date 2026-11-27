@@ -1,8 +1,8 @@
 src/main/resources/plugins/*.jar
 out
-its/projects/*-tmp/
-its/projects/**/bin
-its/projects/**/obj
+e2e/projects/*-tmp/
+e2e/projects/**/bin
+e2e/projects/**/obj
 bin
 
 # ---- Sonar

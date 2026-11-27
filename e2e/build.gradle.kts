@@ -9,7 +9,7 @@ plugins {
 
 apply(from = "${rootProject.projectDir}/gradle/module-conventions.gradle")
 
-// ITs require IDEs whose test-framework JARs introduce transitive deps that vary by environment
+// E2E tests require IDEs whose test-framework JARs introduce transitive deps that vary by environment
 dependencyLocking {
     lockMode.set(LockMode.LENIENT)
 }
@@ -18,7 +18,7 @@ val intellijBuildType: String by project
 val intellijBuildVersion: String by project
 val ijVersion: String by project
 val runIdeDirectory: String by project
-description = "ITs for SonarLint IntelliJ"
+description = "IDE E2E tests for SonarQube for IntelliJ"
 
 java {
     toolchain {
@@ -49,14 +49,14 @@ dependencies {
             }
 
             if (envVarPath != null && File(envVarPath).exists()) {
-                println("ITs: Using IDE from setup-qa-ide.sh: $envVarPath (ijVersion=$ijVersion)")
+                println("E2E: Using IDE from setup-qa-ide.sh: $envVarPath (ijVersion=$ijVersion)")
                 local(envVarPath)
             } else {
                 val isCI = System.getenv("CI") == "true"
                 if (isCI) {
                     // On CI: FAIL - setup-qa-ide.sh should have provided the IDE
                     throw GradleException("""
-                        |IDE not provided for ITs on CI (ijVersion=$ijVersion)
+                        |IDE not provided for E2E tests on CI (ijVersion=$ijVersion)
                         |Expected environment variable: ${when(type) {
                             "IC", "IU" -> "IDEA_HOME"
                             "CL" -> "CLION_HOME"
@@ -72,7 +72,7 @@ dependencies {
                     """.trimMargin())
                 } else {
                     // Local development: fall back to downloading from Repox
-                    println("ITs: WARNING: No *_HOME env var set, downloading $ijVersion from Repox (local development only)")
+                    println("E2E: WARNING: No *_HOME env var set, downloading $ijVersion from Repox (local development only)")
                     create(type, version) {
                         useCache = true
                     }
@@ -81,7 +81,7 @@ dependencies {
         } else {
             val ideaHome = System.getenv("IDEA_HOME")
             if (!ideaHome.isNullOrBlank() && File(ideaHome).exists()) {
-                println("ITs: Using local IDE from IDEA_HOME=$ideaHome")
+                println("E2E: Using local IDE from IDEA_HOME=$ideaHome")
                 local(ideaHome)
             } else {
                 create(intellijBuildType, intellijBuildVersion)
@@ -97,7 +97,7 @@ dependencies {
     testImplementation(libs.its.sonar.ws)
     testImplementation(libs.bundles.its.remote)
     // remote-robot → retrofit and sonar-ws still request okhttp 3.14.x; orchestrator brings okhttp-jvm 5.x.
-    // Without this constraint both jars land on the ITS classpath with duplicate okhttp3 classes.
+    // Without this constraint both jars land on the E2E test classpath with duplicate okhttp3 classes.
     constraints {
         testImplementation(libs.its.okhttp)
     }
@@ -197,7 +197,7 @@ val runIdeForUiTests by intellijPlatformTesting.runIde.registering {
                 }
             }
             // UI-test IDE is not unit-test mode, so the bundled Python plugin refreshes
-            // its PyPI package cache on startup. ITs never use that index; disable it so
+            // its PyPI package cache on startup. E2E tests never use that index; disable it so
             // the sandbox does not contact pypi.org.
             copy {
                 from(layout.projectDirectory.dir("idea-config"))
@@ -225,7 +225,7 @@ intellijPlatform {
         ideaVersion {
             sinceBuild = "242.20224.300"
         }
-        name = "sonarlint-intellij-its"
+        name = "sonarlint-intellij-e2e"
     }
     instrumentCode.set(false)
 }
