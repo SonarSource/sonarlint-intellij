@@ -43,7 +43,7 @@ class McpUiAdaptersTests : AbstractSonarLintLightTests() {
     fun `open notifies when the configuration path cannot be resolved`() = ApplicationManager.getApplication().invokeAndWait {
         val missing = tempDir.resolve("missing-mcp.json")
 
-        assertThat(IntellijMcpUiAdapter().openConfiguration(project, missing)).isFalse()
+        assertThat(runFixtureIo { IntellijMcpUiAdapter().openConfiguration(project, missing) }).isFalse()
 
         val notifications = NotificationsManager.getNotificationsManager().getNotificationsOfType(Notification::class.java, project)
         assertThat(notifications.map { it.content }).anyMatch { it.contains("could not be resolved") }
@@ -56,7 +56,7 @@ class McpUiAdaptersTests : AbstractSonarLintLightTests() {
         val editorManager: FileEditorManager = mock()
         replaceProjectService(FileEditorManager::class.java, editorManager)
 
-        assertThat(IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path))).isFalse()
+        assertThat(runFixtureIo { IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path)) }).isFalse()
 
         verify(editorManager).openTextEditor(any(), eq(true))
     }
@@ -77,7 +77,7 @@ class McpUiAdaptersTests : AbstractSonarLintLightTests() {
         """.trimIndent()
         val file = createTestFile(".claude.json", content)
 
-        assertThat(IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path))).isTrue()
+        assertThat(runFixtureIo { IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path)) }).isTrue()
 
         val editor = FileEditorManager.getInstance(project).selectedTextEditor!!
         assertThat(editor.caretModel.offset).isEqualTo(editor.document.text.indexOf("\"sonarqube\": {\"command\""))
@@ -88,7 +88,7 @@ class McpUiAdaptersTests : AbstractSonarLintLightTests() {
     fun `open falls back to the beginning when no root SonarQube entry can be located`(content: String) = ApplicationManager.getApplication().invokeAndWait {
         val file = createTestFile(".claude.json", content)
 
-        assertThat(IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path))).isTrue()
+        assertThat(runFixtureIo { IntellijMcpUiAdapter().openConfiguration(project, Path.of(file.path)) }).isTrue()
 
         assertThat(FileEditorManager.getInstance(project).selectedTextEditor!!.caretModel.offset).isZero()
     }

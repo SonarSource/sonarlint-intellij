@@ -908,10 +908,15 @@ class McpConfigurationCoordinatorTests : AbstractSonarLintLightTests() {
     @Test
     fun `file opening reports observable editor results without state invalidation`() {
         val origins = captureOrigins()
-        val coordinator = coordinator()
+        val queued = mutableListOf<Runnable>()
+        val coordinator = coordinator(executor = queued::add)
         coordinator.openConfiguration(project, AiAgent.CURSOR, setupSnapshot())
+        verify(telemetry).aiIntegrationAction(AiIntegrationAction.OPEN_MCP_CONFIGURATION, AiIntegrationActionStatus.STARTED, AiAgent.CURSOR)
+        verify(telemetry, never()).aiIntegrationAction(AiIntegrationAction.OPEN_MCP_CONFIGURATION, AiIntegrationActionStatus.SUCCEEDED, AiAgent.CURSOR)
+        runFixtureIo { queued.removeFirst().run() }
         verify(telemetry).aiIntegrationAction(AiIntegrationAction.OPEN_MCP_CONFIGURATION, AiIntegrationActionStatus.SUCCEEDED, AiAgent.CURSOR)
         coordinator.openConfiguration(project, AiAgent.CLAUDE_CODE, baseSnapshot())
+        runFixtureIo { queued.removeFirst().run() }
         verify(telemetry).aiIntegrationAction(AiIntegrationAction.OPEN_MCP_CONFIGURATION, AiIntegrationActionStatus.FAILED, AiAgent.CLAUDE_CODE)
         assertThat(origins).isEmpty()
     }

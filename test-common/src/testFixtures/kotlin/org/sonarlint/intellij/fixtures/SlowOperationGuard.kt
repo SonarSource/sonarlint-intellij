@@ -118,8 +118,6 @@ class SlowOperationGuard : AutoCloseable {
                 validatesFixtureFile || cacheCleanup
         }
 
-        // SLI-3097: the affected MCP adapter refreshes the configuration path on the EDT.
-        return contains("com.intellij.openapi.vfs.newvfs.persistent.FSRecordsImpl", "update") &&
-            contains("org.sonarlint.intellij.ai.IntellijMcpUiAdapter", "openConfiguration")
+        return false
     }
 }
