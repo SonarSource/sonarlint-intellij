@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.json.JsonReadFeature
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -41,6 +42,7 @@ interface McpUiAdapter {
 
     fun confirmWithoutToken(project: Project): Boolean
 
+    /** Resolves the file on a background thread and opens the editor on the EDT. */
     fun openConfiguration(project: Project, path: Path): Boolean
 
     fun openConnectionSettings(project: Project)
@@ -74,17 +76,28 @@ class IntellijMcpUiAdapter : McpUiAdapter {
     }
 
     override fun openConfiguration(project: Project, path: Path): Boolean {
+        val application = ApplicationManager.getApplication()
+        application.assertIsNonDispatchThread()
+        if (project.isDisposed) return false
         val file = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
-        if (file == null) {
-            showMessage(
-                project,
-                "Could not open the SonarQube MCP configuration file. The path could not be resolved.",
-                NotificationType.WARNING
-            )
-            return false
+        val content = file?.let {
+            ReadAction.compute<String?, RuntimeException> {
+                if (it.isValid) FileDocumentManager.getInstance().getDocument(it)?.text else null
+            }
         }
-        val offset = FileDocumentManager.getInstance().getDocument(file)?.text?.let(::sonarQubeOffset) ?: 0
-        return FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, file, offset), true) != null
+        val offset = content?.let(::sonarQubeOffset) ?: 0
+        return application.computeInEDT {
+            if (project.isDisposed) return@computeInEDT false
+            if (file == null || !file.isValid) {
+                showMessage(
+                    project,
+                    "Could not open the SonarQube MCP configuration file. The path could not be resolved.",
+                    NotificationType.WARNING
+                )
+                return@computeInEDT false
+            }
+            FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, file, offset), true) != null
+        }
     }
 
     private fun sonarQubeOffset(content: String): Int = runCatching {

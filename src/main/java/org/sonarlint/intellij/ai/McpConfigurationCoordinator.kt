@@ -150,13 +150,16 @@ class McpConfigurationCoordinator @JvmOverloads constructor(
     fun openConfiguration(project: Project, agent: AiAgent, snapshot: AiIntegrationSnapshot) {
         if (project.isDisposed) return
         val attempt = AiIntegrationTelemetryAttempt(getService(SonarLintTelemetry::class.java), AiIntegrationAction.OPEN_MCP_CONFIGURATION, agent)
-        val status = try {
-            val path = snapshot.mcpConfigurations[agent]?.path
-            if (path != null && ui.openConfiguration(project, path)) AiIntegrationActionStatus.SUCCEEDED else AiIntegrationActionStatus.FAILED
+        try {
+            CompletableFuture.supplyAsync({
+                val path = snapshot.mcpConfigurations[agent]?.path
+                if (path != null && ui.openConfiguration(project, path)) AiIntegrationActionStatus.SUCCEEDED else AiIntegrationActionStatus.FAILED
+            }, executor).whenComplete { status, error ->
+                attempt.finish(if (error == null) status else AiIntegrationActionStatus.FAILED)
+            }
         } catch (_: Exception) {
-            AiIntegrationActionStatus.FAILED
+            attempt.finish(AiIntegrationActionStatus.FAILED)
         }
-        attempt.finish(status)
     }
 
     fun embeddedServerStarted(port: Int) {
