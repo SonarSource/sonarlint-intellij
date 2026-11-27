@@ -30,8 +30,13 @@ class SonarLintUiTestContext(private val project: Project) {
     fun closeOpenEditorsAndSonarLintToolWindows() {
         val fileEditorManager = FileEditorManager.getInstance(project)
         fileEditorManager.openFiles.toList().forEach { fileEditorManager.closeFile(it) }
-        ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
-        ToolWindowManager.getInstance(project).getToolWindow(WALKTHROUGH_TOOL_WINDOW_ID)?.contentManager?.removeAllContents(true)
+        val toolWindows = ToolWindowManager.getInstance(project)
+        for (id in listOf(TOOL_WINDOW_ID, WALKTHROUGH_TOOL_WINDOW_ID)) {
+            toolWindows.getToolWindow(id)?.let { window ->
+                window.contentManager.removeAllContents(true)
+                toolWindows.unregisterToolWindow(id)
+            }
+        }
         PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
     }
 }

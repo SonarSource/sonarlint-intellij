@@ -19,23 +19,34 @@
  */
 package org.sonarlint.intellij;
 
+import com.intellij.codeInsight.AutoPopupController;
+import com.intellij.codeInsight.lookup.LookupManager;
+import com.intellij.codeInsight.template.TemplateManager;
+import com.intellij.ide.GeneratedSourceFileChangeTracker;
+import com.intellij.ide.bookmark.BookmarksManager;
+import com.intellij.ide.favoritesTreeView.FavoritesManager;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.notification.impl.NotificationsToolWindowFactory;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.ui.TestDialog;
 import com.intellij.openapi.ui.TestDialogManager;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vcs.annotate.AnnotationsPreloader;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.serviceContainer.ComponentManagerImpl;
+import com.intellij.testFramework.PlatformTestUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,7 +54,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 import org.apache.commons.io.file.PathUtils;
@@ -77,9 +90,27 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   private BackendService realBackendService;
   protected static final Path storageRoot = Paths.get(PathManager.getSystemPath()).resolve("sonarlint").resolve("storage");
   private final List<Path> createdTempDirs = new ArrayList<>();
+  private final List<Notification> deliveredProjectNotifications = new CopyOnWriteArrayList<>();
 
   public @NotNull Disposable getApplicationLevelDisposable() {
     return getService(AnchorApplicationService.class);
+  }
+
+  @Override
+  protected void initializeProjectLifetimeServices() {
+    super.initializeProjectLifetimeServices();
+    // These platform services attach project-owned listeners when the first editor is used.
+    AutoPopupController.getInstance(getProject());
+    LookupManager.getInstance(getProject());
+    TemplateManager.getInstance(getProject());
+    BookmarksManager.getInstance(getProject());
+    FavoritesManager.getInstance(getProject());
+    GeneratedSourceFileChangeTracker.getInstance(getProject());
+    getProject().getService(AnnotationsPreloader.class);
+    // The Action Center keeps one notification model for the lifetime of the reused project.
+    var notification = new Notification("System Messages", "", NotificationType.INFORMATION);
+    NotificationsToolWindowFactory.Companion.addNotification(getProject(), notification);
+    notification.expire();
   }
 
   @Override
@@ -100,7 +131,13 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
 
   @BeforeEach
   final void beforeEach() {
-    disposable = Disposer.newDisposable();
+    disposable = Disposer.newDisposable(getTestRootDisposable(), "SonarLint light test scratch");
+    getProject().getMessageBus().connect(disposable).subscribe(Notifications.TOPIC, new Notifications() {
+      @Override
+      public void notify(@NotNull Notification notification) {
+        deliveredProjectNotifications.add(notification);
+      }
+    });
     realBackendService = getService(BackendService.class);
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
@@ -145,8 +182,18 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
     createdTempDirs.clear();
     // Connections are removed before the next test, their saved credentials would stay
     var credentialsService = getService(CredentialsService.class);
-    getGlobalSettings().getServerConnections().forEach(credentialsService::eraseCredentials);
+    var connections = List.copyOf(getGlobalSettings().getServerConnections());
+    if (!connections.isEmpty()) {
+      runFixtureIo(() -> {
+        connections.forEach(credentialsService::eraseCredentials);
+        return null;
+      });
+    }
     TestDialogManager.setTestDialog(TestDialog.DEFAULT);
+    deliveredProjectNotifications.forEach(Notification::expire);
+    if (!getProject().isDisposed()) {
+      clearNotifications();
+    }
     realBackendService.projectClosed(getProject());
     if (!getProject().isDisposed()) {
       getService(getProject(), RunningAnalysesTracker.class).cancelAll();
@@ -158,7 +205,7 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   protected void clearNotifications() {
     var mgr = getNotificationsManager();
     Stream.of(mgr.getNotificationsOfType(Notification.class, getProject()))
-      .forEach(mgr::expire);
+      .forEach(Notification::expire);
   }
 
   /**
@@ -227,24 +274,33 @@ public abstract class AbstractSonarLintLightTests extends AbstractLightTests {
   }
 
   protected PsiFile createTestPsiFile(String fileName, String text) {
-    try {
-      if (createdTempDirs.isEmpty()) {
-        var tempDir = Files.createTempDirectory("sonarlint-light-test-src");
-        createdTempDirs.add(tempDir);
-        var virtualDir = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(tempDir);
-        WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model ->
-          model.addContentEntry(virtualDir).addSourceFolder(virtualDir, false)));
-      }
+    if (createdTempDirs.isEmpty()) {
+      var tempDir = runFixtureIo(() -> Files.createTempDirectory("sonarlint-light-test-src"));
+      createdTempDirs.add(tempDir);
+      var virtualDir = runFixtureIo(() -> LocalFileSystem.getInstance().refreshAndFindFileByNioFile(tempDir));
+      WriteAction.runAndWait(() -> ModuleRootModificationUtil.updateModel(getModule(), model ->
+        model.addContentEntry(virtualDir).addSourceFolder(virtualDir, false)));
+    }
 
-      var root = createdTempDirs.get(0);
-      var file = root.resolve(fileName);
+    var file = createdTempDirs.get(0).resolve(fileName);
+    var project = getProject();
+    return runFixtureIo(() -> {
       Files.createDirectories(file.getParent());
       Files.writeString(file, text);
-      var virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(file);
-      return PsiManager.getInstance(getProject()).findFile(virtualFile);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+      var fileSystem = LocalFileSystem.getInstance();
+      var virtualFile = fileSystem.refreshAndFindFileByNioFile(file);
+      if (virtualFile == null) {
+        var parent = Objects.requireNonNull(fileSystem.refreshAndFindFileByNioFile(file.getParent()));
+        parent.refresh(false, false);
+        virtualFile = parent.findChild(file.getFileName().toString());
+      }
+      var refreshedFile = Objects.requireNonNull(virtualFile, "Test file not found after refresh: " + file);
+      return ReadAction.compute(() -> PsiManager.getInstance(project).findFile(refreshedFile));
+    });
+  }
+
+  protected static <T> T runFixtureIo(Callable<T> task) {
+    return PlatformTestUtil.waitForFuture(ApplicationManager.getApplication().executeOnPooledThread(task));
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {

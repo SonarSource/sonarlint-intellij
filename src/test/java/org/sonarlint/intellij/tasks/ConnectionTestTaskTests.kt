@@ -37,19 +37,21 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.credentials.eraseToken
 import org.sonarlint.intellij.config.global.credentials.setToken
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.fixtures.RunTestOffEdt
 
 private const val CONNECTION_NAME = "name"
 
+@RunTestOffEdt
 class ConnectionTestTaskTests : AbstractSonarLintLightTests() {
 
     @AfterEach
     fun eraseCredentials() {
-        PasswordSafe.instance.eraseToken(CONNECTION_NAME)
+        runFixtureIo { PasswordSafe.instance.eraseToken(CONNECTION_NAME) }
     }
 
     @BeforeEach
     fun setUpCredentials() {
-        PasswordSafe.instance.setToken(CONNECTION_NAME, "token")
+        runFixtureIo { PasswordSafe.instance.setToken(CONNECTION_NAME, "token") }
     }
 
     @Test

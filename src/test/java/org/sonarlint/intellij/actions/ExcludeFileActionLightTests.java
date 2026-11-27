@@ -44,9 +44,10 @@ class ExcludeFileActionLightTests extends AbstractSonarLintLightTests {
 
   @BeforeEach
   void setup() {
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
     when(e.getProject()).thenReturn(getProject());
     when(e.getPresentation()).thenReturn(presentation);
-    when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {myFixture.copyFileToProject("foo.php", "foo.php")});
+    when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file});
     when(e.getPlace()).thenReturn(EDITOR_POPUP);
   }
 
@@ -76,7 +77,10 @@ class ExcludeFileActionLightTests extends AbstractSonarLintLightTests {
 
   @Test
   void enable_action() {
-    action.update(e);
+    runFixtureIo(() -> {
+      action.update(e);
+      return null;
+    });
     assertThat(presentation.isVisible()).isTrue();
     assertThat(presentation.isEnabled()).isTrue();
   }

@@ -93,7 +93,7 @@ class AnalysisSubmitterTests : AbstractSonarLintLightTests() {
         val failedFuture = CompletableFuture.failedFuture<ForceAnalyzeResponse>(RuntimeException("test failure"))
         doReturn(failedFuture).whenever(mockBackendService).analyzeFileList(eq(module), any())
 
-        val result = submitter.analyzeFilesPreCommit(setOf(vFile))
+        val result = runFixtureIo { submitter.analyzeFilesPreCommit(setOf(vFile)) }
 
         assertThat(result).isNotNull
         assertThat(result!!.left.analysisSucceeded()).isFalse

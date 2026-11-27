@@ -19,9 +19,13 @@
  */
 package org.sonarlint.intellij.git
 
+import com.intellij.ide.ui.TopHitCache
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
+import com.intellij.openapi.vcs.changes.ChangeListChangeAssigner
+import com.intellij.openapi.vcs.changes.RemoteRevisionsCache
 import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
+import com.intellij.openapi.vcs.impl.projectlevelman.AllVcses
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.project.stateStore
@@ -49,14 +53,26 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.fixtures.AbstractLightTests
+import org.sonarlint.intellij.fixtures.RunTestOffEdt
+import org.sonarlint.intellij.fixtures.readOnEdt
 
 private const val MAIN_BRANCH = "main"
 private const val EXPECTED = "expected-branch"
 
+@RunTestOffEdt
 class GitRepoTests : AbstractLightTests() {
 
     lateinit var vcsManager: ProjectLevelVcsManagerImpl
     lateinit var root: Path
+
+    override fun initializeProjectLifetimeServices() {
+        super.initializeProjectLifetimeServices()
+        // These services install project-lifetime listeners when VCS is first used.
+        AllVcses.getInstance(project)
+        TopHitCache.getInstance(project)
+        RemoteRevisionsCache.getInstance(project)
+        ChangeListChangeAssigner.EP_NAME.getExtensions(project)
+    }
 
     @BeforeEach
     override fun setUp() {
@@ -407,7 +423,7 @@ class GitRepoTests : AbstractLightTests() {
     }
 
     private fun newGitRepository(): GitRepository {
-        vcsManager.setDirectoryMapping(root.toString(), GitVcs.NAME)
+        readOnEdt { vcsManager.setDirectoryMapping(root.toString(), GitVcs.NAME) }
         val file = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(root)
         return ApplicationManager.getApplication().executeOnPooledThread<GitRepository> {
             GitUtil.getRepositoryManager(this.project).getRepositoryForRoot(file)!!

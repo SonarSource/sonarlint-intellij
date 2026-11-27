@@ -63,7 +63,7 @@ class EventSchedulerDispatchTests : AbstractSonarLintLightTests() {
         val secondFile = createTestFile("SecondClass.java", "class SecondClass {}")
 
         clearInvocations(backend)
-        dispatchFileChanges(setOf(firstFile, secondFile), projectLocator)
+        runFixtureIo { dispatchFileChanges(setOf(firstFile, secondFile), projectLocator) }
 
         val events = argumentCaptor<Map<Module, List<VirtualFileEvent>>>()
         verify(backend).updateFileSystem(events.capture(), eq(true))
@@ -84,7 +84,7 @@ class EventSchedulerDispatchTests : AbstractSonarLintLightTests() {
         }
 
         clearInvocations(backend)
-        dispatchFileChanges(setOf(firstFile, secondFile), projectLocator)
+        runFixtureIo { dispatchFileChanges(setOf(firstFile, secondFile), projectLocator) }
 
         assertThat(routedFiles.get()).isEqualTo(2)
         verify(backend, never()).updateFileSystem(any(), any())
@@ -104,7 +104,7 @@ class EventSchedulerDispatchTests : AbstractSonarLintLightTests() {
         whenever(projectLocator.getProjectsForFile(file)).thenReturn(listOf(closingProject))
 
         clearInvocations(backend)
-        dispatchFileChanges(setOf(file), projectLocator)
+        runFixtureIo { dispatchFileChanges(setOf(file), projectLocator) }
 
         assertThat(closed.get()).isTrue()
         verify(backend, never()).updateFileSystem(any(), any())
